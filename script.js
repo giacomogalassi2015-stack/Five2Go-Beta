@@ -121,39 +121,10 @@ async function loadTableData(tableName, btnEl) {
         return;
     }
 
-    // C. FARMACIE (Paesi, Numero, Nome, Indirizzo)
+    // D. FARMACIE (Paesi, Numero, Nome, Indirizzo)
     else if (tableName === 'Farmacie') {
-        data.forEach(f => {
-            // Se c'è un numero, crea il bottone verde, altrimenti niente
-            const callBtn = f.Numero 
-                ? `<a href="tel:${f.Numero}" class="btn-pharmacy-call"><span class="material-icons" style="font-size:16px;">call</span> CHIAMA</a>` 
-                : '';
-
-            html += `
-                <div class="card-pharmacy">
-                    <div class="pharmacy-icon">✚</div>
-                    <div class="pharmacy-info">
-                        <div class="pharmacy-name">${f.Nome}</div>
-                        <div class="pharmacy-address">
-                            📍 ${f.Paesi} <br> 
-                            <span style="font-size:0.8em; color:#999;">${f.Indirizzo || ''}</span>
-                        </div>
-                    </div>
-                    ${callBtn}
-                </div>`;
-        });
-    }
-
-    // D. SPIAGGE (Paesi, Descrizione, Nome)
-    else if (tableName === 'Spiagge') {
-        data.forEach(s => {
-            html += `
-                <div class="card-generic" onclick="simpleAlert('${s.Nome.replace(/'/g, "\\'")}', '${s.Descrizione.replace(/'/g, "\\'")}')">
-                    <div class="card-title">🏖️ ${s.Nome}</div>
-                    <div class="card-subtitle">📍 ${s.Paesi}</div>
-                    <div class="card-preview">Clicca per info</div>
-                </div>`;
-        });
+       renderGenericFilterableView(data, 'Paesi', subContent, farmaciaRenderer);
+        return;
     }
 
     // E. PRODOTTI (Standard con immagine)
@@ -190,18 +161,21 @@ async function loadTableData(tableName, btnEl) {
         });
     }
     else if (tableName === 'Numeri_utili') {
-        data.forEach(n => {
-            html += `
-                <div class="card-number-item" onclick="window.location.href='tel:${n.Numero}'">
-                    <span style="font-size:1.5rem; margin-right:15px;">📞</span>
-                    <div>
-                        <div style="font-weight:bold;">${n.Nome}</div>
-                        <div style="color:#666; font-size:0.9rem;">${n.Numero}</div>
-                    </div>
-                </div>`;
-        });
-    }
+        data.sort((a, b) => {
+            // Controlliamo se il nome contiene "112" o "Emergenza"
+            // Usiamo toLowerCase() per sicurezza
+            const isEmergenzaA = a.Nome.includes('112') || a.Nome.toLowerCase().includes('emergenza');
+            const isEmergenzaB = b.Nome.includes('112') || b.Nome.toLowerCase().includes('emergenza');
 
+            // Logica del "Vince chi è Emergenza"
+            if (isEmergenzaA && !isEmergenzaB) return -1; // A va su (Primo)
+            if (!isEmergenzaA && isEmergenzaB) return 1;  // B va su
+            return 0; // Se nessuno dei due è emergenza, lascia l'ordine com'è
+        }); 
+        renderGenericFilterableView(data, 'Comune', subContent, numeriUtiliRenderer);
+        return;
+        };
+    
     subContent.innerHTML = html + '</div>';
 }
 
@@ -315,9 +289,20 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
             btn.classList.add('active-filter');
             
             // Logica di filtro
+            // LOGICA FILTRO AVANZATA (Sticky Items)
             const filtered = tag === 'Tutti' 
                 ? allData 
-                : allData.filter(item => item[filterKey] === tag);
+                : allData.filter(item => {
+                    // Criterio 1: Corrisponde al tag cliccato (es. "Riomaggiore")
+                    const matchTag = item[filterKey] === tag;
+                    
+                    // Criterio 2 (Trascendenza): È un numero di emergenza?
+                    // Controlla se il nome contiene 112 (adatta la stringa se necessario)
+                    const isUniversal = item.Nome && (item.Nome.includes('112') || item.Nome.toLowerCase().includes('emergenza'));
+                    
+                    // Mostra se corrisponde al filtro OPPURE è universale
+                    return matchTag || isUniversal;
+                });
             
             updateList(filtered);
         };
@@ -441,7 +426,73 @@ const ristoranteRenderer = (r) => {
         <div class="item-arrow" style="align-self: flex-start; margin-top: 5px;">➜</div>
     </div>`;
 };
+const farmaciaRenderer = (f) => {
+    // 1. Normalizzazione
+    const nome = f.Nome || f.nome;
+    const paesi = f.Paesi || f.paesi;
+    const indirizzo = f.Indirizzo || f.indirizzo || '';
+    const numero = f.Numero || f.numero; // Supabase potrebbe chiamarlo 'Numero' o 'numero'
 
+    // 2. Link Mappa & Safe Obj
+    const fullAddress = `${indirizzo}, ${paesi}`;
+    const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+    const safeObj = JSON.stringify(f).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
 
+    return `
+    <div class="card-list-item" onclick='openModal("farmacia", ${safeObj})'>
+        <div class="item-info">
+            <div class="item-header-row">
+                <div class="item-title">${nome}</div>
+                <div class="item-tag" style="background-color:#4CAF50;">FARMACIA</div>
+            </div>
+            
+            <div class="item-subtitle">📍 ${paesi} - ${indirizzo}</div>
+
+            <div class="card-actions">
+                ${numero ? `
+                    <a href="tel:${numero}" class="action-btn btn-phone" onclick="event.stopPropagation()">
+                        <span>📞</span> Chiama
+                    </a>
+                ` : ''}
+                
+                ${indirizzo ? `
+                    <a href="${mapLink}" target="_blank" class="action-btn btn-map" onclick="event.stopPropagation()">
+                        <span>🗺️</span> Mappa
+                    </a>
+                ` : ''}
+            </div>
+        </div>
+        
+        <div class="item-arrow" style="align-self: flex-start; margin-top: 5px;">➜</div>
+    </div>`;
+};
+const numeriUtiliRenderer = (n) => {
+    // 1. Normalizzazione (Gestione Maiuscole/Minuscole)
+    const nome = n.Nome || n.nome;
+    const numero = n.Numero || n.numero;
+    const comune = n.Comune || n.comune; 
+    const paesi = n.Paesi || n.paesi; // Es: "Riomaggiore, Manarola, Volastra"
+
+    return `
+    <div class="card-list-item" style="cursor:default;">
+        <div class="item-info">
+            <div class="item-header-row">
+                <div class="item-title">${nome}</div>
+                <div class="item-tag" style="background-color:#607d8b;">${comune}</div>
+            </div>
+            
+            <div class="item-subtitle" style="margin-top:6px; color:#555;">
+                <strong>Copertura:</strong> ${paesi}
+            </div>
+
+            <div class="card-actions">
+                <a href="tel:${numero}" class="action-btn btn-phone" onclick="event.stopPropagation()">
+                    <span style="font-size:1.2rem; margin-right:5px;">📞</span> 
+                    Chiama ${numero}
+                </a>
+            </div>
+        </div>
+    </div>`;
+};
 // Avvio app
 document.addEventListener('DOMContentLoaded', () => switchView('home'));
