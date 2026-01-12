@@ -124,11 +124,34 @@ async function loadTableData(tableName, btnEl) {
     // C. FARMACIE (Paesi, Numero, Nome, Indirizzo)
     else if (tableName === 'Farmacie') {
         data.forEach(f => {
+            // Se c'è un numero, crea il bottone verde, altrimenti niente
+            const callBtn = f.Numero 
+                ? `<a href="tel:${f.Numero}" class="btn-pharmacy-call"><span class="material-icons" style="font-size:16px;">call</span> CHIAMA</a>` 
+                : '';
+
             html += `
-                <div class="card-generic">
-                    <div class="card-title">💊 ${f.Nome}</div>
-                    <div class="card-subtitle">📍 ${f.Paesi} - ${f.Indirizzo || ''}</div>
-                    ${f.Numero ? `<a href="tel:${f.Numero}" class="btn-call">📞 ${f.Numero}</a>` : ''}
+                <div class="card-pharmacy">
+                    <div class="pharmacy-icon">✚</div>
+                    <div class="pharmacy-info">
+                        <div class="pharmacy-name">${f.Nome}</div>
+                        <div class="pharmacy-address">
+                            📍 ${f.Paesi} <br> 
+                            <span style="font-size:0.8em; color:#999;">${f.Indirizzo || ''}</span>
+                        </div>
+                    </div>
+                    ${callBtn}
+                </div>`;
+        });
+    }
+
+    // D. SPIAGGE (Paesi, Descrizione, Nome)
+    else if (tableName === 'Spiagge') {
+        data.forEach(s => {
+            html += `
+                <div class="card-generic" onclick="simpleAlert('${s.Nome.replace(/'/g, "\\'")}', '${s.Descrizione.replace(/'/g, "\\'")}')">
+                    <div class="card-title">🏖️ ${s.Nome}</div>
+                    <div class="card-subtitle">📍 ${s.Paesi}</div>
+                    <div class="card-preview">Clicca per info</div>
                 </div>`;
         });
     }
@@ -154,10 +177,15 @@ async function loadTableData(tableName, btnEl) {
     else if (tableName === 'Trasporti') {
         data.forEach(t => {
             const safeObj = JSON.stringify(t).replace(/'/g, "&apos;");
+            
+            // Usiamo la classe 'card-product' e 'prod-thumb' che hai già nel CSS
+            // così prendono lo stesso stile grafico dei prodotti.
             html += `
-                <div class="card-service-transport" onclick='openModal("transport", ${safeObj})'>
-                    <img src="${t.Immagine}" class="img-service">
-                    <div class="title-service">${t.Località}</div>
+                <div class="card-product" onclick='openModal("transport", ${safeObj})'>
+                    <div class="prod-info">
+                        <div class="prod-title">${t.Località || t.Mezzo || 'Trasporto'}</div>
+                                          </div>
+                    ${t.Immagine ? `<img src="${t.Immagine}" class="prod-thumb">` : ''}
                 </div>`;
         });
     }
