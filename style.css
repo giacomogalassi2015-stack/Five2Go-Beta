@@ -151,30 +151,23 @@ main, #app-content {
 }
 .sub-nav-bar::-webkit-scrollbar { display: none; }
 
-/* --- AGGIUNTA PER FILTRI A PILLOLA (SERVIZI/RISTORANTI) --- */
-/* Questo stile rende i bottoni dei filtri belli e cliccabili */
-
-.filter-chip {
-    padding: 8px 16px;
-    border-radius: 20px;
-    background-color: #f1f3f4;     /* Grigio spento quando non attivo */
-    color: #555;
-    border: 1px solid transparent;
+.sub-nav-item {
+    padding: 8px 18px;
+    border-radius: 20px;  /* Forma a pillola */
+    border: 1px solid #eee;
+    background: var(--bg-light);
+    color: var(--text-main);
     font-size: 0.9rem;
-    font-weight: 500;
-    white-space: nowrap;           /* Il testo non va a capo */
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex-shrink: 0;                /* Impedisce al bottone di schiacciarsi */
-    margin-right: 5px;             /* Spazietto tra una pillola e l'altra */
+    white-space: nowrap;  /* Il testo non va a capo */
+    flex-shrink: 0;       /* Non si schiaccia */
 }
 
-/* Quando il filtro è attivo (es. hai cliccato Ristoranti) */
-.filter-chip.active {
-    background-color: var(--primary-col); /* Diventa Giallo/Verde */
-    color: white; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+.sub-nav-item.active-sub {
+    background-color: var(--accent-col);
+    color: white;
+    border-color: var(--accent-col);
 }
+
 /* 3. PAGINAZIONE (La soluzione al tuo problema principale) */
 .pagination-container, #pagination-controls {
     display: flex;             /* Mette i numeri in orizzontale */
@@ -309,8 +302,47 @@ main, #app-content {
     margin-bottom: 8px;
     text-transform: uppercase;
 }
+/* --- STILE SPECIFICO TRASPORTI (Foto piccola a sinistra) --- */
+.card-transport {
+    display: flex;              /* Mette tutto in riga orizzontale */
+    align-items: center;        /* Centra verticalmente */
+    background: white;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
 
-/* 4. MODALI (Finestre Popup) */
+/* Il contenitore della foto quadrata */
+.transport-thumb {
+    width: 80px;               /* Larghezza fissa */
+    height: 80px;              /* Altezza fissa */
+    flex-shrink: 0;            /* Impedisce che si schiacci */
+    border-radius: 8px;
+    background-color: #ddd;    /* Grigio se manca la foto */
+    background-size: cover;    /* L'immagine riempie il quadrato */
+    background-position: center;
+    margin-right: 15px;        /* Spazio tra foto e testo */
+}
+
+.transport-info {
+    flex: 1;                   /* Occupa tutto lo spazio rimanente */
+}
+
+.transport-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.transport-desc {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.3;
+}
+/* 5. MODALI (Finestre Popup) */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;

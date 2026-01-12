@@ -196,13 +196,20 @@ async function loadTableData(tableName, btnEl) {
     }
 
     // F. TRASPORTI & NUMERI UTILI (Standard)
+  // F. TRASPORTI (Modificato con stile Prodotti)
     else if (tableName === 'Trasporti') {
         data.forEach(t => {
             const safeObj = JSON.stringify(t).replace(/'/g, "&apos;");
+            
+            // Usiamo la classe 'card-product' e 'prod-thumb' che hai già nel CSS
+            // così prendono lo stesso stile grafico dei prodotti.
             html += `
-                <div class="card-service-transport" onclick='openModal("transport", ${safeObj})'>
-                    <img src="${t.Immagine}" class="img-service">
-                    <div class="title-service">${t.Località}</div>
+                <div class="card-product" onclick='openModal("transport", ${safeObj})'>
+                    <div class="prod-info">
+                        <div class="prod-title">${t.Località || t.Mezzo || 'Trasporto'}</div>
+                        <div class="prod-desc">${t.Descrizione || 'Clicca per orari e info'}</div>
+                    </div>
+                    ${t.Immagine ? `<img src="${t.Immagine}" class="prod-thumb">` : ''}
                 </div>`;
         });
     }
