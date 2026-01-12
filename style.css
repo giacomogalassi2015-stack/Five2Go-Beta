@@ -1,24 +1,30 @@
-/* VARIABILI */
+/* =========================================
+   1. VARIABILI E BASE
+   ========================================= */
 :root { 
-    --primary: #f1c40f; 
+    --primary: #f1c40f;      /* Giallo Five2Go */
+    --primary-dark: #d4ac0d;
     --dark: #2c3e50; 
     --secondary: #e67e22;
+    --google-blue: #1a73e8;
+    --bg-light: #f4f4f4;
+    --white: #ffffff;
 }
 
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-/* BODY */
 body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
     margin: 0; 
     padding: 0;
-    padding-bottom: 80px; /* Spazio per la nav fissa */
-    background: #f4f4f4; 
+    padding-bottom: 80px; /* Spazio per nav fissa */
+    background: var(--bg-light); 
+    color: var(--dark);
 }
 
-/* HEADER */
+/* =========================================
+   2. HEADER & NAVIGAZIONE
+   ========================================= */
 header { 
     background: var(--primary); 
     padding: 15px 20px; 
@@ -28,336 +34,170 @@ header {
     display: flex; 
     justify-content: space-between; 
     align-items: center;
-    font-weight: bold;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
-#view-title {
-    font-size: 1.3rem;
-    color: var(--dark);
-}
+#view-title { font-size: 1.3rem; font-weight: bold; color: var(--dark); }
 
-header .material-icons {
-    cursor: pointer;
-    color: var(--dark);
-}
-
-/* MAIN CONTENT */
-main {
-    min-height: calc(100vh - 150px);
-}
-
-/* GRID PAESI */
-.grid-container { 
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 12px; 
-    padding: 12px; 
-}
-
-.village-card { 
-    height: 180px; 
-    border-radius: 12px; 
-    background-size: cover; /* ✅ NON DEFORMA LE FOTO */
-    background-position: center; 
-    display: flex; 
-    align-items: flex-end; 
-    overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.village-card:active {
-    transform: scale(0.97);
-}
-
-.card-title-overlay { 
-    background: rgba(0,0,0,0.7); 
-    color: white; 
-    width: 100%; 
-    padding: 10px; 
-    text-align: center; 
-    font-weight: bold;
-    font-size: 1rem;
-}
-
-/* ✅ NAVIGAZIONE FISSA IN BASSO */
-#bottom-nav { 
-    position: fixed; 
-    bottom: 0; 
-    left: 0; 
-    right: 0; 
-    height: 70px; 
-    background: white; 
-    display: flex; 
-    justify-content: space-around; 
-    align-items: center; 
-    border-top: 2px solid #ddd; 
-    z-index: 2000;
-    box-shadow: 0 -3px 15px rgba(0,0,0,0.1);
-}
-
-.nav-item { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center;
-    justify-content: center; 
-    color: #95a5a6; 
-    font-size: 0.7rem; 
-    cursor: pointer;
-    flex: 1;
-    padding: 10px;
-    transition: all 0.2s ease;
-}
-
-.nav-item:active {
-    background: #f5f5f5;
-}
-
-.nav-item .material-icons {
-    font-size: 26px;
-    margin-bottom: 4px;
-}
-
-.nav-item.active { 
-    color: var(--dark); 
-}
-
-.nav-item.active .material-icons { 
-    color: var(--primary); 
-}
-
-.nav-label {
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-/* CARDS GENERICHE */
-.card { 
-    background: white; 
-    margin: 10px; 
-    padding: 15px; 
-    border-radius: 10px; 
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-}
-
-.card h3, .card h4 {
-    margin-top: 0;
-    color: var(--dark);
-}
-
-.card p {
-    color: #555;
-    line-height: 1.5;
-    margin: 8px 0;
-}
-
-.card small {
-    color: #777;
-    font-size: 0.85rem;
-}
-
-/* BOTTONI */
-.btn-action { 
-    background: var(--primary); 
-    border: none; 
-    padding: 10px 18px; 
-    border-radius: 6px; 
-    cursor: pointer; 
-    font-weight: bold;
-    margin-top: 8px;
-    margin-right: 8px;
-    color: var(--dark);
-    transition: opacity 0.2s;
-    font-size: 0.9rem;
-}
-
-.btn-action:active {
-    opacity: 0.8;
-}
-
-.btn-secondary {
-    background: var(--secondary);
-    color: white;
-}
-
-/* SEZIONI */
-.section-title {
-    padding: 15px 10px 5px 10px;
-    margin: 0;
-    color: var(--dark);
-    font-size: 1.2rem;
-    font-weight: bold;
-}
-
-.content-wrapper {
-    padding: 10px;
-}
-
-/* LOADING & ERROR */
-.loading {
-    padding: 40px 20px;
-    text-align: center;
-    color: #666;
-    font-size: 1rem;
-}
-
-.error {
-    color: #c0392b;
-    padding: 20px;
-    margin: 10px;
-    background: #fdecea;
-    border-radius: 8px;
-    border-left: 4px solid #c0392b;
-}/* Fascia tipo preferiti di Chrome */
-/* Contenitore della fascia (Fascia tipo Chrome/Google) */
+/* Barra Sotto-Menu (Stile Chrome/Google) */
 .sub-nav-bar {
     display: flex;
     gap: 12px;
-    background-color: #ffffff; /* Sfondo bianco pulito */
+    background-color: var(--white);
     padding: 12px 15px;
-    border-bottom: 1px solid #eeeeee;
-    overflow-x: auto; /* Permette lo scorrimento laterale */
+    border-bottom: 1px solid #eee;
+    overflow-x: auto;
     white-space: nowrap;
     position: sticky;
-    top: 0;
+    top: 58px; /* Sotto l'header */
     z-index: 100;
-    scrollbar-width: none; /* Nasconde la barra scroll su Firefox */
+    scrollbar-width: none;
 }
+.sub-nav-bar::-webkit-scrollbar { display: none; }
 
-.sub-nav-bar::-webkit-scrollbar {
-    display: none; /* Nasconde la barra scroll su Chrome/Safari */
-}
-
-/* Lo stile dei pulsanti "Pills" */
 .sub-nav-item {
     background-color: #f1f3f4;
     border: 1px solid transparent;
-    border-radius: 20px; /* Arrotondamento completo */
+    border-radius: 20px;
     padding: 8px 20px;
     font-size: 14px;
     font-weight: 500;
     color: #5f6368;
     cursor: pointer;
-    transition: all 0.3s ease; /* Animazione fluida */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
 }
 
-/* Effetto quando passi sopra col mouse (PC) */
-.sub-nav-item:hover {
-    background-color: #e8eaed;
-    transform: translateY(-1px);
-}
-
-/* Stato Attivo (quando la categoria è selezionata) */
 .sub-nav-item.active-sub {
-    background-color: #1a73e8; /* Blu Google */
-    color: #ffffff;
+    background-color: var(--google-blue);
+    color: var(--white);
     box-shadow: 0 4px 10px rgba(26, 115, 232, 0.3);
-    border-color: #1a73e8;
 }
 
-/* Stile per il contenitore dei risultati sotto la fascia */
-#sub-content {
-    padding: 15px;
-    background-color: #f8f9fa; /* Grigio chiarissimo di sfondo */
-    min-height: 100vh;
-}/* Stile della finestra modale */
+/* Navigazione Fissa Bottom */
+#bottom-nav { 
+    position: fixed; bottom: 0; left: 0; right: 0; 
+    height: 70px; background: var(--white); 
+    display: flex; justify-content: space-around; align-items: center; 
+    border-top: 1px solid #ddd; z-index: 2000;
+    box-shadow: 0 -3px 15px rgba(0,0,0,0.1);
+}
+
+.nav-item { 
+    display: flex; flex-direction: column; align-items: center;
+    color: #95a5a6; font-size: 0.7rem; cursor: pointer; flex: 1;
+}
+
+.nav-item.active { color: var(--dark); }
+.nav-item.active .material-icons { color: var(--primary-dark); }
+
+/* =========================================
+   3. CARDS & GRID (HOME, PRODOTTI, ECC.)
+   ========================================= */
+.grid-container { 
+    display: grid; grid-template-columns: 1fr 1fr; 
+    gap: 12px; padding: 12px; 
+}
+
+.village-card { 
+    height: 180px; border-radius: 12px; 
+    background-size: cover; background-position: center; 
+    display: flex; align-items: flex-end; overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.card-title-overlay { 
+    background: rgba(0,0,0,0.7); color: var(--white); 
+    width: 100%; padding: 10px; text-align: center; font-weight: bold;
+}
+
+/* Card Standard (Prodotti, Liste) */
+.card { 
+    background: var(--white); margin: 10px; padding: 15px; 
+    border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* =========================================
+   4. SEZIONE OUTDOOR (SENTIERI)
+   ========================================= */
+.macro-label {
+    font-size: 1rem; color: #555; background: #eef1f4;
+    padding: 8px 15px; margin: 20px 0 10px 0;
+    border-left: 4px solid var(--primary);
+    text-transform: uppercase; font-weight: bold;
+}
+
+.card-sentiero {
+    background: var(--white); border-radius: 12px;
+    margin: 10px; padding: 15px; border: 1px solid #eee;
+}
+
+.sentiero-header { 
+    display: flex; justify-content: space-between; 
+    font-weight: bold; font-size: 0.85rem; color: #777;
+}
+
+.sentiero-body h3 { margin: 10px 0 5px 0; color: var(--dark); }
+
+.sentiero-footer { 
+    display: flex; gap: 20px; border-top: 1px solid #eee; 
+    padding-top: 12px; margin-top: 10px;
+}
+
+.btn-yellow { 
+    color: var(--secondary); text-decoration: none; 
+    font-weight: bold; font-size: 0.85rem; 
+}
+
+/* =========================================
+   5. SEZIONE SERVIZI (TRASPORTI & NUMERI)
+   ========================================= */
+/* Trasporti - Card Fotografica */
+.card-service-transport {
+    position: relative; border-radius: 12px; overflow: hidden;
+    margin: 10px; height: 150px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.img-service { width: 100%; height: 100%; object-fit: cover; }
+
+.title-service {
+    position: absolute; bottom: 0; width: 100%;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    color: var(--white); padding: 15px; font-weight: bold; font-size: 1.1rem;
+}
+
+/* Numeri Utili - Lista */
+.card-number-item {
+    background: var(--white); padding: 18px; border-radius: 12px;
+    margin: 10px; border: 1px solid #eee; display: flex; align-items: center;
+}
+
+/* =========================================
+   6. MODALI & UTILITY
+   ========================================= */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.7); /* Sfondo scurito */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-    padding: 20px;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7); display: flex; justify-content: center;
+    align-items: center; z-index: 3000; padding: 20px;
 }
 
 .modal-content {
-    background: white;
-    padding: 25px;
-    border-radius: 20px;
-    max-width: 500px;
-    width: 100%;
-    position: relative;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    background: var(--white); padding: 25px; border-radius: 20px;
+    width: 100%; max-width: 500px; position: relative;
+    max-height: 85vh; overflow-y: auto;
 }
 
 .close-modal {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 30px;
-    cursor: pointer;
-    color: #999;
+    position: absolute; top: 15px; right: 20px;
+    font-size: 30px; color: #bbb; cursor: pointer;
 }
 
-.close-modal:hover {
-    color: #333;
-}/* Titoli delle macrocategorie */
-.titolo-categoria {
-    font-size: 1.2rem;
-    color: #555;
-    background: #f8f9fa;
-    padding: 10px 15px;
-    margin: 20px 0 10px 0;
-    border-left: 4px solid #f39c12; /* Linea gialla laterale */
-    text-transform: uppercase;
+/* Bottoni Link Modali */
+.btn-link-modal {
+    display: block; text-align: center; padding: 14px;
+    background: var(--google-blue); color: var(--white);
+    border-radius: 8px; text-decoration: none; font-weight: bold;
 }
+.btn-link-modal.secondary { background: #f1f3f4; color: #3c4043; }
 
-/* La Scheda */
-.card-sentiero {
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    padding: 15px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    font-weight: bold;
-    font-size: 0.9rem;
-    color: #333;
-    margin-bottom: 8px;
-}
-
-.paesi-titolo {
-    font-size: 1.1rem;
-    margin: 5px 0;
-    color: #2c3e50;
-}
-
-.difficolta {
-    color: #7f8c8d;
-    font-size: 0.85rem;
-    margin-bottom: 15px;
-}
-
-/* Bottoni Mappa e Pedaggio */
-.card-footer {
-    display: flex;
-    gap: 20px;
-    border-top: 1px solid #eee;
-    padding-top: 10px;
-}
-
-.btn-link {
-    color: #f39c12; /* Giallo Oro */
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 0.85rem;
-}
-
-.btn-link:hover {
-    text-decoration: underline;
-}
+.animate-fade { animation: fadeIn 0.3s ease-in; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
