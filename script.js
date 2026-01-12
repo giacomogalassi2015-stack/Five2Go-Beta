@@ -130,7 +130,7 @@ function createModalShell() {
     return modal;
 }
 
-// 6. RENDER TABELLE UNIVERSALE
+// 6. RENDER TABELLE UNIVERSALE (MODIFICATO PER SENTIERI)
 async function renderTable(tableName, btnEl) {
     const subContainer = document.getElementById('sub-content');
     if (!subContainer) return;
@@ -141,11 +141,47 @@ async function renderTable(tableName, btnEl) {
     const { data, error } = await supabaseClient.from(tableName).select('*');
     if (error) return subContainer.innerHTML = `<p>Errore: ${error.message}</p>`;
 
+    // --- CASO SPECIALE: SENTIERI ---
+    if (tableName === 'Sentieri') {
+        const categorie = {};
+        data.forEach(s => {
+            const cat = s.Label || "Altri Sentieri";
+            if (!categorie[cat]) categorie[cat] = [];
+            categorie[cat].push(s);
+        });
+
+        let sentieriHtml = '<div class="outdoor-container animate-fade">';
+        for (const label in categorie) {
+            sentieriHtml += `<div class="macro-label">${label}</div>`;
+            categorie[label].forEach(s => {
+                const pedaggioBtn = s.Pedaggio ? `<a href="${s.Pedaggio}" target="_blank" class="btn-yellow">PEDAGGIO</a>` : '';
+                sentieriHtml += `
+                    <div class="card-sentiero">
+                        <div class="sentiero-header">
+                            <span class="distanza">${s.Distanza || ''}</span>
+                            <span class="durata">${s.Durata || ''}</span>
+                        </div>
+                        <div class="sentiero-body" onclick="alert('${s.Paesi}\\n\\n${s.Descrizione ? s.Descrizione.replace(/'/g, "\\'") : ''}')">
+                            <h3 class="paesi">${s.Paesi || ''}</h3>
+                            <p class="difficolta">${s.Difficoltà || ''}</p>
+                        </div>
+                        <div class="sentiero-footer">
+                            <a href="${s.Mappa}" target="_blank" class="btn-yellow">MAPPA</a>
+                            ${pedaggioBtn}
+                        </div>
+                    </div>`;
+            });
+        }
+        subContainer.innerHTML = sentieriHtml + '</div>';
+        return;
+    }
+
+    // --- RESTO DELLE TABELLE (PRODOTTI, ECC.) ---
     let html = '<div class="list-container animate-fade">';
     data.forEach((row) => {
-        const titolo = getColumnValue(row, ['Prodotti', 'Nome', 'Label ', 'Località', 'Paese', 'Vino']);
+        const titolo = getColumnValue(row, ['Prodotti', 'Nome', 'Località', 'Paese', 'Vino']);
         const immagine = getColumnValue(row, ['Immagine', 'immagine']);
-        const info = getColumnValue(row, ['Descrizione', 'Difficoltà', 'Indirizzo']);
+        const info = getColumnValue(row, ['Descrizione', 'Indirizzo']);
 
         if (tableName === 'Prodotti') {
             const rowData = JSON.stringify(row).replace(/'/g, "&apos;");
