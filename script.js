@@ -126,19 +126,27 @@ async function loadTableData(tableName, btnEl) {
         return;
     }
 
-    // E. PRODOTTI (Standard con immagine)
+ // E. PRODOTTI (Con Lazy Loading per evitare il Lag)
     else if (tableName === 'Prodotti') {
         data.forEach(p => {
-            // Nota: uso p.Prodotti come nome colonna principale come da storico, o p.Nome se cambiato
             const titolo = p.Prodotti || p.Nome; 
-            const safeObj = JSON.stringify(p).replace(/'/g, "&apos;");
+            const safeObj = JSON.stringify(p).replace(/'/g, "'");
+            
             html += `
                 <div class="card-product" onclick='openModal("product", ${safeObj})'>
                     <div class="prod-info">
                         <div class="prod-title">${titolo}</div>
                         <div class="prod-arrow">➜</div>
                     </div>
-                    ${p.Immagine ? `<img src="${p.Immagine}" class="prod-thumb">` : ''}
+                    
+                    ${p.Immagine ? `
+                        <img 
+                            src="${p.Immagine}" 
+                            class="prod-thumb" 
+                            loading="lazy" 
+                            decoding="async"
+                            alt="${titolo}"
+                        >` : ''}
                 </div>`;
         });
     }

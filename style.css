@@ -358,45 +358,59 @@ CSS
 /* Icone dentro i bottoni (opzionale, se usi testo semplice va bene uguale) */
 .btn-icon { font-size: 1rem; }
 /* 2. CONTENITORE PRINCIPALE - PRODOTTI */
-.card-product, .list-item {
-    display: flex;         /* Mette immagine e testo affiancati */
-    justify-content: space-between;
-    align-items: center;
+/* ============================================================
+   NUOVO STILE PRODOTTI "FOOD BLOG" (Immagine Grande)
+   ============================================================ */
+
+.card-product {
     background: white;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-    border: 1px solid #eee;
+    border-radius: 16px;       /* Angoli più arrotondati */
+    margin-bottom: 20px;       /* Più spazio tra un piatto e l'altro */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Ombra morbida ed elegante */
+    overflow: hidden;          /* Assicura che l'immagine rispetti i bordi */
+    border: none;              /* Via il bordo grigio, usiamo l'ombra */
+    
+    /* Layout Verticale (Foto sopra, testo sotto) */
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
+.card-product:active {
+    transform: scale(0.98);
+}
+
+/* L'immagine a piena larghezza */
+.prod-thumb {
+    width: 100%;              /* Occupa tutto lo spazio orizzontale */
+    height: 200px;            /* Altezza fissa importante per evitare scatti */
+    object-fit: cover;        /* Taglia l'immagine per riempire senza deformare */
+    display: block;
+    background-color: #eee;   /* Colore di sfondo mentre carica */
+}
+
+/* Contenitore del testo (sotto la foto) */
 .prod-info {
-    flex: 1;               /* Prende tutto lo spazio disponibile */
-    padding-right: 15px;
+    padding: 15px;            /* Spazio interno per il testo */
+    background: white;
 }
 
 .prod-title {
-    font-weight: 600;
-    font-size: 1.05rem;
-    margin-bottom: 5px;
-    color: var(--text-main);
+    font-size: 1.2rem;        /* Titolo più grande */
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 4px;
 }
 
-.prod-desc {
-    font-size: 0.85rem;
-    color: #666;
+/* Descrizione opzionale sotto il titolo (se presente) */
+.prod-desc-preview {
+    font-size: 0.9rem;
+    color: #777;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;  /* Mette i puntini ... se il testo è lungo */
 }
-
-/* Immagine piccola quadrata a destra (thumbnail) */
-.prod-thumb {
-    width: 70px;
-    height: 70px;
-    border-radius: 8px;
-    object-fit: cover;
-    flex-shrink: 0;        /* Impedisce all'immagine di schiacciarsi */
-    background-color: #eee;
-}
-
 /* 3. CARD SENTIERI E OUTDOOR */
 .card-sentiero {
     background: white;
