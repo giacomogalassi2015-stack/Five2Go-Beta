@@ -4,7 +4,7 @@
 
 /* 1. VARIABILI GLOBALI (Il "Cervello" dei colori) */
 :root {
-    --primary-col: #fbc02d;  /* Verde scuro 5 Terre */
+    --primary-col: #e67e22;  /* Verde scuro 5 Terre */
     --accent-col:  #e67e22;  /* Arancione vivo per azioni/active */
     --bg-light:    #f8f9fa;  /* Sfondo grigio chiarissimo */
     --text-main:   #333333;  /* Testo scuro */
