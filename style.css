@@ -1,830 +1,260 @@
 /* ============================================================
-   PARTE 1: FONDAMENTA, COLORI E STRUTTURA (Header)
+   1. VARIABILI & RESET (INVARIATO)
    ============================================================ */
-
-/* 1. VARIABILI GLOBALI (Il "Cervello" dei colori) */
 :root {
-    --primary-col: #e67e22;  /* Verde scuro 5 Terre */
-    --accent-col:  #e67e22;  /* Arancione vivo per azioni/active */
-    --bg-light:    #f8f9fa;  /* Sfondo grigio chiarissimo */
-    --text-main:   #333333;  /* Testo scuro */
-    --nav-height:  70px;     /* Altezza riservata al menu in basso */
+    --primary-col: #e67e22;
+    --accent-col:  #e67e22;
+    --bg-light:    #f8f9fa;
+    --text-main:   #333333;
+    --nav-height:  70px;
+    --card-radius: 12px; /* Nuova variabile per coerenza */
 }
 
-/* 2. RESET (Pulizia) */
-* {
-    box-sizing: border-box; /* Misure precise bordi inclusi */
-    margin: 0;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent; /* No flash blu su mobile */
-}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-/* 3. CORPO DELLA PAGINA */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-light);
     color: var(--text-main);
     line-height: 1.5;
-     /* Permette lo scroll in verticale e orizzontale, ma VIETA lo zoom */
-    touch-action: pan-x pan-y; 
-    
-    /* Impedisce lo scroll elastico orizzontale che a volte confonde */
-    overflow-x: hidden; 
-    
-    /* Assicura che l'altezza sia stabile */
-    height: 100%;
-    width: 100%;
-    /* Riserviamo spazio in basso affinché il contenuto non finisca sotto il menu (che faremo nella Parte 2) */
+    touch-action: pan-x pan-y;
+    overflow-x: hidden;
+    height: 100%; width: 100%;
     padding-bottom: calc(var(--nav-height) + 20px);
 }
 
-/* 4. HEADER FISSO (Barra in alto) */
+/* ============================================================
+   2. LAYOUT PRINCIPALE (HEADER, MAIN, NAV)
+   ============================================================ */
+/* Header */
 header, #app-header {
     background-color: var(--primary-col);
     color: #f8f9fa;
     height: 60px;
     padding: 0 20px;
-    
-    /* Flexbox per allineare Titolo a SX e Menu a DX */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    
-    /* Blocca la barra in alto quando scorri */
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 1000;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
-/* Grafica per il bottone Condividi */
-.icon-btn {
-    background: transparent;  /* Rimuove lo sfondo grigio di default dei bottoni */
-    border: none;             /* Rimuove il bordo brutto */
-    color: white;             /* Colore dell'icona (deve risaltare sull'header) */
-    cursor: pointer;
-    padding: 8px;             /* Spazio intorno all'icona per cliccare meglio */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.1s ease; /* Effetto al tocco */
-}
 
-/* Effetto quando lo premi col dito */
-.icon-btn:active {
-    transform: scale(0.9);    /* Si rimpicciolisce leggermente */
-    opacity: 0.7;             /* Diventa un po' trasparente */
-}
+#view-title { font-size: 1.3rem; font-weight: 700; letter-spacing: 0.5px; }
+header .material-icons { font-size: 28px; cursor: pointer; }
 
-/* Dimensioni dell'icona dentro al bottone */
-.icon-btn .material-icons {
-    font-size: 24px;          /* Grandezza standard icone mobile */
-}
-#view-title {
-    font-size: 1.3rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-}
+/* Main Content */
+main, #app-content { max-width: 600px; margin: 0 auto; padding: 20px; }
 
-header .material-icons {
-    font-size: 28px;
-    cursor: pointer;
-}
-
-/* 5. CONTENITORE CENTRALE (Main) */
-main, #app-content {
-    max-width: 600px; /* Larghezza ottimale per lettura su tablet/desktop */
-    margin: 0 auto;   /* Centra il blocco nella pagina */
-    padding: 20px;
-}
-
-/* Animazione di caricamento (Base) */
-.loading-state {
-    text-align: center;
-    padding: 50px;
-    color: #888;
-}
-.spin {
-    display: inline-block;
-    animation: rotation 1s infinite linear;
-    font-size: 2.5rem;
-    margin-bottom: 10px;
-}
-@keyframes rotation { from { transform: rotate(0deg); } to { transform: rotate(359deg); } }/* ============================================================
-   PARTE 2: NAVIGAZIONE, CONTROLLI E PAGINAZIONE
-   (Qui risolviamo il problema dei pulsanti verticali)
-   ============================================================ */
-
-/* 1. MENU DI NAVIGAZIONE IN BASSO (Fix Icone) */
+/* Bottom Navigation */
 #bottom-nav, #nav-bar {
-    position: fixed;        /* Lo blocca in basso */
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: var(--nav-height);
-    background-color: white;
-    border-top: 1px solid #e0e0e0;
-    
-    /* LA MAGIA: Flexbox mette tutto in riga orizzontale */
-    display: flex;
-    flex-direction: row; 
-    justify-content: space-around; /* Distribuisce lo spazio equamente */
-    align-items: center;
-    
-    z-index: 1000; /* Sta sopra a tutto */
-    box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+    position: fixed; bottom: 0; left: 0;
+    width: 100%; height: var(--nav-height);
+    background-color: white; border-top: 1px solid #e0e0e0;
+    display: flex; justify-content: space-around; align-items: center;
+    z-index: 1000; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
 }
 
-/* Stile del singolo tasto del menu */
 .nav-item {
-    background: none;
-    border: none;
-    flex: 1;              /* Occupa tutto lo spazio disponibile */
-    display: flex;
-    flex-direction: column; /* Icona sopra, testo sotto */
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: #999;          /* Colore spento quando non attivo */
-    cursor: pointer;
-    text-decoration: none;
+    background: none; border: none; flex: 1; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #999; cursor: pointer; text-decoration: none;
 }
+.nav-item.active { color: var(--accent-col); font-weight: 600; }
+.nav-item .material-icons { font-size: 24px; margin-bottom: 4px; }
+.nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* Quando il tasto è attivo (es. sei sulla Home) */
-.nav-item.active {
-    color: var(--accent-col); /* Diventa Arancione */
-    font-weight: 600;
-}
+/* Loading */
+.loading-state { text-align: center; padding: 50px; color: #888; }
+.spin { display: inline-block; animation: rotation 1s infinite linear; font-size: 2.5rem; margin-bottom: 10px; }
+@keyframes rotation { from { transform: rotate(0deg); } to { transform: rotate(359deg); } }
 
-.nav-item .material-icons {
-    font-size: 24px;
-    margin-bottom: 4px;
-}
-
-.nav-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* 2. BARRA DEI FILTRI (Sotto l'header) */
-.sub-nav-bar {
-    display: flex;        /* Mette i bottoni in riga */
-    overflow-x: auto;     /* Permette di scorrere col dito se non ci stanno */
-    padding: 15px;
-    gap: 10px;            /* Spazio tra le pillole */
-    background: white;
-    border-bottom: 1px solid #eee;
-    
-    /* Nasconde la barra di scorrimento brutta */
-    -ms-overflow-style: none;  
-    scrollbar-width: none;  
-}
-.sub-nav-bar::-webkit-scrollbar { display: none; }
-
-.sub-nav-item {
-    padding: 8px 18px;
-    border-radius: 20px;  /* Forma a pillola */
-    border: 1px solid #eee;
-    background: var(--bg-light);
-    color: var(--text-main);
-    font-size: 0.9rem;
-    white-space: nowrap;  /* Il testo non va a capo */
-    flex-shrink: 0;       /* Non si schiaccia */
-}
-
-.sub-nav-item.active-sub {
-    background-color: var(--accent-col);
-    color: white;
-    border-color: var(--accent-col);
-}
-
-/* 3. PAGINAZIONE (La soluzione al tuo problema principale) */
-.pagination-container, #pagination-controls {
-    display: flex;             /* Mette i numeri in orizzontale */
-    justify-content: center;   /* Li centra nella pagina */
-    align-items: center;
-    gap: 12px;                 /* Spazio comodo tra i pulsanti */
-    margin: 30px 0;            /* Spazio sopra e sotto */
-    padding: 10px;
-}
-
-/* Il design del pulsante pagina */
-.page-btn {
-    width: 46px;              /* Larghezza fissa GRANDE */
-    height: 46px;             /* Altezza fissa GRANDE */
-    
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 10px;      /* Angoli smussati */
-    font-size: 1rem;
-    font-weight: bold;
-    color: var(--text-main);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    transition: transform 0.1s;
-}
-
-.page-btn:active { transform: scale(0.95); } /* Effetto pressione */
-
-.page-btn.active {
-    background-color: var(--primary-col); /* Verde se selezionato */
-    color: white;
-    border-color: var(--primary-col);
-}/* ============================================================
-   PARTE 3: CARD, GRIGLIE E CONTENUTI
-   (Qui rendiamo belle le immagini e le liste)
-   ============================================================ */
-
-/* 1. GRIGLIA BORGHI (Home Page) */
-.grid-container {
-    display: grid;
-    /* Due colonne di larghezza uguale */
-    grid-template-columns: 1fr 1fr; 
-    gap: 15px;             /* Spazio tra le card */
-    padding: 10px 0;
-}
-
-.village-card {
-    position: relative;    /* Necessario per posizionare il titolo sopra */
-    height: 140px;
-    border-radius: 12px;   /* Angoli arrotondati moderni */
-    background-size: cover;
-    background-position: center;
-    overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.village-card:active { transform: scale(0.98); }
-
-.card-title-overlay {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    /* Sfumatura nera per rendere leggibile il testo bianco */
-    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-    color: white;
-    padding: 10px;
-    font-weight: 700;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-}
-CSS
 /* ============================================================
-   2. CARD COMPACT (Stile Prodotti & Ristoranti)
-   Layout: Testo a Sinistra + Immagine Quadrata a Destra
+   3. CLASSI CONDIVISE (IL CUORE DELL'OTTIMIZZAZIONE)
+   Qui raggruppiamo stili comuni per Card e Bottoni
    ============================================================ */
 
-/* 1. CONTENITORE PRINCIPALE - RISTORANTI (Sfondo Bianco e Layout) */
-.card-list-item {
-    background-color: white !important; /* !important forza il bianco */
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-    
-    /* Bordo e Ombra per staccarlo dallo sfondo grigio */
-    border: 1px solid #e0e0e0;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    
-    /* Layout Flessibile: Contenuto a SX | Immagine/Freccia a DX */
-    display: flex;
-    justify-content: space-between;
-    align-items: center; /* Centra verticalmente */
-    gap: 15px;           /* Spazio tra testo e immagine */
-    
-    cursor: pointer;
-    transition: transform 0.2s;
-    }
-
-.card-list-item:active { transform: scale(0.98); }
-
-/* 1.2: AREA TESTO (Sinistra) */
-.item-info {
-    flex: 1; /* Prende tutto lo spazio disponibile */
-    min-width: 0; /* Evita che il testo rompa il layout */
-}
-
-/* Riga Intestazione: Titolo + Badge sulla stessa linea */
-.item-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 4px;
-}
-
-.item-title {
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--text-main);
-    line-height: 1.2;
-}
-
-/* Badge (Tipo Ristorante) */
-.item-tag {
-    font-size: 0.7rem;
-    background-color: #e67e22;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-weight: 600;
-    text-transform: uppercase;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.item-subtitle {
-    font-size: 0.9rem;
-    color: #666;
-}
-/* ============================================================
-   BOTTONI AZIONE DENTRO LA CARD (Chiama / Mappa)
-   ============================================================ */
-
-/* Contenitore dei bottoni (sotto l'indirizzo) */
-.card-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 12px;
-}
-
-/* Stile base del bottone azione */
-.action-btn {
-    flex: 1; /* Si dividono lo spazio in parti uguali */
-    padding: 8px 12px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px; /* Spazio tra icona e testo */
-    transition: transform 0.1s, opacity 0.2s;
-}
-
-.action-btn:active {
-    transform: scale(0.95);
-}
-
-/* Bottone Chiama (Verde Chiaro) */
-.btn-phone {
-    background-color: #e8f5e9;
-    color: #2e7d32; /* Verde scuro */
-    border: 1px solid #c8e6c9;
-}
-
-/* Bottone Mappa (Azzurro Chiaro) */
-.btn-map {
-    background-color: #e3f2fd;
-    color: #1565c0; /* Blu scuro */
-    border: 1px solid #bbdefb;
-}
-
-/* Icone dentro i bottoni (opzionale, se usi testo semplice va bene uguale) */
-.btn-icon { font-size: 1rem; }
-/* 2. CONTENITORE PRINCIPALE - PRODOTTI */
-/* ============================================================
-   NUOVO STILE PRODOTTI "FOOD BLOG" (Immagine Grande)
-   ============================================================ */
-
-.card-product {
-    background: white;
-    border-radius: 16px;       /* Angoli più arrotondati */
-    margin-bottom: 20px;       /* Più spazio tra un piatto e l'altro */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Ombra morbida ed elegante */
-    overflow: hidden;          /* Assicura che l'immagine rispetti i bordi */
-    border: none;              /* Via il bordo grigio, usiamo l'ombra */
-    
-    /* Layout Verticale (Foto sopra, testo sotto) */
-    display: flex;
-    flex-direction: column;
+/* --- A. STILE BASE DELLE CARD --- 
+   Si applica a: Ristoranti, Prodotti, Sentieri, Spiagge, Farmacie, Trasporti */
+.card-list-item, .card-product, .card-sentiero, .card-spiaggia, .card-transport, .card-pharmacy, .village-card {
+    background-color: white !important;
+    border-radius: var(--card-radius);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 15px;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
+    /* Reset bordi comuni */
+    border: 1px solid #eee; 
 }
 
-.card-product:active {
-    transform: scale(0.98);
+/* --- B. EFFETTI DI PRESSIONE (ACTIVE) --- */
+.card-list-item:active, .card-product:active, .card-sentiero:active, 
+.card-spiaggia:active, .village-card:active, 
+.icon-btn:active, .page-btn:active, .action-btn:active, .filter-chip:active {
+    transform: scale(0.98); /* Effetto "premuto" universale */
 }
+.icon-btn:active { opacity: 0.7; }
 
-/* L'immagine a piena larghezza */
-.prod-thumb {
-    width: 100%;              /* Occupa tutto lo spazio orizzontale */
-    height: 200px;            /* Altezza fissa importante per evitare scatti */
-    object-fit: cover;        /* Taglia l'immagine per riempire senza deformare */
-    display: block;
-    background-color: #eee;   /* Colore di sfondo mentre carica */
-}
-
-/* Contenitore del testo (sotto la foto) */
-.prod-info {
-    padding: 15px;            /* Spazio interno per il testo */
-    background: white;
-}
-
-.prod-title {
-    font-size: 1.2rem;        /* Titolo più grande */
+/* --- C. TIPOGRAFIA TITOLI CARD --- */
+.item-title, .prod-title, .spiaggia-title, .transport-title, .pharmacy-name {
     font-weight: 700;
-    color: #333;
-    margin-bottom: 4px;
-}
-
-/* Descrizione opzionale sotto il titolo (se presente) */
-.prod-desc-preview {
-    font-size: 0.9rem;
-    color: #777;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;  /* Mette i puntini ... se il testo è lungo */
-}
-/* 3. CARD SENTIERI E OUTDOOR */
-.card-sentiero {
-    background: white;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-left: 5px solid var(--accent-col);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.sentiero-header {
-    display: flex;
-    justify-content: space-between;
-    color: var(--accent-col);
-    font-size: 0.85rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-} /* <--- QUESTA MANCAVA NEL TUO CODICE */
-
-/* Contenitore Footer del Sentiero */
-.sentiero-footer {
-    display: flex;
-    justify-content: space-between; 
-    align-items: center;
-    padding-top: 12px;
-    margin-top: 10px;
-    border-top: 1px solid #f0f0f0;
-}
-
-/* Pulsante piccolo e compatto */
-.btn-sentiero-small {
-    display: inline-block;
-    padding: 5px 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-decoration: none;
-    text-transform: uppercase;
-    border-radius: 6px;
-    color: #e67e22;
-    background-color: #fef5ed; 
-    border: 1px solid #fad7b9;
-    transition: all 0.2s ease;
-}
-
-.btn-sentiero-small:active {
-    background-color: #e67e22;
-    color: white;
-} /* 4. CARD SPIAGGE (Stile Sentieri - Variante Azzurra) */
-.card-spiaggia {
-    background: white;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-    /* Bordo sinistro AZZURRO MARE per distinguerlo dai sentieri */
-    border-left: 5px solid #00bcd4; 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    transition: transform 0.2s;
-}
-
-.card-spiaggia:active {
-    transform: scale(0.98);
-}
-
-.spiaggia-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 5px;
-}
-
-.spiaggia-title {
+    color: var(--text-main);
     font-size: 1.1rem;
-    font-weight: 700;
-    color: #333;
     line-height: 1.2;
 }
 
-.spiaggia-location {
-    font-size: 0.85rem;
-    color: #666; /* Grigio scuro */
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.spiaggia-footer {
-    display: flex;
-    gap: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #f5f5f5; /* Separatore leggerissimo */
-}
-
-/* Bottone specifico Azzurro (simile a btn-yellow ma tema mare) */
-.btn-azure {
-    background-color: #e0f7fa; /* Azzurro chiarissimo */
-    color: #00838f;            /* Testo Petrolio */
-    border: 1px solid #b2ebf2;
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-decoration: none;
-    text-transform: uppercase;
-    cursor: pointer;
-    text-align: center;
-}
-
-.btn-azure:active {
-    background-color: #b2ebf2;
-}
-/* --- STILE SPECIFICO TRASPORTI (Foto piccola a sinistra) --- */
-.card-transport {
-    display: flex;              /* Mette tutto in riga orizzontale */
-    align-items: center;        /* Centra verticalmente */
-    background: white;
-    padding: 12px;
-    margin-bottom: 12px;
-    border-radius: 12px;
-    border: 1px solid #eee;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-/* Il contenitore della foto quadrata */
-.transport-thumb {
-    width: 80px;               /* Larghezza fissa */
-    height: 80px;              /* Altezza fissa */
-    flex-shrink: 0;            /* Impedisce che si schiacci */
-    border-radius: 8px;
-    background-color: #ddd;    /* Grigio se manca la foto */
-    background-size: cover;    /* L'immagine riempie il quadrato */
-    background-position: center;
-    margin-right: 15px;        /* Spazio tra foto e testo */
-}
-
-.transport-info {
-    flex: 1;                   /* Occupa tutto lo spazio rimanente */
-}
-
-.transport-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 5px;
-}
-
-.transport-desc {
+/* --- D. TIPOGRAFIA SOTTOTITOLI/INFO --- */
+.item-subtitle, .spiaggia-location, .transport-desc, .pharmacy-address {
     font-size: 0.9rem;
     color: #666;
-    line-height: 1.3;
-} 
+}
+
+/* --- E. BASE DEI BOTTONI (Action & Chips) --- */
+.action-btn, .btn-sentiero-small, .btn-azure, .btn-pharmacy-call, .filter-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; text-decoration: none; border-radius: 8px;
+    cursor: pointer; transition: all 0.2s ease;
+}
+
 /* ============================================================
-   STILE NUMERI UTILI / GUARDIA MEDICA
-   (Collega il tuo Renderer al Design)
+   4. COMPONENTI SPECIFICI (LAYOUT INTERNI & COLORI)
    ============================================================ */
 
-/* 1. La Scheda (Contenitore) */
+/* --- HEADER BOTTONI --- */
+.icon-btn {
+    background: transparent; border: none; color: white; padding: 8px;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* --- FILTRI (SUB-NAV & CHIPS) --- */
+.sub-nav-bar, .filter-bar {
+    display: flex; overflow-x: auto; padding: 15px; gap: 10px;
+    background: white; -ms-overflow-style: none; scrollbar-width: none;
+}
+.sub-nav-bar::-webkit-scrollbar, .filter-bar::-webkit-scrollbar { display: none; }
+.sub-nav-bar { border-bottom: 1px solid #eee; }
+
+/* Pillole Filtri */
+.sub-nav-item, .filter-chip {
+    padding: 8px 18px; border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+    border: 1px solid #eee; background: var(--bg-light); color: var(--text-main); font-size: 0.9rem;
+}
+.sub-nav-item.active-sub, .filter-chip.active-filter {
+    background-color: var(--accent-col); color: white; border-color: var(--accent-col);
+}
+.filter-chip.active-filter { background-color: var(--text-main); border-color: var(--text-main); }
+
+/* --- PAGINAZIONE --- */
+.pagination-container { display: flex; justify-content: center; gap: 12px; margin: 30px 0; padding: 10px; }
+.page-btn {
+    width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;
+    background: white; border: 1px solid #ccc; border-radius: 10px;
+    font-size: 1rem; font-weight: bold; color: var(--text-main); box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.page-btn.active { background-color: var(--primary-col); color: white; border-color: var(--primary-col); }
+
+/* --- CARD: BORGHI (HOME) --- */
+.grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px 0; }
+.village-card {
+    height: 140px; position: relative; overflow: hidden;
+    background-size: cover; background-position: center; border: none; /* Sovrascrive il border comune */
+}
+.card-title-overlay {
+    position: absolute; bottom: 0; width: 100%;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    color: white; padding: 10px; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* --- CARD: RISTORANTI & LISTE GENERICHE --- */
 .card-list-item {
-    background: white;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 15px;
-    
-    /* Bordo laterale Blue Grey (lo stesso del tag Comune) */
+    display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 16px;
+    /* Specifico per Numeri Utili: Bordo laterale */
     border-left: 5px solid #607d8b; 
-    
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    border: 1px solid #eee;
-    transition: transform 0.2s;
 }
+/* Override per Ristoranti che non vogliono il bordo laterale grigio ma semplice */
+.card-list-item.restaurant-mode { border-left: 1px solid #eee; }
 
-.card-list-item:active {
-    transform: scale(0.98);
-}
+.item-info { flex: 1; min-width: 0; }
+.item-header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 4px; }
 
-/* 2. Intestazione */
-.item-info { width: 100%; }
-
-.item-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center; /* Allinea verticalmente tag e titolo */
-    margin-bottom: 8px;
-}
-
-.item-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #333;
-}
-
-/* Il tag del comune ha già lo stile inline nel JS, 
-   qui rifiniamo solo il testo per sicurezza */
+/* Tags (Ristorante/Comune) */
 .item-tag {
-    color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    white-space: nowrap;
+    font-size: 0.7rem; background-color: #e67e22; color: white;
+    padding: 4px 8px; border-radius: 6px; font-weight: 600; text-transform: uppercase; white-space: nowrap;
 }
 
-/* 3. Sottotitolo (Copertura) */
-.item-subtitle {
-    font-size: 0.95rem;
-    line-height: 1.4;
-    color: #555;
+/* --- CARD: PRODOTTI (Food Blog Style) --- */
+.card-product {
+    display: flex; flex-direction: column; overflow: hidden; border: none; border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Ombra più forte */
 }
+.prod-thumb { width: 100%; height: 200px; object-fit: cover; background-color: #eee; }
+.prod-info { padding: 15px; }
+.prod-desc-preview { font-size: 0.9rem; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* 4. Footer (Area Azione) - Crea l'effetto "Spiaggia" */
-.card-actions {
-    margin-top: 12px;
-    padding-top: 12px;
-    /* La riga grigia sottile che separa il bottone */
-    border-top: 1px solid #f5f5f5; 
-    display: flex;
-    justify-content: center;
-}
+/* --- CARD: SENTIERI & SPIAGGE --- */
+/* Layout interni specifici */
+.card-sentiero { padding: 15px; border-left: 5px solid var(--accent-col); }
+.card-spiaggia { padding: 15px; border-left: 5px solid #00bcd4; }
 
-/* 5. Il Bottone Chiama (Verde e Largo) */
-.btn-phone {
-    width: 100%; /* Occupa tutto lo spazio disponibile */
-    
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    
-    background-color: #e8f5e9; /* Verde chiarissimo */
-    color: #2e7d32;            /* Verde scuro */
-    border: 1px solid #c8e6c9;
-    
-    padding: 10px 0;
-    border-radius: 8px;
-    
-    font-weight: 700;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    text-decoration: none;
-}
+.sentiero-header { display: flex; justify-content: space-between; color: var(--accent-col); font-size: 0.85rem; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+.spiaggia-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
 
-.btn-phone:active {
-    background-color: #c8e6c9;
+/* Footer specifici */
+.sentiero-footer, .spiaggia-footer {
+    display: flex; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f0f0;
 }
-/* --- STILE FARMACIE --- */
-.card-pharmacy {
-    display: flex;
-    align-items: center;        /* Centra verticalmente */
-    background: white;
-    padding: 15px;
-    margin-bottom: 12px;
-    border-radius: 12px;
-    border-left: 6px solid #2ecc71; /* Bordo VERDE caratteristico */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
+.sentiero-footer { justify-content: space-between; align-items: center; }
+.spiaggia-footer { gap: 10px; }
 
-.pharmacy-icon {
-    font-size: 1.5rem;
-    margin-right: 15px;
-    color: #2ecc71;             /* Croce verde */
-}
+/* Bottoni specifici Sentieri/Spiagge */
+.btn-sentiero-small { padding: 5px 12px; font-size: 0.75rem; text-transform: uppercase; color: #e67e22; background-color: #fef5ed; border: 1px solid #fad7b9; }
+.btn-sentiero-small:active { background-color: #e67e22; color: white; }
 
-.pharmacy-info {
-    flex: 1;                    /* Prende tutto lo spazio centrale */
-}
+.btn-azure { background-color: #e0f7fa; color: #00838f; border: 1px solid #b2ebf2; padding: 6px 14px; font-size: 0.8rem; text-transform: uppercase; }
+.btn-azure:active { background-color: #b2ebf2; }
 
-.pharmacy-name {
-    font-weight: 700;
-    color: #333;
-    font-size: 1.05rem;
-    margin-bottom: 3px;
-}
+/* --- CARD: TRASPORTI & FARMACIE (Layout orizzontale compatto) --- */
+.card-transport, .card-pharmacy { display: flex; align-items: center; padding: 12px; }
 
-.pharmacy-address {
-    font-size: 0.85rem;
-    color: #666;
-}
+/* Trasporti */
+.transport-thumb { width: 80px; height: 80px; flex-shrink: 0; border-radius: 8px; background-color: #ddd; background-size: cover; background-position: center; margin-right: 15px; }
+.transport-info, .pharmacy-info { flex: 1; }
 
-/* Tasto Chiama Rotondo o Compatto */
+/* Farmacie */
+.card-pharmacy { padding: 15px; border-left: 6px solid #2ecc71; }
+.pharmacy-icon { font-size: 1.5rem; margin-right: 15px; color: #2ecc71; }
 .btn-pharmacy-call {
-    background-color: #f0fdf4;  /* Verde chiarissimo */
-    color: #2ecc71;             /* Testo Verde */
-    border: 1px solid #2ecc71;
-    border-radius: 50px;
-    padding: 8px 12px;
-    font-size: 0.85rem;
-    font-weight: bold;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: background 0.2s;
+    background-color: #f0fdf4; color: #2ecc71; border: 1px solid #2ecc71; border-radius: 50px;
+    padding: 8px 12px; font-size: 0.85rem; gap: 5px;
 }
+.btn-pharmacy-call:active { background-color: #2ecc71; color: white; }
 
-.btn-pharmacy-call:active {
-    background-color: #2ecc71;
-    color: white;
-}
-/* 5. MODALI (Finestre Popup) */
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8); /* Sfondo nero semitrasparente */
-    z-index: 2000;         /* Sopra a tutto, anche all'header */
-    
-    display: flex;         /* Centra il contenuto */
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    
-    /* Animazione comparsa */
-    opacity: 0;
-    animation: fadeIn 0.3s forwards;
-}
-
-.modal-content {
-    background: white;
-    padding: 25px;
-    border-radius: 16px;
-    width: 100%;
-    max-width: 450px;
-    max-height: 85vh;      /* Non più alto dell'85% dello schermo */
-    overflow-y: auto;      /* Scorre se il contenuto è lungo */
-    position: relative;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-}
-
-/* Tasto chiudi modale (X in alto a destra) */
-.close-modal {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    font-size: 1.5rem;
-    color: #999;
-    cursor: pointer;
-    background: none;
-    border: none;
-}
-/* 5. CHIPS DI FILTRAGGIO */
 /* ============================================================
-   NUOVA SEZIONE: FILTRI DINAMICI (Chips)
+   5. BOTTONI AZIONE GENERALI (Chiama, Mappa)
    ============================================================ */
+.card-actions { display: flex; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f5f5f5; width: 100%; }
 
-/* Il contenitore che tiene i bottoni in riga */
-.filter-bar {
-    display: flex;
-    gap: 8px;
-    padding: 10px 5px; /* Un po' di padding laterale */
-    margin-bottom: 15px;
-    overflow-x: auto; /* Permette di scorrere col dito se i filtri sono tanti */
-    
-    /* Nascondi barra scorrimento brutta */
-    -ms-overflow-style: none;  
-    scrollbar-width: none; 
+.action-btn { flex: 1; padding: 8px 12px; font-size: 0.8rem; gap: 6px; }
+
+/* Colori specifici bottoni */
+.btn-phone { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+.btn-phone:active { background-color: #c8e6c9; }
+
+.btn-map { background-color: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
+
+/* ============================================================
+   6. MODALI (POPUP)
+   ============================================================ */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); z-index: 2000;
+    display: flex; justify-content: center; align-items: center; padding: 20px;
+    opacity: 0; animation: fadeIn 0.3s forwards;
 }
-.filter-bar::-webkit-scrollbar { display: none; }
-
-/* Il singolo bottone filtro (Chip) */
-.filter-chip {
-    padding: 8px 16px;
-    border-radius: 20px;       /* Molto rotondo */
-    border: 1px solid #e0e0e0;
-    background: white;
-    color: var(--text-main);
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;       /* Il testo non va mai a capo */
-    transition: all 0.2s ease;
-    flex-shrink: 0;            /* Impedisce al bottone di schiacciarsi */
+.modal-content {
+    background: white; padding: 25px; border-radius: 16px; width: 100%; max-width: 450px;
+    max-height: 85vh; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
-
-/* Quando il filtro è selezionato */
-.filter-chip.active-filter {
-    background-color: var(--text-main); /* Diventa scuro (o usa --primary-col se preferisci) */
-    color: white;
-    border-color: var(--text-main);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
+.close-modal { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; color: #999; cursor: pointer; background: none; border: none; }
 @keyframes fadeIn { to { opacity: 1; } }
 
-/* Nasconde la freccia nei Prodotti e nei Ristoranti */
-.prod-arrow, .item-arrow {
-    display: none !important;
-}
+/* Utility: Nascondi frecce liste */
+.prod-arrow, .item-arrow { display: none !important; }
