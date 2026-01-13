@@ -25,7 +25,7 @@ body {
     background-color: var(--bg-light);
     color: var(--text-main);
     line-height: 1.5;
-    
+     touch-action: manipulation;
     /* Riserviamo spazio in basso affinché il contenuto non finisca sotto il menu (che faremo nella Parte 2) */
     padding-bottom: calc(var(--nav-height) + 20px);
 }
