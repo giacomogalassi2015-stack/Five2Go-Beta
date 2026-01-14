@@ -179,13 +179,9 @@ async function loadTableData(tableName, btnEl) {
         })}else if (tableName === 'Mappe') {
             subContent.innerHTML = `
             <div class="map-container animate-fade">
-                <iframe 
-                    src="https://www.google.com/maps/d/edit?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&usp=sharing" 
-                    width="100%" 
-                    height="100%" 
-                    style="border:0;" 
-                    allowfullscreen="" 
-                    loading="lazy">
+                <iframe src="https://www.google.com/maps/d/u/1/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F" 
+                width="640" 
+                height="480">
                 </iframe>
                 <div class="map-note">Mappa caricata da Supabase</div>
             </div>`;
