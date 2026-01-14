@@ -108,7 +108,7 @@ async function loadTableData(tableName, btnEl) {
     if (tableName === 'Mappe') {
         subContent.innerHTML = `
             <div class="map-container animate-fade">
-                <iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F" width="640" height="480"></iframe>
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d46077.56843657856!2d9.699762635905068!3d44.12658102375549!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12d4fa24b95f2231%3A0xe539c89495687708!2sParco%20Nazionale%20delle%20Cinque%20Terre!5e0!3m2!1sit!2sit!4v1709220000000!5m2!1sit!2sit" 
                 width="640" 
                 height="480"
                 style="border:0; width:100%; height:400px; border-radius:12px;" 
@@ -455,10 +455,30 @@ async function shareApp() {
 }
 
 // ZOOM BLOCK
-document.addEventListener('touchmove', function(event) { if (event.scale !== 1) { event.preventDefault(); } }, { passive: false });
+// ==========================================
+// BLOCCO ZOOM IOS (Versione Aggiornata)
+// ==========================================
+
+// 1. Impedisce il pinch-to-zoom (due dita)
+document.addEventListener('touchmove', function(event) {
+    if (event.scale !== 1) {
+        event.preventDefault();
+    }
+}, { passive: false });
+
+// 2. Impedisce il doppio tocco veloce (Double Tap Zoom)
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function(event) {
     const now = (new Date()).getTime();
-    if (now - lastTouchEnd <= 300) { event.preventDefault(); }
+    if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+    }
     lastTouchEnd = now;
 }, false);
+
+// 3. Impedisce il "tap" con due dita (spesso causa zoom su iOS)
+document.addEventListener('touchstart', function(event) {
+    if (event.touches.length > 1) {
+        event.preventDefault();
+    }
+}, { passive: false });
