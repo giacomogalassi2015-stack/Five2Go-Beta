@@ -3,6 +3,28 @@ const SUPABASE_URL = 'https://ydrpicezcwtfwdqpihsb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcnBpY2V6Y3d0ZndkcXBpaHNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNTQzMDAsImV4cCI6MjA4MzYzMDMwMH0.c89-gAZ8Pgp5Seq89BYRraTG-qqmP03LUCl1KqG9bOg';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const CLOUDINARY_CLOUD_NAME = 'dkg0jfady'; 
+const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/`;
+/**
+ * Genera l'URL basandosi ESATTAMENTE sul nome che arriva dal Database.
+ * * @param {string} name - Il nome grezzo dal DB (es. "Pesto Genovese", "Riomaggiore")
+ * @param {string} folder - (Opzionale) La cartella su Cloudinary dove hai messo queste foto
+ * @param {number} width - Larghezza per ottimizzazione
+ */
+function getSmartUrl(name, folder = '', width = 600) {
+    if (!name) return 'https://via.placeholder.com/600x400?text=No+Image';
+
+    // 1. Pulisce il nome: Cloudinary gestisce gli spazi, ma è meglio codificarli (spazio -> %20)
+    // Se su Cloudinary i file si chiamano esattamente "Pesto Genovese", encodeURIComponent lo gestisce.
+    // Se invece li hai rinominati "pesto_genovese", dovremmo fare .toLowerCase().replace(/ /g, '_')
+    const safeName = encodeURIComponent(name); 
+
+    // 2. Gestione Cartella: Se passi una cartella, aggiunge lo slash
+    const folderPath = folder ? `${folder}/` : '';
+
+    // 3. Costruisce l'URL
+    return `${CLOUDINARY_BASE_URL}/w_${width},q_auto,f_auto,c_fill/${folderPath}${safeName}`;
+}
 const content = document.getElementById('app-content');
 const viewTitle = document.getElementById('view-title');
 
@@ -79,12 +101,16 @@ async function renderHome() {
     
     let html = '<div class="grid-container animate-fade">';
     data.forEach(v => {
-        // Escaping per evitare errori con gli apostrofi nel nome
-        const safeName = v.Paesi.replace(/'/g, "\\'");
-        html += `
-            <div class="village-card" style="background-image: url('${v.Immagine}')" onclick="openModal('village', '${safeName}')">
-                <div class="card-title-overlay">${v.Paesi}</div>
-            </div>`;
+        // Passiamo v.Paesi (es. "Riomaggiore") e la cartella 'borghi'
+    const imgUrl = getSmartUrl(v.Paesi, '', 800); 
+    
+    // Escaping per il nome nel click
+    const safeName = v.Paesi.replace(/'/g, "\\'");
+    
+    html += `
+        <div class="village-card" style="background-image: url('${imgUrl}')" onclick="openModal('village', '${safeName}')">
+            <div class="card-title-overlay">${v.Paesi}</div>
+        </div>`;
     });// --- NUOVA 6° CARD (CHIUSURA GRIGLIA) ---
     // Uso un'immagine placeholder da Unsplash a tema mappa/esplorazione, cambiala pure con una tua.
     html += `
@@ -140,43 +166,59 @@ async function loadTableData(tableName, btnEl) {
  // E. PRODOTTI (Con Lazy Loading per evitare il Lag)
     else if (tableName === 'Prodotti') {
         data.forEach(p => {
-            const titolo = p.Prodotti || p.Nome; 
-            const safeObj = JSON.stringify(p).replace(/'/g, "'");
-            
-            html += `
-                <div class="card-product" onclick='openModal("product", ${safeObj})'>
-                    <div class="prod-info">
-                        <div class="prod-title">${titolo}</div>
-                        <div class="prod-arrow">➜</div>
-                    </div>
-                    
-                    ${p.Immagine ? `
+                        const titolo = p.Prodotti || p.Nome; 
+                const imgUrl = getSmartUrl(titolo, '', 400);
+                const safeObj = JSON.stringify(p).replace(/'/g, "'");
+                            
+                html += `
+                    <div class="card-product" onclick='openModal("product", ${safeObj})'>
+                        
+                        <div class="prod-info">
+                            <div class="prod-title">${titolo}</div>
+                            <div class="prod-arrow">➜</div>
+                        </div>
+                        
                         <img 
-                            src="${p.Immagine}" 
+                            src="${imgUrl}" 
                             class="prod-thumb" 
                             loading="lazy" 
-                            decoding="async"
                             alt="${titolo}"
-                        >` : ''}
-                </div>`;
+                            onerror="this.style.display='none'"
+                        >
+                    </div>`;
         });
     }
 
     // F. TRASPORTI & NUMERI UTILI (Standard)
     else if (tableName === 'Trasporti') {
-        data.forEach(t => {
-            const safeObj = JSON.stringify(t).replace(/'/g, "&apos;");
+        data.forEach(t => {// 1. Determina il nome (chiave per Cloudinary e Titolo visualizzato)
+            // Se nel DB hai colonne diverse (es. 'Mezzo'), il codice cerca la prima piena.
+            const nome = t.Località || t.Mezzo;
+
+            // 2. Genera l'URL Cloudinary
+            // NOTA: Assicurati che su Cloudinary le foto siano nella cartella 'trasporti'
+            // o cambia il secondo parametro in '' se sono nella root.
+            const imgUrl = getSmartUrl(nome, '', 400);
+
+            // 3. Prepara l'oggetto per il modale (gestione apostrofi)
+            const safeObj = JSON.stringify(t).replace(/'/g, "\\'");
             
-            // Usiamo la classe 'card-product' e 'prod-thumb' che hai già nel CSS
-            // così prendono lo stesso stile grafico dei prodotti.
             html += `
                 <div class="card-product" onclick='openModal("transport", ${safeObj})'>
+                    
                     <div class="prod-info">
-                        <div class="prod-title">${t.Località || t.Mezzo || 'Trasporto'}</div>
-                                          </div>
-                    ${t.Immagine ? `<img src="${t.Immagine}" class="prod-thumb">` : ''}
-                </div>`;
-        })}else if (tableName === 'Mappe') {
+                        <div class="prod-title">${nome}</div>
+                    </div>
+
+                    <img 
+                        src="${imgUrl}" 
+                        class="prod-thumb" 
+                        loading="lazy"
+                        alt="${nome}"
+                        onerror="this.style.display='none'"
+                    >
+                </div>`;});
+    } else if (tableName === 'Mappe') {
             subContent.innerHTML = `
             <div class="map-container animate-fade">
                 <iframe src="https://www.google.com/maps/d/u/1/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F" 
@@ -227,23 +269,15 @@ async function openModal(type, payload) {
     let contentHtml = '';
 
     if (type === 'village') {
-        const { data } = await supabaseClient.from('Cinque_Terre').select('*').eq('Paesi', payload).single();
-        if (data) {
-            contentHtml = `
-                <img src="${data.Immagine}" style="width:100%; border-radius:12px; height:200px; object-fit:cover;">
-                <h2>${data.Paesi}</h2>
-                <p>${data.Descrizione}</p>`;
+    // Nota: qui devi richiamare l'url basandoti sul payload (che è il nome del paese)
+    const bigImg = getSmartUrl(payload, 'borghi', 1000);
+    contentHtml = `<img src="${bigImg}" ... > ...`;
+        } 
+else if (type === 'product') {
+    const nome = payload.Prodotti || payload.Nome;
+    const bigImg = getSmartUrl(nome, 'prodotti', 800);
+    contentHtml = `<img src="${bigImg}" ... > ...`;
         }
-    } 
-    else if (type === 'product') {
-        // Payload qui è l'oggetto intero
-        contentHtml = `
-            ${payload.Immagine ? `<img src="${payload.Immagine}" style="width:100%; border-radius:12px; height:200px; object-fit:cover;">` : ''}
-            <h2>${payload.Prodotti || payload.Nome}</h2>
-            <p>${payload.Descrizione || ''}</p>
-            <hr>
-            <p><strong>Ideale per:</strong> ${payload["Ideale per"] || payload.IdealePer || ''}</p>`;
-    }
     // NUOVO BLOCCO PER ATTRAZIONI
     else if (type === 'attrazione') {
         contentHtml = `
