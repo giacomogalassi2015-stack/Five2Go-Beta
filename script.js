@@ -108,7 +108,7 @@ async function loadTableData(tableName, btnEl) {
     if (tableName === 'Mappe') {
         subContent.innerHTML = `
             <div class="map-container animate-fade">
-                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d46077.56843657856!2d9.699762635905068!3d44.12658102375549!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12d4fa24b95f2231%3A0xe539c89495687708!2sParco%20Nazionale%20delle%20Cinque%20Terre!5e0!3m2!1sit!2sit!4v1709220000000!5m2!1sit!2sit" 
+                <iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F" width="640" height="480"></iframe>
                 width="640" 
                 height="480"
                 style="border:0; width:100%; height:400px; border-radius:12px;" 
