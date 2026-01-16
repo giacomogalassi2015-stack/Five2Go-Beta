@@ -358,7 +358,7 @@ async function loadTableData(tableName, btnEl) {
     else if (tableName === 'Mappe') {
         subContent.innerHTML = `
         <div class="map-container animate-fade">
-           <iframe src="https://www.google.com/maps/d/u/1/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F" width="640" height="640"></iframe> 
+           <iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="640" height="480"></iframe> 
             <div class="map-note">${t('map_loaded')}</div>
         </div>`;
         return; 
@@ -440,7 +440,7 @@ const spiaggiaRenderer = (s) => {
     <div class="card-spiaggia">
         <div class="spiaggia-header">
             <div class="spiaggia-title">${nome}</div>
-            <span style="font-size:1.2rem;">🏖️</span>
+            <span style="font-size:1.2rem;"></span>
         </div>
         <div class="spiaggia-location">📍 ${paesi}</div>
         <div class="spiaggia-footer">

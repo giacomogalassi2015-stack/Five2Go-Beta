@@ -32,7 +32,7 @@
 
 body {
     font-family: 'LATO'; /* Leggibilità massima per il corpo */
-    background-color: var(--bg-body);
+    background-color: #c6faea;
     color: var(--text-main);
     line-height: 1.6;
     touch-action: pan-x pan-y;
@@ -134,7 +134,7 @@ main, #app-content {
 #bottom-nav, #nav-bar {
     position: fixed; bottom: 20px; left: 20px; right: 20px; /* Staccata dai bordi */
     width: auto; height: 70px;
-    background-color: var(--surface);
+    background-color: #34cbbc;
     border-radius: 25px; /* A pillola */
     display: flex; justify-content: space-evenly; align-items: center;
     z-index: 1000;
@@ -514,8 +514,8 @@ main, #app-content {
     text-transform: uppercase;
     letter-spacing: 1px;
     
-    color: #ffffff; /* Arancione */
-    background: #00897B; /* Sfondo pallido opzionale */
+    color: #000000; /* Arancione */
+    /* Sfondo pallido opzionale */
     padding: 4px 10px;
     border-radius: 12px;
     
@@ -530,6 +530,7 @@ main, #app-content {
     color: var(--primary-dark);
     margin: 0 0 5px 0;
     line-height: 1.1;
+    color: #e78732;
 }
 
 /* --- DIFFICOLTÀ (Sotto il titolo) --- */
@@ -744,7 +745,7 @@ main, #app-content {
 
 /* Colori badge ispirati alla natura */
 .badge-easy { background-color: #E8F5E9; color: #2E7D32; } /* Verde vegetazione */
-.badge-hard { background-color: #FFEBEE; color: #C62828; } /* Rosso sentiero */
+.badge-hard { background-color: #FFEBEE; color: #a12222; } /* Rosso sentiero */
 .badge-time { background-color: #E3F2FD; color: #1565C0; } /* Azzurro cielo */
 
 /* Card Monumento Specifica */
