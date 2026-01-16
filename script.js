@@ -454,41 +454,41 @@ async function loadTableData(tableName, btnEl) {
 }
 
 const sentieroRenderer = (s) => {
-    const paesi = dbCol(s, 'Paesi');
-    const label = dbCol(s, 'Extra'); 
-    const desc = dbCol(s, 'Descrizione');
-    const diff = dbCol(s, 'Difficoltà');
-    const safePaesi = paesi.replace(/'/g, "\\'");
-    const safeDesc = desc ? desc.replace(/'/g, "\\'") : '';
-    
-    // --- GESTIONE MAPPA (Non toccare, funziona) ---
+    // Recupero dati reali dal DB
+    const paese = dbCol(s, 'Paesi');
+    const distanza = s.Distanza || '--';
+    const durata = s.Durata || '--';
+    const extra = dbCol(s, 'Extra') || 'Sentiero';
     const gpxUrl = s.Gpxlink || s.gpxlink;
+
     const uniqueMapId = `map-trail-${Math.random().toString(36).substr(2, 9)}`;
     if (gpxUrl) { window.mapsToInit.push({ id: uniqueMapId, gpx: gpxUrl }); }
-    const mapHtml = gpxUrl 
-        ? `<div id="${uniqueMapId}" class="sentiero-map-area"></div>`
-        : `<div class="sentiero-map-area" style="display:flex;align-items:center;justify-content:center;color:#999;">NO MAP DATA</div>`;
 
-    // --- RENDER ---
     return `
-    <div class="card-sentiero">
+    <div class="card-sentiero-modern">
+        <div id="${uniqueMapId}" class="sentiero-map-bg"></div>
         
-        ${mapHtml}
+        <div class="sentiero-card-overlay">
+            <h2 class="sentiero-overlay-title">${paese}</h2>
 
-        <div class="sentiero-body" onclick="simpleAlert('${safePaesi}', '${safeDesc}')">
-            
-            <div class="sentiero-header-row">
-                <div class="sentiero-stat-left">📏 ${s.Distanza || '--'}</div>
-                
-                <div class="badge-center">${label || 'TRACK'}</div>
-
-                <div class="sentiero-stat-right">⏱ ${s.Durata || '--'}</div>
+            <div class="sentiero-stats">
+                <div class="stat-pill">
+                    <span class="stat-icon">📏</span>
+                    <span class="stat-val">${distanza}</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-icon">🕒</span>
+                    <span class="stat-val">${durata}</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-icon">🏷️</span>
+                    <span class="stat-val">${extra}</span>
+                </div>
             </div>
 
-            <h4 class="sentiero-title" style="margin-top:10px;">${paesi}</h4>
-            <p class="difficolta">${diff || ''}</p>
-
-            ${s.Pedaggio ? `<a href="${s.Pedaggio}" target="_blank" class="btn-toll-full" style="margin-top:15px; width:100%; display:block; background:#FFF3E0; color:#E67E22; padding:10px; border-radius:50px; text-decoration:none; font-weight:bold;">🎫 ${t('btn_toll')}</a>` : ''}
+            <button class="btn-outline-details" onclick="openModal('product', ${JSON.stringify(s).replace(/'/g, "&apos;")})">
+                Dettagli Percorso
+            </button>
         </div>
     </div>`;
 };
