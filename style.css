@@ -512,7 +512,7 @@ sub-nav-bar {
     display: flex;
     flex-direction: column;
     overflow: hidden; /* Mantiene le curve arrotondate */
-    background: white;
+    background: #FFF8E1;
 }
 
 /* LA MAPPA (Parte Superiore - Proporzionata) */
@@ -529,7 +529,7 @@ sub-nav-bar {
     padding: 20px;
     position: relative;
     z-index: 2;
-    background: white;
+    background:#00897B;
     /* Ombra che sale leggermente sulla mappa per stile */
     box-shadow: 0 -10px 20px rgba(0,0,0,0.05); 
     
@@ -550,8 +550,8 @@ sub-nav-bar {
 }
 /* Stile per l'Extra quando è nel mezzo (Pillola Arancione) */
 .badge-center {
-    background-color: #FFF3E0;
-    color: #E67E22;
+    background-color: #fff3e0;
+    color: #000000;
     padding: 4px 12px;
     border-radius: 12px;
     font-weight: 800;
@@ -567,7 +567,6 @@ sub-nav-bar {
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1px;
-    
     color: #000000; /* Arancione */
     /* Sfondo pallido opzionale */
     padding: 4px 10px;
@@ -584,7 +583,7 @@ sub-nav-bar {
     color: var(--primary-dark);
     margin: 0 0 5px 0;
     line-height: 1.1;
-    color: #000000;
+    color: #ffffff;
 }
 
 /* --- DIFFICOLTÀ (Sotto il titolo) --- */
