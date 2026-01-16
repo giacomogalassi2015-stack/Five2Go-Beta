@@ -85,7 +85,6 @@ position: absolute;
     left: 50%;
     transform: translateX(-50%);
     
-    /* MODIFICA QUI */
     font-family: 'Ultra', serif;
     font-size: 1.5rem;
     color: var(--primary-col); /* Usiamo il Turchese per un look fresco */
@@ -266,8 +265,9 @@ main, #app-content {
 /* --- FILTRI (SUB-NAV & CHIPS) --- */
 .sub-nav-bar, .filter-bar {
     display: flex; overflow-x: auto; 
-    padding: 10px 20px 20px 20px; /* Spazio extra sotto per l'ombra */
-    gap: 12px;
+    padding: 6px 20px 8px 20px; /* Spazio extra sotto per l'ombra */
+    margin-bottom: 10px; /* Margine extra ridotto */
+    gap: 8px;
     background: transparent; 
     -ms-overflow-style: none; scrollbar-width: none;
     
@@ -277,7 +277,19 @@ main, #app-content {
 }
 .sub-nav-bar::-webkit-scrollbar, .filter-bar::-webkit-scrollbar { display: none; }
 .sub-nav-bar { border-bottom: none; }
-
+/* --- REGOLA SPECIFICA PER LA BARRA SOTTO --- */
+/* Questa regola serve a tirare su solo la barra dei filtri */
+.filter-bar {
+    /* 1. Margine negativo leggero: la avvicina di 5px (puoi provare -8px se vuoi ancora più vicino) */
+    margin-top: -2px !important; 
+    
+    /* 2. Riduciamo il padding interno superiore per non sprecare spazio vuoto */
+    padding-top: 2px !important; 
+    
+    /* 3. Assicuriamoci che non ci sia nulla che la blocchi */
+    position: relative; 
+    z-index: 5;
+}
 
 /* Pillole Filtri "Galleggianti" */
 .sub-nav-item, .filter-chip {
