@@ -94,28 +94,51 @@ function dbCol(item, field) {
     return item[field];
 }
 
-// --- SETUP HEADER (Versione Fix: Estremi + Share Button) ---
+// --- SETUP HEADER: Share (Abs Sinistra) - Titolo (Abs Centro) - Lingua (Flex Destra) ---
 function setupLanguageSelector() {
     const header = document.querySelector('header');
     
-    // 1. PULIZIA: Rimuoviamo vecchi contenitori actions o icone "volanti"
+    // 1. PULIZIA TOTALE
+    // Rimuoviamo tutto ciò che non è il titolo originale per evitare duplicati
     const oldActions = header.querySelector('.header-actions');
     if (oldActions) oldActions.remove();
     
-    // Rimuove eventuali icone material residue messe manualmente nell'HTML
-    // (Conserva solo #view-title e il container che stiamo per creare)
+    const oldShare = header.querySelector('.header-share-left');
+    if (oldShare) oldShare.remove();
+    
     const existingIcons = header.querySelectorAll('.material-icons');
     existingIcons.forEach(icon => icon.remove());
 
-    // 2. CREAZIONE CONTENITORE DESTRO
-    const actionsContainer = document.createElement('div');
-    actionsContainer.className = 'header-actions'; // Il CSS lo gestisce flex
+    // 2. CREAZIONE BOTTONE SHARE (Assoluto a Sinistra)
+    const shareBtn = document.createElement('span');
+    shareBtn.className = 'material-icons header-share-left'; 
+    shareBtn.innerText = 'share'; 
+    shareBtn.onclick = shareApp;
     
-    // 3. RECUPERO DATI LINGUA
+    // STILI DI POSIZIONAMENTO "BLINDATI"
+    shareBtn.style.position = 'absolute'; // Si sgancia dal flusso
+    shareBtn.style.left = '20px';         // Fisso a sinistra
+    shareBtn.style.top = '50%';           // Centrato verticalmente
+    shareBtn.style.transform = 'translateY(-50%)'; // Correzione centratura
+    
+    // STILI GRAFICI
+    shareBtn.style.color = '#000000'; // Nero
+    shareBtn.style.cursor = 'pointer';
+    shareBtn.style.fontSize = '26px';
+    shareBtn.style.zIndex = '20'; // Sopra a tutto
+
+    // 3. CREAZIONE CONTENITORE LINGUA (A Destra)
+    const actionsContainer = document.createElement('div');
+    actionsContainer.className = 'header-actions'; 
+    
+    // Questo spinge la lingua tutto a destra anche se lo share è assoluto
+    actionsContainer.style.marginLeft = 'auto'; 
+
+    // Recupero dati lingua
     const currFlag = AVAILABLE_LANGS.find(l => l.code === currentLang).flag;
     const currCode = currentLang.toUpperCase();
 
-    // 4. HTML SELETTORE LINGUA
+    // HTML Selettore
     const langSelector = document.createElement('div');
     langSelector.className = 'lang-selector';
     langSelector.innerHTML = `
@@ -131,22 +154,14 @@ function setupLanguageSelector() {
         </div>
     `;
     
-    // 5. CREAZIONE BOTTONE SHARE (JavaScript puro)
-    // Lo ricreiamo qui per essere sicuri al 100% che ci sia e funzioni
-    const shareBtn = document.createElement('span');
-    shareBtn.className = 'material-icons header-share-btn';
-    shareBtn.innerText = 'share'; // Icona di Google Fonts
-    shareBtn.onclick = shareApp;  // Collega la funzione
-    
-    // 6. ASSEMBLAGGIO
-    // Prima la lingua, poi lo share (così lo share è all'estrema destra)
     actionsContainer.appendChild(langSelector);
-    actionsContainer.appendChild(shareBtn);
 
-    // 7. INSERIMENTO NELL'HEADER
+    // 4. INSERIMENTO NELL'HEADER
+    // Aggiungiamo lo share (che andrà a sinistra assoluto)
+    header.appendChild(shareBtn);
+    // Aggiungiamo la lingua (che andrà a destra grazie al margin-left: auto)
     header.appendChild(actionsContainer);
 }
-
 // Assicurati che questa funzione sia presente e invariata
 function toggleLangDropdown(e) {
     e.stopPropagation();
