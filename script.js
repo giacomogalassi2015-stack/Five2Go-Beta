@@ -532,31 +532,85 @@ const sentieroRenderer = (s) => {
     </div>`;
 };
 const ristoranteRenderer = (r) => {
-    const nome = dbCol(r, 'Nome');
-    const paesi = dbCol(r, 'Paesi');
-    const safeObj = JSON.stringify(r).replace(/'/g, "\\'");
+    const nome = dbCol(r, 'Nome') || 'Ristorante';
+    const paesi = dbCol(r, 'Paesi') || '';
+    const indirizzo = r.Indirizzo || '';
     
-    // Genera link Google Maps basato su Nome e Paese
-    const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.Nome + ' ' + r.Paesi)}`;
+    // 1. BLINDA I DATI (Per evitare errori al click)
+    const safeObj = encodeURIComponent(JSON.stringify(r));
+    
+    // 2. Link Mappa Google (Universale)
+    const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nome + ' ' + paesi + ' Cinque Terre')}`;
 
+    // 3. Link Telefono
+    const phoneLink = r.Telefono ? `tel:${r.Telefono}` : '#';
+    // Colore pulsante telefono: Verde se c'è, Grigio se manca
+    const phoneColor = r.Telefono ? '#2E7D32' : '#B0BEC5';
+    const phoneCursor = r.Telefono ? 'pointer' : 'default';
+
+    // 4. HTML CON GRAFICA INTEGRATA (Funziona sempre)
     return `
-    <div class="card-list-item" onclick='openModal("restaurant", ${safeObj})'>
-        <div class="item-info">
-            <div class="item-header-row">
-                <div class="item-title">${nome}</div>
-                
+    <div class="animate-fade" style="
+        background: #ffffff; 
+        border-radius: 16px; 
+        margin-bottom: 20px; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+        overflow: hidden; 
+        font-family: sans-serif;
+        border: 1px solid #eee;">
+        
+        <div onclick="openModal('restaurant', '${safeObj}')" style="padding: 20px; cursor: pointer;">
+            <div style="
+                font-size: 1.25rem; 
+                font-weight: 800; 
+                color: #2c3e50; 
+                margin-bottom: 6px;
+                line-height: 1.2;">
+                ${nome}
             </div>
-            <div class="item-subtitle">📍 ${r.Indirizzo || ''}</div>
+            <div style="font-size: 0.95rem; color: #7f8c8d; display: flex; align-items: center; gap: 5px;">
+                <span>📍</span> ${paesi} ${indirizzo ? ' • ' + indirizzo : ''}
+            </div>
+        </div>
+
+        <div style="
+            display: flex; 
+            border-top: 1px solid #f0f0f0; 
+            background: #fafafa;">
             
-            <div class="card-actions">
-                ${r.Telefono ? `
-                    <a href="tel:${r.Telefono}" class="action-btn btn-phone" onclick="event.stopPropagation()">
-                        <span>📞</span> ${t('btn_call')}
-                    </a>` : ''}
-                <a href="${mapLink}" target="_blank" class="action-btn btn-map" onclick="event.stopPropagation()">
-                    <span>🗺️</span> ${t('btn_map')}
-                </a>
+            <div onclick="openModal('restaurant', '${safeObj}')" style="
+                flex: 1; 
+                padding: 15px 0; 
+                text-align: center; 
+                cursor: pointer; 
+                border-right: 1px solid #eee;
+                color: #F57C00;">
+                <div style="font-size: 1.2rem; margin-bottom: 2px;">📄</div>
+                <div style="font-size: 0.7rem; font-weight: bold;">SCHEDA</div>
             </div>
+
+            <a href="${phoneLink}" style="
+                flex: 1; 
+                padding: 15px 0; 
+                text-align: center; 
+                text-decoration: none; 
+                border-right: 1px solid #eee;
+                cursor: ${phoneCursor};
+                color: ${phoneColor};">
+                <div style="font-size: 1.2rem; margin-bottom: 2px;">📞</div>
+                <div style="font-size: 0.7rem; font-weight: bold;">CHIAMA</div>
+            </a>
+
+            <a href="${mapLink}" target="_blank" style="
+                flex: 1; 
+                padding: 15px 0; 
+                text-align: center; 
+                text-decoration: none; 
+                color: #1565C0;">
+                <div style="font-size: 1.2rem; margin-bottom: 2px;">🗺️</div>
+                <div style="font-size: 0.7rem; font-weight: bold;">MAPPA</div>
+            </a>
+
         </div>
     </div>`;
 };

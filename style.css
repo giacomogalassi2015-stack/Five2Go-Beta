@@ -515,7 +515,89 @@ sub-nav-bar {
     background-color: var(--accent-col); color: white; 
     transform: scale(0.95);
 }
+/* --- STILE RISTORANTI "PRO" (Senza Foto, 3 Bottoni) --- */
 
+.card-rest-pro {
+    background: #ffffff;
+    border-radius: 16px;        /* Angoli moderni */
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06); /* Ombra morbida di alta qualità */
+    border: 1px solid #ffffff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;     /* Disposizione verticale */
+    transition: transform 0.2s ease;
+}
+
+.card-rest-pro:active {
+    transform: scale(0.99);     /* Piccolo effetto click */
+}
+
+/* PARTE SUPERIORE (Testi) */
+.rest-body {
+    padding: 20px;
+    cursor: pointer;            /* Fa capire che è cliccabile */
+}
+
+.rest-name-pro {
+    font-size: 1.3rem;          /* Scritta grande */
+    font-weight: 800;           /* Molto marcato */
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;     /* Stile moderno stretto */
+}
+
+.rest-location-pro {
+    font-size: 0.95rem;
+    color: #666;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* PARTE INFERIORE (Barra 3 Pulsanti) */
+.rest-footer-actions {
+    display: flex;
+    border-top: 1px solid #f0f0f0;
+    background: #fafafa;        /* Sfondo leggermente grigio */
+}
+
+/* Stile unico per i 3 pulsanti */
+.action-btn {
+    flex: 1;                    /* Si dividono lo spazio in 3 parti uguali */
+    padding: 12px 0;
+    text-align: center;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
+    display: flex;
+    flex-direction: column;     /* Icona sopra, testo sotto (opzionale) */
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-right: 1px solid #f0f0f0; /* Linea separatrice */
+    transition: background 0.2s, color 0.2s;
+    cursor: pointer;
+}
+
+.action-btn:last-child {
+    border-right: none;         /* Toglie la linea all'ultimo */
+}
+
+/* Colori al tocco/hover per ogni bottone */
+.btn-details:hover, .btn-details:active { background: #fff3e0; color: #f57c00; } /* Arancione */
+.btn-phone:hover,   .btn-phone:active   { background: #e8f5e9; color: #2e7d32; } /* Verde */
+.btn-map:hover,     .btn-map:active     { background: #e3f2fd; color: #1565c0; } /* Blu */
+
+/* Stile per i pulsanti disabilitati (se manca il numero) */
+.btn-disabled {
+    color: #ccc;
+    pointer-events: none;       /* Non cliccabile */
+    background: #f9f9f9;
+}
 /* --- FIX: DESIGN PROPORZIONATO CARD-ON-MAP --- */
 
 .card-sentiero-modern {
@@ -625,6 +707,7 @@ sub-nav-bar {
 .btn-azure:active { 
     background-color: #00897B; color: white; 
     transform: scale(0.95); 
+    
 }/* --- CARD: TRASPORTI & FARMACIE (Design "Service App") --- */
 .card-transport, .card-pharmacy { 
     display: flex; align-items: center; 
