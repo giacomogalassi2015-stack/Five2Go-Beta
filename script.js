@@ -416,7 +416,16 @@ async function loadTableData(tableName, btnEl) {
        renderGenericFilterableView(data, 'Paesi', subContent, farmaciaRenderer);
        return;
     } 
-    else if (tableName === 'Attrazioni') {
+   else if (tableName === 'Attrazioni') {
+        // 1. SALVIAMO I DATI NELLA VARIABILE GLOBALE
+        window.tempAttractionsData = data;
+        
+        // 2. ASSEGNIAMO UN ID (INDICE) A OGNI RIGA
+        // Così anche se filtriamo, il numero rimane incollato all'attrazione giusta
+        data.forEach((item, index) => {
+            item._tempIndex = index; 
+        });
+
         renderGenericFilterableView(data, 'Paese', subContent, attrazioniRenderer);
         return;
     }
@@ -450,20 +459,27 @@ async function loadTableData(tableName, btnEl) {
                 </div>`;
         });
     } 
-    else if (tableName === 'Trasporti') {
-        data.forEach(t => {
+   else if (tableName === 'Trasporti') {
+        // 1. SALVIAMO I DATI IN UNA VARIABILE GLOBALE TEMPORANEA
+        // In questo modo non dobbiamo scriverli dentro l'HTML (che si rompe)
+        window.tempTransportData = data;
+
+        data.forEach((t, index) => {
             const nomeDisplay = dbCol(t, 'Località') || dbCol(t, 'Mezzo');
             const imgUrl = getSmartUrl(t.Località || t.Mezzo, '', 400);
-            const safeObj = JSON.stringify(t).replace(/'/g, "'");
+            
+            // 2. PASSIAMO SOLO L'INDICE (NUMERO) AL CLICK
+            // Passiamo 'index' invece di tutto l'oggetto 't'. 
+            // È impossibile che un numero rompa il codice.
             html += `
-                <div class="card-product" onclick='openModal("transport", ${safeObj})'>
+                <div class="card-product" onclick="openModal('transport', ${index})">
                     <div class="prod-info">
                         <div class="prod-title">${nomeDisplay}</div>
                     </div>
                     <img src="${imgUrl}" class="prod-thumb" loading="lazy" alt="${nomeDisplay}" onerror="this.style.display='none'">
                 </div>`;
         });
-    } 
+    }
     else if (tableName === 'Mappe') {
         subContent.innerHTML = `
         <div class="map-container animate-fade">
@@ -616,14 +632,18 @@ const numeriUtiliRenderer = (n) => {
 
 const attrazioniRenderer = (item) => {
     const titolo = dbCol(item, 'Attrazioni') || 'Attrazione';
-    const safeObj = JSON.stringify(item).replace(/'/g, "'");
-    const diff = dbCol(item, 'Difficoltà Accesso') || 'Accessibile';
     const paese = dbCol(item, 'Paese');
+    
+    // RECUPERIAMO IL NUMERO SICURO CHE ABBIAMO CREATO PRIMA
+    // Se _tempIndex non esiste (caso raro), usiamo 0 per non rompere tutto
+    const myId = (item._tempIndex !== undefined) ? item._tempIndex : 0;
+
+    const diff = dbCol(item, 'Difficoltà Accesso') || 'Accessibile';
     const isHard = diff.toLowerCase().match(/alta|hard|difficile|schwer|difícil/); 
     const diffStyle = isHard ? 'background:#ffebee; color:#c62828;' : 'background:#e8f5e9; color:#2e7d32;';
 
     return `
-    <div class="card-list-item monument-mode" onclick='openModal("attrazione", ${safeObj})'>
+    <div class="card-list-item monument-mode" onclick="openModal('attrazione', ${myId})">
         <div class="item-info">
             <div class="item-header-row"><div class="item-title">${titolo}</div></div>
             <div class="item-subtitle" style="margin-bottom: 8px;">📍 ${paese}</div>
@@ -662,9 +682,29 @@ async function openModal(type, payload) {
         contentHtml = `<img src="${bigImg}" style="width:100%; border-radius:12px; height:200px; object-fit:cover;" onerror="this.style.display='none'"><h2>${nome}</h2><p>${desc || ''}</p><hr><p><strong>${t('ideal_for')}:</strong> ${ideale || ''}</p>`;
     }
     else if (type === 'transport') {
-        const nome = dbCol(payload, 'Località') || dbCol(payload, 'Mezzo');
-        const desc = dbCol(payload, 'Descrizione');
-        contentHtml = `<h2>${nome}</h2><p>${desc || ''}</p><div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">${payload["Link"] ? `<a href="${payload["Link"]}" target="_blank" class="btn-yellow" style="text-align:center;">${t('btn_website')}</a>` : ''}${payload["Link_2"] ? `<a href="${payload["Link_2"]}" target="_blank" class="btn-yellow" style="text-align:center;">${t('btn_hours')}</a>` : ''}</div>`;
+        // 1. RECUPERA IL DATO DALLA MEMORIA USANDO L'INDICE
+        // 'payload' ora è solo un numero (0, 1, 2...), quindi usiamo quello per prendere l'oggetto reale
+        const item = window.tempTransportData[payload];
+
+        // Se per caso non trova l'oggetto, usciamo
+        if (!item) { console.error("Errore recupero trasporto"); return; }
+
+        // 2. LEGGI I CAMPI (Apostrofi e a capo non danno più fastidio qui)
+        const nome = dbCol(item, 'Località') || dbCol(item, 'Mezzo');
+        const desc = dbCol(item, 'Descrizione');
+        const linkSito = item.Link;
+        const linkOrari = item.Link_2;
+
+        contentHtml = `
+            <h2>${nome}</h2>
+            <p style="margin: 15px 0; line-height: 1.6;">${desc || ''}</p>
+            
+            <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
+                ${linkSito ? `<a href="${linkSito}" target="_blank" class="btn-yellow" style="text-align:center;">${t('btn_website')}</a>` : ''}
+                ${linkOrari ? `<a href="${linkOrari}" target="_blank" class="btn-yellow" style="text-align:center;">${t('btn_hours')}</a>` : ''}
+                ${(!linkSito && !linkOrari) ? `<p style="text-align:center; color:#999;">Nessun link disponibile</p>` : ''}
+            </div>
+        `;
     }
     /* --- NUOVO BLOCCO PER I SENTIERI --- */
     else if (type === 'trail') {
@@ -715,16 +755,50 @@ async function openModal(type, payload) {
         `;
     }
     /* ------------------------------------ */
-    else if (type === 'Attrazione') {
-        const titolo = dbCol(payload, 'Attrazioni');
-        const paese = dbCol(payload, 'Paese'); 
-        const desc = dbCol(payload, 'Descrizione');
-        const curio = dbCol(payload, 'Curiosità');
-        const diff = dbCol(payload, 'Difficoltà Accesso') || 'Accessibile';
-        contentHtml = `<h2>${titolo}</h2><div style="color:#666; margin-bottom:15px; font-weight:600;">📍 ${paese}</div><div style="display:flex; gap:10px; margin-bottom:15px;"><span class="meta-badge" style="background:#eee; padding:5px; border-radius:8px;">⏱ ${payload["Tempo Visita (min)"] || '--'} ${t('visit_time')}</span><span class="meta-badge" style="background:#eee; padding:5px; border-radius:8px;">${diff}</span></div><p>${desc || ''}</p>${curio ? `<div class="curiosity-box" style="margin-top:10px; padding:10px; background:#f9f9f9; border-left:4px solid orange;">💡 ${curio}</div>` : ''}<div style="margin-top:20px;">${payload["Icona MyMaps"] ? `<a href="${payload["Icona MyMaps"]}" target="_blank" class="btn-yellow" style="display:block; text-align:center;">${t('btn_position')}</a>` : ''}</div>`;
-    }
-    else if (type === 'restaurant' || type === 'farmacia') {
-        contentHtml = `<h2>${dbCol(payload, 'Nome')}</h2><p>${payload.Indirizzo}</p>`;
+   // Gestiamo sia maiuscolo che minuscolo per sicurezza
+    else if (type === 'Attrazione' || type === 'attrazione') {
+        
+        let item = null;
+
+        // Controlliamo se abbiamo i dati in memoria
+        if (window.tempAttractionsData && typeof payload === 'number') {
+            item = window.tempAttractionsData[payload];
+        }
+
+        // SE NON TROVA L'ITEM, NON BLOCCHIAMO TUTTO: Creiamo un oggetto vuoto
+        if (!item) {
+            console.error("Errore: Attrazione non trovata in memoria indice:", payload);
+            contentHtml = `<h2>Errore caricamento</h2><p>Impossibile recuperare i dettagli. Riprova a ricaricare la pagina.</p>`;
+        } else {
+            // Se tutto ok, leggiamo i dati
+            const titolo = dbCol(item, 'Attrazioni');
+            const paese = dbCol(item, 'Paese'); 
+            const desc = dbCol(item, 'Descrizione');
+            const curio = dbCol(item, 'Curiosità');
+            const diff = dbCol(item, 'Difficoltà Accesso') || 'Accessibile';
+            const mapLink = item["Icona MyMaps"];
+
+            contentHtml = `
+                <h2>${titolo}</h2>
+                <div style="color:#666; margin-bottom:15px; font-weight:600;">📍 ${paese}</div>
+                
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <span class="meta-badge" style="background:#eee; padding:5px; border-radius:8px;">⏱ ${item["Tempo Visita (min)"] || '--'} ${t('visit_time')}</span>
+                    <span class="meta-badge" style="background:#eee; padding:5px; border-radius:8px;">${diff}</span>
+                </div>
+                
+                <p style="line-height:1.6;">${desc || ''}</p>
+                
+                ${curio ? `
+                <div class="curiosity-box" style="margin-top:20px; padding:15px; background:#f9f9f9; border-left:4px solid orange; border-radius: 4px;">
+                    <strong>💡 ${t('curiosity') || 'Curiosità'}:</strong><br>
+                    ${curio}
+                </div>` : ''}
+                
+                <div style="margin-top:20px;">
+                    ${mapLink ? `<a href="${mapLink}" target="_blank" class="btn-yellow" style="display:block; text-align:center;">${t('btn_position')}</a>` : ''}
+                </div>`;
+        }
     }
     modal.innerHTML = `<div class="modal-content"><span class="close-modal" onclick="this.parentElement.parentElement.remove()">×</span>${contentHtml}</div>`;
 }
