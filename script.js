@@ -556,7 +556,7 @@ const ristoranteRenderer = (r) => {
         margin-bottom: 20px; 
         box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
         overflow: hidden; 
-        font-family: sans-serif;
+        font-family: Roboto Slab;
         border: 1px solid #eee;">
         
         <div onclick="openModal('restaurant', '${safeObj}')" style="padding: 20px; cursor: pointer;">
@@ -771,7 +771,7 @@ async function openModal(type, payload) {
 
         contentHtml = `
             <div style="padding: 20px 0;">
-                <h2 style="text-align: center; margin-bottom: 25px; font-family: 'Fascinate Inline', cursive; font-size: 1.8rem; color: var(--primary-dark);">
+                <h2 style="text-align: center; margin-bottom: 25px; font-family: 'Roboto Slab', cursive; font-size: 1.8rem; color: var(--primary-dark);">
                     ${titolo}
                 </h2>
                 
@@ -800,7 +800,7 @@ async function openModal(type, payload) {
                 <div style="margin: 0 30px; height: 1px; background: #eee;"></div>
 
                <div style="padding: 25px 30px;">
-    <p style="line-height: 1.7; color: #666; text-align: center; font-size: 0.95rem; font-family: 'Inter', sans-serif;">
+    <p style="line-height: 1.7; color: #666; text-align: center; font-size: 0.95rem; font-family: 'Roboto', sans-serif;">
         ${desc}
     </p>
 </div>

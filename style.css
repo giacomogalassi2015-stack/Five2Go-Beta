@@ -31,7 +31,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 body {
-    font-family: 'LATO'; /* Leggibilità massima per il corpo */
+    font-family: 'Roboto'; /* Leggibilità massima per il corpo */
     background-color:var(--glass-blur);
     color: var(--text-main);
     line-height: 1.6;
@@ -43,7 +43,7 @@ body {
 
 /* Titoli in Font Montserrat per carattere */
  .card-title-overlay {
-    font-family: 'Monomakh'; 
+    font-family: 'Roboto Slab'; 
     font-weight: 400; 
     
     /* Colore: Kranky sta benissimo con il tuo Blu Notte o anche con il Corallo */
@@ -207,7 +207,7 @@ main, #app-content {
 
 /* --- C. TIPOGRAFIA TITOLI CARD (Montserrat) --- */
 .item-title, .prod-title, .spiaggia-title, .transport-title, .pharmacy-name {
-    font-family: 'Monomakh', sans-serif; /* Coerenza con Header */
+    font-family: 'Roboto Slab', sans-serif; /* Coerenza con Header */
     font-weight: 700;
     color: var(--primary-dark); /* Blu notte elegante */
     font-size: 1.15rem;
@@ -217,7 +217,7 @@ main, #app-content {
 
 /* --- D. TIPOGRAFIA SOTTOTITOLI/INFO (Nunito) --- */
 .item-subtitle, .spiaggia-location, .transport-desc, .pharmacy-address {
-    font-family: 'Monomakh', sans-serif;
+    font-family: 'Roboto Slab', sans-serif;
     font-size: 0.9rem;
     color: var(--text-light);
     font-weight: 600; /* Leggermente più marcato per leggibilità al sole */
@@ -227,7 +227,7 @@ main, #app-content {
 /* --- E. BASE DEI BOTTONI (Action & Chips) - Stile Pillola --- */
 .action-btn, .btn-sentiero-small, .btn-azure, .btn-pharmacy-call, .filter-chip {
     display: inline-flex; align-items: center; justify-content: center;
-    font-family: 'Monomakh', sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-weight: 600; 
     text-decoration: none; 
     border-radius: 50px; /* Forme completamente arrotondate (Pillola) */
@@ -466,7 +466,7 @@ sub-nav-bar {
 .sentiero-header { 
     display: flex; justify-content: space-between; align-items: center;
     color: var(--accent-col); /* Corallo */
-    font-family: 'Monomakh', sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-size: 0.85rem; font-weight: 800; 
     text-transform: uppercase; letter-spacing: 1px;
     margin-bottom: 12px;
@@ -515,89 +515,7 @@ sub-nav-bar {
     background-color: var(--accent-col); color: white; 
     transform: scale(0.95);
 }
-/* --- STILE RISTORANTI "PRO" (Senza Foto, 3 Bottoni) --- */
 
-.card-rest-pro {
-    background: #ffffff;
-    border-radius: 16px;        /* Angoli moderni */
-    margin-bottom: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06); /* Ombra morbida di alta qualità */
-    border: 1px solid #ffffff;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;     /* Disposizione verticale */
-    transition: transform 0.2s ease;
-}
-
-.card-rest-pro:active {
-    transform: scale(0.99);     /* Piccolo effetto click */
-}
-
-/* PARTE SUPERIORE (Testi) */
-.rest-body {
-    padding: 20px;
-    cursor: pointer;            /* Fa capire che è cliccabile */
-}
-
-.rest-name-pro {
-    font-size: 1.3rem;          /* Scritta grande */
-    font-weight: 800;           /* Molto marcato */
-    color: #1a1a1a;
-    margin-bottom: 8px;
-    line-height: 1.2;
-    letter-spacing: -0.5px;     /* Stile moderno stretto */
-}
-
-.rest-location-pro {
-    font-size: 0.95rem;
-    color: #666;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-/* PARTE INFERIORE (Barra 3 Pulsanti) */
-.rest-footer-actions {
-    display: flex;
-    border-top: 1px solid #f0f0f0;
-    background: #fafafa;        /* Sfondo leggermente grigio */
-}
-
-/* Stile unico per i 3 pulsanti */
-.action-btn {
-    flex: 1;                    /* Si dividono lo spazio in 3 parti uguali */
-    padding: 12px 0;
-    text-align: center;
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #555;
-    display: flex;
-    flex-direction: column;     /* Icona sopra, testo sotto (opzionale) */
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    border-right: 1px solid #f0f0f0; /* Linea separatrice */
-    transition: background 0.2s, color 0.2s;
-    cursor: pointer;
-}
-
-.action-btn:last-child {
-    border-right: none;         /* Toglie la linea all'ultimo */
-}
-
-/* Colori al tocco/hover per ogni bottone */
-.btn-details:hover, .btn-details:active { background: #fff3e0; color: #f57c00; } /* Arancione */
-.btn-phone:hover,   .btn-phone:active   { background: #e8f5e9; color: #2e7d32; } /* Verde */
-.btn-map:hover,     .btn-map:active     { background: #e3f2fd; color: #1565c0; } /* Blu */
-
-/* Stile per i pulsanti disabilitati (se manca il numero) */
-.btn-disabled {
-    color: #ccc;
-    pointer-events: none;       /* Non cliccabile */
-    background: #f9f9f9;
-}
 /* --- FIX: DESIGN PROPORZIONATO CARD-ON-MAP --- */
 
 .card-sentiero-modern {
@@ -634,7 +552,7 @@ sub-nav-bar {
 
 /* Titolo: Rigorosamente su una riga */
 .sentiero-overlay-title {
-    font-family: 'Monomakh', cursive;
+    font-family: 'Roboto Slab', cursive;
     font-size: 1.25rem;
     color: #222;
     margin: 0 0 12px 0;
@@ -707,7 +625,6 @@ sub-nav-bar {
 .btn-azure:active { 
     background-color: #00897B; color: white; 
     transform: scale(0.95); 
-    
 }/* --- CARD: TRASPORTI & FARMACIE (Design "Service App") --- */
 .card-transport, .card-pharmacy { 
     display: flex; align-items: center; 
@@ -779,7 +696,7 @@ sub-nav-bar {
     border-radius: 50px; /* Pillola completa */
     border: none; 
     font-weight: 700;
-    font-family: 'Monomakh', sans-serif;
+    font-family: 'Roboto', sans-serif;
     
     /* Transizioni fluide */
     transition: transform 0.2s ease, filter 0.2s;
@@ -833,7 +750,7 @@ sub-nav-bar {
 /* Testi dentro il modale */
 .modal-content h2 { 
     padding: 25px 25px 5px 25px; 
-    font-family: 'Kranky', sans-serif; 
+    font-family: 'Roboto', sans-serif; 
     color: var(--primary-dark);
     font-size: 1.5rem;
 }
@@ -938,7 +855,7 @@ sub-nav-bar {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-family: 'Kranky', sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-weight: 700;
     font-size: 0.85rem;
     color: var(--primary-dark);
@@ -991,7 +908,7 @@ sub-nav-bar {
     border: none;
     background: none;
     text-align: left;
-    font-family: 'Pratas', sans-serif;
+    font-family: 'Roboto Slab', sans-serif;
     font-weight: 600;
     color: var(--text-main);
     border-radius: 10px;
