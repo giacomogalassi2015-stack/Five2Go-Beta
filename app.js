@@ -499,3 +499,57 @@ document.addEventListener('DOMContentLoaded', () => {
     updateNavBar(); 
     switchView('home');      
 });
+/* ============================================================
+   SWIPE TRA LE SCHEDE (Cambio Tab con il dito)
+   ============================================================ */
+
+const minSwipeDistance = 50; // Distanza minima in pixel per attivare lo swipe
+let touchStartX = 0;
+let touchEndX = 0;
+
+// Ascoltiamo i tocchi su tutto il contenuto principale
+document.getElementById('app-content').addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+}, {passive: true});
+
+document.getElementById('app-content').addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handlePageSwipe();
+}, {passive: true});
+
+function handlePageSwipe() {
+    // 1. Controlliamo se esistono le Tab (i bottoni superiori)
+    const tabs = document.querySelectorAll('.sub-nav-item');
+    if (tabs.length === 0) return; // Se non ci sono tab, non fare nulla
+
+    // 2. Troviamo quale tab è attiva ora
+    let activeIndex = -1;
+    tabs.forEach((tab, index) => {
+        if (tab.classList.contains('active-sub')) {
+            activeIndex = index;
+        }
+    });
+
+    if (activeIndex === -1) return; // Nessuna tab attiva trovata
+
+    // 3. Calcoliamo la direzione dello swipe
+    const distance = touchEndX - touchStartX;
+
+    if (Math.abs(distance) < minSwipeDistance) return; // Movimento troppo piccolo, ignoralo
+
+    if (distance < 0) {
+        // SWIPE VERSO SINISTRA (Voglio andare al PROSSIMO tab)
+        // Es: Da Ristoranti -> Prodotti
+        if (activeIndex < tabs.length - 1) {
+            tabs[activeIndex + 1].click(); // Clicca il prossimo bottone
+        }
+    } 
+    
+    if (distance > 0) {
+        // SWIPE VERSO DESTRA (Voglio andare al tab PRECEDENTE)
+        // Es: Da Prodotti -> Ristoranti
+        if (activeIndex > 0) {
+            tabs[activeIndex - 1].click(); // Clicca il bottone precedente
+        }
+    }
+}
