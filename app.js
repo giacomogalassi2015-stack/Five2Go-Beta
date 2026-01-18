@@ -147,12 +147,22 @@ async function renderHome() {
 // --- 3. SOTTO-MENU E CARICAMENTO DATI ---
 function renderSubMenu(options, defaultTable) {
     // Genera tab e bottone Filtra
+    // NOTA: Ho inserito gli stili critici direttamente qui (inline) per forzare lo scroll
     let menuHtml = `
-    <div class="sub-nav-bar" style="display: flex; justify-content: space-between; align-items: center; padding-right: 15px;">
-        <div class="sub-nav-tabs" style="display:flex; overflow-x: auto; white-space: nowrap;">
-            ${options.map(opt => `<button class="sub-nav-item" onclick="loadTableData('${opt.table}', this)">${opt.label}</button>`).join('')}
+    <div class="sub-nav-bar" style="display: flex; align-items: center; width: 100%; overflow: hidden; padding-right: 15px; margin-bottom: 10px;">
+        
+        <div class="sub-nav-tabs" style="display: flex; overflow-x: auto; gap: 10px; flex: 1; min-width: 0; padding-bottom: 5px; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+            ${options.map(opt => `
+                <button class="sub-nav-item" onclick="loadTableData('${opt.table}', this)" style="flex: 0 0 auto;">
+                    ${opt.label}
+                </button>
+            `).join('')}
         </div>
-        <button id="filter-toggle-btn" style="display: none; background: #f0f0f0; border: 1px solid #ccc; border-radius: 20px; padding: 5px 12px; font-size: 0.8rem; font-weight: bold; color: #333; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">FILTRA</button>
+
+        <button id="filter-toggle-btn" style="display: none; margin-left: 10px; background: #f0f0f0; border: none; border-radius: 50px; padding: 8px 16px; font-size: 0.8rem; font-weight: bold; color: #333; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
+            FILTRA ⚡
+        </button>
+
     </div>
     <div id="sub-content"></div>`;
     
@@ -490,70 +500,4 @@ document.addEventListener('DOMContentLoaded', () => {
     setupLanguageSelector(); 
     updateNavBar(); 
     switchView('home');      
-});/* ==============================================
-   AGGIUNTA: SWIPE MANUALE (GRAB & DRAG)
-   ============================================== */
-function activateSwipe() {
-    // Cerchiamo la lista dei bottoni
-    const slider = document.querySelector('.sub-nav-tabs');
-    
-    // Se non esiste ancora (magari la pagina sta caricando), riproviamo tra poco
-    if(!slider) {
-        setTimeout(activateSwipe, 500);
-        return;
-    }
-
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-
-    // FORZATURA STILE VIA JS (Così vince su tutto)
-    slider.style.display = 'flex';
-    slider.style.overflowX = 'auto'; // Lasciamo auto per il mobile nativo
-    slider.style.flexWrap = 'nowrap';
-    slider.style.cursor = 'grab';
-    slider.style.justifyContent = 'flex-start'; // Allinea a sinistra
-
-    // Blocchiamo il restringimento dei bottoni
-    Array.from(slider.children).forEach(child => {
-        child.style.flexShrink = '0';
-    });
-
-    // --- EVENTI MOUSE (PC) ---
-    slider.addEventListener('mousedown', (e) => {
-        isDown = true;
-        slider.style.cursor = 'grabbing';
-        startX = e.pageX - slider.offsetLeft;
-        scrollLeft = slider.scrollLeft;
-    });
-
-    slider.addEventListener('mouseleave', () => {
-        isDown = false;
-        slider.style.cursor = 'grab';
-    });
-
-    slider.addEventListener('mouseup', () => {
-        isDown = false;
-        slider.style.cursor = 'grab';
-    });
-
-    slider.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        const x = e.pageX - slider.offsetLeft;
-        const walk = (x - startX) * 2; // Velocità scroll
-        slider.scrollLeft = scrollLeft - walk;
-    });
-}
-
-// Avvia la funzione ogni volta che cambia la vista (perché i bottoni vengono ricreati)
-// Modifica alla funzione loadTableData esistente per rilanciare lo swipe? 
-// No, usiamo un trucco: controlliamo ciclicamente se ci sono bottoni nuovi.
-setInterval(() => {
-    const slider = document.querySelector('.sub-nav-tabs');
-    // Se il slider esiste ma non ha ancora l'attributo "data-swipe-active"
-    if(slider && !slider.hasAttribute('data-swipe-active')) {
-        slider.setAttribute('data-swipe-active', 'true');
-        activateSwipe();
-    }
-}, 1000);
+});
