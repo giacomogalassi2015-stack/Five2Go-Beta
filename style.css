@@ -262,93 +262,88 @@ main, #app-content {
     background: rgba(255,255,255,0.4); 
 }
 
-/* --- FILTRI (SUB-NAV & CHIPS) --- */
+/* ============================================================
+   FILTRI & NAVIGAZIONE (Codice Pulito e Corretto)
+   ============================================================ */
+
+/* Contenitore Comune per Barra Superiore e Filtri */
 .sub-nav-bar, .filter-bar {
-    display: flex; overflow-x: auto; 
-    padding: 6px 20px 8px 20px; /* Spazio extra sotto per l'ombra */
-    margin-bottom: 10px; /* Margine extra ridotto */
-    gap: 8px;
-    background: transparent; 
-    -ms-overflow-style: none; scrollbar-width: none;
+    display: flex !important;
+    overflow-x: auto !important; /* Abilita lo swipe laterale */
+    flex-wrap: nowrap !important; /* Impedisce di andare a capo */
     
-    /* MAGIA: Maschera che sfuma il contenuto ai lati (Fade Out) */
+    padding: 6px 20px 8px 20px;
+    margin-bottom: 10px;
+    gap: 10px; /* Spazio tra i bottoni */
+    
+    background: transparent;
+    
+    /* Nasconde la barra di scorrimento ma permette lo swipe */
+    -ms-overflow-style: none; 
+    scrollbar-width: none;
+    
+    /* Effetto sfumato ai lati */
     mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
     -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+    
+    /* Scorrimento fluido su mobile */
+    -webkit-overflow-scrolling: touch;
 }
-.sub-nav-bar::-webkit-scrollbar, .filter-bar::-webkit-scrollbar { display: none; }
-.sub-nav-bar { border-bottom: none; }
-/* --- REGOLA SPECIFICA PER LA BARRA SOTTO --- */
-/* Questa regola serve a tirare su solo la barra dei filtri */
+
+/* Nasconde scrollbar su Chrome/Safari */
+.sub-nav-bar::-webkit-scrollbar, .filter-bar::-webkit-scrollbar { 
+    display: none; 
+}
+
+/* --- REGOLE SPECIFICHE BARRA SUPERIORE (Categorie) --- */
+.sub-nav-bar {
+    border-bottom: none;
+    padding-top: 5px; 
+    /* Nota: Se metti 'justify-content: center', lo swipe non funziona bene. 
+       Meglio lasciarlo a sinistra (default) per poter scorrere. */
+}
+
+/* --- REGOLE SPECIFICHE BARRA FILTRI (Sotto) --- */
 .filter-bar {
-    /* 1. Margine negativo leggero: la avvicina di 5px (puoi provare -8px se vuoi ancora più vicino) */
-    margin-top: -2px !important; 
-    
-    /* 2. Riduciamo il padding interno superiore per non sprecare spazio vuoto */
-    padding-top: 2px !important; 
-    
-    /* 3. Assicuriamoci che non ci sia nulla che la blocchi */
-    position: relative; 
+    margin-top: -5px !important; /* Li avvicina a quelli sopra */
+    padding-top: 2px !important;
+    position: relative;
     z-index: 5;
 }
 
-/* Pillole Filtri "Galleggianti" */
-.sub-nav-item, .filter-chip {
-    padding: 10px 22px; /* Più larghi = più facili da cliccare */
-    border-radius: 50px; 
+/* --- DIMENSIONI TASTI (Differenziati) --- */
+
+/* 1. Tasti SUPERIORI (Più Grandi) */
+.sub-nav-item {
+    padding: 10px 22px !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    border-radius: 50px;
     white-space: nowrap; flex-shrink: 0;
-    
-    /* Stato Inattivo: Pulito */
-    border: none; 
-    background: white; 
-    color: var(--text-light); 
-    
-    font-size: 0.9rem; font-weight: 700; letter-spacing: 0.3px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05); /* Ombra leggera */
+    border: none; background: white; color: var(--text-light);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* Stato Attivo: Esplosione Turchese */
+/* 2. Tasti FILTRO (Più Piccoli) */
+.filter-chip {
+    padding: 7px 14px !important;
+    font-size: 0.80rem !important;
+    font-weight: 600 !important;
+    border-radius: 50px;
+    white-space: nowrap; flex-shrink: 0;
+    border: none; background: white; color: var(--text-light);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Stato Attivo (Comune) */
 .sub-nav-item.active-sub, .filter-chip.active-filter {
-    background-color: var(--primary-col); 
-    color: white; 
-    /* L'ombra diventa colorata (Glow) */
-    box-shadow: 0 8px 20px -5px rgba(42, 157, 143, 0.5); 
-    transform: translateY(-2px) scale(1.02); /* Si solleva leggermente */
+    background-color: var(--primary-col);
+    color: white;
+    box-shadow: 0 8px 20px -5px rgba(42, 157, 143, 0.5);
+    transform: translateY(-2px) scale(1.02);
 }
-
-/* --- PAGINAZIONE (Cerchi Perfetti) --- */
-.pagination-container { 
-    display: flex; justify-content: center; gap: 15px; 
-    margin: 30px 0; padding: 10px; 
-}
-
-.page-btn {
-    width: 48px; height: 48px; /* Quadrato perfetto per fare il cerchio */
-    display: flex; align-items: center; justify-content: center;
-    
-    background: white; 
-    border: none; 
-    border-radius: 50%; /* Cerchio */
-    
-    font-size: 1rem; font-weight: 800; color: var(--primary-dark); 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Ombra morbida */
-    transition: transform 0.2s ease;
-}
-
-.page-btn.active { 
-    background-color: var(--primary-col); color: white; 
-    transform: scale(1.15); /* Il numero attivo è più grande */
-    box-shadow: 0 8px 20px rgba(42, 157, 143, 0.4); /* Glow Turchese */
-}
-sub-nav-bar {
-    justify-content: center; /* Li sposta dai lati al CENTRO */
-    padding-top: 0px;        /* Toglie spazio sopra (attacca alla fascia) */
-    padding-bottom: 10px;    /* Riduce lo spazio sotto (attacca alle schede) */
-    gap: 8px;                /* Li avvicina tra loro (da 12px a 8px) */
-}
-
-.page-btn:active { transform: scale(0.9); }
-
 /* ============================================================
    4. COMPONENTI SPECIFICI (Card & Liste Premium)
    Miglioramenti: Design immersivo, Curve 24px, Micro-interazioni
