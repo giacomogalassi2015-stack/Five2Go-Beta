@@ -263,86 +263,77 @@ main, #app-content {
 }
 
 /* ============================================================
-   FILTRI & NAVIGAZIONE (Codice Pulito e Corretto)
+   SWIPE ORIZZONTALE (FIX DEFINITIVO)
    ============================================================ */
 
-/* Contenitore Comune per Barra Superiore e Filtri */
+/* 1. IL CONTENITORE (La striscia) */
 .sub-nav-bar, .filter-bar {
+    /* Layout Flessibile */
     display: flex !important;
-    overflow-x: auto !important; /* Abilita lo swipe laterale */
-    flex-wrap: nowrap !important; /* Impedisce di andare a capo */
+    flex-direction: row !important;
     
-    padding: 6px 20px 8px 20px;
-    margin-bottom: 10px;
-    gap: 10px; /* Spazio tra i bottoni */
+    /* ABILITA LO SCROLL */
+    overflow-x: auto !important; 
     
-    background: transparent;
+    /* VIETATO ANDARE A CAPO */
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
     
-    /* Nasconde la barra di scorrimento ma permette lo swipe */
-    -ms-overflow-style: none; 
-    scrollbar-width: none;
+    /* Allinea tutto a SINISTRA (Fondamentale per lo scroll!) */
+    justify-content: flex-start !important; 
     
-    /* Effetto sfumato ai lati */
-    mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+    /* Occupa tutto lo spazio */
+    width: 100% !important;
+    max-width: 100vw !important; /* Larghezza viewport */
     
-    /* Scorrimento fluido su mobile */
-    -webkit-overflow-scrolling: touch;
+    /* Estetica */
+    padding: 10px 20px !important;
+    gap: 12px !important; /* Spazio tra i bottoni */
+    
+    /* Nascondi scrollbar brutte */
+    -ms-overflow-style: none; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch; /* Inerzia su iPhone */
 }
 
-/* Nasconde scrollbar su Chrome/Safari */
-.sub-nav-bar::-webkit-scrollbar, .filter-bar::-webkit-scrollbar { 
-    display: none; 
+/* Nasconde scrollbar su Chrome */
+.sub-nav-bar::-webkit-scrollbar, .filter-bar::-webkit-scrollbar { display: none; }
+
+
+/* 2. I BOTTONI (Gli elementi dentro) */
+.sub-nav-item, .filter-chip {
+    /* COMANDO MAGICO: Non ti rimpicciolire (0), Non ti ingrandire (0), Larghezza auto */
+    flex: 0 0 auto !important; 
+    width: auto !important;
+    
+    /* Il resto è stile visivo */
+    border-radius: 50px;
+    border: none;
+    background: white;
+    color: var(--text-light);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
-/* --- REGOLE SPECIFICHE BARRA SUPERIORE (Categorie) --- */
-.sub-nav-bar {
-    border-bottom: none;
-    padding-top: 5px; 
-    /* Nota: Se metti 'justify-content: center', lo swipe non funziona bene. 
-       Meglio lasciarlo a sinistra (default) per poter scorrere. */
-}
-
-/* --- REGOLE SPECIFICHE BARRA FILTRI (Sotto) --- */
-.filter-bar {
-    margin-top: -5px !important; /* Li avvicina a quelli sopra */
-    padding-top: 2px !important;
-    position: relative;
-    z-index: 5;
-}
-
-/* --- DIMENSIONI TASTI (Differenziati) --- */
-
-/* 1. Tasti SUPERIORI (Più Grandi) */
+/* 3. DIMENSIONI DIFFERENZIATE */
+/* Bottoni Sopra (Grandi) */
 .sub-nav-item {
-    padding: 10px 22px !important;
+    padding: 12px 24px !important;
     font-size: 0.95rem !important;
     font-weight: 700 !important;
-    border-radius: 50px;
-    white-space: nowrap; flex-shrink: 0;
-    border: none; background: white; color: var(--text-light);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* 2. Tasti FILTRO (Più Piccoli) */
+/* Bottoni Filtro (Piccoli) */
 .filter-chip {
-    padding: 7px 14px !important;
-    font-size: 0.80rem !important;
+    padding: 8px 16px !important;
+    font-size: 0.85rem !important;
     font-weight: 600 !important;
-    border-radius: 50px;
-    white-space: nowrap; flex-shrink: 0;
-    border: none; background: white; color: var(--text-light);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* Stato Attivo (Comune) */
+/* Stato Attivo */
 .sub-nav-item.active-sub, .filter-chip.active-filter {
     background-color: var(--primary-col);
     color: white;
     box-shadow: 0 8px 20px -5px rgba(42, 157, 143, 0.5);
-    transform: translateY(-2px) scale(1.02);
+    transform: translateY(-2px);
 }
 /* ============================================================
    4. COMPONENTI SPECIFICI (Card & Liste Premium)
