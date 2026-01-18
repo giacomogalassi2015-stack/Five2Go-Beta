@@ -109,4 +109,98 @@ window.shareApp = async function() {
         if (navigator.share) await navigator.share({ title: '5 Terre App', text: 'Guarda questa guida!', url: window.location.href });
         else { navigator.clipboard.writeText(window.location.href); alert("Link copiato!"); }
     } catch (err) { console.log("Errore:", err); }
+};// =========================================================
+// 6. MOTORE DI RICERCA BUS (Cervello)
+// =========================================================
+window.eseguiRicercaBus = async function() {
+    // 1. Lettura dati
+    const selPartenza = document.getElementById('selPartenza');
+    const selArrivo = document.getElementById('selArrivo');
+    const selData = document.getElementById('selData');
+    const selOra = document.getElementById('selOra');
+
+    if (!selPartenza || !selArrivo || !selData || !selOra) {
+        console.error("Elementi DOM non trovati. Sei sicuro che il modale sia aperto?");
+        return;
+    }
+
+    const partenzaId = parseInt(selPartenza.value);
+    const arrivoId = parseInt(selArrivo.value);
+    const dataScelta = selData.value;
+    const oraScelta = selOra.value;
+
+    // Riferimenti UI
+    const nextCard = document.getElementById('nextBusCard');
+    const list = document.getElementById('otherBusList');
+    const resultsContainer = document.getElementById('busResultsContainer');
+
+    // Validazione
+    if (!partenzaId || !arrivoId) { alert("Seleziona fermate valide"); return; }
+    if (partenzaId === arrivoId) { alert("Partenza e arrivo coincidono!"); return; }
+
+    // UI Loading
+    resultsContainer.style.display = 'block';
+    nextCard.innerHTML = `<div style="text-align:center; padding:20px;">Cercando... <span class="material-icons spin">sync</span></div>`;
+    list.innerHTML = '';
+
+    // Calcolo Festivo
+    const dateObj = new Date(dataScelta);
+    const isFestivo = (dateObj.getDay() === 0); // 0 = Domenica
+
+    // DEBUG: Stampiamo cosa mandiamo a Supabase
+    console.log("🚀 INVIO A SUPABASE:", {
+        p_partenza_id: partenzaId,
+        p_arrivo_id: arrivoId,
+        p_orario_min: oraScelta,
+        p_is_festivo: isFestivo
+    });
+
+    // 2. Chiamata RPC
+    const { data, error } = await window.supabaseClient.rpc('trova_bus', { 
+        p_partenza_id: partenzaId, 
+        p_arrivo_id: arrivoId, 
+        p_orario_min: oraScelta, 
+        p_is_festivo: isFestivo 
+    });
+
+    // Gestione Errori
+    if (error) { 
+        console.error("❌ ERRORE SQL:", error);
+        nextCard.innerHTML = `<div style="color:red; text-align:center;">Errore: ${error.message}<br><small>Controlla la console per dettagli</small></div>`; 
+        return; 
+    }
+
+    console.log("✅ RISPOSTA SUPABASE:", data);
+
+    // 3. Risultati vuoti
+    if (!data || data.length === 0) { 
+        nextCard.innerHTML = `
+            <div style="text-align:center; padding:15px; color:#c62828;">
+                <span class="material-icons">event_busy</span><br>
+                <strong>Nessuna corsa trovata</strong><br>
+                <small>Prova a cambiare orario.</small>
+            </div>`; 
+        return; 
+    }
+
+    // 4. Mostra Risultati
+    const primo = data[0];
+    // Tronca i secondi se presenti (es. 10:00:00 -> 10:00)
+    const pOra = primo.ora_partenza.slice(0,5);
+    const aOra = primo.ora_arrivo.slice(0,5);
+
+    nextCard.innerHTML = `
+        <div style="font-size:0.75rem; color:#555; text-transform:uppercase; font-weight:bold;">PROSSIMA PARTENZA</div>
+        <div class="bus-time-big">${pOra}</div>
+        <div style="font-size:1rem; color:#333;">Arrivo: <strong>${aOra}</strong></div>
+        <div style="font-size:0.8rem; color:#777; margin-top:5px;">${primo.nome_linea}</div>
+    `;
+
+    const successivi = data.slice(1);
+    list.innerHTML = successivi.map(b => `
+        <div class="bus-list-item">
+            <span style="font-weight:bold; color:#333;">${b.ora_partenza.slice(0,5)}</span>
+            <span style="color:#666;">➜ ${b.ora_arrivo.slice(0,5)}</span>
+        </div>
+    `).join('');
 };

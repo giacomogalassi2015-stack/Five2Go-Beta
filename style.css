@@ -921,3 +921,170 @@ sub-nav-bar {
 .lang-flag { font-size: 1.2rem; }
 /* Utility: Nascondi frecce liste (Pulizia visiva) */
 .prod-arrow, .item-arrow { display: none !important; }
+/* =========================================
+   STILE MOTORE DI RICERCA BUS (Modern UI)
+   ========================================= */
+
+/* Contenitore Principale */
+.bus-search-box {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Ombra morbida */
+    border: 1px solid #f0f0f0;
+    margin-top: 15px;
+}
+
+/* Titolo con icona */
+.bus-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #2c3e50;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.5px;
+}
+
+.bus-title .material-icons {
+    color: #FFC107; /* Giallo Cinque Terre */
+    background: #FFF8E1;
+    padding: 6px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+}
+
+/* Griglia Input (Partenza/Arrivo e Data/Ora) */
+.bus-inputs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+/* Etichette sopra gli input */
+.bus-inputs label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #90a4ae;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* I campi di input e select */
+.bus-select {
+    width: 100%;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #37474f;
+    outline: none;
+    transition: all 0.2s ease;
+    -webkit-appearance: none; /* Rimuove lo stile default iOS */
+    appearance: none;
+}
+
+/* Effetto Focus (quando clicchi) */
+.bus-select:focus {
+    border-color: #FFC107;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+}
+
+/* Bottone Cerca */
+.btn-yellow {
+    background: linear-gradient(135deg, #FFC107 0%, #FFB300 100%);
+    color: #3e2723;
+    border: none;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+    transition: transform 0.1s ease, box-shadow 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-yellow:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+}
+
+/* =========================================
+   RISULTATI RICERCA
+   ========================================= */
+
+/* Card Risultato Principale (Quello grosso) */
+.bus-result-main {
+    background: #E3F2FD; /* Azzurro tenue */
+    border: 1px solid #BBDEFB;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* L'ora gigante */
+.bus-time-big {
+    font-size: 3rem;
+    font-weight: 900;
+    color: #1565C0; /* Blu scuro */
+    line-height: 1;
+    margin: 8px 0;
+    font-family: 'Roboto', sans-serif; /* Assicurati di avere un font sans-serif */
+    letter-spacing: -2px;
+}
+
+/* Lista corse successive */
+.bus-list-container {
+    background: #fafafa;
+    border-radius: 12px;
+    border: 1px solid #eee;
+    overflow: hidden;
+}
+
+.bus-list-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.bus-list-item:last-child {
+    border-bottom: none;
+}
+
+.bus-list-item:hover {
+    background: #fff;
+}
+
+/* Animazione Caricamento (Spin) */
+.spin {
+    animation: spin 1s linear infinite;
+    color: #FFC107;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes popIn { 
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Piccola correzione per i Date/Time input su iOS per vederli meglio */
+input[type="date"], input[type="time"] {
+    display: block;
+    min-height: 45px; /* Altezza dito */
+}

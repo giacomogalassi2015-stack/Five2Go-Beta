@@ -333,7 +333,7 @@ window.openModal = async function(type, payload) {
         const bigImg = window.getSmartUrl(payload.Prodotti || payload.Nome, 'Prodotti', 800);
         contentHtml = `<img src="${bigImg}" style="width:100%; border-radius:12px; height:200px; object-fit:cover;" onerror="this.style.display='none'"><h2>${nome}</h2><p>${desc || ''}</p><hr><p><strong>${window.t('ideal_for')}:</strong> ${ideale || ''}</p>`;
     }
-    // --- GESTIONE TRASPORTI & BUS ---
+   // --- GESTIONE TRASPORTI (Corretto) ---
     else if (type === 'transport') {
         const item = window.tempTransportData[payload];
         if (!item) { console.error("Errore recupero trasporto"); return; }
@@ -343,20 +343,52 @@ window.openModal = async function(type, payload) {
         
         let customContent = '';
 
-        // SE È IL BUS -> ATTIVA IL MOTORE
+        // SE È IL BUS -> ATTIVA IL MOTORE COMPLETO
         if (nome.toLowerCase().includes('bus') || nome.toLowerCase().includes('autobus') || nome.toLowerCase().includes('atc')) {
-            const { data: fermate, error } = await window.supabaseClient.from('Fermate_bus').select('id_fermata, nome_fermata').order('nome_fermata');
+            // CORREZIONE QUI: Usiamo i nomi esatti delle colonne ("ID" e "NOME_FERMATA")
+            // Nota: Se su Supabase sono minuscole, usa 'id, nome_fermata'. Se Maiuscole, usa 'ID, NOME_FERMATA'.
+            // Provo con la versione più probabile basata sui tuoi CSV precedenti:
+            const { data: fermate, error } = await window.supabaseClient
+                .from('Fermate_bus')
+                .select('ID, NOME_FERMATA') 
+                .order('NOME_FERMATA', { ascending: true });
 
             if (fermate && !error) {
-                const options = fermate.map(f => `<option value="${f.id_fermata}">${f.nome_fermata}</option>`).join('');
+                const now = new Date();
+                const todayISO = now.toISOString().split('T')[0];
+                const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+                // CORREZIONE QUI: f.ID e f.NOME_FERMATA (devono coincidere con la select sopra)
+                const options = fermate.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+                
                 customContent = `
                 <div class="bus-search-box animate-fade">
-                    <div class="bus-title"><span class="material-icons">directions_bus</span> Cerca Prossimo Bus</div>
+                    <div class="bus-title"><span class="material-icons">directions_bus</span> Pianifica Viaggio</div>
+                    
                     <div class="bus-inputs">
-                        <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">PARTENZA</label><select id="selPartenza" class="bus-select"><option value="" disabled selected>Seleziona...</option>${options}</select></div>
-                        <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">ARRIVO</label><select id="selArrivo" class="bus-select"><option value="" disabled selected>Seleziona...</option>${options}</select></div>
+                        <div style="flex:1;">
+                            <label style="font-size:0.7rem; color:#666; font-weight:bold;">PARTENZA</label>
+                            <select id="selPartenza" class="bus-select"><option value="" disabled selected>Seleziona...</option>${options}</select>
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:0.7rem; color:#666; font-weight:bold;">ARRIVO</label>
+                            <select id="selArrivo" class="bus-select"><option value="" disabled selected>Seleziona...</option>${options}</select>
+                        </div>
                     </div>
-                    <button onclick="eseguiRicercaBus()" class="btn-yellow" style="width:100%; font-weight:bold;">TROVA ORARI</button>
+
+                    <div class="bus-inputs">
+                        <div style="flex:1;">
+                            <label style="font-size:0.7rem; color:#666; font-weight:bold;">DATA VIAGGIO</label>
+                            <input type="date" id="selData" class="bus-select" value="${todayISO}">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:0.7rem; color:#666; font-weight:bold;">ORARIO</label>
+                            <input type="time" id="selOra" class="bus-select" value="${nowTime}">
+                        </div>
+                    </div>
+
+                    <button onclick="eseguiRicercaBus()" class="btn-yellow" style="width:100%; font-weight:bold; margin-top:5px;">TROVA ORARI</button>
+                    
                     <div id="busResultsContainer" style="display:none; margin-top:20px;">
                         <div id="nextBusCard" class="bus-result-main"></div>
                         <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">CORSE SUCCESSIVE:</div>
@@ -364,7 +396,8 @@ window.openModal = async function(type, payload) {
                     </div>
                 </div>`;
             } else {
-                customContent = `<p style="color:red;">Errore caricamento fermate.</p>`;
+                console.error("Errore Supabase:", error); // Logga l'errore per vederlo
+                customContent = `<p style="color:red;">Errore caricamento fermate: ${error ? error.message : 'Sconosciuto'}</p>`;
             }
         } else {
             customContent = `<div style="text-align:center; padding:30px; background:#f9f9f9; border-radius:12px; margin-top:20px; color:#999;">Funzione in arrivo</div>`;
@@ -379,6 +412,35 @@ window.openModal = async function(type, payload) {
         const dura = payload.Durata || '--';
         const desc = window.dbCol(payload, 'Descrizione') || '';
         contentHtml = `<div style="padding:20px;"><h2 style="text-align:center;">${titolo}</h2><div style="display:flex; justify-content:space-between; margin:20px 0;"><div><strong>Distanza</strong><br>${dist}</div><div><strong>Tempo</strong><br>${dura}</div></div><p>${desc}</p></div>`;
+    }
+    else if (type === 'restaurant') {
+        const item = JSON.parse(decodeURIComponent(payload)); // Decodifica l'oggetto passato dal renderer
+        const nome = window.dbCol(item, 'Nome');
+        const desc = window.dbCol(item, 'Descrizione') || '';
+        const orari = item.Orari || 'Orari non disponibili';
+        const telefono = item.Telefono || '';
+        const web = item.SitoWeb || '';
+        
+        // Costruisci il contenuto
+        contentHtml = `
+            <h2>${nome}</h2>
+            <div style="margin-bottom:15px; color:#666;">📍 ${window.dbCol(item, 'Paesi')} • ${item.Indirizzo || ''}</div>
+            <p>${desc}</p>
+            <hr style="margin:15px 0; border:0; border-top:1px solid #eee;">
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <div><strong>🕒 Orari:</strong><br>${orari}</div>
+                ${telefono ? `<div><strong>📞 Telefono:</strong> <a href="tel:${telefono}">${telefono}</a></div>` : ''}
+                ${web ? `<div><strong>🌐 Sito Web:</strong> <a href="${web}" target="_blank">Apri sito</a></div>` : ''}
+            </div>
+            <div style="margin-top:20px; text-align:center;">
+                <a href="http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(nome + ' ' + window.dbCol(item, 'Paesi'))}" target="_blank" class="btn-azure" style="display:inline-block; text-decoration:none; padding:10px 20px; border-radius:20px;">Portami qui 🗺️</a>
+            </div>
+        `;
+    }
+    else if (type === 'farmacia') {
+        // ... logica simile per farmacia se serve, o usa quella generica
+        const item = payload; // Farmacia passa l'oggetto diretto non codificato
+        contentHtml = `<h2>${item.Nome}</h2><p>📍 ${item.Indirizzo}, ${item.Paesi}</p><p>📞 <a href="tel:${item.Numero}">${item.Numero}</a></p>`;
     }
     else if (type === 'attrazione') {
          // Logica già gestita sopra con tempAttractionsData

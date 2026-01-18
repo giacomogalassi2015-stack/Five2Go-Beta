@@ -1,8 +1,11 @@
-const sentieroRenderer = (s) => {
-    const paese = dbCol(s, 'Paesi');
+console.log("✅ 2. ui-renderers.js caricato");
+
+// RENDERER SENTIERO
+window.sentieroRenderer = (s) => {
+    const paese = window.dbCol(s, 'Paesi');
     const distanza = s.Distanza || '--';
     const durata = s.Durata || '--';
-    const extra = dbCol(s, 'Extra') || 'Sentiero';
+    const extra = window.dbCol(s, 'Extra') || 'Sentiero';
     const gpxUrl = s.Gpxlink || s.gpxlink;
 
     const uniqueMapId = `map-trail-${Math.random().toString(36).substr(2, 9)}`;
@@ -25,11 +28,13 @@ const sentieroRenderer = (s) => {
     </div>`;
 };
 
-const ristoranteRenderer = (r) => {
-    const nome = dbCol(r, 'Nome') || 'Ristorante';
-    const paesi = dbCol(r, 'Paesi') || '';
+// RENDERER RISTORANTE
+window.ristoranteRenderer = (r) => {
+    const nome = window.dbCol(r, 'Nome') || 'Ristorante';
+    const paesi = window.dbCol(r, 'Paesi') || '';
     const indirizzo = r.Indirizzo || '';
     const safeObj = encodeURIComponent(JSON.stringify(r));
+    // Correzione URL Mappa
     const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nome + ' ' + paesi + ' Cinque Terre')}`;
     const phoneLink = r.Telefono ? `tel:${r.Telefono}` : '#';
     const phoneColor = r.Telefono ? '#2E7D32' : '#B0BEC5';
@@ -55,67 +60,72 @@ const ristoranteRenderer = (r) => {
     </div>`;
 };
 
-const spiaggiaRenderer = (s) => {
-    const nome = dbCol(s, 'Nome') || 'Spiaggia';
-    const paesi = dbCol(s, 'Paesi');
-    const desc = dbCol(s, 'Descrizione') || '';
+// RENDERER SPIAGGIA
+window.spiaggiaRenderer = (s) => {
+    const nome = window.dbCol(s, 'Nome') || 'Spiaggia';
+    const paesi = window.dbCol(s, 'Paesi');
+    const desc = window.dbCol(s, 'Descrizione') || '';
     const safePaesi = paesi.replace(/'/g, "\\'");
     const safeDesc = desc.replace(/'/g, "\\'");
-    const mapLink = `https://www.google.com/maps/search/?api=1&query=Spiaggia ${encodeURIComponent(nome + ' ' + paesi)}`;
+    // Correzione URL Mappa
+    const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nome + ' ' + paesi)}`;
 
     return `
     <div class="card-spiaggia" onclick="simpleAlert('${safePaesi}', '${safeDesc}')">
         <div class="spiaggia-header"><div class="spiaggia-location">📍 ${paesi}</div><span>🏖️</span></div>
         <div class="item-title" style="font-size: 1.3rem; margin: 10px 0;">${nome}</div>
         <div class="spiaggia-footer">
-            <a href="${mapLink}" target="_blank" class="btn-azure" onclick="event.stopPropagation()">${t('btn_position')}</a>
+            <a href="${mapLink}" target="_blank" class="btn-azure" onclick="event.stopPropagation()">${window.t('btn_position')}</a>
         </div>
     </div>`;
 };
 
-const farmaciaRenderer = (f) => {
-    const nome = dbCol(f, 'Nome');
-    const paesi = dbCol(f, 'Paesi');
+// RENDERER FARMACIA
+window.farmaciaRenderer = (f) => {
+    const nome = window.dbCol(f, 'Nome');
+    const paesi = window.dbCol(f, 'Paesi');
     const safeObj = JSON.stringify(f).replace(/'/g, "'");
     const fullAddress = `${f.Indirizzo}, ${f.Paesi}`;
-    const mapLink = `http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(fullAddress)}`;
+    const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
 
     return `
     <div class="card-list-item" onclick='openModal("farmacia", ${safeObj})'>
         <div class="item-info">
-            <div class="item-header-row"><div class="item-title">${nome}</div><div class="item-tag" style="background-color:#4CAF50;">${t('pharmacy_tag')}</div></div>
+            <div class="item-header-row"><div class="item-title">${nome}</div><div class="item-tag" style="background-color:#4CAF50;">${window.t('pharmacy_tag')}</div></div>
             <div class="item-subtitle">📍 ${paesi}</div>
             <div class="card-actions">
-                ${f.Numero ? `<a href="tel:${f.Numero}" class="action-btn btn-phone" onclick="event.stopPropagation()"><span>📞</span> ${t('btn_call')}</a>` : ''}
-                ${f.Indirizzo ? `<a href="${mapLink}" target="_blank" class="action-btn btn-map" onclick="event.stopPropagation()"><span>🗺️</span> ${t('btn_map')}</a>` : ''}
+                ${f.Numero ? `<a href="tel:${f.Numero}" class="action-btn btn-phone" onclick="event.stopPropagation()"><span>📞</span> ${window.t('btn_call')}</a>` : ''}
+                ${f.Indirizzo ? `<a href="${mapLink}" target="_blank" class="action-btn btn-map" onclick="event.stopPropagation()"><span>🗺️</span> ${window.t('btn_map')}</a>` : ''}
             </div>
         </div>
     </div>`;
 };
 
-const numeriUtiliRenderer = (n) => {
-    const nome = dbCol(n, 'Nome');
-    const comune = dbCol(n, 'Comune');
-    const paesi = dbCol(n, 'Paesi'); 
+// RENDERER NUMERI UTILI
+window.numeriUtiliRenderer = (n) => {
+    const nome = window.dbCol(n, 'Nome');
+    const comune = window.dbCol(n, 'Comune');
+    const paesi = window.dbCol(n, 'Paesi'); 
     return `
     <div class="card-list-item" style="cursor:default;">
         <div class="item-info">
             <div class="item-header-row"><div class="item-title">${nome}</div><div class="item-tag" style="background-color:#607d8b;">${comune}</div></div>
-            <div class="item-subtitle" style="margin-top:6px; color:#555;"><strong>${t('coverage')}:</strong> ${paesi}</div>
+            <div class="item-subtitle" style="margin-top:6px; color:#555;"><strong>${window.t('coverage')}:</strong> ${paesi}</div>
             <div class="card-actions">
                 <a href="tel:${n.Numero}" class="action-btn btn-phone" onclick="event.stopPropagation()">
-                    <span style="font-size:1.2rem; margin-right:5px;">📞</span> ${t('btn_call')} ${n.Numero}
+                    <span style="font-size:1.2rem; margin-right:5px;">📞</span> ${window.t('btn_call')} ${n.Numero}
                 </a>
             </div>
         </div>
     </div>`;
 };
 
-const attrazioniRenderer = (item) => {
-    const titolo = dbCol(item, 'Attrazioni') || 'Attrazione';
-    const paese = dbCol(item, 'Paese');
+// RENDERER ATTRAZIONI
+window.attrazioniRenderer = (item) => {
+    const titolo = window.dbCol(item, 'Attrazioni') || 'Attrazione';
+    const paese = window.dbCol(item, 'Paese');
     const myId = (item._tempIndex !== undefined) ? item._tempIndex : 0;
-    const diff = dbCol(item, 'Difficoltà Accesso') || 'Accessibile';
+    const diff = window.dbCol(item, 'Difficoltà Accesso') || 'Accessibile';
     const isHard = diff.toLowerCase().match(/alta|hard|difficile|schwer|difícil/); 
     const diffStyle = isHard ? 'background:#ffebee; color:#c62828;' : 'background:#e8f5e9; color:#2e7d32;';
 
@@ -126,7 +136,7 @@ const attrazioniRenderer = (item) => {
             <div class="item-subtitle" style="margin-bottom: 8px;">📍 ${paese}</div>
             <div class="monument-meta" style="display:flex; gap:8px;">
                 <span class="meta-badge" style="${diffStyle} padding:2px 8px; border-radius:4px; font-size:0.75rem;">${diff}</span>
-                <span class="meta-badge badge-time" style="background:#f5f5f5; padding:2px 8px; border-radius:4px; font-size:0.75rem;">⏱ ${item["Tempo Visita (min)"] || '--'} ${t('visit_time')}</span>
+                <span class="meta-badge badge-time" style="background:#f5f5f5; padding:2px 8px; border-radius:4px; font-size:0.75rem;">⏱ ${item["Tempo Visita (min)"] || '--'} ${window.t('visit_time')}</span>
             </div>
         </div>
         <div class="item-arrow" style="margin-top: auto; margin-bottom: auto;">➜</div>
