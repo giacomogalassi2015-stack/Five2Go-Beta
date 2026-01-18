@@ -261,32 +261,27 @@ main, #app-content {
     transform: scale(0.9); 
     background: rgba(255,255,255,0.4); 
 }
-
 /* ============================================================
-   STILE PULITO (Lo swipe è gestito da JS)
+   STILE PULITO (Il layout è gestito da JS)
    ============================================================ */
 
-/* Rimuove solo la barra di scorrimento visiva, lasciando lo scroll */
-.sub-nav-tabs, .filter-bar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-}
-.sub-nav-tabs::-webkit-scrollbar, .filter-bar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari */
-}
+/* Nasconde solo la barra di scorrimento visiva (brutta), lasciando lo scroll attivo */
+.sub-nav-tabs::-webkit-scrollbar, .filter-bar::-webkit-scrollbar { display: none; }
+.sub-nav-tabs, .filter-bar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Spaziature generali per la barra filtri (quella che appare/scompare) */
+/* REGOLE PER LA BARRA FILTRI (Quella che appare sotto) */
+/* Questa non è gestita dal JS "Arma Fine di Mondo", quindi le serve il layout CSS */
 .filter-bar {
-    display: flex; /* Questa la gestisce CSS */
+    display: flex;
     overflow-x: auto;
     flex-wrap: nowrap;
     gap: 10px;
     padding: 5px 20px 10px 20px;
 }
 
-/* --- DESIGN DEI BOTTONI --- */
+/* --- ESTETICA BOTTONI (Solo colori e dimensioni) --- */
 
-/* Base comune */
+/* Base Comune */
 .sub-nav-item, .filter-chip {
     border: none;
     background: white; 
@@ -298,20 +293,21 @@ main, #app-content {
 
 /* 1. Tasti SOPRA (Categorie) - GRANDI */
 .sub-nav-item {
-    padding: 12px 24px;      /* Grandi */
-    font-size: 0.95rem;      /* Testo leggibile */
-    font-weight: 700;        /* Grassetto */
+    /* Il JS gestisce il posizionamento, qui diamo solo la forma */
+    padding: 12px 24px;      
+    font-size: 0.95rem;      
+    font-weight: 700;        
     border-radius: 50px;
-    margin-right: 10px;      /* Spazio tra loro */
+    /* Niente margin-right qui, usiamo il gap del contenitore */
 }
 
 /* 2. Tasti SOTTO (Filtri) - PICCOLI */
 .filter-chip {
-    padding: 7px 14px;       /* Compatti */
-    font-size: 0.80rem;      /* Testo piccolo */
+    padding: 7px 14px;       
+    font-size: 0.80rem;      
     font-weight: 600;
     border-radius: 50px;
-    flex: 0 0 auto;          /* Non schiacciarti */
+    flex: 0 0 auto;          
 }
 
 /* Stato ATTIVO (Turchese) */

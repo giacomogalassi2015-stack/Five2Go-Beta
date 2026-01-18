@@ -144,22 +144,21 @@ async function renderHome() {
     content.innerHTML = html + '</div>';
 }
 
-// --- 3. SOTTO-MENU E CARICAMENTO DATI ---
 function renderSubMenu(options, defaultTable) {
     // Genera tab e bottone Filtra
-    // NOTA: Ho inserito gli stili critici direttamente qui (inline) per forzare lo scroll
+    // ARMA FINE DI MONDO: Stili inline forzati con !important per vincere su qualsiasi CSS esterno
     let menuHtml = `
-    <div class="sub-nav-bar" style="display: flex; align-items: center; width: 100%; overflow: hidden; padding-right: 15px; margin-bottom: 10px;">
+    <div class="sub-nav-bar" style="display: flex !important; width: 100% !important; align-items: center !important; padding-right: 10px !important; margin-bottom: 10px !important; overflow: hidden !important;">
         
-        <div class="sub-nav-tabs" style="display: flex; overflow-x: auto; gap: 10px; flex: 1; min-width: 0; padding-bottom: 5px; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+        <div class="sub-nav-tabs" style="display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; flex: 1 !important; min-width: 0 !important; gap: 10px !important; padding-bottom: 5px !important; -webkit-overflow-scrolling: touch !important; scrollbar-width: none !important;">
             ${options.map(opt => `
-                <button class="sub-nav-item" onclick="loadTableData('${opt.table}', this)" style="flex: 0 0 auto;">
+                <button class="sub-nav-item" onclick="loadTableData('${opt.table}', this)" style="flex: 0 0 auto !important; white-space: nowrap !important;">
                     ${opt.label}
                 </button>
             `).join('')}
         </div>
 
-        <button id="filter-toggle-btn" style="display: none; margin-left: 10px; background: #f0f0f0; border: none; border-radius: 50px; padding: 8px 16px; font-size: 0.8rem; font-weight: bold; color: #333; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
+        <button id="filter-toggle-btn" style="display: none; margin-left: 10px; flex-shrink: 0 !important; background: #f0f0f0; border: none; border-radius: 50px; padding: 8px 16px; font-size: 0.8rem; font-weight: bold; color: #333; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
             FILTRA ⚡
         </button>
 
@@ -170,7 +169,6 @@ function renderSubMenu(options, defaultTable) {
     const firstBtn = content.querySelector('.sub-nav-item');
     if (firstBtn) loadTableData(defaultTable, firstBtn);
 }
-
 // Funzione globale per essere chiamata dall'HTML
 window.loadTableData = async function(tableName, btnEl) {
     const subContent = document.getElementById('sub-content');
