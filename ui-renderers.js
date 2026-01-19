@@ -286,12 +286,50 @@ window.openModal = async function(type, payload) {
     }
     
     // ... Altri tipi (trail, attrazione) ...
-    else if (type === 'trail') {
+   else if (type === 'trail') {
         const titolo = window.dbCol(payload, 'Paesi');
         const dist = payload.Distanza || '--';
         const dura = payload.Durata || '--';
         const desc = window.dbCol(payload, 'Descrizione') || '';
-        contentHtml = `<div style="padding:20px;"><h2 style="text-align:center;">${titolo}</h2><div style="display:flex; justify-content:space-between; margin:20px 0;"><div><strong>Distanza</strong><br>${dist}</div><div><strong>Tempo</strong><br>${dura}</div></div><p>${desc}</p></div>`;
+        
+        // Recuperiamo i nuovi dati (Usa dbCol se sono campi traducibili, altrimenti payload.Campo)
+        const tag = window.dbCol(payload, 'Tag') || '--'; 
+        const extra = window.dbCol(payload, 'Extra') || '--';
+
+        contentHtml = `
+        <div style="padding:20px;">
+            <h2 style="text-align:center; margin-bottom:20px;">${titolo}</h2>
+            
+            <div style="display:flex; justify-content:space-between; text-align:center; gap:15px; margin-bottom:25px;">
+                
+                <div style="flex:1; background:#f9f9f9; padding:15px 10px; border-radius:12px;">
+                    <div style="margin-bottom:15px;">
+                        <div style="font-size:1.5rem;">📏</div>
+                        <strong>Distanza</strong><br>
+                        ${dist}
+                    </div>
+                    <div style="border-top:1px solid #e0e0e0; padding-top:10px;">
+                        <strong>Tag</strong><br>
+                        <span style="color:#666; font-size:0.9rem;">${tag}</span>
+                    </div>
+                </div>
+
+                <div style="flex:1; background:#f9f9f9; padding:15px 10px; border-radius:12px;">
+                    <div style="margin-bottom:15px;">
+                        <div style="font-size:1.5rem;">⏱️</div>
+                        <strong>Tempo</strong><br>
+                        ${dura}
+                    </div>
+                    <div style="border-top:1px solid #e0e0e0; padding-top:10px;">
+                        <strong>Extra</strong><br>
+                        <span style="color:#666; font-size:0.9rem;">${extra}</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <p style="line-height:1.6; color:#333;">${desc}</p>
+        </div>`;
     }
     else if (type === 'restaurant') {
         const item = JSON.parse(decodeURIComponent(payload)); // Decodifica l'oggetto passato dal renderer
@@ -425,4 +463,21 @@ window.setBusStop = function(selectId, value) {
         select.style.backgroundColor = "#fff3cd"; 
         setTimeout(() => select.style.backgroundColor = "white", 500);
     }
+};
+// Renderer per i Prodotti (Risolve sfarfallio e accenti)
+window.prodottoRenderer = (p) => {
+    const titolo = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
+    const imgUrl = window.getSmartUrl(titolo, '', 800);
+    
+    // Impacchettiamo l'oggetto in modo sicuro per evitare che gli accenti rompano l'HTML
+    const safeObj = encodeURIComponent(JSON.stringify(p));
+
+    return `
+    <div class="village-card animate-fade" 
+         style="background-image: url('${imgUrl}'); background-color: #f0f0f0;" 
+         onclick="openModal('product', '${safeObj}')">
+         <div class="card-title-overlay">
+            ${p.Prodotti || 'Senza Nome'}
+        </div>
+    </div>`;
 };

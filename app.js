@@ -220,39 +220,14 @@ window.loadTableData = async function(tableName, btnEl) {
         }); 
         renderGenericFilterableView(data, 'Comune', subContent, window.numeriUtiliRenderer);
         return;
-    };
+    }
 
  // ... codice precedente ...
-
-    if (tableName === 'Prodotti') {
-        // 1. Apriamo il contenitore GRIGLIA (come nei Borghi)
+else if (tableName === 'Prodotti') {
         html = '<div class="grid-container animate-fade">'; 
-
         data.forEach(p => {
-            // Recuperiamo Titolo e Immagine
-            const titolo = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome'); 
-            
-            // NOTA: Ho aumentato la qualità a 600/800 perché ora l'immagine è uno sfondo grande
-            const imgUrl = window.getSmartUrl(p.Prodotti || p.Nome, '', 800); 
-            
-            // Prepariamo l'oggetto per il click (lasciamo la logica del modal prodotto)
-            // Attenzione agli apici nel JSON per evitare errori
-            const safeObj = JSON.stringify(p).replace(/'/g, "\\'"); 
-
-            // 2. Usiamo la classe "village-card" invece di "card-product"
-            html += `
-            <div class="village-card" 
-                 style="background-image: url('${imgUrl}')" 
-                 onclick='openModal("product", ${safeObj})'>
-                
-                <div class="card-title-overlay">
-                    ${titolo}
-                </div>
-            
-            </div>`;
+            html += window.prodottoRenderer(p);
         });
-
-        // 3. Chiudiamo il contenitore
         html += '</div>';
     }
 
@@ -360,46 +335,67 @@ document.addEventListener('DOMContentLoaded', () => {
     switchView('home');      
 });
 /* ============================================================
-   SWIPE TRA LE PAGINE (Cambio Tab automatico)
+   SWIPE TRA LE PAGINE (Intelligente)
    ============================================================ */
 
-const minSwipeDistance = 60; // Sensibilità (più alto = devi strisciare di più)
+const minSwipeDistance = 60; 
 let touchStartX = 0;
 let touchEndX = 0;
 let touchStartY = 0;
 let touchEndY = 0;
+let isSwipeIgnored = false; // Nuova variabile di controllo
 
 const contentArea = document.getElementById('app-content');
 
-// 1. Inizio tocco
+// 1. Inizio tocco: Verifichiamo COSA stiamo toccando
 contentArea.addEventListener('touchstart', e => {
+    // A. Se stiamo toccando una mappa (Leaflet usa la classe .leaflet-container), ignoriamo lo swipe
+    if (e.target.closest('.leaflet-container') || e.target.closest('.map-container') || e.target.closest('#bus-map')) {
+        isSwipeIgnored = true;
+        return;
+    }
+
+    // B. Se stiamo toccando la barra dei tab (per scorrerla), ignoriamo lo swipe pagina
+    if (e.target.closest('.sub-nav-tabs')) {
+        isSwipeIgnored = true;
+        return;
+    }
+
+    // Se non è una zona vietata, registriamo le coordinate
+    isSwipeIgnored = false;
     touchStartX = e.changedTouches[0].screenX;
     touchStartY = e.changedTouches[0].screenY;
 }, {passive: true});
 
 // 2. Fine tocco
 contentArea.addEventListener('touchend', e => {
+    // Se il tocco è partito su una mappa, non facciamo nulla
+    if (isSwipeIgnored) return;
+
     touchEndX = e.changedTouches[0].screenX;
     touchEndY = e.changedTouches[0].screenY;
     handlePageSwipe();
 }, {passive: true});
 
 function handlePageSwipe() {
-    // Calcoliamo quanto ti sei mosso in orizzontale e verticale
+    // Reset immediato
+    if (isSwipeIgnored) return;
+
     const xDiff = touchEndX - touchStartX;
     const yDiff = touchEndY - touchStartY;
 
-    // Se l'utente sta scorrendo in giù (scroll pagina), ignoriamo lo swipe laterale
+    // 1. CONTROLLO VERTICALE RIGOROSO
+    // Se lo spostamento verticale è maggiore di quello orizzontale,
+    // significa che l'utente sta scrollando la pagina -> STOP.
     if (Math.abs(yDiff) > Math.abs(xDiff)) return;
 
-    // Se il movimento è troppo corto, ignoriamo
+    // 2. CONTROLLO DISTANZA MINIMA
     if (Math.abs(xDiff) < minSwipeDistance) return;
 
-    // Troviamo i bottoni (Tab) attivi
+    // 3. RECUPERO TABS
     const tabs = document.querySelectorAll('.sub-nav-item');
     if (tabs.length === 0) return;
 
-    // Troviamo quale è attivo ora
     let activeIndex = -1;
     tabs.forEach((tab, index) => {
         if (tab.classList.contains('active-sub')) activeIndex = index;
@@ -407,45 +403,21 @@ function handlePageSwipe() {
 
     if (activeIndex === -1) return;
 
-    // LOGICA CAMBIO PAGINA
+    // 4. ESECUZIONE CAMBIO PAGINA
     if (xDiff < 0) {
-        // Swipe Sinistra (Next)
+        // Swipe verso Sinistra (Vai avanti)
         if (activeIndex < tabs.length - 1) {
-            animateTransition('left', () => tabs[activeIndex + 1].click());
+            window.utils.animateTransition('left', () => tabs[activeIndex + 1].click());
         }
     } else {
-        // Swipe Destra (Prev)
+        // Swipe verso Destra (Torna indietro)
         if (activeIndex > 0) {
-            animateTransition('right', () => tabs[activeIndex - 1].click());
+            window.utils.animateTransition('right', () => tabs[activeIndex - 1].click());
         }
     }
 }
 
-// Piccolo effetto visivo (Opzionale, ma carino)
-function animateTransition(direction, callback) {
-    const container = document.getElementById('sub-content');
-    if(!container) { callback(); return; }
-
-    // Dissolvenza veloce prima di cambiare
-    container.style.transition = 'transform 0.15s, opacity 0.15s';
-    container.style.opacity = '0';
-    container.style.transform = direction === 'left' ? 'translateX(-20px)' : 'translateX(20px)';
-
-    setTimeout(() => {
-        callback(); // Carica i nuovi dati
-        // Reset posizione per la nuova pagina
-        setTimeout(() => {
-            container.style.transition = 'none';
-            container.style.transform = direction === 'left' ? 'translateX(20px)' : 'translateX(-20px)';
-            
-            setTimeout(() => {
-                container.style.transition = 'transform 0.15s, opacity 0.15s';
-                container.style.opacity = '1';
-                container.style.transform = 'translateX(0)';
-            }, 10);
-        }, 50);
-    }, 150);
-}/* ============================================================
+/* ============================================================
    NUOVA GRIGLIA SERVIZI (Misto: Trasporti DB + Card Statiche)
    ============================================================ */
 async function renderServicesGrid() {
