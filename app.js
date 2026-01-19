@@ -335,67 +335,62 @@ document.addEventListener('DOMContentLoaded', () => {
     switchView('home');      
 });
 /* ============================================================
-   SWIPE TRA LE PAGINE (Intelligente)
+   SWIPE TRA LE PAGINE (Fixed & Global)
    ============================================================ */
 
-const minSwipeDistance = 60; 
+const minSwipeDistance = 50; 
+const maxVerticalDistance = 100; // Tolleranza verticale
 let touchStartX = 0;
-let touchEndX = 0;
 let touchStartY = 0;
+let touchEndX = 0;
 let touchEndY = 0;
-let isSwipeIgnored = false; // Nuova variabile di controllo
 
-const contentArea = document.getElementById('app-content');
-
-// 1. Inizio tocco: Verifichiamo COSA stiamo toccando
-contentArea.addEventListener('touchstart', e => {
-    // A. Se stiamo toccando una mappa (Leaflet usa la classe .leaflet-container), ignoriamo lo swipe
-    if (e.target.closest('.leaflet-container') || e.target.closest('.map-container') || e.target.closest('#bus-map')) {
-        isSwipeIgnored = true;
+// Ascoltiamo su DOCUMENT per essere sicuri di prendere il tocco ovunque
+document.addEventListener('touchstart', e => {
+    // 1. Ignoriamo se stiamo toccando una mappa o uno slider interno
+    if (e.target.closest('.leaflet-container') || 
+        e.target.closest('.map-container') || 
+        e.target.closest('#bus-map') || 
+        e.target.closest('.sub-nav-tabs')) {
+        // console.log("Swipe ignorato: zona protetta");
+        touchStartX = null; // Resetta
         return;
     }
 
-    // B. Se stiamo toccando la barra dei tab (per scorrerla), ignoriamo lo swipe pagina
-    if (e.target.closest('.sub-nav-tabs')) {
-        isSwipeIgnored = true;
-        return;
-    }
-
-    // Se non è una zona vietata, registriamo le coordinate
-    isSwipeIgnored = false;
-    touchStartX = e.changedTouches[0].screenX;
-    touchStartY = e.changedTouches[0].screenY;
+    touchStartX = e.changedTouches[0].clientX;
+    touchStartY = e.changedTouches[0].clientY;
 }, {passive: true});
 
-// 2. Fine tocco
-contentArea.addEventListener('touchend', e => {
-    // Se il tocco è partito su una mappa, non facciamo nulla
-    if (isSwipeIgnored) return;
+document.addEventListener('touchend', e => {
+    if (touchStartX === null) return; // Era una zona ignorata
 
-    touchEndX = e.changedTouches[0].screenX;
-    touchEndY = e.changedTouches[0].screenY;
+    touchEndX = e.changedTouches[0].clientX;
+    touchEndY = e.changedTouches[0].clientY;
+    
     handlePageSwipe();
 }, {passive: true});
 
 function handlePageSwipe() {
-    // Reset immediato
-    if (isSwipeIgnored) return;
-
     const xDiff = touchEndX - touchStartX;
     const yDiff = touchEndY - touchStartY;
+    
+    // Debug (guarda la console se non va)
+    // console.log(`Swipe X: ${xDiff}, Swipe Y: ${yDiff}`);
 
-    // 1. CONTROLLO VERTICALE RIGOROSO
-    // Se lo spostamento verticale è maggiore di quello orizzontale,
-    // significa che l'utente sta scrollando la pagina -> STOP.
-    if (Math.abs(yDiff) > Math.abs(xDiff)) return;
-
-    // 2. CONTROLLO DISTANZA MINIMA
+    // 1. Se il movimento orizzontale è troppo corto, esci
     if (Math.abs(xDiff) < minSwipeDistance) return;
 
-    // 3. RECUPERO TABS
+    // 2. Se il movimento verticale è troppo ampio, è uno scroll -> esci
+    if (Math.abs(yDiff) > maxVerticalDistance) return;
+
+    // 3. Se ci siamo mossi più in verticale che in orizzontale -> esci
+    if (Math.abs(yDiff) > Math.abs(xDiff)) return;
+
+    // 4. Logica cambio tab
     const tabs = document.querySelectorAll('.sub-nav-item');
     if (tabs.length === 0) return;
 
+    // Trova tab attivo
     let activeIndex = -1;
     tabs.forEach((tab, index) => {
         if (tab.classList.contains('active-sub')) activeIndex = index;
@@ -403,20 +398,31 @@ function handlePageSwipe() {
 
     if (activeIndex === -1) return;
 
-    // 4. ESECUZIONE CAMBIO PAGINA
     if (xDiff < 0) {
-        // Swipe verso Sinistra (Vai avanti)
+        // Swipe Sinistra (Next)
         if (activeIndex < tabs.length - 1) {
-            window.utils.animateTransition('left', () => tabs[activeIndex + 1].click());
+            // Verifica che window.utils esista, altrimenti clicca diretto
+            if (window.utils && window.utils.animateTransition) {
+                window.utils.animateTransition('left', () => tabs[activeIndex + 1].click());
+            } else {
+                tabs[activeIndex + 1].click();
+            }
         }
     } else {
-        // Swipe verso Destra (Torna indietro)
+        // Swipe Destra (Prev)
         if (activeIndex > 0) {
-            window.utils.animateTransition('right', () => tabs[activeIndex - 1].click());
+            if (window.utils && window.utils.animateTransition) {
+                window.utils.animateTransition('right', () => tabs[activeIndex - 1].click());
+            } else {
+                tabs[activeIndex - 1].click();
+            }
         }
     }
+    
+    // Reset
+    touchStartX = null;
+    touchStartY = null;
 }
-
 /* ============================================================
    NUOVA GRIGLIA SERVIZI (Misto: Trasporti DB + Card Statiche)
    ============================================================ */
