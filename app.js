@@ -43,16 +43,7 @@ function setupHeaderElements() {
         </div>`;
     actionsContainer.appendChild(langSelector);
 
-    // --- Bottone Share (Destra) ---
-    const shareBtn = document.createElement('span');
-    shareBtn.className = 'material-icons header-share-right animate-fade'; 
-    shareBtn.id = 'header-btn-share'; 
-    shareBtn.innerText = 'share'; 
-    shareBtn.onclick = window.shareApp; 
-    Object.assign(shareBtn.style, { position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', color: '#000000', cursor: 'pointer', fontSize: '26px', zIndex: '20' });
-
-    header.appendChild(actionsContainer);
-    header.appendChild(shareBtn);
+  
 }
 
 function updateNavBar() {
@@ -110,26 +101,7 @@ window.switchView = async function(view, el) {
          const homeBtn = document.querySelector('.nav-item[onclick*="home"]');
          if(homeBtn) homeBtn.classList.add('active');
     }
-    
-    // --- GESTIONE HEADER ---
-    // 1. Applica la logica di visibilità bottoni (Share/Lang)
-    setupHeaderElements();
-    
-    // 2. Il titolo centrale c'è SEMPRE (anche in Home ora)
-    if (viewTitle) viewTitle.style.display = 'block';
-
-    // 3. Imposta il testo del titolo
-    const titleMap = { 
-        'home': 'home_title',  // "Benvenuto"
-        'cibo': 'food_title', 
-        'outdoor': 'outdoor_title', 
-        'servizi': 'services_title', 
-        'mappe_monumenti': 'maps_title' 
-    };
-    if(titleMap[view] && viewTitle) viewTitle.innerText = window.t(titleMap[view]);
-
-    // Loading State
-    content.innerHTML = `<div class="loader">${window.t('loading')}</div>`;
+  
 
     // Routing Viste
     try {

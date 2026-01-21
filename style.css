@@ -461,3 +461,6 @@ main, #app-content {
 @keyframes spin { 100% { transform: rotate(360deg); } }
 @keyframes popIn { 0% { opacity: 0; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
 input[type="date"], input[type="time"] { display: block; min-height: 45px; }
+header {
+  display: none;
+}

@@ -126,13 +126,6 @@ window.getSmartUrl = function(name, folder = '', width = 600) {
     return `${CLOUDINARY_BASE_URL}/w_${width},c_fill,f_auto,q_auto:good,fl_progressive/${folderPath}${safeName}`;
 };
 
-window.shareApp = async function() {
-    try {
-        if (navigator.share) await navigator.share({ title: '5 Terre App', text: 'Guarda questa guida!', url: window.location.href });
-        else { navigator.clipboard.writeText(window.location.href); alert("Link copiato!"); }
-    
-    } catch (err) { console.log("Errore:", err); }
-};
 
 // =========================================================
 // 6. MOTORE DI RICERCA BUS (Cervello)
