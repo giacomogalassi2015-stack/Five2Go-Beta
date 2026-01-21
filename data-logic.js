@@ -113,10 +113,18 @@ window.t = function(key) {
 };
 
 window.dbCol = function(item, field) {
-    if (!item) return '';
-    if (window.currentLang === 'it') return item[field]; 
-    const translatedField = `${field}_${window.currentLang}`; 
-    return (item[translatedField] && item[translatedField].trim() !== '') ? item[translatedField] : item[field];
+    if (!item || !item[field]) return '';
+
+    let value = item[field];
+
+    // Se Supabase restituisce il JSONB già come oggetto
+    if (typeof value === 'object' && value !== null) {
+        // Cerca la lingua corrente, altrimenti fallback su italiano, altrimenti stringa vuota
+        return value[window.currentLang] || value['it'] || '';
+    }
+
+    // Se è ancora una stringa (es. vecchi dati o errore di parsing), la restituisce così com'è
+    return value;
 };
 
 window.getSmartUrl = function(name, folder = '', width = 600) {
@@ -126,8 +134,44 @@ window.getSmartUrl = function(name, folder = '', width = 600) {
     return `${CLOUDINARY_BASE_URL}/w_${width},c_fill,f_auto,q_auto:good,fl_progressive/${folderPath}${safeName}`;
 };
 
+window.changeLanguage = function(langCode) {
+    console.log("Cambio lingua a:", langCode);
+    
+    // 1. Aggiorna la variabile globale
+    window.currentLang = langCode;
+    
+    // (Opzionale) Salva la scelta nel browser per la prossima volta
+    localStorage.setItem('user_lang', langCode);
 
-// =========================================================
+    // 2. Aggiorna i testi statici dell'interfaccia (Titoli, Bottoni)
+    updateStaticInterface();
+
+    // 3. Ricarica la vista corrente (Forza il re-render delle card)
+    // Assumo che tu abbia una funzione che renderizza la pagina, es: renderApp() o loadData()
+    // Se usi una logica basata su router, ricarica la pagina corrente:
+    if (typeof renderCategory === 'function') {
+        // Esempio: se sei nella vista attrazioni, ricaricala
+        const currentCategory = window.currentCategory || 'attrazioni'; // O la tua variabile di stato
+        renderCategory(currentCategory); 
+    } else {
+        // Fallback brutale se non hai una funzione di render centralizzata
+        location.reload(); 
+    }
+};
+
+// Funzione helper per aggiornare i testi fissi (Menu, Home Title, ecc.)
+function updateStaticInterface() {
+    // Esempio: Aggiorna il titolo della Home
+    const homeTitleEl = document.getElementById('home-title'); 
+    if(homeTitleEl) homeTitleEl.textContent = window.t('home_title');
+
+    // Esempio: Aggiorna i bottoni della navbar
+    // Suggerimento: Aggiungi id="nav-food" ai tuoi elementi HTML per trovarli facilmente
+    const navFood = document.getElementById('nav-food');
+    if(navFood) navFood.textContent = window.t('nav_food');
+    
+    // Aggiorna tutti gli elementi che usano window.t() al volo se necessario
+}
 // 6. MOTORE DI RICERCA BUS (Cervello)
 // =========================================================
 window.eseguiRicercaBus = async function() {
@@ -186,6 +230,11 @@ window.eseguiRicercaBus = async function() {
                 <strong>Nessuna corsa trovata</strong><br>
                 <small>Prova a cambiare orario.</small>
             </div>`; 
+        
+        // (Opzionale) Scrolla anche se non trova nulla per mostrare l'errore
+        setTimeout(() => {
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
         return; 
     }
 
@@ -207,4 +256,12 @@ window.eseguiRicercaBus = async function() {
             <span style="color:#666;">➜ ${b.ora_arrivo.slice(0,5)}</span>
         </div>
     `).join('');
+
+    // === 3. NUOVO CODICE PER AUTOSCROLL ===
+    setTimeout(() => {
+        resultsContainer.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' // Cerca di mettere l'inizio del box in alto
+        });
+    }, 150); // Ritardo leggero per permettere al browser di disegnare il box
 };
