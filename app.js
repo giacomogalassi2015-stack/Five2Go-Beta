@@ -251,85 +251,6 @@ window.loadTableData = async function(tableName, btnEl) {
     }
 };
 
-// --- LOGICA FILTRI ---
-function renderGenericFilterableView(allData, filterKey, container, cardRenderer) {
-    container.innerHTML = `<div class="filter-bar animate-fade" id="dynamic-filters" style="display:none;"></div><div class="list-container animate-fade" id="dynamic-list"></div>`;
-    
-    const filterBar = container.querySelector('#dynamic-filters');
-    const listContainer = container.querySelector('#dynamic-list');
-    const filterBtn = document.getElementById('filter-toggle-btn');
-
-    if (filterBtn) {
-        filterBtn.style.display = 'block'; 
-        const newBtn = filterBtn.cloneNode(true);
-        filterBtn.parentNode.replaceChild(newBtn, filterBtn);
-        
-        newBtn.onclick = () => {
-            const isHidden = filterBar.style.display === 'none';
-            filterBar.style.display = isHidden ? 'flex' : 'none';
-            newBtn.style.background = isHidden ? '#e0e0e0' : '#f0f0f0'; 
-        };
-    }
-
-    let rawValues = allData.map(item => item[filterKey] ? item[filterKey].trim() : null).filter(x => x);
-    let tagsRaw = [...new Set(rawValues)];
-    
-    const customOrder = ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso", "Facile", "Media", "Difficile", "Turistico", "Escursionistico", "Esperto"];
-    if (!tagsRaw.includes('Tutti')) tagsRaw.unshift('Tutti');
-
-    const uniqueTags = tagsRaw.sort((a, b) => {
-        const indexA = customOrder.indexOf(a), indexB = customOrder.indexOf(b);
-        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-        if (indexA !== -1) return -1;
-        if (indexB !== -1) return 1;
-        return a.localeCompare(b);
-    });
-
-    uniqueTags.forEach(tag => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-chip';
-        btn.innerText = tag;
-        if (tag === 'Tutti') btn.classList.add('active-filter');
-        
-        btn.onclick = () => {
-            filterBar.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active-filter'));
-            btn.classList.add('active-filter');
-            
-            const filtered = tag === 'Tutti' ? allData : allData.filter(item => {
-                const valDB = item[filterKey] ? item[filterKey].trim() : '';
-                return (valDB === tag) || (item.Nome && (item.Nome.includes('112') || item.Nome.toLowerCase().includes('emergenza')));
-            });
-            updateList(filtered);
-        };
-        filterBar.appendChild(btn);
-    });
-
-    function updateList(items) {
-        if (!items || items.length === 0) { listContainer.innerHTML = `<p style="text-align:center; padding:20px; color:#999;">${window.t('no_results')}</p>`; return; }
-        listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
-        if (typeof initPendingMaps === 'function') setTimeout(() => initPendingMaps(), 100);
-    }
-    
-    updateList(allData);
-}
-
-// --- 6. EVENT LISTENERS E AVVIO ---
-document.addEventListener('touchmove', function(event) { if (event.scale !== 1) event.preventDefault(); }, { passive: false });
-let lastTouchEnd = 0;
-document.addEventListener('touchend', function(event) {
-    const now = (new Date()).getTime();
-    if (now - lastTouchEnd <= 300) event.preventDefault();
-    lastTouchEnd = now;
-}, false);
-document.addEventListener('touchstart', function(event) { if (event.touches.length > 1) event.preventDefault(); }, { passive: false });
-
-document.addEventListener('DOMContentLoaded', () => {
-    window.currentViewName = 'home'; 
-    setupHeaderElements(); // Avvia header con configurazione Home
-    updateNavBar(); 
-    switchView('home');
-});
-
 // ... (Resto funzioni swipe, servizi grid, ecc... invariate) ...
 /* ============================================================
    SWIPE TRA LE PAGINE (Fixed & Global)
@@ -423,3 +344,71 @@ window.toggleTicketInfo = function() {
     const box = document.getElementById('ticket-info-box');
     if (box) { box.style.display = (box.style.display === 'none') ? 'block' : 'none'; }
 };
+
+// --- LOGICA FILTRI ---
+function renderGenericFilterableView(allData, filterKey, container, cardRenderer) {
+    container.innerHTML = `<div class="filter-bar animate-fade" id="dynamic-filters" style="display:none;"></div><div class="list-container animate-fade" id="dynamic-list"></div>`;
+    
+    const filterBar = container.querySelector('#dynamic-filters');
+    const listContainer = container.querySelector('#dynamic-list');
+    const filterBtn = document.getElementById('filter-toggle-btn');
+
+    if (filterBtn) {
+        filterBtn.style.display = 'block'; 
+        const newBtn = filterBtn.cloneNode(true);
+        filterBtn.parentNode.replaceChild(newBtn, filterBtn);
+        
+        newBtn.onclick = () => {
+            const isHidden = filterBar.style.display === 'none';
+            filterBar.style.display = isHidden ? 'flex' : 'none';
+            newBtn.style.background = isHidden ? '#e0e0e0' : '#f0f0f0'; 
+        };
+    }
+
+    let rawValues = allData.map(item => item[filterKey] ? item[filterKey].trim() : null).filter(x => x);
+    let tagsRaw = [...new Set(rawValues)];
+    
+    const customOrder = ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso", "Facile", "Media", "Difficile", "Turistico", "Escursionistico", "Esperto"];
+    if (!tagsRaw.includes('Tutti')) tagsRaw.unshift('Tutti');
+
+    const uniqueTags = tagsRaw.sort((a, b) => {
+        const indexA = customOrder.indexOf(a), indexB = customOrder.indexOf(b);
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        return a.localeCompare(b);
+    });
+
+    uniqueTags.forEach(tag => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-chip';
+        btn.innerText = tag;
+        if (tag === 'Tutti') btn.classList.add('active-filter');
+        
+        btn.onclick = () => {
+            filterBar.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active-filter'));
+            btn.classList.add('active-filter');
+            
+            const filtered = tag === 'Tutti' ? allData : allData.filter(item => {
+                const valDB = item[filterKey] ? item[filterKey].trim() : '';
+                return (valDB === tag) || (item.Nome && (item.Nome.includes('112') || item.Nome.toLowerCase().includes('emergenza')));
+            });
+            updateList(filtered);
+        };
+        filterBar.appendChild(btn);
+    });
+
+    function updateList(items) {
+        if (!items || items.length === 0) { listContainer.innerHTML = `<p style="text-align:center; padding:20px; color:#999;">${window.t('no_results')}</p>`; return; }
+        listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
+        if (typeof initPendingMaps === 'function') setTimeout(() => initPendingMaps(), 100);
+    }
+    
+    updateList(allData);
+}
+document.addEventListener('DOMContentLoaded', () => {
+    window.currentViewName = 'home'; 
+    setupHeaderElements(); // Avvia header con configurazione Home
+    updateNavBar(); 
+    switchView('home');
+});
