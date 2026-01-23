@@ -223,7 +223,7 @@ main, #app-content {
 
     /* --- POSIZIONAMENTO --- */
     position: absolute; /* Lo sgancia dal resto del contenuto */
-    top: 50px;          /* Distanza dall'alto (modifica questo valore se lo vuoi più su o giù) */
+    top: 40px;          /* Distanza dall'alto (modifica questo valore se lo vuoi più su o giù) */
     left: 0;
     width: 100%;        /* Occupa tutta la larghezza */
     text-align: center; /* Centra il testo */
