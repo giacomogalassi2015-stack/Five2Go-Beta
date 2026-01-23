@@ -442,10 +442,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateNavBar(); 
     switchView('home');
 });
-// --- FUNZIONE TRENI (Sito Ufficiale HTTPS) ---
-window.apriMonitorMobile = function() {
-    // Puntiamo alla Home ufficiale sicura. 
-    // Si adatta al telefono e permette di cercare "Riomaggiore", "Monterosso", ecc.
-    // Non da errore perché è il sito principale.
-    window.open('https://www.viaggiatreno.it/', '_blank');
+// --- FUNZIONE SITO TRENITALIA ---
+window.apriTrenitalia = function() {
+    // Apre il sito ufficiale Trenitalia.
+    // Perfetto per: Acquistare biglietti, vedere prezzi e orari futuri.
+    window.open('https://www.trenitalia.com', '_blank');
 };

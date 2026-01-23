@@ -615,9 +615,9 @@ window.toggleBusMap = function() {
 
 window.trainSearchRenderer = () => {
     return `
-    <div class="bus-search-box animate-fade" style="border-top: 4px solid #d32f2f; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); color: white; border-radius: 20px;">
+    <div class="bus-search-box animate-fade" style="border-top: 4px solid #c0392b; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); color: white; border-radius: 20px;">
         <div class="bus-title">
-            <span class="material-icons" style="background: rgba(255,255,255,0.1); color:#ff5252;">train</span> 
+            <span class="material-icons" style="background: rgba(255, 255, 255, 0.3); color:#e74c3c;">train</span> 
             Cinque Terre Express
         </div>
         
@@ -626,13 +626,13 @@ window.trainSearchRenderer = () => {
                 Il treno è il mezzo più veloce. Corse frequenti ogni 15-20 minuti tra i borghi.
             </p>
 
-            <div style="background: rgba(255,255,255,0.05); border-radius:12px; padding:15px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.1);">
+            <div style="background: rgba(255, 255, 255, 0.19); border-radius:12px; padding:15px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.1);">
                 <h4 style="margin:0 0 10px 0; font-size:0.8rem; color:#aaa; text-transform:uppercase;">⏱️ Tempi Medi</h4>
                 
                 <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.1); padding:8px 0;">
                     <span>La Spezia ↔ Riomaggiore</span> <b style="color:white;">7 min</b>
                 </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.1); padding:8px 0;">
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255, 255, 255, 0.25); padding:8px 0;">
                     <span>Tra i Borghi (es. Rio-Manarola)</span> <b style="color:white;">2-4 min</b>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0;">
@@ -641,13 +641,13 @@ window.trainSearchRenderer = () => {
             </div>
         </div>
 
-        <button onclick="apriMonitorMobile()" class="btn-yellow" style="background: #212121; color: white; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:15px; border-radius:12px;">
-            <span class="material-icons" style="font-size:1.2rem;">dvr</span> 
-            <span style="font-weight:bold;">MONITOR LIVE (Web)</span>
+        <button onclick="apriTrenitalia()" class="btn-yellow" style="background: #c0392b; color: white; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4); display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:15px; border-radius:12px;">
+            <span class="material-icons" style="font-size:1.2rem;">confirmation_number</span> 
+            <span style="font-weight:bold;">ORARI E BIGLIETTI</span>
         </button>
 
         <p style="font-size:0.75rem; text-align:center; color:#888; margin-top:10px;">
-            Versione web leggera ufficiale RFI. Nessuna App richiesta.
+            Acquista e controlla gli orari sul sito ufficiale Trenitalia
         </p>
     </div>`;
 };
