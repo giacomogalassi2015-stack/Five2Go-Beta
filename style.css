@@ -684,3 +684,66 @@ header { display: none !important; }
     background-size: cover !important;
     background-position: center !important;
 }
+
+/* --- GRIGLIA WIDGET VETRO NERO (2 Colonne Spaziate) --- */
+.services-grid-modern {
+    display: grid;
+    /* 2 Colonne uguali */
+    grid-template-columns: repeat(2, 1fr); 
+    /* Spazio abbondante TRA i widget */
+    gap: 20px; 
+    /* Spazio abbondante DAI BORDI dello schermo */
+    padding: 25px; 
+    /* Max width per evitare che su tablet diventino giganti */
+    max-width: 600px; 
+    margin: 0 auto; /* Centra la griglia */
+}
+
+.service-widget {
+    /* Mantiene la forma quadrata perfetta */
+    aspect-ratio: 1 / 1; 
+    
+    /* Arrotondamento morbido */
+    border-radius: 24px; 
+    padding: 20px;
+    
+    /* Flexbox per centrare tutto */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease-out;
+
+    /* --- STILE VETRO NERO --- */
+    background-color: rgba(0, 0, 0, 0.65); /* Nero al 65% */
+    backdrop-filter: blur(15px); /* Sfocatura forte */
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Bordo sottile */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); /* Ombra profonda */
+}
+
+.service-widget:active {
+    transform: scale(0.96); /* Effetto pressione */
+    background-color: rgba(0, 0, 0, 0.85);
+}
+
+.service-widget .widget-icon {
+    font-size: 3rem; /* Icona Grande */
+    color: #ffffff;
+    opacity: 0.95;
+    margin-bottom: 10px; /* Spazio tra icona e testo */
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+}
+
+.service-widget .widget-label {
+    font-size: 1.1rem; /* Testo leggibile */
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.2;
+    letter-spacing: 0.5px;
+}

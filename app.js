@@ -310,29 +310,62 @@ function handlePageSwipe() {
     touchStartY = null;
 }
 
-// ... (renderServicesGrid e toggleTicketInfo restano uguali alla versione precedente, omettiamo per brevità visto che non sono toccati) ...
-async function renderServicesGrid() {
+// --- RENDER SERVIZI (Versione Vetro Nero & Icone) ---
+window.renderServicesGrid = async function() {
+    const content = document.getElementById('app-content');
+    
+    // 1. Recupero dati dal DB
     const { data, error } = await window.supabaseClient.from('Trasporti').select('*');
-    if (error) throw error;
+    if (error) { 
+        console.error(error);
+        content.innerHTML = `<p class="error-msg">Errore caricamento servizi.</p>`; 
+        return;
+    }
     window.tempTransportData = data;
-    let html = '<div class="grid-container animate-fade">';
-    data.forEach((t, index) => {
-        const titolo = t.Mezzo || t.Località || 'Trasporto'; 
-        const imgUrl = window.getSmartUrl(titolo, '', 600);
-        html += `<div class="village-card" style="background-image: url('${imgUrl}')" onclick="openModal('transport', ${index})"><div class="card-title-overlay">${titolo}</div></div>`;
-    });
-    // 2. Card statiche (Numeri Utili e Farmacie)
-    // Definiamo manualmente i nomi delle immagini che vogliamo cercare su Cloudinary
-    // Assicurati di avere immagini chiamate "numeri_utili" (o "telefono") e "farmacia" nel tuo Cloudinary
-    const urlNumeri = window.getSmartUrl('Numeri Utili', '', 600); 
-    const urlFarmacie = window.getSmartUrl('Farmacie', '', 600);
 
-    html += `<div class="village-card" style="background-image: url('${urlNumeri}')"  onclick="renderSimpleList('Numeri_utili')"><div class="card-title-overlay">${window.t('menu_num') || 'Numeri Utili'}</div></div>`;
+    // 2. Helper Semplice: Solo Icone (I colori sono gestiti dal CSS ora)
+    function getServiceIcon(name, type) {
+        const n = name.toLowerCase();
+        if (n.includes('treno') || n.includes('stazione')) return 'train';
+        if (n.includes('battello') || n.includes('traghetto')) return 'directions_boat';
+        if (n.includes('bus') || n.includes('autobus')) return 'directions_bus';
+        if (n.includes('taxi')) return 'local_taxi';
+        if (type === 'farmacia') return 'local_pharmacy';
+        if (type === 'info') return 'phonelink_ring';
+        return 'confirmation_number'; // Icona default
+    }
+
+    let html = '<div class="services-grid-modern animate-fade">';
+
+    // 3. Generazione Card Trasporti
+    data.forEach((t, index) => {
+        const nome = t.Mezzo || t.Località || 'Trasporto';
+        const icon = getServiceIcon(nome, 'trasporto');
+        
+        // NOTA: Ho rimosso style="background..." -> Ora è tutto nero dal CSS
+        html += `
+        <div class="service-widget" onclick="openModal('transport', ${index})">
+            <span class="material-icons widget-icon">${icon}</span>
+            <span class="widget-label">${nome}</span>
+        </div>`;
+    });
+
+    // 4. Generazione Card Statiche
+    html += `
+    <div class="service-widget" onclick="renderSimpleList('Numeri_utili')">
+        <span class="material-icons widget-icon">phonelink_ring</span>
+        <span class="widget-label">${window.t('menu_num') || 'Numeri Utili'}</span>
+    </div>`;
     
-    html += `<div class="village-card" style="background-image: url('${urlFarmacie}')"  onclick="renderSimpleList('Farmacie')"><div class="card-title-overlay">${window.t('menu_pharm') || 'Farmacie'}</div></div>`;
-    
-    content.innerHTML = html + '</div>';
-}
+    html += `
+    <div class="service-widget" onclick="renderSimpleList('Farmacie')">
+        <span class="material-icons widget-icon">medical_services</span>
+        <span class="widget-label">${window.t('menu_pharm') || 'Farmacie'}</span>
+    </div>`;
+
+    html += '</div>';
+    content.innerHTML = html;
+};
 function renderSimpleList(tableName) {
     content.innerHTML = `<div style="padding: 10px 0; display:flex; align-items:center; gap:10px;"><button onclick="renderServicesGrid()" class="btn-back" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">⬅</button><h2 style="margin:0;">${tableName.replace('_', ' ')}</h2></div><div id="sub-content"></div>`;
     window.loadTableData(tableName, null);
