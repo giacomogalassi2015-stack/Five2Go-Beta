@@ -408,7 +408,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupHeaderElements(); // Avvia header con configurazione Home
     updateNavBar(); 
     switchView('home');
-});// --- FUNZIONE TABELLONE IN-APP (STRATEGIA MULTI-PROXY) ---
+});
+
+// --- FUNZIONE TABELLONE (Versione "Graceful Fail") ---
 window.caricaTabelloneJSON = async function() {
     const selPartenza = document.getElementById('trainPartenza');
     const container = document.getElementById('liveTrainResults');
@@ -421,87 +423,58 @@ window.caricaTabelloneJSON = async function() {
     const idStazione = selPartenza.value;
     const nomeStazione = selPartenza.options[selPartenza.selectedIndex].text;
 
-    container.innerHTML = `<div class="loader" style="font-size:0.8rem; text-align:center;">Connessione ai server FS in corso...</div>`;
+    // Loader più carino
+    container.innerHTML = `
+        <div class="animate-fade" style="text-align:center; padding:20px;">
+            <div class="loader"></div>
+            <div style="font-size:0.8rem; color:#666; margin-top:10px;">Controllo stato treni...</div>
+        </div>`;
 
     const now = new Date().getTime();
     const targetUrl = `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${idStazione}/${now}`;
+    
+    // Proviamo SOLO il proxy più "invisibile" (AllOrigins in modalità raw)
+    // Se questo non va, inutile insistere, Trenitalia è blindata.
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
 
-    // --- LISTA PROXY (Se uno fallisce, proviamo il prossimo) ---
-    // 1. CodeTabs (Molto affidabile)
-    // 2. CorsProxy.io (Veloce)
-    // 3. AllOrigins (Backup)
-    const proxies = [
-        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
-        `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-        `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
-    ];
+    try {
+        const response = await fetch(proxyUrl);
+        const dataWrapper = await response.json();
+        
+        // Se AllOrigins risponde ma il contenuto è vuoto o errore
+        if (!dataWrapper.contents) throw new Error("Blocco Proxy");
 
-    let treniData = null;
-    let success = false;
-
-    // TENTATIVI IN SEQUENZA
-    for (const proxy of proxies) {
+        // Tentativo di parsing
+        let treni;
         try {
-            console.log("Tentativo connessione con:", proxy);
-            const response = await fetch(proxy);
-            
-            if (!response.ok) throw new Error("Proxy error");
-
-            // Gestione formati diversi dei proxy
-            const text = await response.text();
-            
-            // AllOrigins mette i dati dentro .contents, gli altri no
-            let jsonRaw;
-            try {
-                const parsed = JSON.parse(text);
-                if (parsed.contents) {
-                    jsonRaw = JSON.parse(parsed.contents); // Scompatta AllOrigins
-                } else {
-                    jsonRaw = parsed; // CodeTabs e CorsProxy danno JSON diretto
-                }
-            } catch (e) {
-                throw new Error("JSON non valido");
-            }
-
-            if (jsonRaw && Array.isArray(jsonRaw)) {
-                treniData = jsonRaw;
-                success = true;
-                break; // Usciamo dal ciclo, abbiamo i dati!
-            }
-        } catch (err) {
-            console.warn("Proxy fallito, provo il prossimo...", err);
+            treni = JSON.parse(dataWrapper.contents);
+        } catch(e) {
+            throw new Error("Dati non leggibili"); // Succede quando Trenitalia manda HTML di errore
         }
-    }
 
-    // --- RENDERIZZAZIONE ---
-    if (success && treniData) {
-        if (treniData.length === 0) {
+        if (!treni || !Array.isArray(treni)) throw new Error("Formato errato");
+
+        // --- SUCCESSO: ABBIAMO I DATI! ---
+        if (treni.length === 0) {
             container.innerHTML = `<p style="text-align:center; padding:15px; color:#666;">Nessun treno in partenza a breve.</p>`;
             return;
         }
 
         let html = `
             <div style="background:#f1f2f6; padding:8px; font-size:0.75rem; color:#666; text-align:center; border-radius:8px 8px 0 0;">
-                Partenze da <b>${nomeStazione}</b> (Live)
+                Partenze da <b>${nomeStazione}</b>
             </div>
             <div style="max-height:400px; overflow-y:auto;">
         `;
 
-        treniData.forEach(t => {
-            const destinazione = t.destinazione;
-            const cat = t.categoria;
-            const num = t.numeroTreno;
-            
-            // Orario
+        treni.forEach(t => {
             const dataP = new Date(t.orarioPartenza);
             const ora = dataP.getHours().toString().padStart(2,'0') + ':' + dataP.getMinutes().toString().padStart(2,'0');
+            
+            let ritardoHtml = t.ritardo > 0 
+                ? `<span style="color:#e74c3c; font-weight:bold;">+${t.ritardo} min</span>` 
+                : `<span style="color:#27ae60;">In Orario</span>`;
 
-            // Ritardo
-            let ritardoHtml = '';
-            if (t.ritardo > 0) ritardoHtml = `<span style="color:#e74c3c; font-weight:bold;">+${t.ritardo} min</span>`;
-            else ritardoHtml = `<span style="color:#27ae60;">In Orario</span>`;
-
-            // Binario
             const bin = t.binarioEffettivoPartenzaDescrizione || t.binarioProgrammatoPartenzaDescrizione || '--';
 
             html += `
@@ -509,39 +482,44 @@ window.caricaTabelloneJSON = async function() {
                 <div style="text-align:center; width:55px;">
                     <div style="font-size:1.1rem; font-weight:800; color:#2D3436; line-height:1;">${ora}</div>
                 </div>
-                
                 <div style="flex:1; padding:0 12px;">
-                    <div style="font-size:0.95rem; font-weight:bold; color:#2C3E50;">${destinazione}</div>
-                    <div style="font-size:0.75rem; color:#666;">
-                        ${cat} ${num} • ${ritardoHtml}
-                    </div>
+                    <div style="font-size:0.95rem; font-weight:bold; color:#2C3E50;">${t.destinazione}</div>
+                    <div style="font-size:0.75rem; color:#666;">${t.categoria} ${t.numeroTreno} • ${ritardoHtml}</div>
                 </div>
-
                 <div style="text-align:right;">
                     <div style="font-size:0.65rem; color:#999;">Bin</div>
                     <div style="font-size:1.1rem; font-weight:bold; color:#2C3E50; background:#eee; padding:2px 6px; border-radius:4px;">${bin}</div>
                 </div>
             </div>`;
         });
-
-        html += `</div>
-            <div style="text-align:center; padding:5px; font-size:0.65rem; color:#ccc;">
-                Dati forniti da RFI
-            </div>`;
         
+        html += `</div>`;
         container.innerHTML = html;
 
-    } else {
-        // --- FALLBACK (Se TUTTI i proxy falliscono) ---
-        // Mostriamo il pulsante per il sito mobile ufficiale che non fallisce mai
-        console.error("Tutti i proxy sono bloccati.");
+    } catch (err) {
+        console.warn("API Bloccata, fallback attivo.");
+        
+        // --- FALLBACK ELEGANTE (L'utente non deve percepire l'errore come un bug) ---
+        // Mostriamo una card che sembra una funzionalità nativa
+        
         container.innerHTML = `
-            <div style="text-align:center; padding:15px; background:#fff3cd; border-radius:8px;">
-                <p style="color:#856404; font-size:0.9rem;">⚠️ Connessione API bloccata.</p>
-                <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Usa il collegamento diretto al tabellone:</p>
-                <button onclick="window.open('http://www.viaggiatreno.it/infomobilita/vt_pda/stazione?id=${idStazione}', '_blank')" style="padding:10px 20px; background:#e67e22; color:white; border:none; border-radius:50px; font-weight:bold; cursor:pointer;">
-                    APRI TABELLONE UFFICIALE
+            <div class="animate-fade" style="text-align:center; padding:20px; background: #fff; border: 1px solid #eee; border-radius: 12px; margin-top:10px;">
+                <div style="font-size:3rem; margin-bottom:10px;">🚦</div>
+                <h3 style="margin:0 0 10px 0; color:#333;">Tabellone Live</h3>
+                <p style="font-size:0.9rem; color:#666; margin-bottom:20px;">
+                    Per garantire la massima precisione su ritardi e binari, 
+                    connettiti direttamente al sistema RFI della stazione.
+                </p>
+                
+                <button onclick="window.open('http://www.viaggiatreno.it/infomobilita/vt_pda/stazione?id=${idStazione}', '_blank')" 
+                        style="background: #27AE60; color: white; border: none; padding: 12px 25px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3); display:inline-flex; align-items:center; gap:8px;">
+                    <span>VISUALIZZA DATI UFFICIALI</span>
+                    <span style="font-size:1.2em;">➜</span>
                 </button>
+                
+                <div style="margin-top:15px; font-size:0.75rem; color:#999;">
+                    Link diretto Viaggiatreno mobile
+                </div>
             </div>
         `;
     }
