@@ -99,47 +99,60 @@ window.spiaggiaRenderer = (s) => {
         </div>
     </div>`;
 };
-
-// === RENDERER FARMACIA ===
+// === RENDERER FARMACIA (Con Icone Località) ===
 window.farmaciaRenderer = (f) => {
     const nome = window.dbCol(f, 'Nome');
     const paesi = window.dbCol(f, 'Paesi');
-    
-    // Encode sicuro per modale
+    const indirizzo = f.Indirizzo || '';
     const safeObj = encodeURIComponent(JSON.stringify(f)).replace(/'/g, "%27");
     
-    const fullAddress = `${f.Indirizzo}, ${paesi}`;
-    const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+    const fullAddress = `${indirizzo}, ${paesi}`;
+    const mapLink = f.Mappa || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('Farmacia ' + nome + ' ' + fullAddress)}`;
 
-    // Nota: Ho cambiato openModal per ricevere safeObj come stringa codificata, più sicuro
     return `
-    <div class="card-list-item" onclick="openModal('farmacia', '${safeObj}')">
-        <div class="item-info">
-            <div class="item-header-row"><div class="item-title">${nome}</div><div class="item-tag" style="background-color:#4CAF50;">${window.t('pharmacy_tag')}</div></div>
-            <div class="item-subtitle">📍 ${paesi}</div>
-            <div class="card-actions">
-                ${f.Numero ? `<a href="tel:${f.Numero}" class="action-btn btn-phone" onclick="event.stopPropagation()"><span>📞</span> ${window.t('btn_call')}</a>` : ''}
-                ${f.Indirizzo ? `<a href="${mapLink}" target="_blank" class="action-btn btn-map" onclick="event.stopPropagation()"><span>🗺️</span> ${window.t('btn_map')}</a>` : ''}
+    <div class="info-card" onclick="openModal('farmacia', '${safeObj}')">
+        <div class="info-content">
+            <h3 style="margin-bottom: 4px;">${nome}</h3>
+            <p style="margin:2px 0; color:rgba(255,255,255,0.9);">
+                <span class="material-icons" style="font-size:1rem; vertical-align:middle; color:#ea4335; margin-right:4px;">place</span>
+                ${paesi}
+            </p>
+            <p style="margin:0; font-size:0.85rem; color:rgba(255,255,255,0.6); padding-left:22px;">
+                ${indirizzo}
+            </p>
+            ${f.Orario ? `<p style="font-size:0.85rem; color:#f1c40f; margin-top:6px; padding-left:22px;">🕒 ${f.Orario}</p>` : ''}
+        </div>
+        
+        <div style="display:flex; gap:10px;">
+            ${f.Numero ? `
+                <div class="action-btn btn-call" onclick="event.stopPropagation(); window.location.href='tel:${f.Numero}'">
+                    <span class="material-icons">call</span>
+                </div>` : ''}
+            <div class="action-btn btn-map" onclick="event.stopPropagation(); window.open('${mapLink}', '_blank')">
+                <span class="material-icons">map</span>
             </div>
         </div>
     </div>`;
 };
 
-// === RENDERER NUMERI UTILI ===
+// === RENDERER NUMERI UTILI (Layout Fisso) ===
 window.numeriUtiliRenderer = (n) => {
     const nome = window.dbCol(n, 'Nome');
-    const comune = window.dbCol(n, 'Comune');
     const paesi = window.dbCol(n, 'Paesi'); 
+    const numero = n.Numero || n.Telefono || '';
+
     return `
-    <div class="card-list-item" style="cursor:default;">
-        <div class="item-info">
-            <div class="item-header-row"><div class="item-title">${nome}</div><div class="item-tag" style="background-color:#607d8b;">${comune}</div></div>
-            <div class="item-subtitle" style="margin-top:6px; color:#555;"><strong>${window.t('coverage')}:</strong> ${paesi}</div>
-            <div class="card-actions">
-                <a href="tel:${n.Numero}" class="action-btn btn-phone" onclick="event.stopPropagation()">
-                    <span style="font-size:1.2rem; margin-right:5px;">📞</span> ${window.t('btn_call')} ${n.Numero}
-                </a>
-            </div>
+    <div class="info-card" onclick="window.location.href='tel:${numero}'" style="display: flex; align-items: center; min-height: 85px;">
+        <div class="info-content" style="flex: 1;">
+            <h3 style="margin: 0 0 4px 0;">${nome}</h3>
+            <p style="color:rgba(255,255,255,0.7); font-size:0.85rem; margin:0; display: flex; align-items: center;">
+                <span class="material-icons" style="font-size:1.1rem; color:#4285f4; margin-right:6px;">location_on</span>
+                ${paesi}
+            </p>
+        </div>
+
+        <div class="action-btn btn-call" style="flex-shrink: 0;">
+            <span class="material-icons">call</span>
         </div>
     </div>`;
 };
