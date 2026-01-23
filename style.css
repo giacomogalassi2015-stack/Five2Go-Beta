@@ -364,9 +364,8 @@ main, #app-content {
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 /* Utility e altre card (copiate per completezza strutturale) */
-.sub-nav-tabs::-webkit-scrollbar, .filter-bar::-webkit-scrollbar { display: none; }
-.sub-nav-tabs, .filter-bar { -ms-overflow-style: none; scrollbar-width: none; }
-.filter-bar { display: flex; overflow-x: auto; flex-wrap: nowrap; gap: 10px; padding: 5px 20px 10px 20px; }
+.sub-nav-tabs::-webkit-scrollbar, 
+.sub-nav-tabs { -ms-overflow-style: none; scrollbar-width: none; }
 .sub-nav-bar { padding-top: 15px !important; padding-bottom: 0 !important; align-items: flex-end !important; min-height: 60px; }
 .sub-nav-item { padding: 10px 5px !important; position: relative; font-size: 1rem !important; font-weight: 600 !important; color: #B2BEC3 !important; text-transform: uppercase; letter-spacing: 1px; background: transparent !important; box-shadow: none !important; border-radius: 0 !important; transition: color 0.3s ease; }
 .sub-nav-item::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background-color: var(--primary-col); transform: scaleX(0); transform-origin: center; transition: transform 0.3s ease; border-radius: 3px 3px 0 0; }
@@ -746,4 +745,141 @@ header { display: none !important; }
     color: #ffffff;
     line-height: 1.2;
     letter-spacing: 0.5px;
+}/* --- SCHEDA SENTIERI: Statistiche e Pulsante --- */
+
+/* Griglia per Distanza, Durata, Difficoltà */
+.trail-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 Colonne identiche */
+    gap: 12px; /* Spazio tra i box (più distanziati) */
+    margin: 15px 0 20px 0;
+}
+
+/* Il singolo box della statistica */
+.trail-stat-box {
+    background-color: #f5f5f5; /* Grigio chiarissimo (lo sfondo che volevi mantenere) */
+    border-radius: 12px;       /* Angoli arrotondati */
+    padding: 12px 5px;         /* Spaziatura interna */
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 80px; /* Altezza fissa uguale per tutti */
+    border: 1px solid #eeeeee;
+}
+
+.trail-stat-box span.material-icons {
+    font-size: 1.5rem;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.trail-stat-box span.stat-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #333;
+    line-height: 1.1;
+}
+
+.trail-stat-box span.stat-label {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    margin-top: 3px;
+}
+
+/* Pulsante con Gradiente Verde-Azzurro */
+.btn-trail-action {
+    background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%); /* Gradiente Natura */
+    color: white;
+    font-weight: bold;
+    border: none;
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    font-size: 1rem;
+    box-shadow: 0 4px 15px rgba(66, 230, 149, 0.4); /* Ombra verde luminosa */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: transform 0.2s;
+}
+
+.btn-trail-action:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+}
+/* --- TASTO FILTRO GALLEGGIANTE (Minimal) --- */
+#filter-toggle-btn {
+    position: fixed;
+    bottom: 85px;  /* Calcolato per stare sopra la Tab Bar */
+    right: 20px;   /* Angolo destro */
+    z-index: 999;  /* Sopra a tutto */
+    
+    background: none !important; /* Nessuno sfondo */
+    border: none !important;     /* Nessun bordo */
+    box-shadow: none !important; /* Nessuna ombra del box */
+    padding: 0;
+    
+    color: #ffffff; /* Icona bianco puro */
+    cursor: pointer;
+    transition: transform 0.2s ease-out;
+    
+    /* Ombra applicata SOLO alla sagoma dell'icona per leggibilità */
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+}
+
+#filter-toggle-btn:active {
+    transform: scale(0.9); /* Effetto clic */
+    opacity: 0.8;
+}
+
+#filter-toggle-btn .material-icons {
+    font-size: 3.5rem; /* Icona grande e ben visibile */
+}
+/* IL SINGOLO BOTTONE FILTRO (Chip Non Selezionato) */
+.filter-chip {
+    /* --- RENDIAMOLI VISIBILI --- */
+    /* Sfondo nero semitrasparente (come i widget) */
+    background: rgba(0, 0, 0, 0.65);
+    
+    /* Effetto sfocatura dietro al bottone */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    
+    /* Bordo bianco più visibile (30% opacità) */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    
+    /* Testo bianco */
+    color: #ffffff;
+    
+    /* Dimensioni e Forma */
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0; 
+    
+    /* Ombra leggera per staccarli dallo sfondo */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+/* Quando ci clicchi sopra (Effetto pressione) */
+.filter-chip:active {
+    transform: scale(0.95);
+    background: rgba(0, 0, 0, 0.8);
+}
+
+/* IL FILTRO SELEZIONATO (Resta uguale a prima: Verde Acceso) */
+.active-filter {
+    background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%);
+    border: 1px solid transparent; /* Toglie il bordo bianco */
+    color: #000000; /* Testo nero per contrasto */
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(66, 230, 149, 0.4);
 }

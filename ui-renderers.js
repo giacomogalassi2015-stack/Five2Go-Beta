@@ -32,12 +32,6 @@ window.sentieroRenderer = (s) => {
             
             <h2 class="sentiero-overlay-title">${paese}</h2>
             
-            <div class="sentiero-stats">
-                <div class="stat-pill"><span class="stat-icon">📏</span><span class="stat-val">${distanza}</span></div>
-                <div class="stat-pill"><span class="stat-icon">🕒</span><span class="stat-val">${durata}</span></div>
-                <div class="stat-pill"><span class="stat-icon">🏷️</span><span class="stat-val">${extra}</span></div>
-            </div>
-            
             <button class="btn-outline-details">
                 Dettagli Percorso
             </button>
@@ -373,82 +367,60 @@ window.openModal = async function(type, payload) {
         }
     }
 
-    // --- MAPPE SENTIERI (Grande) ---
-    else if (type === 'map') {
-        const gpxUrl = payload;
-        const bigMapId = `big-map-${Date.now()}`;
-        
-        contentHtml = `
-            <div style="height: 500px; width: 100%; border-radius: 12px; overflow: hidden; background: #eee;">
-                <div id="${bigMapId}" style="height: 100%; width: 100%;"></div>
-            </div>
-            <p style="text-align:center; color:#666; margin-top:10px; font-size:0.9rem;">
-                💡 Usa due dita per muoverti sulla mappa
-            </p>
-        `;
-
-        setTimeout(() => {
-            const mapContainer = document.getElementById(bigMapId);
-            if (mapContainer && window.L) {
-                console.log("🗺️ Inizializzazione Mappa Grande in corso...");
-                const map = L.map(bigMapId).setView([44.12, 9.70], 12); 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
-
-                if (gpxUrl && typeof omnivore !== 'undefined') {
-                    const runLayer = omnivore.gpx(gpxUrl, null, L.geoJson(null, { style: { color: '#ff5722', weight: 5, opacity: 0.8 } }))
-                    .on('ready', function() { map.fitBounds(runLayer.getBounds()); })
-                    .addTo(map);
-                } else if (gpxUrl && window.L.GPX) {
-                    new L.GPX(gpxUrl, {
-                        async: true,
-                        marker_options: { startIconUrl: 'https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2.png', endIconUrl: 'https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2.png', shadowUrl: null }
-                    }).on('loaded', function(e) { map.fitBounds(e.target.getBounds()); }).addTo(map);
-                }
-                setTimeout(() => { map.invalidateSize(); }, 100);
-            } else {
-                console.error("❌ Errore: Contenitore mappa non trovato o Leaflet mancante.");
-            }
-        }, 400); 
-    }
-
-    // --- DETTAGLI SENTIERO ---
+    // --- DETTAGLI SENTIERO (Design Aggiornato) ---
     else if (type === 'trail') {
         const p = JSON.parse(decodeURIComponent(payload));
-        const titolo = window.dbCol(p, 'Paesi');
+        
+        // Recupero Dati
+        const titolo = window.dbCol(p, 'Paesi') || p.Nome; // Titolo principale
+        const nomeSentiero = p.Nome || ''; // Sottotitolo (es. "SVA - Sentiero Azzurro")
         const dist = p.Distanza || '--';
         const dura = p.Durata || '--';
+        // Usiamo 'Tag' o 'Difficolta' per il terzo box
+        const diff = p.Tag || p.Difficolta || 'Media'; 
         const desc = window.dbCol(p, 'Descrizione') || '';
-        const tag = window.dbCol(p, 'Tag') || '--'; 
-        const extra = window.dbCol(p, 'Extra') || '--';
+        // Link alla mappa GPX
+        const linkGpx = p.Link_Gpx || p.Mappa || '';
 
         contentHtml = `
-        <div style="padding:20px;">
-            <h2 style="text-align:center; margin-bottom:20px;">${titolo}</h2>
+        <div style="padding: 20px 15px;">
             
-            <div style="display:flex; justify-content:space-between; text-align:center; gap:15px; margin-bottom:25px;">
-                <div style="flex:1; background:#f9f9f9; padding:15px 10px; border-radius:12px;">
-                    <div style="margin-bottom:15px;">
-                        <div style="font-size:1.5rem;">📏</div>
-                        <strong>Distanza</strong><br>${dist}
-                    </div>
-                    <div style="border-top:1px solid #e0e0e0; padding-top:10px;">
-                        <strong>Tag</strong><br><span style="color:#666; font-size:0.9rem;">${tag}</span>
-                    </div>
+            <h2 style="text-align:center; margin: 0 0 5px 0; color:#2c3e50;">${titolo}</h2>
+            ${nomeSentiero ? `<p style="text-align:center; color:#7f8c8d; margin:0 0 15px 0; font-size:0.9rem;">${nomeSentiero}</p>` : ''}
+
+            <div class="trail-stats-grid">
+                <div class="trail-stat-box">
+                    <span class="material-icons">straighten</span>
+                    <span class="stat-value">${dist}</span>
+                    <span class="stat-label">Distanza</span>
                 </div>
-                <div style="flex:1; background:#f9f9f9; padding:15px 10px; border-radius:12px;">
-                    <div style="margin-bottom:15px;">
-                        <div style="font-size:1.5rem;">⏱️</div>
-                        <strong>Tempo</strong><br>${dura}
-                    </div>
-                    <div style="border-top:1px solid #e0e0e0; padding-top:10px;">
-                        <strong>Extra</strong><br><span style="color:#666; font-size:0.9rem;">${extra}</span>
-                    </div>
+
+                <div class="trail-stat-box">
+                    <span class="material-icons">schedule</span>
+                    <span class="stat-value">${dura}</span>
+                    <span class="stat-label">Durata</span>
+                </div>
+
+                <div class="trail-stat-box">
+                    <span class="material-icons">terrain</span>
+                    <span class="stat-value">${diff}</span>
+                    <span class="stat-label">Livello</span>
                 </div>
             </div>
-            <p style="line-height:1.6; color:#333;">${desc}</p>
+
+            ${linkGpx ? `
+            <button onclick="openModal('map', '${linkGpx}')" class="btn-trail-action">
+                <span class="material-icons">map</span>
+                DETTAGLI PERCORSO
+            </button>
+            ` : ''}
+
+            <div style="margin-top:25px; line-height:1.6; color:#444; font-size:0.95rem; text-align:justify;">
+                ${desc}
+            </div>
+
         </div>`;
     }
-
     // --- DETTAGLI RISTORANTE ---
     else if (type === 'restaurant') {
         const item = JSON.parse(decodeURIComponent(payload));

@@ -375,30 +375,59 @@ window.toggleTicketInfo = function() {
     if (box) { box.style.display = (box.style.display === 'none') ? 'block' : 'none'; }
 };
 
-// --- LOGICA FILTRI ---
+// --- LOGICA FILTRI (Tasto Galleggiante in Basso) ---
 function renderGenericFilterableView(allData, filterKey, container, cardRenderer) {
-    container.innerHTML = `<div class="filter-bar animate-fade" id="dynamic-filters" style="display:none;"></div><div class="list-container animate-fade" id="dynamic-list"></div>`;
+    // Prepara i contenitori
+    container.innerHTML = `
+        <div class="filter-bar animate-fade" id="dynamic-filters" style="display:none; margin-bottom:15px;"></div>
+        <div class="list-container animate-fade" id="dynamic-list"></div>
+    `;
     
     const filterBar = container.querySelector('#dynamic-filters');
     const listContainer = container.querySelector('#dynamic-list');
-    const filterBtn = document.getElementById('filter-toggle-btn');
-
-    if (filterBtn) {
-        filterBtn.style.display = 'block'; 
-        const newBtn = filterBtn.cloneNode(true);
-        filterBtn.parentNode.replaceChild(newBtn, filterBtn);
-        
-        newBtn.onclick = () => {
-            const isHidden = filterBar.style.display === 'none';
-            filterBar.style.display = isHidden ? 'flex' : 'none';
-            newBtn.style.background = isHidden ? '#e0e0e0' : '#f0f0f0'; 
-        };
+    
+    // --- GESTIONE TASTO FILTRO ---
+    // Cerchiamo il tasto nel documento (fuori dal container, perché è fixed)
+    let filterBtn = document.getElementById('filter-toggle-btn');
+    
+    // Se non esiste, lo creiamo al volo
+    if (!filterBtn) {
+        filterBtn = document.createElement('button');
+        filterBtn.id = 'filter-toggle-btn';
+        document.body.appendChild(filterBtn);
     }
+    
+    // Impostiamo lo stile e l'ICONA (Imbuto/Filtro)
+    filterBtn.style.display = 'block';
+    filterBtn.innerHTML = '<span class="material-icons">filter_alt</span>'; // Icona Filtro
+    
+    // Gestione Click (Apre/Chiude la barra)
+    // Cloniamo il nodo per rimuovere vecchi event listener di altre pagine
+    const newBtn = filterBtn.cloneNode(true);
+    filterBtn.parentNode.replaceChild(newBtn, filterBtn);
+    
+    newBtn.onclick = () => {
+        const isHidden = filterBar.style.display === 'none';
+        
+        if (isHidden) {
+            filterBar.style.display = 'flex';
+            // Scrolla leggermente in alto per far vedere i filtri
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Cambia icona in "Chiudi" (X) o lascia filtro colorato?
+            // Lasciamo filtro ma magari cambiamo colore per feedback
+            newBtn.style.color = '#42e695'; // Diventa verde quando aperto
+        } else {
+            filterBar.style.display = 'none';
+            newBtn.style.color = '#ffffff'; // Torna bianco
+        }
+    };
 
+    // --- GENERAZIONE TAG DEI FILTRI ---
     let rawValues = allData.map(item => item[filterKey] ? item[filterKey].trim() : null).filter(x => x);
     let tagsRaw = [...new Set(rawValues)];
     
-    const customOrder = ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso", "Facile", "Media", "Difficile", "Turistico", "Escursionistico", "Esperto"];
+    // Ordine personalizzato
+    const customOrder = ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso", "Facile", "Media", "Difficile"];
     if (!tagsRaw.includes('Tutti')) tagsRaw.unshift('Tutti');
 
     const uniqueTags = tagsRaw.sort((a, b) => {
@@ -421,7 +450,7 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
             
             const filtered = tag === 'Tutti' ? allData : allData.filter(item => {
                 const valDB = item[filterKey] ? item[filterKey].trim() : '';
-                return (valDB === tag) || (item.Nome && (item.Nome.includes('112') || item.Nome.toLowerCase().includes('emergenza')));
+                return (valDB === tag) || (item.Nome && item.Nome.toLowerCase().includes('emergenza'));
             });
             updateList(filtered);
         };
@@ -429,11 +458,17 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
     });
 
     function updateList(items) {
-        if (!items || items.length === 0) { listContainer.innerHTML = `<p style="text-align:center; padding:20px; color:#999;">${window.t('no_results')}</p>`; return; }
+        if (!items || items.length === 0) { 
+            listContainer.innerHTML = `<p style="text-align:center; padding:20px; color:#999;">${window.t('no_results')}</p>`; 
+            return; 
+        }
         listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
+        
+        // Se ci sono mappe da inizializzare
         if (typeof initPendingMaps === 'function') setTimeout(() => initPendingMaps(), 100);
     }
     
+    // Caricamento iniziale
     updateList(allData);
 }
 document.addEventListener('DOMContentLoaded', () => {
