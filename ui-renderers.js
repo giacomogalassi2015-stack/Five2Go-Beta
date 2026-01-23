@@ -43,35 +43,39 @@ window.sentieroRenderer = (s) => {
 window.ristoranteRenderer = (r) => {
     const nome = window.dbCol(r, 'Nome') || 'Ristorante';
     const paesi = window.dbCol(r, 'Paesi') || '';
-    const indirizzo = r.Indirizzo || '';
-    
-    // Encode sicuro per modale
+    const numero = r.Numero || r.Telefono || '';
     const safeObj = encodeURIComponent(JSON.stringify(r)).replace(/'/g, "%27");
-    
-    // Correzione URL Mappa
-    const mapQuery = encodeURIComponent(`${nome} ${paesi} Cinque Terre`);
-    const mapLink = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
-    
-    const phoneLink = r.Telefono ? `tel:${r.Telefono}` : '#';
-    const phoneColor = r.Telefono ? '#2E7D32' : '#B0BEC5';
-    const phoneCursor = r.Telefono ? 'pointer' : 'default';
+    const mapLink = r.Mappa || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nome + ' ' + paesi)}`;
 
     return `
-    <div class="animate-fade" style="background: #ffffff; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden; font-family: Roboto; border: 1px solid #eee;">
-        <div onclick="openModal('restaurant', '${safeObj}')" style="padding: 20px; cursor: pointer;">
-            <div style="font-size: 1.25rem; font-weight: 800; color: #2c3e50; margin-bottom: 6px; line-height: 1.2;">${nome}</div>
-            <div style="font-size: 0.95rem; color: #7f8c8d; display: flex; align-items: center; gap: 5px;"><span>📍</span> ${paesi} ${indirizzo ? ' • ' + indirizzo : ''}</div>
-        </div>
-        <div style="display: flex; border-top: 1px solid #f0f0f0; background: #fafafa;">
-            <div onclick="openModal('restaurant', '${safeObj}')" style="flex: 1; padding: 15px 0; text-align: center; cursor: pointer; border-right: 1px solid #eee; color: #F57C00;">
-                <div style="font-size: 1.2rem; margin-bottom: 2px;">📄</div><div style="font-size: 0.7rem; font-weight: bold;">SCHEDA</div>
+    <div class="info-card" onclick="openModal('ristorante', '${safeObj}')" 
+         style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220px; text-align: center; padding: 25px;
+                background: rgba(0, 0, 0, 0.6) !important; 
+                backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                border-radius: 30px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+                margin-bottom: 20px;">
+        
+        <h3 style="margin: 0 0 8px 0; font-size: 1.5rem; color: #ffffff;">${nome}</h3>
+        
+        <p style="margin: 0; color: rgba(255,255,255,0.7); font-size: 1.1rem; display: flex; align-items: center; justify-content: center;">
+            <span class="material-icons" style="font-size: 1.2rem; color: #f39c12; margin-right: 6px;">restaurant</span>
+            ${paesi}
+        </p>
+
+        <p style="margin: 12px 0 25px 0; color: #ffffff; font-weight: 700; font-size: 1.1rem; letter-spacing: 1px;">
+            ${numero}
+        </p>
+
+        <div style="display: flex; justify-content: center; gap: 30px; width: 100%;">
+            ${numero ? `
+                <div class="action-btn btn-call" style="width: 55px; height: 55px;" onclick="event.stopPropagation(); window.location.href='tel:${numero}'">
+                    <span class="material-icons">call</span>
+                </div>` : ''}
+            <div class="action-btn btn-map" style="width: 55px; height: 55px;" onclick="event.stopPropagation(); window.open('${mapLink}', '_blank')">
+                <span class="material-icons">map</span>
             </div>
-            <a href="${phoneLink}" style="flex: 1; padding: 15px 0; text-align: center; text-decoration: none; border-right: 1px solid #eee; cursor: ${phoneCursor}; color: ${phoneColor};">
-                <div style="font-size: 1.2rem; margin-bottom: 2px;">📞</div><div style="font-size: 0.7rem; font-weight: bold;">CHIAMA</div>
-            </a>
-            <a href="${mapLink}" target="_blank" style="flex: 1; padding: 15px 0; text-align: center; text-decoration: none; color: #1565C0;">
-                <div style="font-size: 1.2rem; margin-bottom: 2px;">🗺️</div><div style="font-size: 0.7rem; font-weight: bold;">MAPPA</div>
-            </a>
         </div>
     </div>`;
 };
