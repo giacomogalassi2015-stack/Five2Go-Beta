@@ -17,7 +17,9 @@ window.sentieroRenderer = (s) => {
     if (gpxUrl) { window.mapsToInit.push({ id: uniqueMapId, gpx: gpxUrl }); }
 
     // Codifica sicura per il pulsante dettagli
-    const safeObj = encodeURIComponent(JSON.stringify(s));
+ // Aggiungiamo .replace(/'/g, "%27") per sistemare gli apostrofi
+const safeObj = encodeURIComponent(JSON.stringify(s)).replace(/'/g, "%27");
+
 
     return `
     <div class="card-sentiero-modern animate-fade">
@@ -25,10 +27,13 @@ window.sentieroRenderer = (s) => {
         <div id="${uniqueMapId}" 
              class="sentiero-map-bg" 
              style="cursor: pointer;"
-             onclick="openModal('map', '${gpxUrl}')">
-        </div>
+             onclick="event.stopPropagation(); openModal('map', '${gpxUrl}')"> 
+             </div>
         
-        <div class="sentiero-card-overlay">
+        <div class="sentiero-card-overlay" 
+             style="cursor: pointer;" 
+             onclick="openModal('trail', '${safeObj}')">
+            
             <h2 class="sentiero-overlay-title">${paese}</h2>
             
             <div class="sentiero-stats">
@@ -37,13 +42,12 @@ window.sentieroRenderer = (s) => {
                 <div class="stat-pill"><span class="stat-icon">🏷️</span><span class="stat-val">${extra}</span></div>
             </div>
             
-            <button class="btn-outline-details" onclick="openModal('trail', '${safeObj}')">
+            <button class="btn-outline-details">
                 Dettagli Percorso
             </button>
         </div>
     </div>`;
 };
-
 // RENDERER RISTORANTE
 window.ristoranteRenderer = (r) => {
     const nome = window.dbCol(r, 'Nome') || 'Ristorante';
@@ -88,7 +92,7 @@ window.spiaggiaRenderer = (s) => {
 
     return `
     <div class="card-spiaggia" onclick="simpleAlert('${safePaesi}', '${safeDesc}')">
-        <div class="spiaggia-header"><div class="spiaggia-location">📍 ${paesi}</div><span>🏖️</span></div>
+        <div class="spiaggia-header"><div class="spiaggia-location">📍 ${paesi}</div><span></span></div>
         <div class="item-title" style="font-size: 1.3rem; margin: 10px 0;">${nome}</div>
         <div class="spiaggia-footer">
             <a href="${mapLink}" target="_blank" class="btn-azure" onclick="event.stopPropagation()">${window.t('btn_position')}</a>
@@ -152,7 +156,7 @@ window.attrazioniRenderer = (item) => {
             <div class="item-subtitle" style="margin-bottom: 8px;">📍 ${paese}</div>
             <div class="monument-meta" style="display:flex; gap:8px;">
                 <span class="meta-badge" style="${diffStyle} padding:2px 8px; border-radius:4px; font-size:0.75rem;">${diff}</span>
-                <span class="meta-badge badge-time" style="background:#f5f5f5; padding:2px 8px; border-radius:4px; font-size:0.75rem;">⏱ ${item["Tempo Visita (min)"] || '--'} ${window.t('visit_time')}</span>
+                <span class="meta-badge badge-time" style="background:#f5f5f5; padding:2px 8px; border-radius:4px; font-size:0.75rem;">⏱ ${item["Tempo Visita"] || '--'} ${window.t('visit_time')}</span>
             </div>
         </div>
         <div class="item-arrow" style="margin-top: auto; margin-bottom: auto;">➜</div>

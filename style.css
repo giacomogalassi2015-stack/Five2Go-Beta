@@ -121,10 +121,6 @@ main, #app-content {
     color: var(--primary-col); 
     transform: translateY(-2px);
 }
-.nav-item.active::after {
-    content: ''; position: absolute; bottom: 8px; width: 5px; height: 5px;
-    background-color: var(--accent-col); border-radius: 50%;
-}
 
 .nav-item .material-icons { font-size: 26px; margin-bottom: 3px; }
 .nav-label { 
