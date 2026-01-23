@@ -250,7 +250,7 @@ window.openModal = async function(type, payload) {
         `;
     }
 
-    // --- TRASPORTI ---
+   // --- TRASPORTI ---
     else if (type === 'transport') {
         const item = window.tempTransportData[payload];
         if (!item) { console.error("Errore recupero trasporto"); return; }
@@ -269,7 +269,8 @@ window.openModal = async function(type, payload) {
 
         let customContent = '';
 
-       if (isBus) {
+        if (isBus) {
+            // === LOGICA BUS (Mappa + Ricerca) ===
             const { data: fermate, error } = await window.supabaseClient
                 .from('Fermate_bus')
                 .select('ID, NOME_FERMATA, LAT, LONG') 
@@ -281,7 +282,7 @@ window.openModal = async function(type, payload) {
                 const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
                 const options = fermate.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
                 
-                // Sezione Biglietti (Turchese)
+                // Sezione Biglietti
                 let ticketSection = '';
                 if (hasTicketInfo) {
                     ticketSection = `
@@ -295,19 +296,17 @@ window.openModal = async function(type, payload) {
                     </div>`;
                 }
 
-                // === NUOVA SEZIONE MAPPA A TENDINA (Viola) ===
+                // Sezione Mappa a Tendina
                 const mapToggleSection = `
                     <button id="btn-bus-map-toggle" onclick="toggleBusMap()" style="width:100%; margin-bottom:15px; background:#EDE7F6; color:#4527A0; border:1px solid #D1C4E9; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition: background 0.3s;">
                         🗺️ MOSTRA MAPPA FERMATE ▾
                     </button>
-                    
                     <div id="bus-map-wrapper" style="display:none; margin-bottom: 20px;">
                         <div id="bus-map" style="height: 280px; width: 100%; border-radius: 12px; z-index: 1; border: 2px solid #EDE7F6;"></div>
                         <p style="font-size:0.75rem; text-align:center; color:#999; margin-top:5px;">Tocca i segnaposto per impostare Partenza/Arrivo</p>
-                    </div>
-                `;
+                    </div>`;
 
-                // Costruzione HTML finale
+                // Costruzione HTML Bus
                 customContent = `
                 <div class="bus-search-box animate-fade">
                     <div class="bus-title" style="margin-bottom: 0px; padding-bottom: 15px;">
@@ -329,37 +328,26 @@ window.openModal = async function(type, payload) {
                     <div id="busResultsContainer" style="display:none; margin-top:20px;"><div id="nextBusCard" class="bus-result-main"></div><div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">CORSE SUCCESSIVE:</div><div id="otherBusList" class="bus-list-container"></div></div>
                 </div>`;
                 
-                // Inizializza la mappa (anche se nascosta, deve essere pronta)
                 setTimeout(() => { initBusMap(fermate); }, 300);
             } else {
                 customContent = `<p style="color:red;">Errore caricamento fermate.</p>`;
             }
-        }
+        } 
         else if (isTrain) {
-            const LINK_OMIO = "https://omio.sjv.io/c/6902975/861892/7385/"; 
-            customContent = `
-            <div class="bus-search-box animate-fade" style="margin: -20px; padding: 20px;">
-                <div class="bus-title" style="margin-bottom: 0px; padding-bottom: 15px; padding-top: 5px;">
-                    <span class="material-icons" style="background: linear-gradient(135deg, #FF5252, #D32F2F) !important; box-shadow: 0 4px 6px rgba(211, 47, 47, 0.25) !important; color: white !important; padding: 8px; border-radius: 12px;">train</span> 
-                    Treni & Orari
-                </div>
-                <p style="color:#666; font-size:0.95rem; margin-bottom: 25px; line-height: 1.6; padding: 0 5px;">
-                    Spostarsi in treno è il modo più rapido per visitare le Cinque Terre. 
-                    Controlla gli orari in tempo reale e acquista i biglietti.
-                </p>
-                <a href="${LINK_OMIO}" target="_blank" style="text-decoration: none;">
-                    <button class="btn-yellow" style="background: linear-gradient(135deg, #FF5252 0%, #D32F2F 100%) !important; box-shadow: 0 10px 25px -5px rgba(211, 47, 47, 0.4) !important; color: white !important;">
-                        <span class="material-icons" style="margin-right: 10px;">search</span>
-                        COMPRA BIGLIETTI E CONSULTA ORARI
-                    </button>
-                </a>
-                <div style="text-align: center; margin-top: 15px; font-size: 0.75rem; color: #aaa; line-height: 1.4;">
-                    Powered by <strong>Omio</strong><br>
-                    <span style="font-size: 0.65rem;">*Link affiliato: acquistando sostieni Five2Go senza costi extra.</span>
-                </div>
-            </div>`;
+            // === NUOVA LOGICA TRENI (Trenitalia) ===
+            // Calcolo orario corrente
+            const now = new Date();
+            const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+            // Richiama il renderer che abbiamo creato in ui-renderers.js
+            if (window.trainSearchRenderer) {
+                customContent = window.trainSearchRenderer(null, nowTime);
+            } else {
+                customContent = "<p>Errore interfaccia Treni.</p>";
+            }
         }
         else {
+            // === ALTRI TRASPORTI (Traghetti, Taxi) ===
             if (hasTicketInfo) {
                  customContent = `
                  <button onclick="toggleTicketInfo()" style="width:100%; margin-top:15px; background:#e0f7fa; color:#006064; border:1px solid #b2ebf2; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">
@@ -375,9 +363,12 @@ window.openModal = async function(type, payload) {
             }
         }
 
+        // Output Finale
         if (isBus || isTrain) {
+            // Bus e Treni hanno già la loro grafica "customContent" completa
             contentHtml = customContent;
         } else {
+            // Gli altri mostrano Titolo + Descrizione + Info Biglietti
             contentHtml = `<h2>${nome}</h2><p style="color:#666;">${desc}</p>${customContent}`;
         }
     }
@@ -618,4 +609,48 @@ window.toggleBusMap = function() {
         btn.innerHTML = '🗺️ MOSTRA MAPPA FERMATE ▾';
         btn.style.backgroundColor = '#EDE7F6'; // Viola chiaro
     }
+};
+
+// ui-renderers.js
+
+window.trainSearchRenderer = (stazioniIgnorate, defaultTime) => {
+    const stazioni = [
+        { id: "S00228", nome: "La Spezia Centrale" },
+        { id: "S00226", nome: "Riomaggiore" },
+        { id: "S00225", nome: "Manarola" },
+        { id: "S00224", nome: "Corniglia" },
+        { id: "S00223", nome: "Vernazza" },
+        { id: "S00222", nome: "Monterosso" },
+        { id: "S00221", nome: "Levanto" }
+    ];
+
+    const options = stazioni.map(s => `<option value="${s.id}">${s.nome}</option>`).join('');
+
+    return `
+    <div class="bus-search-box animate-fade" style="border-top: 4px solid #27AE60;">
+        <div class="bus-title">
+            <span class="material-icons" style="background:#E9F7EF; color:#27AE60;">dvr</span> 
+            Tabellone Partenze
+        </div>
+        
+        <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">
+            Visualizza i treni in partenza, i <b>ritardi</b> e i <b>binari</b> in tempo reale.
+        </p>
+
+        <div class="bus-inputs-row">
+            <div class="bus-input-group" style="width:100%;">
+                <label class="bus-label">SELEZIONA STAZIONE</label>
+                <select id="trainPartenza" class="bus-select">
+                    <option value="" disabled selected>Dove ti trovi?</option>
+                    ${options}
+                </select>
+            </div>
+        </div>
+
+        <button onclick="caricaTabelloneJSON()" class="btn-yellow" style="background: linear-gradient(135deg, #27AE60 0%, #145A32 100%); color:white; margin-top:10px;">
+            AGGIORNA TABELLONE
+        </button>
+
+        <div id="liveTrainResults" style="margin-top:20px; min-height:50px;"></div>
+    </div>`;
 };

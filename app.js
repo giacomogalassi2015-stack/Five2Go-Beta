@@ -121,12 +121,10 @@ window.switchView = async function(view, el) {
         content.innerHTML = `<div class="error-msg">${window.t('error')}: ${err.message}</div>`;
     }
 };
-
-// --- NUOVA RENDER HOME (Integrata nel layout) ---
+// --- NUOVA RENDER HOME (Corretta senza scritta doppia) ---
 function renderHome() {
     const bgImage = "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
 
-    // Nota: Non usiamo più position:fixed, ma riempiamo il contenitore principale
     content.innerHTML = `
     <div class="welcome-card animate-fade" style="background-image: url('${bgImage}');">
         <div class="welcome-overlay">
@@ -135,7 +133,6 @@ function renderHome() {
                 <p class="welcome-desc">${window.t('welcome_desc')}</p>
                 <div class="welcome-divider"></div>
                 
-                <p style="color:rgba(255,255,255,0.8); font-size:0.8rem; margin-bottom:10px; text-transform:uppercase; font-weight:bold;">${window.t('nav_villages')}</p>
                 <div class="lang-grid">
                     ${window.AVAILABLE_LANGS.map(l => `
                         <button class="lang-tile ${l.code === window.currentLang ? 'active' : ''}" onclick="changeLanguage('${l.code}')">
@@ -411,4 +408,141 @@ document.addEventListener('DOMContentLoaded', () => {
     setupHeaderElements(); // Avvia header con configurazione Home
     updateNavBar(); 
     switchView('home');
-});
+});// --- FUNZIONE TABELLONE IN-APP (STRATEGIA MULTI-PROXY) ---
+window.caricaTabelloneJSON = async function() {
+    const selPartenza = document.getElementById('trainPartenza');
+    const container = document.getElementById('liveTrainResults');
+
+    if (!selPartenza || !selPartenza.value) {
+        alert("Seleziona una stazione.");
+        return;
+    }
+
+    const idStazione = selPartenza.value;
+    const nomeStazione = selPartenza.options[selPartenza.selectedIndex].text;
+
+    container.innerHTML = `<div class="loader" style="font-size:0.8rem; text-align:center;">Connessione ai server FS in corso...</div>`;
+
+    const now = new Date().getTime();
+    const targetUrl = `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${idStazione}/${now}`;
+
+    // --- LISTA PROXY (Se uno fallisce, proviamo il prossimo) ---
+    // 1. CodeTabs (Molto affidabile)
+    // 2. CorsProxy.io (Veloce)
+    // 3. AllOrigins (Backup)
+    const proxies = [
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+        `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+        `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
+    ];
+
+    let treniData = null;
+    let success = false;
+
+    // TENTATIVI IN SEQUENZA
+    for (const proxy of proxies) {
+        try {
+            console.log("Tentativo connessione con:", proxy);
+            const response = await fetch(proxy);
+            
+            if (!response.ok) throw new Error("Proxy error");
+
+            // Gestione formati diversi dei proxy
+            const text = await response.text();
+            
+            // AllOrigins mette i dati dentro .contents, gli altri no
+            let jsonRaw;
+            try {
+                const parsed = JSON.parse(text);
+                if (parsed.contents) {
+                    jsonRaw = JSON.parse(parsed.contents); // Scompatta AllOrigins
+                } else {
+                    jsonRaw = parsed; // CodeTabs e CorsProxy danno JSON diretto
+                }
+            } catch (e) {
+                throw new Error("JSON non valido");
+            }
+
+            if (jsonRaw && Array.isArray(jsonRaw)) {
+                treniData = jsonRaw;
+                success = true;
+                break; // Usciamo dal ciclo, abbiamo i dati!
+            }
+        } catch (err) {
+            console.warn("Proxy fallito, provo il prossimo...", err);
+        }
+    }
+
+    // --- RENDERIZZAZIONE ---
+    if (success && treniData) {
+        if (treniData.length === 0) {
+            container.innerHTML = `<p style="text-align:center; padding:15px; color:#666;">Nessun treno in partenza a breve.</p>`;
+            return;
+        }
+
+        let html = `
+            <div style="background:#f1f2f6; padding:8px; font-size:0.75rem; color:#666; text-align:center; border-radius:8px 8px 0 0;">
+                Partenze da <b>${nomeStazione}</b> (Live)
+            </div>
+            <div style="max-height:400px; overflow-y:auto;">
+        `;
+
+        treniData.forEach(t => {
+            const destinazione = t.destinazione;
+            const cat = t.categoria;
+            const num = t.numeroTreno;
+            
+            // Orario
+            const dataP = new Date(t.orarioPartenza);
+            const ora = dataP.getHours().toString().padStart(2,'0') + ':' + dataP.getMinutes().toString().padStart(2,'0');
+
+            // Ritardo
+            let ritardoHtml = '';
+            if (t.ritardo > 0) ritardoHtml = `<span style="color:#e74c3c; font-weight:bold;">+${t.ritardo} min</span>`;
+            else ritardoHtml = `<span style="color:#27ae60;">In Orario</span>`;
+
+            // Binario
+            const bin = t.binarioEffettivoPartenzaDescrizione || t.binarioProgrammatoPartenzaDescrizione || '--';
+
+            html += `
+            <div class="bus-list-item animate-fade" style="display:flex; justify-content:space-between; align-items:center; padding:12px; margin-bottom:8px; border-left: 4px solid ${t.ritardo > 5 ? '#e74c3c' : '#27ae60'};">
+                <div style="text-align:center; width:55px;">
+                    <div style="font-size:1.1rem; font-weight:800; color:#2D3436; line-height:1;">${ora}</div>
+                </div>
+                
+                <div style="flex:1; padding:0 12px;">
+                    <div style="font-size:0.95rem; font-weight:bold; color:#2C3E50;">${destinazione}</div>
+                    <div style="font-size:0.75rem; color:#666;">
+                        ${cat} ${num} • ${ritardoHtml}
+                    </div>
+                </div>
+
+                <div style="text-align:right;">
+                    <div style="font-size:0.65rem; color:#999;">Bin</div>
+                    <div style="font-size:1.1rem; font-weight:bold; color:#2C3E50; background:#eee; padding:2px 6px; border-radius:4px;">${bin}</div>
+                </div>
+            </div>`;
+        });
+
+        html += `</div>
+            <div style="text-align:center; padding:5px; font-size:0.65rem; color:#ccc;">
+                Dati forniti da RFI
+            </div>`;
+        
+        container.innerHTML = html;
+
+    } else {
+        // --- FALLBACK (Se TUTTI i proxy falliscono) ---
+        // Mostriamo il pulsante per il sito mobile ufficiale che non fallisce mai
+        console.error("Tutti i proxy sono bloccati.");
+        container.innerHTML = `
+            <div style="text-align:center; padding:15px; background:#fff3cd; border-radius:8px;">
+                <p style="color:#856404; font-size:0.9rem;">⚠️ Connessione API bloccata.</p>
+                <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Usa il collegamento diretto al tabellone:</p>
+                <button onclick="window.open('http://www.viaggiatreno.it/infomobilita/vt_pda/stazione?id=${idStazione}', '_blank')" style="padding:10px 20px; background:#e67e22; color:white; border:none; border-radius:50px; font-weight:bold; cursor:pointer;">
+                    APRI TABELLONE UFFICIALE
+                </button>
+            </div>
+        `;
+    }
+};
