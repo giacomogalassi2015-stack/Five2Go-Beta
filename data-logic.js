@@ -172,6 +172,65 @@ function updateStaticInterface() {
     
     // Aggiorna tutti gli elementi che usano window.t() al volo se necessario
 }
+
+
+// Algoritmo di Gauss per calcolare la Pasqua
+function getEasterDate(year) {
+    const a = year % 19;
+    const b = Math.floor(year / 100);
+    const c = year % 100;
+    const d = Math.floor(b / 4);
+    const e = b % 4;
+    const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4);
+    const k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    
+    const month = Math.floor((h + l - 7 * m + 114) / 31) - 1; // 0-indexed per JS Date
+    const day = ((h + l - 7 * m + 114) % 31) + 1;
+    
+    return new Date(year, month, day);
+}
+
+// Verifica se è un giorno festivo in Italia
+function isItalianHoliday(dateObj) {
+    const d = dateObj.getDate();
+    const m = dateObj.getMonth() + 1; // 1-12
+    const y = dateObj.getFullYear();
+
+    // 1. Domenica
+    if (dateObj.getDay() === 0) return true;
+
+    // 2. Festività Fisse
+    const fixedHolidays = [
+        "1-1",   // Capodanno
+        "6-1",   // Epifania
+        "25-4",  // Liberazione
+        "1-5",   // Festa del Lavoro
+        "2-6",   // Festa della Repubblica
+        "15-8",  // Ferragosto
+        "1-11",  // Ognissanti
+        "8-12",  // Immacolata
+        "25-12", // Natale
+        "26-12"  // Santo Stefano
+    ];
+    if (fixedHolidays.includes(`${d}-${m}`)) return true;
+
+    // 3. Pasquetta (Lunedì dell'Angelo) = Pasqua + 1 giorno
+    const easter = getEasterDate(y);
+    const pasquetta = new Date(easter);
+    pasquetta.setDate(easter.getDate() + 1);
+
+    if (d === pasquetta.getDate() && (m - 1) === pasquetta.getMonth()) return true;
+    
+    // (Opzionale) Patrono della Spezia 19 Marzo? 
+    // Per ora teniamo le nazionali standard.
+    
+    return false;
+}
 // 6. MOTORE DI RICERCA BUS (Cervello)
 // =========================================================
 window.eseguiRicercaBus = async function() {
@@ -205,11 +264,20 @@ window.eseguiRicercaBus = async function() {
     nextCard.innerHTML = `<div style="text-align:center; padding:20px;">Cercando... <span class="material-icons spin">sync</span></div>`;
     list.innerHTML = '';
 
-    // Calcolo Festivo
-    const dateObj = new Date(dataScelta);
-    const isFestivo = (dateObj.getDay() === 0); // 0 = Domenica
+    // === CALCOLO FESTIVO AVANZATO ===
+    // Parsing manuale per evitare problemi di timezone
+    const parts = dataScelta.split('-');
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1; 
+    const day = parseInt(parts[2]);
+    const dateObj = new Date(year, month, day);
 
-    // 2. Chiamata RPC
+    // Usa la funzione helper per determinare se è festivo
+    const isFestivo = isItalianHoliday(dateObj);
+
+    // 2. Chiamata RPC a Supabase
+    // Nota: Passiamo p_is_festivo. Lato DB la query dovrà fare qualcosa tipo:
+    // WHERE (p_is_festivo = true AND "ATTIVO_FESTIVO" = true) OR (p_is_festivo = false AND "ATTIVO_FERIALE" = true)
     const { data, error } = await window.supabaseClient.rpc('trova_bus', { 
         p_partenza_id: partenzaId, 
         p_arrivo_id: arrivoId, 
@@ -223,18 +291,19 @@ window.eseguiRicercaBus = async function() {
         return; 
     }
 
+    // Badge UI per indicare all'utente che tipo di orario sta vedendo
+    const dayTypeLabel = isFestivo 
+        ? `<span class="badge-holiday">📅 FESTIVO</span>` 
+        : `<span class="badge-weekday">🏢 FERIALE</span>`;
+
     if (!data || data.length === 0) { 
         nextCard.innerHTML = `
             <div style="text-align:center; padding:15px; color:#c62828;">
                 <span class="material-icons">event_busy</span><br>
                 <strong>Nessuna corsa trovata</strong><br>
-                <small>Prova a cambiare orario.</small>
+                <div style="margin-top:5px;">${dayTypeLabel}</div>
+                <small style="display:block; margin-top:5px;">Prova a cambiare orario.</small>
             </div>`; 
-        
-        // (Opzionale) Scrolla anche se non trova nulla per mostrare l'errore
-        setTimeout(() => {
-            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 100);
         return; 
     }
 
@@ -243,10 +312,13 @@ window.eseguiRicercaBus = async function() {
     const aOra = primo.ora_arrivo.slice(0,5);
 
     nextCard.innerHTML = `
-        <div style="font-size:0.75rem; color:#555; text-transform:uppercase; font-weight:bold;">PROSSIMA PARTENZA</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <span style="font-size:0.75rem; color:#e0f7fa; text-transform:uppercase; font-weight:bold;">PROSSIMA PARTENZA</span>
+            ${dayTypeLabel}
+        </div>
         <div class="bus-time-big">${pOra}</div>
-        <div style="font-size:1rem; color:#333;">Arrivo: <strong>${aOra}</strong></div>
-        <div style="font-size:0.8rem; color:#777; margin-top:5px;">${primo.nome_linea}</div>
+        <div style="font-size:1rem; color:#e0f7fa;">Arrivo: <strong>${aOra}</strong></div>
+        <div style="font-size:0.8rem; color:#b2ebf2; margin-top:5px;">${primo.nome_linea || 'Linea ATC'}</div>
     `;
 
     const successivi = data.slice(1);
