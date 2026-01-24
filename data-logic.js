@@ -38,7 +38,7 @@ const UI_TEXT = {
         ideal_for: "Ideale per", no_results: "Nessun risultato.", visit_time: "min", curiosity: "Curiosità", coverage: "Copertura", pharmacy_tag: "FARMACIA",
         map_loaded: "Mappa caricata",
         // NUOVI TESTI WELCOME
-        welcome_app_name: "Five2Go",
+        welcome_app_name: "5 Terre Guide",
         welcome_desc: "La tua guida essenziale per esplorare le Cinque Terre. Scopri sentieri, spiagge, cultura e sapori locali.",
         welcome_start: "Inizia a Esplorare"
     },
@@ -51,7 +51,7 @@ const UI_TEXT = {
         ideal_for: "Best for", no_results: "No results found.", visit_time: "min", curiosity: "Curiosity", coverage: "Coverage", pharmacy_tag: "PHARMACY",
         map_loaded: "Map loaded",
         // NEW WELCOME TEXTS
-        welcome_app_name: "Five2Go",
+        welcome_app_name: "5 Terre Guide",
         welcome_desc: "Your essential guide to exploring Cinque Terre. Discover trails, beaches, culture, and local flavors.",
         welcome_start: "Start Exploring"
     },
@@ -64,7 +64,7 @@ const UI_TEXT = {
         btn_call: "Llamar", btn_map: "Mapa", btn_info: "Info", btn_website: "Sitio Web", btn_hours: "Horario", btn_toll: "Peaje", btn_position: "Posición",
         ideal_for: "Ideal para", no_results: "Sin resultados.", visit_time: "min", curiosity: "Curiosidad", coverage: "Cobertura", pharmacy_tag: "FARMACIA",
         map_loaded: "Mapa cargado",
-        welcome_app_name: "Five2Go",
+        welcome_app_name: "5 Terre Guide",
         welcome_desc: "Tu guía esencial para explorar Cinque Terre. Descubre senderos, playas, cultura y sabores.",
         welcome_start: "Empezar"
     },
@@ -76,7 +76,7 @@ const UI_TEXT = {
         btn_call: "Appeler", btn_map: "Carte", btn_info: "Info", btn_website: "Site Web", btn_hours: "Horaires", btn_toll: "Péage", btn_position: "Position",
         ideal_for: "Idéal pour", no_results: "Aucun résultat.", visit_time: "min", curiosity: "Curiosité", coverage: "Couverture", pharmacy_tag: "PHARMACIE",
         map_loaded: "Carte chargée",
-        welcome_app_name: "Five2Go",
+        welcome_app_name: "5 Terre Guide",
         welcome_desc: "Votre guide essentiel pour explorer les Cinque Terre. Découvrez sentiers, plages, culture et saveurs.",
         welcome_start: "Commencer"
     },
@@ -88,7 +88,7 @@ const UI_TEXT = {
         btn_call: "Anrufen", btn_map: "Karte", btn_info: "Info", btn_website: "Webseite", btn_hours: "Öffnungszeiten", btn_toll: "Maut", btn_position: "Standort",
         ideal_for: "Ideal für", no_results: "Keine Ergebnisse.", visit_time: "min", curiosity: "Kuriosität", coverage: "Abdeckung", pharmacy_tag: "APOTHEKE",
         map_loaded: "Karte geladen",
-        welcome_app_name: "Five2Go",
+        welcome_app_name: "5 Terre Guide",
         welcome_desc: "Ihr wesentlicher Reiseführer für die Cinque Terre. Entdecken Sie Wanderwege, Strände, Kultur und Geschmack.",
         welcome_start: "Starten"
     },
@@ -100,7 +100,7 @@ const UI_TEXT = {
         btn_call: "致电", btn_map: "地图", btn_info: "信息", btn_website: "网站", btn_hours: "时间", btn_toll: "通行费", btn_position: "位置",
         ideal_for: "适合", no_results: "无结果", visit_time: "分", curiosity: "趣闻", coverage: "覆盖范围", pharmacy_tag: "药房",
         map_loaded: "地图已加载",
-        welcome_app_name: "Five2Go",
+        welcome_app_name: "5 Terre Guide",
         welcome_desc: "探索五渔村的必备指南。发现步道、海滩、文化和当地风味。",
         welcome_start: "开始探索"
     }
@@ -113,18 +113,10 @@ window.t = function(key) {
 };
 
 window.dbCol = function(item, field) {
-    if (!item || !item[field]) return '';
-
-    let value = item[field];
-
-    // Se Supabase restituisce il JSONB già come oggetto
-    if (typeof value === 'object' && value !== null) {
-        // Cerca la lingua corrente, altrimenti fallback su italiano, altrimenti stringa vuota
-        return value[window.currentLang] || value['it'] || '';
-    }
-
-    // Se è ancora una stringa (es. vecchi dati o errore di parsing), la restituisce così com'è
-    return value;
+    if (!item) return '';
+    if (window.currentLang === 'it') return item[field]; 
+    const translatedField = `${field}_${window.currentLang}`; 
+    return (item[translatedField] && item[translatedField].trim() !== '') ? item[translatedField] : item[field];
 };
 
 window.getSmartUrl = function(name, folder = '', width = 600) {
@@ -134,44 +126,15 @@ window.getSmartUrl = function(name, folder = '', width = 600) {
     return `${CLOUDINARY_BASE_URL}/w_${width},c_fill,f_auto,q_auto:good,fl_progressive/${folderPath}${safeName}`;
 };
 
-window.changeLanguage = function(langCode) {
-    console.log("Cambio lingua a:", langCode);
+window.shareApp = async function() {
+    try {
+        if (navigator.share) await navigator.share({ title: '5 Terre App', text: 'Guarda questa guida!', url: window.location.href });
+        else { navigator.clipboard.writeText(window.location.href); alert("Link copiato!"); }
     
-    // 1. Aggiorna la variabile globale
-    window.currentLang = langCode;
-    
-    // (Opzionale) Salva la scelta nel browser per la prossima volta
-    localStorage.setItem('user_lang', langCode);
-
-    // 2. Aggiorna i testi statici dell'interfaccia (Titoli, Bottoni)
-    updateStaticInterface();
-
-    // 3. Ricarica la vista corrente (Forza il re-render delle card)
-    // Assumo che tu abbia una funzione che renderizza la pagina, es: renderApp() o loadData()
-    // Se usi una logica basata su router, ricarica la pagina corrente:
-    if (typeof renderCategory === 'function') {
-        // Esempio: se sei nella vista attrazioni, ricaricala
-        const currentCategory = window.currentCategory || 'attrazioni'; // O la tua variabile di stato
-        renderCategory(currentCategory); 
-    } else {
-        // Fallback brutale se non hai una funzione di render centralizzata
-        location.reload(); 
-    }
+    } catch (err) { console.log("Errore:", err); }
 };
 
-// Funzione helper per aggiornare i testi fissi (Menu, Home Title, ecc.)
-function updateStaticInterface() {
-    // Esempio: Aggiorna il titolo della Home
-    const homeTitleEl = document.getElementById('home-title'); 
-    if(homeTitleEl) homeTitleEl.textContent = window.t('home_title');
-
-    // Esempio: Aggiorna i bottoni della navbar
-    // Suggerimento: Aggiungi id="nav-food" ai tuoi elementi HTML per trovarli facilmente
-    const navFood = document.getElementById('nav-food');
-    if(navFood) navFood.textContent = window.t('nav_food');
-    
-    // Aggiorna tutti gli elementi che usano window.t() al volo se necessario
-}
+// =========================================================
 // 6. MOTORE DI RICERCA BUS (Cervello)
 // =========================================================
 window.eseguiRicercaBus = async function() {
@@ -230,11 +193,6 @@ window.eseguiRicercaBus = async function() {
                 <strong>Nessuna corsa trovata</strong><br>
                 <small>Prova a cambiare orario.</small>
             </div>`; 
-        
-        // (Opzionale) Scrolla anche se non trova nulla per mostrare l'errore
-        setTimeout(() => {
-            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 100);
         return; 
     }
 
@@ -256,12 +214,4 @@ window.eseguiRicercaBus = async function() {
             <span style="color:#666;">➜ ${b.ora_arrivo.slice(0,5)}</span>
         </div>
     `).join('');
-
-    // === 3. NUOVO CODICE PER AUTOSCROLL ===
-    setTimeout(() => {
-        resultsContainer.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' // Cerca di mettere l'inizio del box in alto
-        });
-    }, 150); // Ritardo leggero per permettere al browser di disegnare il box
 };

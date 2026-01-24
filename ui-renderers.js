@@ -141,7 +141,7 @@ window.attrazioniRenderer = (item) => {
     const titolo = window.dbCol(item, 'Attrazioni') || 'Attrazione';
     const paese = window.dbCol(item, 'Paese');
     const myId = (item._tempIndex !== undefined) ? item._tempIndex : 0;
-    const diff = window.dbCol(item, 'Difficoltà Accesso') || 'Accessibile';
+    const diff = window.dbCol(item, 'Difficoltà accesso');
     const isHard = diff.toLowerCase().match(/alta|hard|difficile|schwer|difícil/); 
     const diffStyle = isHard ? 'background:#ffebee; color:#c62828;' : 'background:#e8f5e9; color:#2e7d32;';
 
