@@ -93,6 +93,13 @@ window.switchView = async function(view, el) {
     if (!content) return;
     window.currentViewName = view; // Salva stato vista corrente
 
+     // === FIX BUG FILTRO: Rimuovi il tasto filtro globale se esiste ===
+    const globalFilterBtn = document.querySelector('body > #filter-toggle-btn');
+    if (globalFilterBtn) {
+        globalFilterBtn.remove();
+    }
+    // ================================================================
+
     // Aggiorna menu in basso (UI Attiva)
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     if (el) el.classList.add('active');
