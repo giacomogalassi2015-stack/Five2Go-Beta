@@ -90,8 +90,15 @@ window.addEventListener('click', () => {
 
 // --- 2. NAVIGAZIONE PRINCIPALE ---
 window.switchView = async function(view, el) {
-    if (!content) return;
+   if (!content) return;
     window.currentViewName = view; // Salva stato vista corrente
+
+    // === FIX BUG FILTRO: Rimuovi il tasto filtro globale se esiste ===
+    const globalFilterBtn = document.querySelector('body > #filter-toggle-btn');
+    if (globalFilterBtn) {
+        globalFilterBtn.remove();
+    }
+    // ================================================================
 
     // Aggiorna menu in basso (UI Attiva)
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
@@ -318,8 +325,16 @@ function handlePageSwipe() {
 window.renderServicesGrid = async function() {
     const content = document.getElementById('app-content');
     
+    // === FIX BUG FILTRO: Rimuovi il tasto filtro globale se torni indietro ===
+    const globalFilterBtn = document.querySelector('body > #filter-toggle-btn');
+    if (globalFilterBtn) {
+        globalFilterBtn.remove();
+    }
+    // =======================================================================
+
     // 1. Recupero dati dal DB
     const { data, error } = await window.supabaseClient.from('Trasporti').select('*');
+    // ... (il resto della funzione rimane invariato)
     if (error) { 
         console.error(error);
         content.innerHTML = `<p class="error-msg">Errore caricamento servizi.</p>`; 
