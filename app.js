@@ -176,11 +176,15 @@ window.loadTableData = async function(tableName, btnEl) {
     const filterBtn = document.getElementById('filter-toggle-btn');
     if (!subContent) return;
 
+    // === AGGIUNGI QUESTE RIGHE QUI PER PULIRE I FILTRI ===
+    const filterContainer = document.getElementById('filters-scroll') || document.getElementById('category-filters');
+    if (filterContainer) filterContainer.innerHTML = '';
+    // ====================================================
+
     // Gestione visuale tab attivo
     document.querySelectorAll('.sub-nav-item').forEach(b => b.classList.remove('active-sub'));
     if (btnEl) btnEl.classList.add('active-sub');
     if(filterBtn) filterBtn.style.display = 'none';
-
     subContent.innerHTML = `<div class="loader">${window.t('loading')}</div>`;
     
     if (tableName === 'Mappe') {
