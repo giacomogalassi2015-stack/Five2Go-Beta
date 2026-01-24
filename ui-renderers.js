@@ -478,80 +478,151 @@ window.openModal = async function(type, payload) {
              contentHtml = `<h2>${titolo}</h2><p>📍 ${paese}</p><p>${window.dbCol(item, 'Descrizione')}</p>`;
          }
     }
+// --- MAPPA FULL SCREEN (GPX) ---
+    else if (type === 'map') {
+        const gpxUrl = payload;
+        // Creiamo un ID unico per questa mappa modale
+        const uniqueMapId = 'modal-map-' + Math.random().toString(36).substr(2, 9);
+        
+        // Impostiamo un'altezza fissa importante
+        contentHtml = `
+            <h3 style="text-align:center; margin-bottom:10px;">Mappa Percorso</h3>
+            <div id="${uniqueMapId}" style="height: 450px; width: 100%; border-radius: 12px; border: 1px solid #ddd;"></div>
+            <p style="text-align:center; font-size:0.8rem; color:#888; margin-top:10px;">Usa due dita per zoomare</p>
+        `;
 
+        // --- IL TRUCCO PER FARLA APPARIRE ---
+        // Inizializziamo la mappa DOPO che la modale è stata inserita nel DOM (setTimeout)
+        setTimeout(() => {
+            const element = document.getElementById(uniqueMapId);
+            if (element) {
+                const map = L.map(uniqueMapId);
+                
+                // Layer CartoDB (quello bello moderno)
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap, © CARTO',
+                    maxZoom: 20
+                }).addTo(map);
+
+                // Carichiamo il GPX con le ancore corrette anche qui
+                new L.GPX(gpxUrl, {
+                    async: true,
+                    marker_options: { 
+                        startIconUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-icon-start.png', 
+                        endIconUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-icon-end.png', 
+                        shadowUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-shadow.png',
+                        iconSize: [25, 41],   
+                        iconAnchor: [12, 41], 
+                        shadowSize: [41, 41]
+                    },
+                    polyline_options: { color: '#E76F51', weight: 5, opacity: 0.8 }
+                }).on('loaded', function(e) { 
+                    map.fitBounds(e.target.getBounds(), { padding: [20, 20] }); 
+                }).addTo(map);
+
+                // --- COMANDO MAGICO: Forza il ricalcolo delle dimensioni ---
+                setTimeout(() => { map.invalidateSize(); }, 300);
+            }
+        }, 100); // Ritardo iniziale di 100ms per attendere il render HTML
+    }
     modal.innerHTML = `<div class="${modalClass}"><span class="close-modal" onclick="this.parentElement.parentElement.remove()">×</span>${contentHtml}</div>`;
 };
 
-// --- ALTRE FUNZIONI DI SUPPORTO (Maps, ecc.) ---
+// 1. INIZIALIZZA LE MAPPE DEI SENTIERI (e altre modali)
 window.initPendingMaps = function() {
     if (!window.mapsToInit || window.mapsToInit.length === 0) return;
+    
     window.mapsToInit.forEach(mapData => {
         const element = document.getElementById(mapData.id);
+        // Controlla se l'elemento esiste e se la mappa non è già stata creata
         if (element && !element._leaflet_id) {
-            const map = L.map(mapData.id, { zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, attributionControl: false });
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            const map = L.map(mapData.id, { 
+                zoomControl: false, 
+                dragging: false, 
+                scrollWheelZoom: false, 
+                doubleClickZoom: false, 
+                attributionControl: false 
+            });
+
+            // --- QUI C'È LA MODIFICA DELLA MAPPA ---
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(map);
+            // ---------------------------------------
+
             if (mapData.gpx) {
-                new L.GPX(mapData.gpx, {
-                    async: true,
-                    marker_options: { startIconUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-icon-start.png', endIconUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-icon-end.png', shadowUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-shadow.png', iconSize: [20, 30] },
-                    polyline_options: { color: '#E76F51', weight: 5, opacity: 0.8 }
-                }).on('loaded', function(e) { map.fitBounds(e.target.getBounds(), { paddingTopLeft: [20, 20], paddingBottomRight: [20, 180] }); }).addTo(map);
+      // Cerca questo blocco dentro initPendingMaps:
+
+new L.GPX(mapData.gpx, {
+    async: true,
+    marker_options: { 
+        startIconUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-icon-start.png', 
+        endIconUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-icon-end.png', 
+        shadowUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-shadow.png', 
+        // Assicurati di mantenere anche questi fix per i pin che abbiamo messo prima:
+        iconSize: [25, 41],    
+        iconAnchor: [12, 41],  
+        shadowSize: [41, 41]   
+    },
+    polyline_options: { color: '#E76F51', weight: 5, opacity: 0.8 }
+}).on('loaded', function(e) { 
+    
+    // === QUESTA È LA MODIFICA FONDAMENTALE ===
+    map.fitBounds(e.target.getBounds(), { 
+        paddingTopLeft: [20, 20],     // 20px di spazio Sopra e a Sinistra
+        paddingBottomRight: [20, 180] // 20px a Destra, 180px SOTTO!
+    });
+    // =========================================
+
+}).addTo(map);
             }
         }
     });
     window.mapsToInit = []; 
 };
 
+// 2. INIZIALIZZA LA MAPPA DEI BUS
 window.initBusMap = function(fermate) {
-    // === COORDINATE RIOMAGGIORE ===
-    const startLat = 44.1000; 
-    const startLong = 9.7385;
-    
-    // Zoom 13: Abbastanza per vedere Riomaggiore e dintorni, ma non troppo chiuso sui tetti
-    const startZoom = 13; 
-
     const mapContainer = document.getElementById('bus-map');
     if (!mapContainer) return;
-
-    // Rimuove la mappa vecchia se esiste (pulizia)
-    if (window.currentBusMap) {
-        window.currentBusMap.remove();
-        window.currentBusMap = null;
+    
+    // Rimuovi mappa precedente se esiste
+    if (window.currentBusMap) { 
+        window.currentBusMap.remove(); 
+        window.currentBusMap = null; 
     }
 
-    // Inizializza la mappa su Riomaggiore
-    const map = L.map('bus-map').setView([startLat, startLong], startZoom);
-    
-    // Salviamo la mappa in globale
+    // Centra su Riomaggiore/Cinque Terre
+    const map = L.map('bus-map').setView([44.1000, 9.7385], 13);
     window.currentBusMap = map; 
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-        attribution: '© OpenStreetMap', 
-        maxZoom: 18 
+    // --- QUI C'È LA MODIFICA DELLA MAPPA ---
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
     }).addTo(map);
+    // ---------------------------------------
 
     const markersGroup = new L.FeatureGroup();
     fermate.forEach(f => {
         if (!f.LAT || !f.LONG) return;
         const marker = L.marker([f.LAT, f.LONG]).addTo(map);
-        const popupContent = `
+        marker.bindPopup(`
             <div style="text-align:center; min-width:150px;">
                 <h3 style="margin:0 0 10px 0; font-size:1rem;">${f.NOME_FERMATA}</h3>
                 <div style="display:flex; gap:5px; justify-content:center;">
-                    <button onclick="setBusStop('selPartenza', '${f.ID}')" style="background:#4CAF50; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;">Partenza</button>
-                    <button onclick="setBusStop('selArrivo', '${f.ID}')" style="background:#F44336; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;">Arrivo</button>
+                    <button onclick="setBusStop('selPartenza', '${f.ID}')" class="btn-popup-start">Partenza</button>
+                    <button onclick="setBusStop('selArrivo', '${f.ID}')" class="btn-popup-end">Arrivo</button>
                 </div>
-            </div>`;
-        marker.bindPopup(popupContent);
+            </div>`);
         markersGroup.addLayer(marker);
     });
     map.addLayer(markersGroup);
     
-    // --- NOTA: Ho rimosso map.fitBounds() ---
-    // In questo modo la mappa rispetta il tuo "setView" su Riomaggiore
-    // invece di auto-adattarsi per mostrare tutte le fermate da La Spezia a Levanto.
-    
-    // Forza il ricalcolo dimensionale (per il toggle a tendina)
+    // Ricalcola dimensioni dopo breve delay (per il menu a tendina)
     setTimeout(() => { map.invalidateSize(); }, 200);
 };
 
