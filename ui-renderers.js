@@ -71,10 +71,11 @@ window.spiaggiaRenderer = (s) => {
     </div>`;
 };
 
-// === RENDERER SENTIERO (Adventure Vibe) ===
+// === RENDERER SENTIERO (Centrato e Adattivo) ===
 window.sentieroRenderer = (s) => {
     const paese = window.dbCol(s, 'Paesi');
-    const titolo = s.Nome || paese; // Nome del sentiero
+    // Se c'è un nome specifico lo usiamo, altrimenti usiamo il paese
+    const titoloMostrato = s.Nome || paese; 
     const distanza = s.Distanza || '--';
     const durata = s.Durata || '--';
     const diff = s.Tag || s.Difficolta || 'Media';
@@ -82,30 +83,26 @@ window.sentieroRenderer = (s) => {
     const uniqueMapId = `map-trail-${Math.random().toString(36).substr(2, 9)}`;
     const safeObj = encodeURIComponent(JSON.stringify(s)).replace(/'/g, "%27");
 
-    // Calcolo Colore Difficoltà
-    let diffClass = 'diff-medium';
-    if (diff.toLowerCase().includes('facile') || diff.toLowerCase().includes('easy')) diffClass = 'diff-easy';
-    if (diff.toLowerCase().includes('difficile') || diff.toLowerCase().includes('expert') || diff.toLowerCase().includes('hard')) diffClass = 'diff-hard';
+    // Calcolo Colore Testo Difficoltà (Invece del badge)
+    let diffColor = '#f39c12'; // Default (Media - Arancio)
+    if (diff.toLowerCase().includes('facile') || diff.toLowerCase().includes('easy')) diffColor = '#27ae60'; // Verde
+    if (diff.toLowerCase().includes('difficile') || diff.toLowerCase().includes('expert') || diff.toLowerCase().includes('hard')) diffColor = '#c0392b'; // Rosso
 
-    // Inizializza mappa se c'è
+    // Inizializza mappa
     if (gpxUrl) { window.mapsToInit.push({ id: uniqueMapId, gpx: gpxUrl }); }
 
     return `
     <div class="trail-card-modern animate-fade">
         <div id="${uniqueMapId}" class="trail-map-container" 
              onclick="event.stopPropagation(); openModal('map', '${gpxUrl}')">
-             </div>
+        </div>
 
-        <div class="trail-info-overlay" onclick="openModal('trail', '${safeObj}')">
-            
-            <div class="trail-title-row">
-                <div>
-                    <h3 style="margin:0; font-family:'Roboto Slab'; font-size:1.3rem; color:#222;">${paese}</h3>
-                    <div style="font-size:0.85rem; color:#888; margin-top:3px;">${titolo !== paese ? titolo : 'Sentiero Panoramico'}</div>
-                </div>
-                <div class="trail-diff-badge ${diffClass}">
-                    ${diff}
-                </div>
+        <div class="trail-info-overlay" onclick="openModal('trail', '${safeObj}')" style="text-align: center;"> <h3 style="margin:0 0 5px 0; font-family:'Roboto Slab'; font-size: clamp(1.2rem, 5vw, 1.5rem); color:#222; line-height:1.2;">
+                ${titoloMostrato}
+            </h3>
+
+            <div style="font-size:0.9rem; font-weight:700; color:${diffColor}; text-transform:uppercase; letter-spacing:1px; margin-bottom:15px;">
+                ${diff}
             </div>
 
             <div class="trail-stats-row">
@@ -503,20 +500,22 @@ new L.GPX(mapData.gpx, {
         startIconUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-icon-start.png', 
         endIconUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-icon-end.png', 
         shadowUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-shadow.png', 
-        // Assicurati di mantenere anche questi fix per i pin che abbiamo messo prima:
         iconSize: [25, 41],    
-        iconAnchor: [12, 41],  
+        iconAnchor: [12, 41],
         shadowSize: [41, 41]   
     },
     polyline_options: { color: '#E76F51', weight: 5, opacity: 0.8 }
 }).on('loaded', function(e) { 
     
-    // === QUESTA È LA MODIFICA FONDAMENTALE ===
+    // === MODIFICA QUI ===
+    // Prima avevi paddingBottomRight: [20, 180]. CANCELLALO.
+    // Usa questo per centrare perfettamente la traccia nel riquadro:
+    
     map.fitBounds(e.target.getBounds(), { 
-        paddingTopLeft: [20, 20],     // 20px di spazio Sopra e a Sinistra
-        paddingBottomRight: [20, 180] // 20px a Destra, 180px SOTTO!
+        padding: [30, 30]  // 30px di spazio vuoto su TUTTI i lati (Sopra, Sotto, Destra, Sinistra)
     });
-    // =========================================
+
+    // ====================
 
 }).addTo(map);
             }
