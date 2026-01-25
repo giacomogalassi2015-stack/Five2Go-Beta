@@ -235,8 +235,9 @@ window.loadTableData = async function(tableName, btnEl) {
         renderGenericFilterableView(data, 'Comune', subContent, window.numeriUtiliRenderer);
         return;
     }
-    else if (tableName === 'Prodotti') {
-        html = '<div class="grid-container animate-fade">'; 
+   else if (tableName === 'Prodotti') {
+        // Usa la griglia con max-width 600px per evitare l'effetto "enorme"
+        html = '<div class="products-grid-fixed animate-fade">'; 
         data.forEach(p => {
             html += window.prodottoRenderer(p);
         });
@@ -377,8 +378,26 @@ window.renderServicesGrid = async function() {
     html += '</div>';
     content.innerHTML = html;
 };
+// Funzione per renderizzare liste semplici (Farmacie, Numeri Utili) con Header Bello
 function renderSimpleList(tableName) {
-    content.innerHTML = `<div style="padding: 10px 0; display:flex; align-items:center; gap:10px;"><button onclick="renderServicesGrid()" class="btn-back" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">⬅</button><h2 style="margin:0;">${tableName.replace('_', ' ')}</h2></div><div id="sub-content"></div>`;
+    const cleanTitle = tableName.replace('_', ' '); // Es. "Numeri_utili" -> "Numeri utili"
+
+    // Header con Bottone Custom + Contenitore Contenuto
+    const layout = `
+    <div class="header-simple-list animate-fade">
+        <button onclick="renderServicesGrid()" class="btn-back-custom">
+            <span class="material-icons">arrow_back</span>
+        </button>
+        <h2>${cleanTitle}</h2>
+    </div>
+    
+    <div id="sub-content">
+        <div class="loader">${window.t('loading')}...</div>
+    </div>`;
+
+    content.innerHTML = layout;
+    
+    // Carica effettivamente i dati
     window.loadTableData(tableName, null);
 }
 window.toggleTicketInfo = function() {

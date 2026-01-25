@@ -254,42 +254,68 @@ main, #app-content {
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-/* ============================================================
-   5. SPECIFICHE VISTE (Prodotti, Spiagge, Sentieri)
-   ============================================================ */
+/* === PRODOTTI (Stile Servizi: Dimensioni Contenute) === */
 
-/* Glass Modal & Tag */
-.glass-modal {
-    background: rgba(255, 255, 255, 0.65) !important;
-    backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important; color: #2D3436;
-}
-.glass-tag {
-    display: inline-block; background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.6); padding: 8px 16px;
-    border-radius: 50px; font-weight: 700; color: var(--primary-dark);
-    margin-top: 10px; font-size: 0.9rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+/* 1. GRIGLIA: Copia esatta della tua .services-grid-modern */
+.products-grid-fixed {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 Colonne */
+    gap: 20px;                             /* Distanza identica ai servizi */
+    padding: 25px;                         
+    max-width: 600px;                      /* FONDAMENTALE: impedisce che diventino enormi */
+    margin: 0 auto;
 }
 
-/* Prodotti Grid */
-.grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 0 10px 0; }
-.village-card { 
-    height: 180px; position: relative; overflow: hidden; background-size: cover; 
-    background-position: center; border: none; border-radius: 24px; 
-    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2); margin-bottom: 0 !important; 
+/* 2. CARD PRODOTTO: Altezza Fissa e Compatta */
+.prod-card-fixed {
+    width: 100%;
+    height: 140px;          /* Altezza ridotta (era 180px all'inizio, ora è più piccola) */
+    
+    position: relative;
+    overflow: hidden;
+    
+    /* Gestione Sfondo */
+    background-size: cover;
+    background-position: center;
+    background-color: #333;
+    
+    /* Stile Bordo identico ai servizi */
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Ombra leggermente ridotta */
+    
+    transition: transform 0.2s ease-out;
+    cursor: pointer;
 }
-.card-title-overlay {
-    position: absolute; bottom: 0; width: 100%; height: 60%;
-    background: linear-gradient(to top, rgba(38, 70, 83, 0.9) 0%, transparent 100%);
-    display: flex; align-items: flex-end; padding: 15px; color: white;
-    font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px;
-}
-.card-product { display: flex; flex-direction: column; overflow: hidden; border: none; border-radius: 24px; box-shadow: 0 15px 35px -10px rgba(0,0,0,0.15); transform: translateZ(0); }
-.prod-thumb { width: 100%; height: 230px; object-fit: cover; background-color: #eee; transition: transform 0.5s ease; }
-.card-product:active .prod-thumb { transform: scale(1.05); }
-.prod-info { padding: 22px; background: white; position: relative; }
 
+.prod-card-fixed:active {
+    transform: scale(0.96);
+}
+
+/* 3. Overlay Testo (Sfumatura scura in basso) */
+.prod-overlay-fixed {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; 
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%);
+    
+    display: flex;
+    align-items: flex-end; /* Testo in basso */
+    justify-content: center;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.prod-title-fixed {
+    color: white;
+    font-size: 1rem;       /* Font contenuto */
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    line-height: 1.2;
+}
 /* Spiaggia */
 .card-spiaggia { padding: 22px 25px; border-left: none; position: relative; }
 .spiaggia-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
@@ -1144,4 +1170,60 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 /* 3. PANORAMI (Verde Acqua) -> Usa icona "fa-mountain-sun" */
 .culture-card.is-view .culture-bg-icon i {
     color: #00897B;
+}
+/* === HEADER LISTE SEMPLICI (Farmacie/Numeri Utili) === */
+
+/* Contenitore Intestazione (Allinea bottone e titolo) */
+.header-simple-list {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Spazio tra bottone e titolo */
+    padding: 10px 5px 20px 5px; /* Un po' di aria sotto */
+}
+
+/* Il Titolo accanto alla freccia */
+.header-simple-list h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50; /* Grigio Scuro elegante */
+    font-family: 'Roboto Slab', serif; /* O il tuo font titoli */
+    text-transform: capitalize;
+}
+
+/* IL NUOVO PULSANTE INDIETRO */
+.btn-back-custom {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%; /* Cerchio Perfetto */
+    background: #ffffff;
+    
+    border: 1px solid rgba(0,0,0,0.05); /* Bordino sottile */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08); /* Ombra morbida */
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    
+    /* Rimuove stili default brutti */
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* Icona dentro il bottone */
+.btn-back-custom .material-icons {
+    color: #333;
+    font-size: 1.4rem;
+    transform: translateX(-1px); /* Aggiustamento ottico per centrare la freccia */
+}
+
+/* Effetto Click */
+.btn-back-custom:active {
+    transform: scale(0.92);
+    background: #f5f5f5;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }

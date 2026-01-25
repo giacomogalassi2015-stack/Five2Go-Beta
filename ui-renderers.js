@@ -265,20 +265,25 @@ window.attrazioniRenderer = (item) => {
     </div>`;
 };
 
-// === RENDERER PRODOTTO ===
+// === RENDERER PRODOTTO (Compatto: 140px Altezza) ===
 window.prodottoRenderer = (p) => {
     const titolo = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
+    
+    // Immagine Sfondo
     const fotoKey = p.Prodotti_foto || titolo;
-    const imgUrl = window.getSmartUrl(fotoKey, '', 800);
+    const imgUrl = window.getSmartUrl(fotoKey, '', 600);
+    
     const safeObj = encodeURIComponent(JSON.stringify(p)).replace(/'/g, "%27");
 
     return `
-    <div class="village-card animate-fade" 
-         style="background-image: url('${imgUrl}'); background-color: #f0f0f0;" 
+    <div class="prod-card-fixed animate-fade" 
+         style="background-image: url('${imgUrl}');" 
          onclick="openModal('product', '${safeObj}')">
-         <div class="card-title-overlay">
-            ${titolo || 'Senza Nome'}
-        </div>
+         
+         <div class="prod-overlay-fixed">
+            <div class="prod-title-fixed">${titolo}</div>
+         </div>
+         
     </div>`;
 };
 
