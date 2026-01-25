@@ -254,7 +254,9 @@ window.loadTableData = async function(tableName, btnEl) {
     // Gestione Vini (se presente)
     else if (tableName === 'Vini') {
         const renderer = window.vinoRenderer || window.prodottoRenderer;
-        renderGenericFilterableView(data, 'Tipo', subContent, renderer);
+        renderGenericFilterableView(data, 'Tipo', subContent, window.vinoRenderer);
+    
+  
         setTimeout(() => {
             const list = document.getElementById('dynamic-list');
             if(list) { list.className = 'products-grid-fixed animate-fade'; list.style.display='grid'; }

@@ -40,42 +40,36 @@ window.ristoranteRenderer = (r) => {
         </div>
     </div>`;
 };
+// ============================================================
+// RENDERER SPIAGGE (Stile Monumenti Unificato)
+// ============================================================
+window.spiaggiaRenderer = function(item) {
+    // Dati
+    const nome = item.Nome || 'Spiaggia';
+    const comune = item.Paese || item.Comune || '';
+    // Se hai un campo per il tipo di spiaggia (es. "Sabbia", "Scogli") usalo qui
+    const tipo = item.Tipo || 'Spiaggia'; 
 
-// === RENDERER SPIAGGIA (Clean & CSS-Based) ===
-window.spiaggiaRenderer = (s) => {
-    const nome = window.dbCol(s, 'Nome') || 'Spiaggia';
-    const paesi = window.dbCol(s, 'Paesi');
-    const desc = window.dbCol(s, 'Descrizione') || '';
-    
-    // Sicurezza stringhe per onclick
-    const safePaesi = paesi.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    const safeDesc = desc.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
-    
-    const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nome + ' ' + paesi + ' beach')}`;
+    // Icona specifica per la spiaggia (Onde marine - NO palme)
+    const iconClass = 'fa-water';
 
     return `
-    <div class="beach-card animate-fade" onclick="simpleAlert('${safePaesi}', '${safeDesc}')">
-        
-        <div class="beach-header">
-            <div class="beach-location">
-                <span class="material-icons" style="font-size:1rem;">place</span> ${paesi}
+    <div class="culture-card is-beach animate-fade" onclick="openModal('Spiagge', '${item.id}')">
+        <div class="culture-info">
+            ${comune ? `<div class="culture-location"><span class="material-icons" style="font-size:0.9rem">place</span> ${comune}</div>` : ''}
+            
+            <h3 class="culture-title">${nome}</h3>
+            
+            <div class="culture-tags">
+                 <span class="c-pill">${tipo}</span>
             </div>
-            
-            <svg class="beach-wave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
-                <path fill-opacity="1" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,250.7C960,235,1056,181,1152,165.3C1248,149,1344,171,1392,181.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-            </svg>
         </div>
-
-        <div class="beach-body">
-            
-            <div class="beach-title">${nome}</div>
-
-            <button class="btn-beach-map" onclick="event.stopPropagation(); window.open('${mapLink}', '_blank')">
-                <span class="material-icons">near_me</span>
-            </button>
-
+        
+        <div class="culture-bg-icon">
+            <i class="fa-solid ${iconClass}"></i>
         </div>
-    </div>`;
+    </div>
+    `;
 };
 
 // === RENDERER SENTIERO (Centrato e Adattivo) ===
@@ -833,51 +827,48 @@ window.filterDestinations = async function(startId) {
         selArr.innerHTML = `<option>Errore</option>`;
     }
 };
-// === RENDERER VINO (Stile identico a Prodotto) ===
-// === RENDERER VINO (Stile Prodotto + Badge Tipo) ===
-window.vinoRenderer = (v) => {
-    const nome = window.dbCol(v, 'Nome') || 'Vino';
-    const tipoRaw = window.dbCol(v, 'Tipo') || ''; 
-    const tipo = tipoRaw.trim(); 
-    const tipoLower = tipo.toLowerCase();
+
+
+window.vinoRenderer = function(item) {
+    // Dati
+    const nome = item.Nome || item.Vino || 'Vino';
+    const cantina = item.Cantina || item.Produttore || '';
     
-    // Generiamo URL immagine dal NOME (perché manca colonna Foto)
-    const imgUrl = window.getSmartUrl(nome, '', 600); 
-    const safeObj = encodeURIComponent(JSON.stringify(v)).replace(/'/g, "%27");
-
-    // --- LOGICA COLORI BADGE ---
-    let badgeBg = '#95a5a6'; // Grigio default
-    let badgeColor = '#ffffff'; // Testo bianco
-
-    if (tipoLower.includes('bianco')) {
-        badgeBg = '#f1c40f'; // Giallo Oro
-        badgeColor = '#2d3436'; // Testo scuro
+    // Leggiamo la colonna 'Tipo' e puliamo il testo (minuscolo, senza spazi extra)
+    // Es. "Bianco " diventa "bianco"
+    const tipo = (item.Tipo || '').toLowerCase().trim();
+    
+    // LOGICA ASSEGNAZIONE CLASSI
+    let themeClass = 'is-wine-red'; // Default (Rosso) se non trova corrispondenze
+    
+    if (tipo === 'bianco') {
+        themeClass = 'is-wine-white';   // Stile ORO
     } 
-    else if (tipoLower.includes('rosso')) {
-        badgeBg = '#c0392b'; // Rosso Scuro
-    } 
-    else if (tipoLower.includes('rosato') || tipoLower.includes('rosé')) {
-        badgeBg = '#e84393'; // Rosa Intenso
-    } 
-    else if (tipoLower.includes('frizzante') || tipoLower.includes('bollicine')) {
-        badgeBg = '#00cec9'; // Turchese
+    else if (tipo === 'rosato' || tipo.includes('orange')) {
+        themeClass = 'is-wine-orange';  // Stile ARANCIONE (per Rosato/Orange)
     }
-    else if (tipoLower.includes('sciacchetr')) {
-        badgeBg = '#d35400'; // Ambra
+    else if (tipo === 'rosso') {
+        themeClass = 'is-wine-red';     // Stile BORDEAUX
     }
 
-    // --- HTML IDENTICO A PRODOTTI MA CON BADGE ---
+    // HTML Scheda (Rettangolare stile Monumenti)
     return `
-    <div class="wine-card-fixed animate-fade" 
-         style="background-image: url('${imgUrl}');" 
-         onclick="openModal('wine', '${safeObj}')">
-         
-         <div class="wine-badge" style="background-color: ${badgeBg}; color: ${badgeColor};">
-            ${tipo}
-         </div>
-
-         <div class="wine-overlay-fixed">
-            <div class="wine-title-fixed">${nome}</div>
-         </div>
-    </div>`;
+    <div class="culture-card ${themeClass} animate-fade" onclick="openModal('Vini', '${item.id}')">
+        <div class="culture-info">
+            ${cantina ? `<div class="culture-location"><span class="material-icons" style="font-size:0.9rem">storefront</span> ${cantina}</div>` : ''}
+            
+            <h3 class="culture-title">${nome}</h3>
+            
+            <div class="culture-tags">
+                 <span class="c-pill" style="text-transform: capitalize;">
+                    ${item.Tipo || 'Vino'}
+                 </span>
+            </div>
+        </div>
+        
+        <div class="culture-bg-icon">
+            <i class="fa-solid fa-wine-bottle"></i>
+        </div>
+    </div>
+    `;
 };

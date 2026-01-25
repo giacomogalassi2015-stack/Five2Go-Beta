@@ -99,8 +99,7 @@ main, #app-content {
 /* ============================================================
    3. CLASSI CARD GENERALI
    ============================================================ */
-.card-list-item, 
-.card-spiaggia {
+.card-list-item {
     background-color: var(--surface) !important;
     border-radius: var(--card-radius); 
     box-shadow: var(--shadow-soft); 
@@ -109,18 +108,18 @@ main, #app-content {
     transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.25s ease;
     border: none; position: relative; overflow: hidden; 
 }
-.card-list-item:active, .card-spiaggia:active {
+.card-list-item:active {
     transform: scale(0.97); 
     box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
 }
 
 /* Tipografia Card */
-.item-title, .prod-title, .spiaggia-title, .transport-title, .pharmacy-name {
+.item-title, .prod-title, .transport-title, .pharmacy-name {
     font-family: 'Roboto Slab', sans-serif; font-weight: 700;
     color: var(--primary-dark); font-size: 1.15rem;
     line-height: 1.3; margin-bottom: 4px;
 }
-.item-subtitle, .spiaggia-location, .transport-desc, .pharmacy-address {
+.item-subtitle, .transport-desc, .pharmacy-address {
     font-family: 'Roboto Slab', sans-serif; font-size: 0.9rem;
     color: var(--text-light); font-weight: 600; 
     display: flex; align-items: center; gap: 4px; 
@@ -298,12 +297,6 @@ main, #app-content {
     text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     line-height: 1.2;
 }
-/* Spiaggia */
-.card-spiaggia { padding: 22px 25px; border-left: none; position: relative; }
-.spiaggia-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-.spiaggia-location { display: inline-flex; align-items: center; background-color: #F8F9FA; padding: 4px 10px; border-radius: 8px; font-size: 0.85rem; color: var(--text-light); font-weight: 700; }
-.spiaggia-footer { gap: 12px; display: flex; margin-top: 18px; padding-top: 15px; border-top: 2px dashed rgba(0,0,0,0.06); }
-
 /* Sentiero Moderno */
 .card-sentiero-modern { 
     position: relative; width: 100%; height: 420px; border-radius: 24px; overflow: hidden; margin-bottom: 25px; 
@@ -544,48 +537,7 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 @keyframes popIn { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; color: #fff; }
-/* === NUOVO DESIGN SPIAGGE (Ocean Vibe) === */
-.beach-card-modern {
-    background: #ffffff;
-    border-radius: 24px;
-    box-shadow: 0 10px 30px -5px rgba(0, 150, 255, 0.15);
-    margin-bottom: 20px;
-    overflow: hidden;
-    position: relative;
-    transition: transform 0.2s;
-    border: 1px solid rgba(0,0,0,0.03);
-}
-.beach-card-modern:active { transform: scale(0.98); }
 
-.beach-gradient-header {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); /* Gradiente Oceano */
-    padding: 20px 20px 40px 20px; /* Padding extra sotto per l'effetto sovrapposizione */
-    color: white;
-    position: relative;
-}
-
-.beach-wave-shape {
-    position: absolute; bottom: -1px; left: 0; width: 100%;
-    line-height: 0; fill: #ffffff;
-}
-
-.beach-content-body {
-    padding: 0 20px 20px 20px;
-    margin-top: -30px; /* Tira su il contenuto sopra il gradiente */
-    position: relative;
-    z-index: 2;
-}
-
-.beach-title {
-    font-family: 'Roboto Slab', serif; font-size: 1.4rem; font-weight: 700; color: #005073;
-    margin-bottom: 5px; text-shadow: 0 2px 4px rgba(255,255,255,0.8);
-}
-
-.beach-tag {
-    display: inline-block; background: #E1F5FE; color: #0288D1; 
-    padding: 5px 12px; border-radius: 50px; font-size: 0.75rem; 
-    font-weight: 800; text-transform: uppercase; margin-bottom: 15px;
-}
 
 /* === NUOVO DESIGN SENTIERI (Adventure Style) === */
 .trail-card-modern {
@@ -912,97 +864,63 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
     padding: 0 15px;
     margin-bottom: 20px;
 }
+/* --- VARIANTE SPIAGGE (Blu Oceano & Onde) --- */
+/* Classe da aggiungere nel JS: .culture-card.is-beach */
 
-/* === SCHEDA SPIAGGIA (Sand & Ocean Design) === */
-.beach-card {
-    position: relative;
-    background-color: #fffaf0; /* Colore "Sabbia Chiara" (FloralWhite) */
-    border-radius: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    overflow: hidden;
-    transition: transform 0.2s;
-    
-    /* Dimensione minima per uniformare ai monumenti */
-    min-height: 140px; 
+.culture-card.is-beach {
+    /* Striscia laterale color oceano */
+    border-left-color: #008B8B; /* Turchese scuro */
 }
 
-.beach-card:active {
-    transform: scale(0.98);
+.culture-card.is-beach .culture-title {
+    /* Titolo color oceano */
+    color: #00695C;
 }
 
-/* Header Blu Oceano */
-.beach-header {
-    background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
-    padding: 15px 20px 35px 20px; /* Padding sotto extra per l'onda */
-    color: white;
-    position: relative;
+/* Colore dell'icona di sfondo per le spiagge */
+.culture-card.is-beach .culture-bg-icon i {
+    color: #008B8B;
 }
 
-/* Scritta Paesi (Location) nell'header */
-.beach-location {
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: 0.95;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+/* --- FIX GENERALE PER I TAGS --- */
+/* Assicura che i tag (pillole grigie) stiano bene in questo layout */
+.culture-tags {
+    margin-top: 8px; /* Un po' di spazio sopra i tag */
+} 
+/* === COLORI VINI (Logica Personalizzata) === */
+
+/* 1. BIANCO (Giallo Oro) */
+.culture-card.is-wine-white {
+    border-left-color: #F4D03F; /* Giallo intenso */
+}
+.culture-card.is-wine-white .culture-title {
+    color: #B7950B; /* Oro scuro testo */
+}
+.culture-card.is-wine-white .culture-bg-icon i {
+    color: #F4D03F; /* Icona Gialla */
 }
 
-/* L'onda SVG */
-.beach-wave {
-    position: absolute;
-    bottom: -1px; /* Corregge eventuale riga bianca */
-    left: 0;
-    width: 100%;
-    height: auto;
-    fill: #fffaf0; /* DEVE essere uguale al background della card */
+/* 2. ROSATO (Che usiamo per lo stile ORANGE) */
+.culture-card.is-wine-orange {
+    border-left-color: #E67E22; /* Arancione Zucca/Ambra */
+}
+.culture-card.is-wine-orange .culture-title {
+    color: #D35400; /* Ruggine scuro */
+}
+.culture-card.is-wine-orange .culture-bg-icon i {
+    color: #E67E22; /* Icona Arancione */
 }
 
-/* Corpo della scheda */
-.beach-body {
-    padding: 10px 20px 20px 20px;
-    position: relative;
+/* 3. ROSSO (Bordeaux Classico) */
+.culture-card.is-wine-red {
+    border-left-color: #9B2335; /* Rosso Vino */
 }
-
-/* Titolo Spiaggia */
-.beach-title {
-    font-family: 'Roboto Slab', serif;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #3e3e3e;
-    margin: 0;
-    line-height: 1.2;
-    padding-right: 50px; /* Lascia spazio al bottone mappa */
+.culture-card.is-wine-red .culture-title {
+    color: #801C2C; /* Bordeaux testo */
 }
-
-/* Bottone Mappa Fluttuante */
-.btn-beach-map {
-    position: absolute;
-    top: -25px; /* Metà fuori, metà dentro */
-    right: 20px;
-    
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: #0288D1;
-    color: white;
-    border: none;
-    box-shadow: 0 4px 10px rgba(2, 136, 209, 0.4);
-    
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s;
-    z-index: 10;
+.culture-card.is-wine-red .culture-bg-icon i {
+    color: #9B2335; /* Icona Rossa */
 }
-
-.btn-beach-map:active {
-    transform: scale(0.9);
-}
-
 /* =========================================
    STYLE SCHEDE ATTRAZIONI (CULTURA)
    ========================================= */
@@ -1302,60 +1220,23 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 }
 
 /* ============================================================
-   STILE VINI (Clone di Prodotti + Badge)
+   NUOVI STILI UNIFICATI (VINI & SPIAGGE stile MONUMENTI)
    ============================================================ */
 
-/* 1. La Card (Identica a prod-card-fixed ma specifica per vini) */
-.wine-card-fixed {
-    width: 100%;
-    height: 140px;          /* Altezza compatta come i prodotti */
-    position: relative;
-    overflow: hidden;
-    background-size: cover;
-    background-position: center;
-    background-color: #f0f0f0;
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    transition: transform 0.2s ease-out;
-    cursor: pointer;
+/* --- VARIANTE VINI (Rosso Rubino & Bottiglia) --- */
+/* Classe da aggiungere nel JS: .culture-card.is-wine */
+
+.culture-card.is-wine {
+    /* Striscia laterale color vino */
+    border-left-color: #9B2335; 
 }
 
-.wine-card-fixed:active {
-    transform: scale(0.96);
+.culture-card.is-wine .culture-title {
+    /* Titolo color vino */
+    color: #801C2C;
 }
 
-/* 2. Overlay Sfumato in basso per il testo */
-.wine-overlay-fixed {
-    position: absolute;
-    bottom: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding: 15px;
-}
-
-.wine-title-fixed {
-    color: white;
-    font-size: 1rem;
-    font-weight: 700;
-    text-align: center;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-    line-height: 1.2;
-}
-
-/* 3. Badge TIPO in alto a destra */
-.wine-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    z-index: 10;
-    letter-spacing: 0.5px;
+/* Colore dell'icona di sfondo per i vini */
+.culture-card.is-wine .culture-bg-icon i {
+    color: #9B2335;
 }
