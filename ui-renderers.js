@@ -326,56 +326,54 @@ window.openModal = async function(type, payload) {
         let customContent = '';
 
         if (isBus) {
-            const { data: fermate, error } = await window.supabaseClient.from('Fermate_bus').select('ID, NOME_FERMATA, LAT, LONG').order('NOME_FERMATA', { ascending: true });
-            if (fermate && !error) {
-                const now = new Date();
-                const todayISO = now.toISOString().split('T')[0];
-                const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-                const options = fermate.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+            // Sezione Ticket (invariata)
+            let ticketSection = '';
+            if (hasTicketInfo) {
+                // ... (tuo codice ticket HTML esistente) ...
+            }
+
+            const now = new Date();
+            const todayISO = now.toISOString().split('T')[0];
+            const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+            // --- NUOVO HTML: Solo Partenza e Arrivo "Reattivi" ---
+            customContent = `
+            <div class="bus-search-box animate-fade">
+                <div class="bus-title" style="margin-bottom: 0px; padding-bottom: 15px;">
+                    <span class="material-icons">directions_bus</span> ${window.t('plan_trip')}
+                </div>
                 
-                let ticketSection = '';
-                if (hasTicketInfo) {
-                    ticketSection = `
-                    <button onclick="toggleTicketInfo()" style="width:100%; margin-bottom:15px; background:#e0f7fa; color:#006064; border:1px solid #b2ebf2; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-                        🎟️ ${window.t('how_to_ticket')} ▾
-                    </button>
-                    <div id="ticket-info-box" style="display:none; background:#fff; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:15px; font-size:0.9rem; color:#333; line-height:1.5;">
-                        ${infoSms ? `<p style="margin-bottom:10px;"><strong>📱 SMS</strong><br>${infoSms}</p>` : ''}
-                        ${infoApp ? `<p style="margin-bottom:10px;"><strong>📲 APP</strong><br>${infoApp}</p>` : ''}
-                        ${infoAvvisi ? `<div style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.85rem; border:1px solid #ffeeba; margin-top:10px;"><strong>⚠️ ${window.t('error')}:</strong> ${infoAvvisi}</div>` : ''}
-                    </div>`;
-                }
+                ${ticketSection}
 
-                const mapToggleSection = `
-                    <button id="btn-bus-map-toggle" onclick="toggleBusMap()" style="width:100%; margin-bottom:15px; background:#EDE7F6; color:#4527A0; border:1px solid #D1C4E9; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition: background 0.3s;">
-                        🗺️ ${window.t('show_map')} ▾
-                    </button>
-                    <div id="bus-map-wrapper" style="display:none; margin-bottom: 20px;">
-                        <div id="bus-map" style="height: 280px; width: 100%; border-radius: 12px; z-index: 1; border: 2px solid #EDE7F6;"></div>
-                        <p style="font-size:0.75rem; text-align:center; color:#999; margin-top:5px;">${window.t('map_hint')}</p>
-                    </div>`;
+                <div class="bus-inputs">
+                    <div style="flex:1;">
+                        <label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('departure')}</label>
+                        <select id="selPartenza" class="bus-select" onchange="filterDestinations(this.value)">
+                            <option value="" disabled selected>Caricamento...</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('arrival')}</label>
+                        <select id="selArrivo" class="bus-select" disabled>
+                            <option value="" disabled selected>-- Seleziona Partenza --</option>
+                        </select>
+                    </div>
+                </div>
 
-                customContent = `
-                <div class="bus-search-box animate-fade">
-                    <div class="bus-title" style="margin-bottom: 0px; padding-bottom: 15px;">
-                        <span class="material-icons">directions_bus</span> ${window.t('plan_trip')}
-                    </div>
-                    ${ticketSection}
-                    ${mapToggleSection} 
-                    <div class="bus-inputs">
-                        <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('departure')}</label><select id="selPartenza" class="bus-select"><option value="" disabled selected>${window.t('select_placeholder')}</option>${options}</select></div>
-                        <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('arrival')}</label><select id="selArrivo" class="bus-select"><option value="" disabled selected>${window.t('select_placeholder')}</option>${options}</select></div>
-                    </div>
-                    <div class="bus-inputs">
-                        <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('date_trip')}</label><input type="date" id="selData" class="bus-select" value="${todayISO}"></div>
-                        <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('time_trip')}</label><input type="time" id="selOra" class="bus-select" value="${nowTime}"></div>
-                    </div>
-                    <button onclick="eseguiRicercaBus()" class="btn-yellow" style="width:100%; font-weight:bold; margin-top:5px;">${window.t('find_times')}</button>
-                    <div id="busResultsContainer" style="display:none; margin-top:20px;"><div id="nextBusCard" class="bus-result-main"></div><div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">${window.t('next_runs')}:</div><div id="otherBusList" class="bus-list-container"></div></div>
-                </div>`;
-                setTimeout(() => { initBusMap(fermate); }, 300);
-            } else { customContent = `<p style="color:red;">${window.t('error')}</p>`; }
-        } 
+                <div class="bus-inputs">
+                    <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('date_trip')}</label><input type="date" id="selData" class="bus-select" value="${todayISO}"></div>
+                    <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('time_trip')}</label><input type="time" id="selOra" class="bus-select" value="${nowTime}"></div>
+                </div>
+                
+                <button id="btnSearchBus" onclick="eseguiRicercaBus()" class="btn-yellow" style="width:100%; font-weight:bold; margin-top:5px; opacity: 0.5; pointer-events: none;">${window.t('find_times')}</button>
+                
+                <div id="busResultsContainer" style="display:none; margin-top:20px;"><div id="nextBusCard" class="bus-result-main"></div><div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">${window.t('next_runs')}:</div><div id="otherBusList" class="bus-list-container"></div></div>
+            </div>`;
+            
+            // Appena aperta la modale, carichiamo TUTTE le fermate nella Partenza
+            setTimeout(() => { loadAllStops(); }, 50);
+
+        }
         else if (isTrain) {
             const now = new Date();
             const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -677,4 +675,100 @@ window.trainSearchRenderer = () => {
         </button>
         <p style="font-size:0.75rem; text-align:center; color:#888; margin-top:10px;">${window.t('check_site')}</p>
     </div>`;
+};
+
+// 1. CARICAMENTO INIZIALE (Tutte le fermate in Partenza)
+window.loadAllStops = async function() {
+    const selPart = document.getElementById('selPartenza');
+    if(!selPart) return;
+
+    // Cache per evitare chiamate inutili se l'utente apre/chiude spesso
+    if (!window.cachedStops) {
+        const { data, error } = await window.supabaseClient
+            .from('Fermate_bus')
+            .select('ID, NOME_FERMATA')
+            .order('NOME_FERMATA', { ascending: true });
+        
+        if (error) { console.error(error); return; }
+        window.cachedStops = data;
+    }
+
+    const options = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+    selPart.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` + options;
+};
+
+// 2. FILTRO DESTINAZIONI (Il cuore della logica)
+window.filterDestinations = async function(startId) {
+    const selArr = document.getElementById('selArrivo');
+    const btnSearch = document.getElementById('btnSearchBus');
+    
+    if(!startId || !selArr) return;
+
+    // UI Feedback
+    selArr.innerHTML = `<option>Cerco collegamenti...</option>`;
+    selArr.disabled = true;
+    btnSearch.style.opacity = '0.5';
+    btnSearch.style.pointerEvents = 'none';
+
+    try {
+        // STEP A: Trova tutte le CORSE che passano per la fermata di partenza
+        const { data: corsePassanti, error: errCorse } = await window.supabaseClient
+            .from('Orari_bus')
+            .select('ID_CORSA')
+            .eq('ID_FERMATA', startId);
+
+        if(errCorse) throw errCorse;
+        
+        // Estraiamo gli ID delle corse (es. [101, 102, 105])
+        const runIds = corsePassanti.map(c => c.ID_CORSA);
+        
+        if (runIds.length === 0) {
+            selArr.innerHTML = `<option disabled>Nessun collegamento</option>`;
+            return;
+        }
+
+        // STEP B: Trova tutte le ALTRE fermate che appartengono a quelle corse
+        const { data: fermateCollegate, error: errColl } = await window.supabaseClient
+            .from('Orari_bus')
+            .select('ID_FERMATA')
+            .in('ID_CORSA', runIds); // "Dammi tutte le fermate di queste corse"
+
+        if(errColl) throw errColl;
+
+        // Estraiamo gli ID unici delle destinazioni (escludendo la partenza stessa)
+        const destIds = [...new Set(fermateCollegate.map(x => x.ID_FERMATA))]
+                        .filter(id => id != startId); // Rimuovi la fermata di partenza stessa
+
+        // STEP C: Recupera i nomi delle destinazioni dalla cache (o DB)
+        // Usiamo window.cachedStops che abbiamo caricato prima per fare veloce
+        let validDestinations = [];
+        if (window.cachedStops) {
+            validDestinations = window.cachedStops.filter(s => destIds.includes(s.ID));
+        } else {
+            // Fallback se la cache non c'è (raro)
+            const { data } = await window.supabaseClient
+                .from('Fermate_bus').select('ID, NOME_FERMATA').in('ID', destIds);
+            validDestinations = data || [];
+        }
+
+        // STEP D: Popola la Select Arrivo
+        if (validDestinations.length > 0) {
+            // Ordina alfabeticamente per pulizia
+            validDestinations.sort((a, b) => a.NOME_FERMATA.localeCompare(b.NOME_FERMATA));
+            
+            selArr.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` + 
+                               validDestinations.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+            selArr.disabled = false;
+            
+            // Riattiva bottone cerca
+            btnSearch.style.opacity = '1';
+            btnSearch.style.pointerEvents = 'auto';
+        } else {
+            selArr.innerHTML = `<option disabled>Nessuna destinazione</option>`;
+        }
+
+    } catch (err) {
+        console.error("Errore filtro destinazioni:", err);
+        selArr.innerHTML = `<option>Errore</option>`;
+    }
 };
