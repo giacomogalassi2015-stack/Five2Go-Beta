@@ -113,8 +113,13 @@ window.switchView = async function(view, el) {
     // Routing Viste
     try {
         if (view === 'home') renderHome();
-        else if (view === 'cibo') renderSubMenu([{ label: window.t('menu_rest'), table: "Ristoranti" }, { label: window.t('menu_prod'), table: "Prodotti" }], 'Ristoranti');
-        else if (view === 'outdoor') {
+       else if (view === 'cibo') {
+            renderSubMenu([
+        { label: window.t('menu_rest'), table: "Ristoranti" },
+        { label: window.t('menu_prod'), table: "Prodotti" },
+        { label: window.t('menu_wine'), table: "Vini" } // <--- NUOVO TAB
+                 ], 'Ristoranti');
+        } else if (view === 'outdoor') {
             renderSubMenu([
                 { label: window.t('menu_trail'), table: "Sentieri" },
                 { label: window.t('menu_beach'), table: "Spiagge" },
@@ -234,8 +239,7 @@ window.loadTableData = async function(tableName, btnEl) {
         }); 
         renderGenericFilterableView(data, 'Comune', subContent, window.numeriUtiliRenderer);
         return;
-    }
-    else if (tableName === 'Prodotti') {
+    }else if (tableName === 'Prodotti') { // <--- ERA: tableName === 'Prodotti' || tableName === 'Vini'
         html = '<div class="grid-container animate-fade">'; 
         data.forEach(p => {
             html += window.prodottoRenderer(p);
@@ -250,13 +254,30 @@ window.loadTableData = async function(tableName, btnEl) {
             html += `<div class="card-product" onclick="openModal('transport', ${index})"><div class="prod-info"><div class="prod-title">${nomeDisplay}</div></div><img src="${imgUrl}" class="prod-thumb" loading="lazy" onerror="this.style.display='none'"></div>`;
         });
         html += '</div>';
+    }else if (tableName === 'Vini') {
+        // Usa la funzione generica di filtro, filtrando per la colonna 'Tipo'
+        renderGenericFilterableView(data, 'Tipo', subContent, window.vinoRenderer);
+        
+        // TRUCCO: Aggiungiamo la classe CSS "grid-container" al contenitore della lista filtrata
+        // così i risultati appariranno a griglia (2 colonne) e non in lista verticale.
+        setTimeout(() => {
+            const dynamicList = document.getElementById('dynamic-list');
+            if (dynamicList) {
+                dynamicList.classList.add('grid-container');
+                // Rimuoviamo il margine negativo o padding che potrebbe avere la lista standard
+                dynamicList.style.display = 'grid'; 
+                dynamicList.style.padding = '10px 0';
+            }
+        }, 50); // Piccolo ritardo per assicurarsi che il DOM sia pronto
+        
+        return; // Esce dalla funzione
     }
     
-    if(tableName !== 'Trasporti' && tableName !== 'Prodotti') {
-       subContent.innerHTML = html + '</div>';
-    } else {
-       subContent.innerHTML = html;
-    }
+    if(tableName !== 'Trasporti' && tableName !== 'Prodotti' && tableName !== 'Vini') {
+   subContent.innerHTML = html + '</div>';
+        } else {
+   subContent.innerHTML = html;
+}
 };
 
 // ... (Resto funzioni swipe, servizi grid, ecc... invariate) ...

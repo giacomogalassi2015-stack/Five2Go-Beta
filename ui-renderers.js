@@ -518,6 +518,54 @@ window.openModal = async function(type, payload) {
              const paese = window.dbCol(item, 'Paese');
              contentHtml = `<h2>${titolo}</h2><p>📍 ${paese}</p><p>${window.dbCol(item, 'Descrizione')}</p>`;
          }
+    }// --- MODALE VINI ---
+    else if (type === 'wine') {
+        const v = JSON.parse(decodeURIComponent(payload));
+        
+        // Mappatura esatta con le tue colonne
+        const nome = window.dbCol(v, 'Nome');
+        const produttore = window.dbCol(v, 'Produttore');
+        const tipo = window.dbCol(v, 'Tipo');
+        const uve = window.dbCol(v, 'Uve');
+        const gradi = window.dbCol(v, 'Gradi'); // È text, quindi lo prendiamo così com'è
+        const abbinamenti = window.dbCol(v, 'Abbinamenti');
+        const desc = window.dbCol(v, 'Descrizione');
+        
+        // Anche qui usiamo il Nome per l'immagine
+        const bigImg = window.getSmartUrl(nome, '', 800);
+        modalClass = 'modal-content glass-modal';
+
+        // Logica colori per il badge Tipo
+        let tipoColor = '#7f8c8d'; 
+        if (tipo && tipo.toLowerCase().includes('bianco')) tipoColor = '#f1c40f'; // Giallo
+        if (tipo && tipo.toLowerCase().includes('rosso')) tipoColor = '#c0392b'; // Rosso
+        if (tipo && tipo.toLowerCase().includes('sciacchetr')) tipoColor = '#e67e22'; // Ambra
+
+        contentHtml = `
+            <div style="position: relative;">
+                <img src="${bigImg}" style="width:100%; border-radius: 0 0 24px 24px; height:300px; object-fit:cover; margin-bottom: 15px; mask-image: linear-gradient(to bottom, black 80%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);" onerror="this.style.display='none'">
+                
+                ${gradi ? `<div style="position:absolute; bottom:20px; right:20px; background:rgba(255,255,255,0.9); padding:5px 10px; border-radius:12px; font-weight:bold; color:#333; box-shadow:0 4px 10px rgba(0,0,0,0.2);">${gradi}</div>` : ''}
+            </div>
+
+            <div style="padding: 0 25px 30px 25px;">
+                <div style="font-size: 0.85rem; text-transform:uppercase; letter-spacing:1px; color:${tipoColor}; font-weight:700; margin-bottom:5px;">
+                    ${tipo || 'Vino'}
+                </div>
+                
+                <h2 style="font-size: 2.2rem; margin: 0 0 5px 0; color: #222; line-height:1.1;">${nome}</h2>
+                
+                ${produttore ? `<div style="font-size: 1.1rem; color: #555; font-family:'Roboto Slab'; margin-bottom:20px;">Cantina <strong>${produttore}</strong></div>` : ''}
+
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:25px;">
+                    ${uve ? `<span class="glass-tag" style="font-size:0.8rem;">🍇 ${uve}</span>` : ''}
+                    ${abbinamenti ? `<span class="glass-tag" style="font-size:0.8rem;">🍽️ ${abbinamenti}</span>` : ''}
+                </div>
+
+                <div style="font-size: 1.05rem; line-height: 1.8; color: #444; text-align:justify;">
+                    ${desc || ''}
+                </div>
+            </div>`;
     }
     modal.innerHTML = `<div class="${modalClass}"><span class="close-modal" onclick="this.parentElement.parentElement.remove()">×</span>${contentHtml}</div>`;
 };
@@ -771,4 +819,55 @@ window.filterDestinations = async function(startId) {
         console.error("Errore filtro destinazioni:", err);
         selArr.innerHTML = `<option>Errore</option>`;
     }
+};
+// === RENDERER VINO (Stile identico a Prodotto) ===
+window.vinoRenderer = (v) => {
+    const nome = window.dbCol(v, 'Nome') || 'Vino';
+    // Normalizziamo il tipo per i controlli (minuscolo)
+    const tipoRaw = window.dbCol(v, 'Tipo') || ''; 
+    const tipo = tipoRaw.trim(); 
+    const tipoLower = tipo.toLowerCase();
+    
+    // Generiamo URL immagine dal nome
+    const imgUrl = window.getSmartUrl(nome, '', 600); 
+    const safeObj = encodeURIComponent(JSON.stringify(v)).replace(/'/g, "%27");
+
+    // --- LOGICA COLORI BADGE ---
+    let badgeBg = '#95a5a6'; // Grigio default
+    let badgeColor = '#ffffff'; // Testo bianco default
+
+    if (tipoLower.includes('bianco')) {
+        badgeBg = '#f1c40f'; // Giallo Oro
+        badgeColor = '#2d3436'; // Testo scuro per contrasto
+    } 
+    else if (tipoLower.includes('rosso')) {
+        badgeBg = '#c0392b'; // Rosso Scuro
+    } 
+    else if (tipoLower.includes('rosato') || tipoLower.includes('rosé')) {
+        badgeBg = '#e84393'; // Rosa Intenso
+    } 
+    else if (tipoLower.includes('frizzante') || tipoLower.includes('bollicine')) {
+        badgeBg = '#00cec9'; // Turchese/Azzurro
+    }
+    else if (tipoLower.includes('sciacchetr')) {
+        badgeBg = '#d35400'; // Ambra/Arancio scuro
+    }
+
+    return `
+    <div class="village-card animate-fade" 
+         style="background-image: url('${imgUrl}'); background-color: #f0f0f0; position: relative;" 
+         onclick="openModal('wine', '${safeObj}')">
+         
+         <div style="position: absolute; top: 10px; right: 10px; 
+                     background-color: ${badgeBg}; color: ${badgeColor}; 
+                     padding: 5px 12px; border-radius: 12px; 
+                     font-size: 0.75rem; font-weight: 800; text-transform: uppercase; 
+                     box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 10;">
+            ${tipo}
+         </div>
+
+         <div class="card-title-overlay">
+            ${nome}
+            </div>
+    </div>`;
 };

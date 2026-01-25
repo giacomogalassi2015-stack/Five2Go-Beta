@@ -44,6 +44,7 @@ const UI_TEXT = {
         // Ristoranti & Locali
         hours_label: "Orari", phone_label: "Telefono", no_hours: "Orari non disponibili",
         ideal_for: "Ideale per",
+        menu_wine: "Vini",
         // Trasporti (Bus/Treno)
         plan_trip: "Pianifica Viaggio", departure: "PARTENZA", arrival: "ARRIVO", 
         date_trip: "DATA VIAGGIO", time_trip: "ORARIO", find_times: "TROVA ORARI",
