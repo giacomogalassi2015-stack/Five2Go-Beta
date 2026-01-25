@@ -153,175 +153,111 @@ function renderHome() {
     </div>`;
 }
 
+// ============================================================
+// 1. RENDER SUB-MENU (Stile Clean)
+// ============================================================
 function renderSubMenu(options, defaultTable) {
     let menuHtml = `
-    <div class="sub-nav-bar" style="display: flex !important; width: 100% !important; align-items: center !important; padding-right: 10px !important; margin-bottom: 5px !important; border-bottom: 1px solid rgba(0,0,0,0.05);">
-        
-        <div class="sub-nav-tabs" style="display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; flex: 1 !important; min-width: 0 !important; gap: 15px !important; padding-bottom: 0 !important; -webkit-overflow-scrolling: touch !important; scrollbar-width: none !important;">
+    <div class="sub-menu-sticky animate-fade">
+        <div class="sub-menu-scroll">
             ${options.map(opt => `
-                <button class="sub-nav-item" onclick="loadTableData('${opt.table}', this)" style="flex: 0 0 auto !important; white-space: nowrap !important; background: transparent !important; box-shadow: none !important; border: none !important;">
+                <button class="sub-tab-btn" onclick="loadTableData('${opt.table}', this)">
                     ${opt.label}
                 </button>
             `).join('')}
         </div>
-
-        <button id="filter-toggle-btn" style="display: none; margin-left: 10px; flex-shrink: 0 !important; background: #f0f0f0; border: none; border-radius: 50px; padding: 8px 12px; font-size: 0.75rem; font-weight: bold; color: #333; cursor: pointer; white-space: nowrap;">
-            ⚡
+        
+        <button id="filter-toggle-btn" class="sub-filter-btn" style="display: none;">
+            <span class="material-icons">filter_list</span>
         </button>
-
     </div>
-    <div id="sub-content"></div>`;
+    
+    <div id="sub-content" style="padding-top: 10px;"></div>`;
     
     content.innerHTML = menuHtml;
-    const firstBtn = content.querySelector('.sub-nav-item');
-    if (firstBtn) loadTableData(defaultTable, firstBtn);
+    
+    // Attiva il primo bottone
+    const firstBtn = content.querySelector('.sub-tab-btn');
+    if (firstBtn) {
+        loadTableData(defaultTable, firstBtn); 
+    }
 }
 
-// Funzione globale per essere chiamata dall'HTML
+// ============================================================
+// 2. LOAD DATA (Gestione Attivazione)
+// ============================================================
 window.loadTableData = async function(tableName, btnEl) {
     const subContent = document.getElementById('sub-content');
     const filterBtn = document.getElementById('filter-toggle-btn');
     if (!subContent) return;
 
-    // === AGGIUNGI QUESTE RIGHE QUI PER PULIRE I FILTRI ===
-    const filterContainer = document.getElementById('filters-scroll') || document.getElementById('category-filters');
-    if (filterContainer) filterContainer.innerHTML = '';
-    // ====================================================
+    // --- LOGICA VISIVA (Spegni/Accendi) ---
+    // 1. Spegni TUTTI (Rimuovi sfondo nero)
+    document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+        btn.classList.remove('active-sub');
+        btn.style.color = '#94a3b8'; // Forza grigio
+    });
 
-    // Gestione visuale tab attivo
-    document.querySelectorAll('.sub-nav-item').forEach(b => b.classList.remove('active-sub'));
-    if (btnEl) btnEl.classList.add('active-sub');
+    // 2. Accendi SOLO QUESTO (Metti sfondo nero)
+    if (btnEl) {
+        btnEl.classList.add('active-sub');
+        btnEl.style.color = '#ffffff'; // Forza bianco
+        
+        // Effetto scorrimento automatico per centrare il bottone
+        btnEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    } else {
+        // Fallback se btnEl non è passato (es. caricamento iniziale)
+        // Cerca il bottone che corrisponde al tableName e attivalo
+        /* Opzionale: logica avanzata omessa per semplicità */
+    }
+    // --------------------------------------
+
+    // Reset Filtri
+    const existingFilters = document.getElementById('dynamic-filters');
+    if(existingFilters) existingFilters.remove();
     if(filterBtn) filterBtn.style.display = 'none';
-    subContent.innerHTML = `<div class="loader">${window.t('loading')}</div>`;
+
+    // Loader
+    subContent.innerHTML = `<div class="loader">${window.t('loading')}...</div>`;
     
+    // Mappe
     if (tableName === 'Mappe') {
-        subContent.innerHTML = `<div class="map-container animate-fade"><iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="640" height="480"></iframe><div class="map-note">${window.t('map_loaded')}</div></div>`;
+        subContent.innerHTML = `<div class="map-container animate-fade"><iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="640" height="480"></iframe></div>`;
         return; 
     }
 
+    // Caricamento Dati
     const { data, error } = await window.supabaseClient.from(tableName).select('*');
-    if (error) { subContent.innerHTML = `<p class="error-msg">${window.t('error')}: ${error.message}</p>`; return; }
-
-    let html = '<div class="list-container animate-fade">';
-
-    if (tableName === 'Sentieri') { 
-        renderGenericFilterableView(data, 'Difficolta', subContent, window.sentieroRenderer); 
+    if (error) { 
+        subContent.innerHTML = `<p class="error-msg">Errore: ${error.message}</p>`; 
         return; 
     }
-    else if (tableName === 'Spiagge') { 
-        renderGenericFilterableView(data, 'Paesi', subContent, window.spiaggiaRenderer); 
-        return; 
+
+    // Routing Renderers
+    if (tableName === 'Prodotti') {
+        let html = '<div class="products-grid-fixed animate-fade">'; 
+        data.forEach(p => { html += window.prodottoRenderer(p); });
+        subContent.innerHTML = html + '</div>';
     }
     else if (tableName === 'Ristoranti') { 
         renderGenericFilterableView(data, 'Paesi', subContent, window.ristoranteRenderer); 
-        return; 
+    }
+    else if (tableName === 'Sentieri') { 
+        renderGenericFilterableView(data, 'Difficolta', subContent, window.sentieroRenderer); 
+    }
+    else if (tableName === 'Spiagge') { 
+        renderGenericFilterableView(data, 'Paesi', subContent, window.spiaggiaRenderer); 
+    }
+    else if (tableName === 'Attrazioni') {
+        renderGenericFilterableView(data, 'Paese', subContent, window.attrazioniRenderer);
     }
     else if (tableName === 'Farmacie') { 
         renderGenericFilterableView(data, 'Paesi', subContent, window.farmacieRenderer); 
-        return; 
     } 
-    else if (tableName === 'Attrazioni') {
-        window.tempAttractionsData = data; 
-        data.forEach((item, index) => { item._tempIndex = index; });
-        renderGenericFilterableView(data, 'Paese', subContent, window.attrazioniRenderer);
-        return;
-    }
     else if (tableName === 'Numeri_utili') {
-        data.sort((a, b) => {
-            const isEmergenzaA = a.Nome.includes('112') || a.Nome.toLowerCase().includes('emergenza');
-            const isEmergenzaB = b.Nome.includes('112') || b.Nome.toLowerCase().includes('emergenza');
-            return (isEmergenzaA === isEmergenzaB) ? 0 : isEmergenzaA ? -1 : 1;
-        }); 
         renderGenericFilterableView(data, 'Comune', subContent, window.numeriUtiliRenderer);
-        return;
-    }
-   else if (tableName === 'Prodotti') {
-        // Usa la griglia con max-width 600px per evitare l'effetto "enorme"
-        html = '<div class="products-grid-fixed animate-fade">'; 
-        data.forEach(p => {
-            html += window.prodottoRenderer(p);
-        });
-        html += '</div>';
-    }
-    else if (tableName === 'Trasporti') {
-        window.tempTransportData = data; 
-        data.forEach((t, index) => {
-            const nomeDisplay = window.dbCol(t, 'Località') || window.dbCol(t, 'Mezzo');
-            const imgUrl = window.getSmartUrl(t.Mezzo, '', 400);
-            html += `<div class="card-product" onclick="openModal('transport', ${index})"><div class="prod-info"><div class="prod-title">${nomeDisplay}</div></div><img src="${imgUrl}" class="prod-thumb" loading="lazy" onerror="this.style.display='none'"></div>`;
-        });
-        html += '</div>';
-    }
-    
-    if(tableName !== 'Trasporti' && tableName !== 'Prodotti') {
-       subContent.innerHTML = html + '</div>';
-    } else {
-       subContent.innerHTML = html;
     }
 };
-
-// ... (Resto funzioni swipe, servizi grid, ecc... invariate) ...
-/* ============================================================
-   SWIPE TRA LE PAGINE (Fixed & Global)
-   ============================================================ */
-
-const minSwipeDistance = 50; 
-const maxVerticalDistance = 100;
-let touchStartX = 0;
-let touchStartY = 0;
-let touchEndX = 0;
-let touchEndY = 0;
-
-document.addEventListener('touchstart', e => {
-    if (e.target.closest('.leaflet-container') || 
-        e.target.closest('.map-container') || 
-        e.target.closest('#bus-map') || 
-        e.target.closest('.sub-nav-tabs')) {
-        touchStartX = null; 
-        return;
-    }
-
-    touchStartX = e.changedTouches[0].clientX;
-    touchStartY = e.changedTouches[0].clientY;
-}, {passive: true});
-
-document.addEventListener('touchend', e => {
-    if (touchStartX === null) return; 
-
-    touchEndX = e.changedTouches[0].clientX;
-    touchEndY = e.changedTouches[0].clientY;
-    
-    handlePageSwipe();
-}, {passive: true});
-
-function handlePageSwipe() {
-    const xDiff = touchEndX - touchStartX;
-    const yDiff = touchEndY - touchStartY;
-    
-    if (Math.abs(xDiff) < minSwipeDistance) return;
-    if (Math.abs(yDiff) > maxVerticalDistance) return;
-    if (Math.abs(yDiff) > Math.abs(xDiff)) return;
-
-    const tabs = document.querySelectorAll('.sub-nav-item');
-    if (tabs.length === 0) return;
-
-    let activeIndex = -1;
-    tabs.forEach((tab, index) => {
-        if (tab.classList.contains('active-sub')) activeIndex = index;
-    });
-
-    if (activeIndex === -1) return;
-
-    if (xDiff < 0) {
-        if (activeIndex < tabs.length - 1) tabs[activeIndex + 1].click();
-    } else {
-        if (activeIndex > 0) tabs[activeIndex - 1].click();
-    }
-    
-    touchStartX = null;
-    touchStartY = null;
-}
-
 // --- RENDER SERVIZI (Versione Vetro Nero & Icone) ---
 window.renderServicesGrid = async function() {
     const content = document.getElementById('app-content');

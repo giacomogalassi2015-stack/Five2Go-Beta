@@ -40,15 +40,6 @@ body {
     padding-bottom: calc(var(--nav-height) + 30px); 
 }
 
-/* Titoli in Font Slab per carattere */
-.card-title-overlay {
-    font-family: 'Roboto Slab', sans-serif; 
-    font-weight: 400; 
-    color: var(--primary-dark);
-    font-size: 1.6rem; 
-    line-height: 1.1;
-}
-
 /* ============================================================
    2. HEADER & NAVIGAZIONE
    ============================================================ */
@@ -98,14 +89,6 @@ main, #app-content {
 .nav-item .material-icons { font-size: 26px; margin-bottom: 3px; }
 .nav-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; }
 
-/* Sub-Nav & Loading */
-.sub-nav-tabs::-webkit-scrollbar, .sub-nav-tabs { -ms-overflow-style: none; scrollbar-width: none; }
-.sub-nav-bar { padding-top: 15px !important; padding-bottom: 0 !important; align-items: flex-end !important; min-height: 60px; }
-.sub-nav-item { padding: 10px 5px !important; position: relative; font-size: 1rem !important; font-weight: 600 !important; color: #B2BEC3 !important; text-transform: uppercase; letter-spacing: 1px; background: transparent !important; box-shadow: none !important; border-radius: 0 !important; transition: color 0.3s ease; }
-.sub-nav-item::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background-color: var(--primary-col); transform: scaleX(0); transform-origin: center; transition: transform 0.3s ease; border-radius: 3px 3px 0 0; }
-.sub-nav-item.active-sub { color: var(--primary-col) !important; font-weight: 800 !important; transform: none !important; }
-.sub-nav-item.active-sub::after { transform: scaleX(0.8); }
-
 .loading-state { text-align: center; padding: 60px 20px; color: var(--text-light); }
 .loader {
     font-weight: 600; color: var(--primary-col); letter-spacing: 1px;
@@ -116,8 +99,8 @@ main, #app-content {
 /* ============================================================
    3. CLASSI CARD GENERALI
    ============================================================ */
-.card-list-item, .card-product, 
-.card-spiaggia, .village-card {
+.card-list-item, 
+.card-spiaggia {
     background-color: var(--surface) !important;
     border-radius: var(--card-radius); 
     box-shadow: var(--shadow-soft); 
@@ -126,8 +109,7 @@ main, #app-content {
     transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.25s ease;
     border: none; position: relative; overflow: hidden; 
 }
-.card-list-item:active, .card-product:active, 
-.card-spiaggia:active, .village-card:active {
+.card-list-item:active, .card-spiaggia:active {
     transform: scale(0.97); 
     box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
 }
@@ -745,7 +727,7 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 .culture-icon-deco .material-icons {
     font-size: 1.8rem;
     background: -webkit-linear-gradient(#8E2DE2, #4A00E0);
-    -webkit-background-clip: text;
+
     -webkit-text-fill-color: transparent;
 }
 
@@ -1226,4 +1208,83 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
     transform: scale(0.92);
     background: #f5f5f5;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* ============================================================
+   MENU FISSO: STILE "CLEAN AIRBNB" (Niente pulsanti grigi)
+   ============================================================ */
+
+.sub-menu-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    
+    /* Sfondo Vetro pulitissimo */
+    background: rgba(255, 255, 255, 0.96); 
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    
+    /* Vicinissimo al bordo alto come chiedevi */
+    padding: 5px 15px 10px 15px; 
+    margin: 0 -20px 20px -20px;
+    border-bottom: 1px solid rgba(0,0,0,0.05); /* Linea sottilissima */
+    
+    display: flex;
+    align-items: center;
+    height: 60px;
+}
+
+/* Contenitore Scrollabile */
+.sub-menu-scroll {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Meno spazio, più compatti */
+    
+    overflow-x: auto;
+    padding-right: 20px;
+    height: 100%;
+    
+    /* Scroll fluido nativo */
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+}
+.sub-menu-scroll::-webkit-scrollbar { display: none; }
+
+/* --- IL BOTTONE (Stato NORMALE: Solo Testo) --- */
+/* Questo risolve il problema "non mi piacciono i pulsanti" */
+button.sub-tab-btn {
+    background: transparent; /* NESSUNO SFONDO */
+    border: 1px solid transparent; /* NESSUN BORDO */
+    border-radius: 50px;
+    
+    padding: 8px 16px;
+    
+    /* Testo */
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #94a3b8; /* Grigio chiaro elegante */
+    
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* --- STATO ATTIVO (BOLLINO NERO) --- */
+button.sub-tab-btn.active-sub {
+    background-color: #000000; /* Nero Pieno */
+    color: #ffffff !important; /* Bianco */
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Ombra che lo stacca */
+    transform: scale(1.02); /* Leggermente più grande */
+}
+
+/* Tasto Filtro (opzionale) */
+.sub-filter-btn {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: transparent; color: #333;
+    margin-left: auto; /* Lo spinge a destra */
 }

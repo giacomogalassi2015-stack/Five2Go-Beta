@@ -299,15 +299,8 @@ window.openModal = async function(type, payload) {
     let contentHtml = '';
     let modalClass = 'modal-content'; 
 
-    if (type === 'village') {
-        const bigImg = window.getSmartUrl(payload, '', 1000);
-        const { data } = await window.supabaseClient.from('Cinque_Terre').select('*').eq('Paesi', payload).single();
-        const desc = data ? window.dbCol(data, 'Descrizione') : window.t('loading');
-        contentHtml = `<img src="${bigImg}" style="width:100%; border-radius:12px; height:220px; object-fit:cover;"><h2>${payload}</h2><p>${desc}</p>`;
-    } 
-    
     // --- PRODOTTI ---
-    else if (type === 'product') {
+    if (type === 'product') {
         const p = JSON.parse(decodeURIComponent(payload));
         const nome = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome') || 'Prodotto';
         const desc = window.dbCol(p, 'Descrizione');   
