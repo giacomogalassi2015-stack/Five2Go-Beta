@@ -1,27 +1,11 @@
-console.log("✅ 1. data-logic.js caricato");
+// config.js
+export const SUPABASE_URL = 'https://ydrpicezcwtfwdqpihsb.supabase.co';
+export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcnBpY2V6Y3d0ZndkcXBpaHNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNTQzMDAsImV4cCI6MjA4MzYzMDMwMH0.c89-gAZ8Pgp5Seq89BYRraTG-qqmP03LUCl1KqG9bOg';
 
-// 1. CONFIGURAZIONE SUPABASE
-const SUPABASE_URL = 'https://ydrpicezcwtfwdqpihsb.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcnBpY2V6Y3d0ZndkcXBpaHNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNTQzMDAsImV4cCI6MjA4MzYzMDMwMH0.c89-gAZ8Pgp5Seq89BYRraTG-qqmP03LUCl1KqG9bOg';
+export const CLOUDINARY_CLOUD_NAME = 'dkg0jfady'; 
+export const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/`;
 
-// RENDIAMO SUPABASE GLOBALE
-window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// --- MODIFICA: INIZIALIZZAZIONE CACHE ---
-window.appCache = {};
-
-const CLOUDINARY_CLOUD_NAME = 'dkg0jfady'; 
-const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/`;
-
-// 2. VARIABILI GLOBALI
-window.mapsToInit = [];
-window.tempTransportData = [];
-window.tempAttractionsData = [];
-window.currentLang = localStorage.getItem('app_lang') || 'it';
-window.currentViewName = 'home'; // Tracciamento vista per header
-
-// 3. CONFIGURAZIONE LINGUE
-window.AVAILABLE_LANGS = [
+export const AVAILABLE_LANGS = [
     { code: 'it', label: 'Italiano', flag: '🇮🇹' },
     { code: 'en', label: 'English', flag: '🇬🇧' },
     { code: 'fr', label: 'Français', flag: '🇫🇷' },
@@ -30,28 +14,33 @@ window.AVAILABLE_LANGS = [
     { code: 'zh', label: '中文', flag: '🇨🇳' }
 ];
 
-// 4. DIZIONARIO TESTI (Full Version - Aggiornato)
-const UI_TEXT = {
+export const FERRY_STOPS = [
+    { id: 'levanto', label: 'Levanto' },
+    { id: 'monterosso', label: 'Monterosso' },
+    { id: 'vernazza', label: 'Vernazza' },
+    { id: 'corniglia', label: 'Corniglia' },
+    { id: 'manarola', label: 'Manarola' },
+    { id: 'riomaggiore', label: 'Riomaggiore' },
+    { id: 'portovenere', label: 'Portovenere' },
+    { id: 'la spezia', label: 'La Spezia' },
+    { id: 'lerici', label: 'Lerici' }
+];
+
+export const UI_TEXT = {
     it: {
         loading: "Caricamento...", error: "Errore", no_results: "Nessun risultato.",
-        // Menu & Nav
         home_title: "Benvenuto", nav_villages: "Paesi", nav_food: "Cibo", nav_outdoor: "Outdoor", nav_services: "Servizi",
         menu_prod: "Prodotti", menu_rest: "Ristoranti", menu_trail: "Sentieri", menu_beach: "Spiagge", 
         menu_trans: "Trasporti", menu_num: "Numeri Utili", menu_pharm: "Farmacie", menu_map: "Mappe", menu_monu: "Attrazioni",
         menu_wine: "Vini",
-        // Footer
         footer_rights: "Tutti i diritti riservati.",
-        // Filtri
         filter_title: "Filtra per", filter_all: "Tutti", show_results: "Mostra Risultati", 
         filter_cat: "Categoria", filter_village: "Borgo",
-        // Vini & Schede
         wine_type: "Tipologia", wine_grapes: "Uve", wine_pairings: "Abbinamenti", wine_deg: "Gradi",
         label_curiosity: "Curiosità", desc_missing: "Descrizione non disponibile.",
-        // Azioni Generiche
         btn_details: "Vedi Dettagli", btn_download_gpx: "Scarica file GPX", 
         gpx_missing: "Traccia GPS non presente",
         map_route_title: "Mappa Percorso", map_zoom_hint: "Usa due dita per zoomare",
-        // Trasporti (Bus/Treno) Avanzati
         plan_trip: "Pianifica Viaggio", departure: "PARTENZA", arrival: "ARRIVO", 
         date_trip: "DATA VIAGGIO", time_trip: "ORARIO", find_times: "TROVA ORARI",
         next_runs: "CORSE SUCCESSIVE", next_departure: "PROSSIMA PARTENZA",
@@ -70,6 +59,7 @@ const UI_TEXT = {
         ideal_for: "Ideale per",
         welcome_app_name: "5 Terre Guide", welcome_desc: "La tua guida essenziale per esplorare le Cinque Terre."
     },
+  
     en: {
         loading: "Loading...", error: "Error", no_results: "No results found.",
         home_title: "Welcome", nav_villages: "Villages", nav_food: "Food", nav_outdoor: "Outdoor", nav_services: "Services",
@@ -226,140 +216,4 @@ const UI_TEXT = {
         welcome_app_name: "5 Terre Guide", welcome_desc: "探索五渔村的必备指南。"
     }
 };
-const FERRY_STOPS = [
-    { id: 'levanto', label: 'Levanto' },
-    { id: 'monterosso', label: 'Monterosso' },
-    { id: 'vernazza', label: 'Vernazza' },
-    { id: 'corniglia', label: 'Corniglia' },
-    { id: 'manarola', label: 'Manarola' },
-    { id: 'riomaggiore', label: 'Riomaggiore' },
-    { id: 'portovenere', label: 'Portovenere' },
-    { id: 'la spezia', label: 'La Spezia' },
-    { id: 'lerici', label: 'Lerici' }
-];
-
-// 5. HELPER FUNCTIONS GLOBALI
-window.t = function(key) {
-    const langDict = UI_TEXT[window.currentLang] || UI_TEXT['it'];
-    return langDict[key] || key; // Fallback sulla chiave stessa se manca
-};
-
-window.dbCol = function(item, field) {
-    if (!item || !item[field]) return '';
-
-    let value = item[field];
-
-    // Se Supabase restituisce il JSONB già come oggetto
-    if (typeof value === 'object' && value !== null) {
-        // Cerca la lingua corrente, altrimenti fallback su italiano, altrimenti stringa vuota
-        return value[window.currentLang] || value['it'] || '';
-    }
-
-    // Se è ancora una stringa (es. vecchi dati o errore di parsing), la restituisce così com'è
-    return value;
-};
-
-window.getSmartUrl = function(name, folder = '', width = 600) {
-    if (!name) return 'https://via.placeholder.com/600x400?text=No+Image';
-    const safeName = encodeURIComponent(name.trim()); 
-    const folderPath = folder ? `${folder}/` : '';
-    return `${CLOUDINARY_BASE_URL}/w_${width},c_fill,f_auto,q_auto:good,fl_progressive/${folderPath}${safeName}`;
-};
-
-window.changeLanguage = function(langCode) {
-    console.log("Cambio lingua a:", langCode);
     
-    // 1. Aggiorna la variabile globale
-    window.currentLang = langCode;
-    
-    // (Opzionale) Salva la scelta nel browser per la prossima volta
-    localStorage.setItem('user_lang', langCode);
-
-    // 2. Aggiorna i testi statici dell'interfaccia (Titoli, Bottoni)
-    updateStaticInterface();
-
-    // 3. Ricarica la vista corrente (Forza il re-render delle card)
-    // Assumo che tu abbia una funzione che renderizza la pagina, es: renderApp() o loadData()
-    // Se usi una logica basata su router, ricarica la pagina corrente:
-    if (typeof renderCategory === 'function') {
-        // Esempio: se sei nella vista attrazioni, ricaricala
-        const currentCategory = window.currentCategory || 'attrazioni'; // O la tua variabile di stato
-        renderCategory(currentCategory); 
-    } else {
-        // Fallback brutale se non hai una funzione di render centralizzata
-        location.reload(); 
-    }
-};
-
-// Funzione helper per aggiornare i testi fissi (Menu, Home Title, ecc.)
-function updateStaticInterface() {
-    // Esempio: Aggiorna il titolo della Home
-    const homeTitleEl = document.getElementById('home-title'); 
-    if(homeTitleEl) homeTitleEl.textContent = window.t('home_title');
-
-    // Esempio: Aggiorna i bottoni della navbar
-    // Suggerimento: Aggiungi id="nav-food" ai tuoi elementi HTML per trovarli facilmente
-    const navFood = document.getElementById('nav-food');
-    if(navFood) navFood.textContent = window.t('nav_food');
-    
-    // Aggiorna tutti gli elementi che usano window.t() al volo se necessario
-}
-
-
-// Algoritmo di Gauss per calcolare la Pasqua
-function getEasterDate(year) {
-    const a = year % 19;
-    const b = Math.floor(year / 100);
-    const c = year % 100;
-    const d = Math.floor(b / 4);
-    const e = b % 4;
-    const f = Math.floor((b + 8) / 25);
-    const g = Math.floor((b - f + 1) / 3);
-    const h = (19 * a + b - d - g + 15) % 30;
-    const i = Math.floor(c / 4);
-    const k = c % 4;
-    const l = (32 + 2 * e + 2 * i - h - k) % 7;
-    const m = Math.floor((a + 11 * h + 22 * l) / 451);
-    
-    const month = Math.floor((h + l - 7 * m + 114) / 31) - 1; // 0-indexed per JS Date
-    const day = ((h + l - 7 * m + 114) % 31) + 1;
-    
-    return new Date(year, month, day);
-}
-
-// Verifica se è un giorno festivo in Italia
-function isItalianHoliday(dateObj) {
-    const d = dateObj.getDate();
-    const m = dateObj.getMonth() + 1; // 1-12
-    const y = dateObj.getFullYear();
-
-    // 1. Domenica
-    if (dateObj.getDay() === 0) return true;
-
-    // 2. Festività Fisse
-    const fixedHolidays = [
-        "1-1",   // Capodanno
-        "6-1",   // Epifania
-        "25-4",  // Liberazione
-        "1-5",   // Festa del Lavoro
-        "2-6",   // Festa della Repubblica
-        "15-8",  // Ferragosto
-        "1-11",  // Ognissanti
-        "8-12",  // Immacolata
-        "25-12", // Natale
-        "26-12"  // Santo Stefano
-    ];
-    if (fixedHolidays.includes(`${d}-${m}`)) return true;
-
-    // 3. Pasquetta (Lunedì dell'Angelo) = Pasqua + 1 giorno
-    const easter = getEasterDate(y);
-    const pasquetta = new Date(easter);
-    pasquetta.setDate(easter.getDate() + 1);
-
-    if (d === pasquetta.getDate() && (m - 1) === pasquetta.getMonth()) return true;
-    
-    // (Opzionale) Patrono della Spezia 19 Marzo? 
-    // Per ora teniamo le nazionali standard.
-    
-    return false;
-}
