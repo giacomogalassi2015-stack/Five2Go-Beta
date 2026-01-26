@@ -233,9 +233,10 @@ window.loadTableData = async function(tableName, btnEl) {
     else if (tableName === 'Spiagge') {
         renderGenericFilterableView(data, 'Paesi', subContent, window.spiaggiaRenderer);
     }
-    // PRODOTTI (Griglia)
+   // PRODOTTI (Lista Verticale)
     else if (tableName === 'Prodotti') {
-        let html = '<div class="products-grid-fixed animate-fade">'; 
+        // IMPORTANTE: Usa 'list-container' e NON 'products-grid-fixed'
+        let html = '<div class="list-container animate-fade" style="padding-bottom:20px;">'; 
         data.forEach(p => { html += window.prodottoRenderer(p); });
         subContent.innerHTML = html + '</div>';
     }

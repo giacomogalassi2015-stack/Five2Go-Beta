@@ -280,28 +280,37 @@ const safeId = item.POI_ID || item.id;
     </div>`;
 };
 
-// === RENDERER PRODOTTO (Compatto: 140px Altezza) ===
+// === RENDERER PRODOTTO (Titolo Dominante + Foto a Destra) ===
 window.prodottoRenderer = (p) => {
+    // 1. Recupero Dati
     const titolo = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
+    const ideale = window.dbCol(p, 'Ideale per') || 'Tutti'; 
     
-    // Immagine Sfondo
+    // 2. Immagine
     const fotoKey = p.Prodotti_foto || titolo;
-    const imgUrl = window.getSmartUrl(fotoKey, '', 600);
+    const imgUrl = window.getSmartUrl(fotoKey, '', 200); // Thumb piccola
     
+    // 3. Oggetto per modale
     const safeObj = encodeURIComponent(JSON.stringify(p)).replace(/'/g, "%27");
 
     return `
-    <div class="prod-card-fixed animate-fade" 
-         style="background-image: url('${imgUrl}');" 
-         onclick="openModal('product', '${safeObj}')">
-         
-         <div class="prod-overlay-fixed">
-            <div class="prod-title-fixed">${titolo}</div>
-         </div>
-         
+    <div class="culture-card is-product animate-fade" onclick="openModal('product', '${safeObj}')">
+        
+        <div class="culture-info">
+            <div class="culture-title">${titolo}</div>
+
+            <div class="product-subtitle">
+                <span class="material-icons">stars</span> 
+                Ideale per: ${ideale}
+            </div>
+        </div>
+        
+        <div class="culture-product-thumb">
+            <img src="${imgUrl}" loading="lazy" alt="${titolo}">
+        </div>
+
     </div>`;
 };
-
 // ============================================================
 // LOGICA MODALE PRINCIPALE (window.openModal)
 // ============================================================

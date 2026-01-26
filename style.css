@@ -267,65 +267,60 @@ main, #app-content {
 
 /* === PRODOTTI (Stile Servizi: Dimensioni Contenute) === */
 
-/* 1. GRIGLIA: Copia esatta della tua .services-grid-modern */
-.products-grid-fixed {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 Colonne */
-    gap: 20px;                             /* Distanza identica ai servizi */
-    padding: 25px;                         
-    max-width: 600px;                      /* FONDAMENTALE: impedisce che diventino enormi */
-    margin: 0 auto;
+/* ============================================================
+   VARIANTE PRODOTTI (Stile Lista con Foto)
+   ============================================================ */
+/* ============================================================
+   VARIANTE PRODOTTI (Lista con Foto a Destra)
+   ============================================================ */
+
+.culture-card.is-product {
+    border-left-color: #FFB300; /* Giallo Ambra (Colore Identificativo Cibo) */
+    align-items: center;        /* Centra verticalmente contenuto e foto */
+    padding-right: 15px;        /* Spazio a destra per la foto */
+    min-height: 100px;
 }
 
-/* 2. CARD PRODOTTO: Altezza Fissa e Compatta */
-.prod-card-fixed {
-    width: 100%;
-    height: 140px;          /* Altezza ridotta (era 180px all'inizio, ora è più piccola) */
-    
-    position: relative;
-    overflow: hidden;
-    
-    /* Gestione Sfondo */
-    background-size: cover;
-    background-position: center;
-    background-color: #333;
-    
-    /* Stile Bordo identico ai servizi */
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Ombra leggermente ridotta */
-    
-    transition: transform 0.2s ease-out;
-    cursor: pointer;
+/* 1. TITOLO (Più evidente) */
+.culture-card.is-product .culture-title {
+    color: #E65100; /* Arancione scuro intenso (oppure usa #2c3e50 per grigio scuro) */
+    margin-bottom: 6px; /* Poco spazio sotto il titolo */
+    font-size: 1.15rem; /* Leggermente più grande */
 }
 
-.prod-card-fixed:active {
-    transform: scale(0.96);
-}
-
-/* 3. Overlay Testo (Sfumatura scura in basso) */
-.prod-overlay-fixed {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100%; 
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%);
-    
+/* 2. SOTTOTITOLO "IDEALE PER" (Meno vivo, stile "Caption") */
+.product-subtitle {
+    font-size: 0.85rem;
+    color: #90A4AE; /* Grigio-Bluastro spento (molto meno vivo) */
+    font-weight: 500;
     display: flex;
-    align-items: flex-end; /* Testo in basso */
-    justify-content: center;
-    padding: 15px;
-    box-sizing: border-box;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.3;
 }
 
-.prod-title-fixed {
-    color: white;
-    font-size: 1rem;       /* Font contenuto */
-    font-weight: 700;
-    text-align: center;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-    line-height: 1.2;
+/* Icona piccola e grigia accanto a "Ideale per" */
+.product-subtitle .material-icons {
+    font-size: 1rem;
+    color: #CFD8DC; /* Grigio molto chiaro, quasi invisibile */
+}
+
+/* 3. FOTO A DESTRA */
+.culture-product-thumb {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-left: 15px;
+    background-color: #f5f5f5;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.culture-product-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 /* Sentiero Moderno */
 .card-sentiero-modern { 
