@@ -344,33 +344,55 @@ window.openModal = async function(type, payload) {
             </div>`;
     }
 
-   // --- TRASPORTI ---
+   // --- TRASPORTI (QUI È LA MODIFICA PRINCIPALE) ---
     else if (type === 'transport') {
         const item = window.tempTransportData[payload];
         if (!item) { console.error("Errore recupero trasporto"); return; }
         
         const nome = window.dbCol(item, 'Nome') || window.dbCol(item, 'Località') || window.dbCol(item, 'Mezzo') || 'Trasporto';
         const desc = window.dbCol(item, 'Descrizione') || '';
+        
+        // Info Ticket (Recuperate dal backup)
         const infoSms = window.dbCol(item, 'Info_SMS');
         const infoApp = window.dbCol(item, 'Info_App');
         const infoAvvisi = window.dbCol(item, 'Info_Avvisi');
         const hasTicketInfo = infoSms || infoApp || infoAvvisi;
+        
         const isBus = nome.toLowerCase().includes('bus') || nome.toLowerCase().includes('autobus') || nome.toLowerCase().includes('atc');
         const isTrain = nome.toLowerCase().includes('tren') || nome.toLowerCase().includes('ferrovi') || nome.toLowerCase().includes('stazione');
         let customContent = '';
 
         if (isBus) {
-            // Sezione Ticket (invariata)
+            // 1. RIPRISTINO SEZIONE TICKET (Codice recuperato da m-ui-renderers.js)
             let ticketSection = '';
             if (hasTicketInfo) {
-                // ... (tuo codice ticket HTML esistente) ...
+                ticketSection = `
+                <button onclick="toggleTicketInfo()" style="width:100%; margin-bottom:15px; background:#e0f7fa; color:#006064; border:1px solid #b2ebf2; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    🎟️ ${window.t('how_to_ticket')} ▾
+                </button>
+                <div id="ticket-info-box" style="display:none; background:#fff; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:15px; font-size:0.9rem; color:#333; line-height:1.5;">
+                    ${infoSms ? `<p style="margin-bottom:10px;"><strong>📱 SMS</strong><br>${infoSms}</p>` : ''}
+                    ${infoApp ? `<p style="margin-bottom:10px;"><strong>📲 APP</strong><br>${infoApp}</p>` : ''}
+                    ${infoAvvisi ? `<div style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.85rem; border:1px solid #ffeeba; margin-top:10px;"><strong>⚠️ ATTENZIONE:</strong> ${infoAvvisi}</div>` : ''}
+                </div>`;
             }
 
+            // 2. RIPRISTINO SEZIONE MAPPA (Codice recuperato da m-ui-renderers.js)
+            const mapToggleSection = `
+                <button id="btn-bus-map-toggle" onclick="toggleBusMap()" style="width:100%; margin-bottom:15px; background:#EDE7F6; color:#4527A0; border:1px solid #D1C4E9; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition: background 0.3s;">
+                    🗺️ ${window.t('show_map')} ▾
+                </button>
+                <div id="bus-map-wrapper" style="display:none; margin-bottom: 20px;">
+                    <div id="bus-map" style="height: 280px; width: 100%; border-radius: 12px; z-index: 1; border: 2px solid #EDE7F6;"></div>
+                    <p style="font-size:0.75rem; text-align:center; color:#999; margin-top:5px;">${window.t('map_hint')}</p>
+                </div>`;
+
+            // Dati per i nuovi input
             const now = new Date();
             const todayISO = now.toISOString().split('T')[0];
             const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
 
-            // --- NUOVO HTML: Solo Partenza e Arrivo "Reattivi" ---
+            // 3. MERGE HTML: Ticket + Mappa + Nuovi Input
             customContent = `
             <div class="bus-search-box animate-fade">
                 <div class="bus-title" style="margin-bottom: 0px; padding-bottom: 15px;">
@@ -378,12 +400,13 @@ window.openModal = async function(type, payload) {
                 </div>
                 
                 ${ticketSection}
+                ${mapToggleSection}
 
                 <div class="bus-inputs">
                     <div style="flex:1;">
                         <label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('departure')}</label>
                         <select id="selPartenza" class="bus-select" onchange="filterDestinations(this.value)">
-                            <option value="" disabled selected>Caricamento...</option>
+                            <option value="" disabled selected>${window.t('loading')}...</option>
                         </select>
                     </div>
                     <div style="flex:1;">
@@ -404,17 +427,19 @@ window.openModal = async function(type, payload) {
                 <div id="busResultsContainer" style="display:none; margin-top:20px;"><div id="nextBusCard" class="bus-result-main"></div><div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">${window.t('next_runs')}:</div><div id="otherBusList" class="bus-list-container"></div></div>
             </div>`;
             
-            // Appena aperta la modale, carichiamo TUTTE le fermate nella Partenza
+            // Carica fermate (Modificato sotto per scaricare anche LAT/LONG per la mappa)
             setTimeout(() => { loadAllStops(); }, 50);
 
         }
         else if (isTrain) {
+            // ... (Resto codice treni invariato) ...
             const now = new Date();
             const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
             if (window.trainSearchRenderer) { customContent = window.trainSearchRenderer(null, nowTime); } 
             else { customContent = "<p>Errore interfaccia Treni.</p>"; }
         }
         else {
+             // ... (Resto codice traghetti/altri invariato) ...
             if (hasTicketInfo) {
                  customContent = `
                  <button onclick="toggleTicketInfo()" style="width:100%; margin-top:15px; background:#e0f7fa; color:#006064; border:1px solid #b2ebf2; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">
@@ -429,7 +454,6 @@ window.openModal = async function(type, payload) {
         }
         if (isBus || isTrain) { contentHtml = customContent; } else { contentHtml = `<h2>${nome}</h2><p style="color:#666;">${desc}</p>${customContent}`; }
     }
-
  // --- DETTAGLI SENTIERO ---
     else if (type === 'trail') {
         const p = JSON.parse(decodeURIComponent(payload));
@@ -848,11 +872,12 @@ window.loadAllStops = async function() {
     const selPart = document.getElementById('selPartenza');
     if(!selPart) return;
 
-    // Cache per evitare chiamate inutili se l'utente apre/chiude spesso
+    // Cache per evitare chiamate inutili
     if (!window.cachedStops) {
+        // AGGIUNTO 'LAT, LONG' ALLA SELECT
         const { data, error } = await window.supabaseClient
             .from('Fermate_bus')
-            .select('ID, NOME_FERMATA')
+            .select('ID, NOME_FERMATA, LAT, LONG') 
             .order('NOME_FERMATA', { ascending: true });
         
         if (error) { console.error(error); return; }
@@ -861,8 +886,13 @@ window.loadAllStops = async function() {
 
     const options = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
     selPart.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` + options;
-};
 
+    // INIZIALIZZA LA MAPPA ORA CHE ABBIAMO I DATI
+    // (Non serve fare un'altra fetch come nel file m-)
+    if (window.cachedStops && window.initBusMap) {
+        window.initBusMap(window.cachedStops);
+    }
+};
 // 2. FILTRO DESTINAZIONI (Il cuore della logica)
 window.filterDestinations = async function(startId) {
     const selArr = document.getElementById('selArrivo');
