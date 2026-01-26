@@ -35,6 +35,7 @@ const UI_TEXT = {
         home_title: "Benvenuto", nav_villages: "Paesi", nav_food: "Cibo", nav_outdoor: "Outdoor", nav_services: "Servizi",
         menu_prod: "Prodotti", menu_rest: "Ristoranti", menu_trail: "Sentieri", menu_beach: "Spiagge", 
         menu_trans: "Trasporti", menu_num: "Numeri Utili", menu_pharm: "Farmacie", menu_map: "Mappe", menu_monu: "Attrazioni",
+        menu_wine: "Vini",
         // Footer
         footer_rights: "Tutti i diritti riservati.",
         // Filtri
@@ -70,7 +71,7 @@ const UI_TEXT = {
         loading: "Loading...", error: "Error", no_results: "No results found.",
         home_title: "Welcome", nav_villages: "Villages", nav_food: "Food", nav_outdoor: "Outdoor", nav_services: "Services",
         menu_prod: "Products", menu_rest: "Restaurants", menu_trail: "Trails", menu_beach: "Beaches", 
-        menu_trans: "Transport", menu_num: "Useful Numbers", menu_pharm: "Pharmacies", menu_map: "Maps", menu_monu: "Attractions",
+        menu_trans: "Transport", menu_num: "Useful Numbers", menu_pharm: "Pharmacies", menu_map: "Maps", menu_monu: "Attractions",menu_wine: "Wines",
         footer_rights: "All rights reserved.",
         filter_title: "Filter by", filter_all: "All", show_results: "Show Results", 
         filter_cat: "Category", filter_village: "Village",
@@ -100,7 +101,7 @@ const UI_TEXT = {
     fr: {
         loading: "Chargement...", error: "Erreur", no_results: "Aucun résultat.",
         home_title: "Bienvenue", nav_villages: "Villages", nav_food: "Nourriture", nav_outdoor: "Plein Air", nav_services: "Services",
-        menu_prod: "Produits", menu_rest: "Restaurants", menu_trail: "Sentiers", menu_beach: "Plages", 
+        menu_prod: "Produits", menu_rest: "Restaurants", menu_trail: "Sentiers", menu_beach: "Plages", menu_wine: "Vins",
         menu_trans: "Transport", menu_num: "Numéros", menu_pharm: "Pharmacies", menu_map: "Cartes", menu_monu: "Attractions",
         footer_rights: "Tous droits réservés.",
         filter_title: "Filtrer par", filter_all: "Tous", show_results: "Voir Résultats", 
@@ -131,7 +132,7 @@ const UI_TEXT = {
     de: {
         loading: "Laden...", error: "Fehler", no_results: "Keine Ergebnisse.",
         home_title: "Willkommen", nav_villages: "Dörfer", nav_food: "Essen", nav_outdoor: "Outdoor", nav_services: "Dienste",
-        menu_prod: "Produkte", menu_rest: "Restaurants", menu_trail: "Wanderwege", menu_beach: "Strände", 
+        menu_prod: "Produkte", menu_rest: "Restaurants", menu_trail: "Wanderwege", menu_beach: "Strände", menu_wine: "Weine",
         menu_trans: "Transport", menu_num: "Nummern", menu_pharm: "Apotheken", menu_map: "Karten", menu_monu: "Attraktionen",
         footer_rights: "Alle Rechte vorbehalten.",
         filter_title: "Filtern nach", filter_all: "Alle", show_results: "Ergebnisse anzeigen", 
@@ -162,7 +163,7 @@ const UI_TEXT = {
     es: {
         loading: "Cargando...", error: "Error", no_results: "Sin resultados.",
         home_title: "Bienvenido", nav_villages: "Pueblos", nav_food: "Comida", nav_outdoor: "Aire Libre", nav_services: "Servicios",
-        menu_prod: "Productos", menu_rest: "Restaurantes", menu_trail: "Senderos", menu_beach: "Playas", 
+        menu_prod: "Productos", menu_rest: "Restaurantes", menu_trail: "Senderos", menu_beach: "Playas", menu_wine: "Vinos",
         menu_trans: "Transporte", menu_num: "Números", menu_pharm: "Farmacias", menu_map: "Mapas", menu_monu: "Atracciones",
         footer_rights: "Todos los derechos reservados.",
         filter_title: "Filtrar por", filter_all: "Todos", show_results: "Mostrar Resultados", 
@@ -193,7 +194,7 @@ const UI_TEXT = {
     zh: {
         loading: "加载中...", error: "错误", no_results: "无结果",
         home_title: "欢迎", nav_villages: "村庄", nav_food: "美食", nav_outdoor: "户外", nav_services: "服务",
-        menu_prod: "产品", menu_rest: "餐厅", menu_trail: "步道", menu_beach: "海滩", 
+        menu_prod: "产品", menu_rest: "餐厅", menu_trail: "步道", menu_beach: "海滩", menu_wine: "葡萄酒",
         menu_trans: "交通", menu_num: "常用号码", menu_pharm: "药房", menu_map: "地图", menu_monu: "景点",
         footer_rights: "版权所有。",
         filter_title: "筛选", filter_all: "全部", show_results: "显示结果", 
