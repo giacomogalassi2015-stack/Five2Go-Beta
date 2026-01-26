@@ -4,8 +4,9 @@ export const state = {
     currentViewName: 'home',
     mapsToInit: [],
     tempTransportData: [],
+    dataCache: {}, // <-- Aggiungi questo: qui salveremo parsing con ID
     // Cache per evitare chiamate ripetute
-    cachedStops: null 
+    cachedStops: null,
 };
 
 export function setCurrentLang(lang) {

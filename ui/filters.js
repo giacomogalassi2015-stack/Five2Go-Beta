@@ -1,13 +1,11 @@
-// filters.js
-import { t, dbCol } from '../utils.js';
-import { initPendingMaps } from '../mapLogic.js';
+// ui/filters.js
+import { t, dbCol } from '../core/utils.js';
+import { initPendingMaps } from '../servizi/mapLogic.js';
 
-// FILTRO SEMPLICE
 export function renderGenericFilterableView(allData, filterKey, container, cardRenderer) {
     container.innerHTML = `<div class="list-container animate-fade" id="dynamic-list" style="padding-bottom: 80px;"></div>`;
     const listContainer = container.querySelector('#dynamic-list');
 
-    // Pulizia
     const oldSheet = document.getElementById('filter-sheet');
     if (oldSheet) oldSheet.remove();
     const oldOverlay = document.getElementById('filter-overlay');
@@ -15,11 +13,9 @@ export function renderGenericFilterableView(allData, filterKey, container, cardR
     const oldBtn = document.getElementById('filter-toggle-btn');
     if (oldBtn) oldBtn.remove();
 
-    // Estrazione Valori Unici
     let rawValues = allData.map(item => item[filterKey] ? item[filterKey].trim() : null).filter(x => x);
     let tagsRaw = [...new Set(rawValues)];
     
-    // Ordine specifico
     const customOrder = ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso", "Facile", "Media", "Difficile"];
     if (!tagsRaw.includes('Tutti')) tagsRaw.unshift('Tutti');
 
@@ -31,7 +27,6 @@ export function renderGenericFilterableView(allData, filterKey, container, cardR
         return a.localeCompare(b);
     });
 
-    // Creazione DOM
     const overlay = document.createElement('div');
     overlay.id = 'filter-overlay';
     overlay.className = 'sheet-overlay';
@@ -40,14 +35,7 @@ export function renderGenericFilterableView(allData, filterKey, container, cardR
     sheet.id = 'filter-sheet';
     sheet.className = 'bottom-sheet';
     
-    // NOTA: t() invece di window.t()
-    sheet.innerHTML = `
-        <div class="sheet-header">
-            <div class="sheet-title">${t('filter_title')}</div> 
-            <div class="material-icons sheet-close" onclick="closeFilterSheet()">close</div>
-        </div>
-        <div class="filter-grid" id="sheet-options"></div>
-    `;
+    sheet.innerHTML = `<div class="sheet-header"><div class="sheet-title">${t('filter_title')}</div> <div class="material-icons sheet-close" onclick="closeFilterSheet()">close</div></div><div class="filter-grid" id="sheet-options"></div>`;
 
     document.body.appendChild(overlay);
     document.body.appendChild(sheet);
@@ -55,7 +43,6 @@ export function renderGenericFilterableView(allData, filterKey, container, cardR
     const optionsContainer = sheet.querySelector('#sheet-options');
     let activeTag = 'Tutti'; 
 
-    // Generazione Chips
     uniqueTags.forEach(tag => {
         const chip = document.createElement('button');
         chip.className = 'sheet-chip';
@@ -66,12 +53,10 @@ export function renderGenericFilterableView(allData, filterKey, container, cardR
             document.querySelectorAll('.sheet-chip').forEach(c => c.classList.remove('active-filter'));
             chip.classList.add('active-filter');
             activeTag = tag;
-            
             const filtered = tag === 'Tutti' ? allData : allData.filter(item => {
                 const valDB = item[filterKey] ? item[filterKey].trim() : '';
                 return valDB.includes(tag) || (item.Nome && item.Nome.toLowerCase().includes('emergenza'));
             });
-
             updateList(filtered);
             if(window.closeFilterSheet) window.closeFilterSheet();
         };
@@ -93,19 +78,19 @@ export function renderGenericFilterableView(allData, filterKey, container, cardR
             return; 
         }
         listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
-        // Re-init mappe se ci sono sentieri
+        // FIX: Import dinamico corretto verso la cartella servizi
         if (typeof initPendingMaps === 'function') setTimeout(() => initPendingMaps(), 100);
         else {
-            // Import dinamico se serve
-            import('../mapLogic.js').then(m => setTimeout(() => m.initPendingMaps(), 100));
+            import('../servizi/mapLogic.js').then(m => setTimeout(() => m.initPendingMaps(), 100));
         }
     }
-    
     updateList(allData);
 }
 
-// FILTRO DOPPIO
+// ... (renderDoubleFilterView resta invariata, tranne la prima riga se contiene import) ...
 export function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer) {
+    // Copia qui il contenuto di renderDoubleFilterView dal tuo file originale
+    // Non richiede modifiche logiche, solo assicurati che segua la funzione sopra.
     container.innerHTML = `<div class="list-container animate-fade" id="dynamic-list" style="padding-bottom: 80px;"></div>`;
     const listContainer = container.querySelector('#dynamic-list');
 
@@ -117,7 +102,6 @@ export function renderDoubleFilterView(allData, filtersConfig, container, cardRe
     if (oldBtn) oldBtn.remove();
 
     const getUniqueValues = (key, customOrder = []) => {
-        // NOTA: dbCol() invece di window.dbCol()
         const raw = allData.map(i => dbCol(i, key)).filter(x => x).map(x => x.trim());
         let unique = [...new Set(raw)];
         if (customOrder && customOrder.length > 0) {

@@ -1,14 +1,14 @@
-import { supabaseClient } from './supabaseClient.js';
-import { t, isItalianHoliday } from '../utils.js';
-import { state } from './state.js';
+import { supabaseClient } from '../core/supabaseClient.js';
+import { t, isItalianHoliday } from '../core/utils.js';
+import { state } from '../core/state.js';
 import { initBusMap } from './mapLogic.js';
-import { FERRY_STOPS } from './config.js';
-
+import { FERRY_STOPS } from '../core/config.js';
 // 1. CARICAMENTO INIZIALE (Fermate e Mappa)
 export async function loadAllStops() {
     const selPart = document.getElementById('selPartenza');
     if(!selPart) return;
 
+    // Se non abbiamo i dati in cache, li scarichiamo
     if (!state.cachedStops) {
         const { data, error } = await supabaseClient
             .from('Fermate_bus')
@@ -19,10 +19,17 @@ export async function loadAllStops() {
         state.cachedStops = data;
     }
 
+    // Generiamo le opzioni
     const options = state.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
     selPart.innerHTML = `<option value="" disabled selected>${t('select_placeholder')}</option>` + options;
 
-    // Inizializza mappa (importata da mapLogic)
+    // --- FIX CRITICO 1: Attacchiamo l'evento CHANGE manualmente ---
+    // Questo sostituisce l'onchange="filterDestinations(this.value)" che c'era nel vecchio HTML
+    selPart.addEventListener('change', (e) => {
+        filterDestinations(e.target.value);
+    });
+
+    // Inizializza mappa
     initBusMap(state.cachedStops);
 }
 
@@ -33,12 +40,16 @@ export async function filterDestinations(startId) {
     
     if(!startId || !selArr) return;
 
+    // Reset UI mentre cerco
     selArr.innerHTML = `<option>${t('bus_searching')}</option>`;
     selArr.disabled = true;
-    btnSearch.style.opacity = '0.5';
-    btnSearch.style.pointerEvents = 'none';
+    if(btnSearch) {
+        btnSearch.style.opacity = '0.5';
+        btnSearch.style.pointerEvents = 'none';
+    }
 
     try {
+        // 1. Trova tutte le corse che passano per la fermata di partenza
         const { data: corsePassanti } = await supabaseClient
             .from('Orari_bus')
             .select('ID_CORSA')
@@ -51,11 +62,13 @@ export async function filterDestinations(startId) {
             return;
         }
 
+        // 2. Trova tutte le ALTRE fermate toccate da quelle corse
         const { data: fermateCollegate } = await supabaseClient
             .from('Orari_bus')
             .select('ID_FERMATA')
             .in('ID_CORSA', runIds);
 
+        // Filtra via la fermata di partenza stessa ed elimina i duplicati
         const destIds = [...new Set(fermateCollegate.map(x => x.ID_FERMATA))].filter(id => id != startId);
 
         let validDestinations = [];
@@ -63,13 +76,17 @@ export async function filterDestinations(startId) {
             validDestinations = state.cachedStops.filter(s => destIds.includes(s.ID));
         }
 
+        // 3. Popola la select Arrivo
         if (validDestinations.length > 0) {
             validDestinations.sort((a, b) => a.NOME_FERMATA.localeCompare(b.NOME_FERMATA));
             selArr.innerHTML = `<option value="" disabled selected>${t('select_placeholder')}</option>` + 
                                validDestinations.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
             selArr.disabled = false;
-            btnSearch.style.opacity = '1';
-            btnSearch.style.pointerEvents = 'auto';
+            
+            if(btnSearch) {
+                btnSearch.style.opacity = '1';
+                btnSearch.style.pointerEvents = 'auto';
+            }
         } else {
             selArr.innerHTML = `<option disabled>${t('bus_no_dest')}</option>`;
         }
@@ -150,12 +167,13 @@ export async function eseguiRicercaBus() {
     setTimeout(() => { resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
 }
 
-// 4. TRAGHETTI
+// 4. TRAGHETTI - INIT
 export function initFerrySearch() {
     const selPart = document.getElementById('selPartenzaFerry');
     const selArr = document.getElementById('selArrivoFerry');
     if (!selPart || !selArr) return;
 
+    // Usa FERRY_STOPS da config.js
     selPart.innerHTML = `<option value="" disabled selected>${t('select_placeholder')}</option>` + 
         FERRY_STOPS.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
 
@@ -168,10 +186,16 @@ export function initFerrySearch() {
     });
 }
 
+// 5. TRAGHETTI - ESECUZIONE (FIX DATE)
 export async function eseguiRicercaTraghetto() {
     const selPart = document.getElementById('selPartenzaFerry');
     const selArr = document.getElementById('selArrivoFerry');
     const selOra = document.getElementById('selOraFerry');
+    
+    // --- FIX CRITICO 2: Recupero e Formattazione Data ---
+    // Cerchiamo selDataFerry, se non c'è usiamo selData (quello dei bus) come fallback
+    const selData = document.getElementById('selDataFerry') || document.getElementById('selData');
+    
     const resultsContainer = document.getElementById('ferryResultsContainer');
     const nextCard = document.getElementById('nextFerryCard');
     const list = document.getElementById('otherFerryList');
@@ -185,6 +209,15 @@ export async function eseguiRicercaTraghetto() {
     const startCol = selPart.value; 
     const endCol = selArr.value;    
     const timeFilter = selOra.value; 
+
+    // Formattazione data per visualizzazione
+    let dateDisplayHtml = '';
+    if (selData && selData.value) {
+        const d = new Date(selData.value);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        dateDisplayHtml = `<span class="badge-weekday" style="background:rgba(255,255,255,0.2); margin-left:8px;">${day}/${month}</span>`;
+    }
 
     const { data, error } = await supabaseClient
         .from('Orari_traghetti')
@@ -211,21 +244,28 @@ export async function eseguiRicercaTraghetto() {
             <div style="text-align:center; padding:15px; color:#c62828;">
                 <span class="material-icons">directions_boat_filled</span><br>
                 <strong>${t('bus_not_found')}</strong><br>
+                ${dateDisplayHtml}
             </div>`;
         return;
     }
 
     const primo = validRuns[0];
+    
+    // HTML Aggiornato con la data
     nextCard.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-            <span style="font-size:0.75rem; color:#e1f5fe; text-transform:uppercase; font-weight:bold;">${t('next_departure')}</span>
+            <div style="display:flex; align-items:center;">
+                <span style="font-size:0.75rem; color:#e1f5fe; text-transform:uppercase; font-weight:bold;">${t('next_departure')}</span>
+                ${dateDisplayHtml}
+            </div>
             <span class="badge-weekday" style="background:#0288D1">Navigazione</span>
         </div>
         <div class="bus-time-big">${primo[startCol].slice(0,5)}</div>
         <div style="font-size:1rem; color:#e1f5fe;">${t('arrival')}: <strong>${primo[endCol].slice(0,5)}</strong></div>
         <div style="font-size:0.75rem; color:#b3e5fc; margin-top:5px;">Direzione: ${primo.direzione || '--'}</div>
     `;
-const successivi = validRuns.slice(1);
+
+    const successivi = validRuns.slice(1);
     list.innerHTML = successivi.map(run => `
         <div class="bus-list-item">
             <span style="font-weight:bold; color:#01579b;">${run[startCol].slice(0,5)}</span>

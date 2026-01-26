@@ -1,7 +1,7 @@
 // router.js
-import { supabaseClient } from '../supabaseClient.js';
+import { supabaseClient } from './supabaseClient.js';
 import { state, setCurrentView } from './state.js';
-import { t, dbCol, getSmartUrl } from '../utils.js';
+import { t, dbCol, getSmartUrl } from './utils.js';
 import { openModal } from '../ui/modals.js';
 import { AVAILABLE_LANGS } from './config.js';
 import { 

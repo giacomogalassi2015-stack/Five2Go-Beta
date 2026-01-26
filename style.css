@@ -452,47 +452,231 @@ main, #app-content {
 /* ============================================================
    7. BUS & TRASPORTI (Search Box & Griglia)
    ============================================================ */
-.bus-search-box {
-    background: #ffffff; border-radius: 24px; padding: 24px;
-    box-shadow: 0 20px 40px -5px rgba(0,0,0,0.1), 0 10px 15px -3px rgba(0,0,0,0.05);
-    border: 1px solid rgba(255,255,255,0.5); margin-top: 5px; position: relative; overflow: hidden;
-}
-.bus-title {
-    font-size: 1.25rem; font-weight: 900; color: #1a202c; margin-bottom: 0px; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px; padding-bottom: 15px;
-}
-.bus-title .material-icons {
-    color: #fff; background: linear-gradient(135deg, #FFC107, #FF9800); padding: 8px; border-radius: 12px; font-size: 1.3rem; box-shadow: 0 4px 6px rgba(255, 152, 0, 0.25);
-}
-.bus-inputs { display: flex; gap: 15px; margin-bottom: 15px; }
-.bus-inputs label { display: block; margin-bottom: 6px; font-size: 0.75rem; font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; }
-.bus-select {
-    width: 100%; background: #F7FAFC; border: 2px solid transparent; border-radius: 16px; padding: 14px;
-    font-size: 1rem; font-weight: 600; color: #2D3748; outline: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); -webkit-appearance: none; appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A0AEC0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
-}
-.bus-select:focus { background: #ffffff; border-color: #FFC107; box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.15); transform: translateY(-1px); }
-input[type="date"].bus-select, input[type="time"].bus-select { background-image: none; min-height: 52px; }
 
+/* Container Generico Search Box */
+.bus-search-box {
+    background: #ffffff; 
+    border-radius: 24px; 
+    padding: 24px;
+    box-shadow: 0 20px 40px -5px rgba(0,0,0,0.1), 0 10px 15px -3px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255,255,255,0.5);
+    margin-top: 5px; 
+    position: relative; 
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* --- TITOLI --- */
+.bus-title {
+    font-size: 1.25rem; 
+    font-weight: 900; 
+    margin-bottom: 0px; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    letter-spacing: -0.5px; 
+    padding-bottom: 15px;
+}
+
+/* Icona Bus nel titolo (Gialla) */
+.bus-title.theme-bus { color: #1a202c; }
+.bus-title.theme-bus .material-icons {
+    color: #fff; 
+    background: linear-gradient(135deg, #FFC107, #FF9800); 
+    padding: 8px; 
+    border-radius: 12px; 
+    font-size: 1.3rem; 
+    box-shadow: 0 4px 6px rgba(255, 152, 0, 0.25);
+}
+
+/* Icona Battello nel titolo (Blu) */
+.bus-title.theme-ferry { color: #0277BD; }
+.bus-title.theme-ferry .material-icons {
+    color: #fff;
+    background: linear-gradient(135deg, #29B6F6, #0288D1);
+    padding: 8px; 
+    border-radius: 12px; 
+    font-size: 1.3rem;
+    box-shadow: 0 4px 6px rgba(2, 136, 209, 0.25);
+}
+
+/* --- INPUTS & SELECT (Stile Recuperato dal Backup) --- */
+.bus-inputs { display: flex; gap: 15px; margin-bottom: 15px; }
+
+.input-group-label {
+    display: block; margin-bottom: 6px; font-size: 0.75rem; 
+    font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.bus-select {
+    width: 100%; 
+    background-color: #F7FAFC; 
+    border: 2px solid transparent; 
+    border-radius: 16px; 
+    padding: 14px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem; 
+    font-weight: 600; 
+    color: #2D3748; 
+    outline: none; 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    -webkit-appearance: none; appearance: none;
+    
+    /* RECUPERATO: La freccetta SVG di sfondo che si era persa */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A0AEC0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat; 
+    background-position: right 12px center; 
+    background-size: 16px;
+}
+
+.bus-select:focus { 
+    background-color: #ffffff; 
+    border-color: #FFC107; 
+    box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.15); 
+    transform: translateY(-1px); 
+}
+
+.bus-select:disabled {
+    opacity: 0.6;
+    background-color: #edf2f7;
+    cursor: not-allowed;
+}
+
+/* Data e Ora (Rimuovi freccia SVG perché hanno il loro picker nativo) */
+input[type="date"].bus-select, input[type="time"].bus-select { 
+    background-image: none; 
+    min-height: 52px; 
+}
+
+/* --- BOTTONI AZIONE (Stili Recuperati) --- */
+
+/* Bottone BUS (Giallo Intenso) */
 .btn-yellow {
-    width: 100%; background: linear-gradient(135deg, #FFC107 0%, #FF8F00 100%);
-    color: #422006; border: none; padding: 16px; border-radius: 18px; font-size: 1.1rem; font-weight: 900; letter-spacing: 0.5px; cursor: pointer;
-    box-shadow: 0 10px 25px -5px rgba(255, 160, 0, 0.4); transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; margin-top: 10px; position: relative; overflow: hidden;
+    width: 100%; 
+    background: linear-gradient(135deg, #FFC107 0%, #FF8F00 100%);
+    color: #422006; 
+    border: none; 
+    padding: 16px; 
+    border-radius: 18px; 
+    font-size: 1.1rem; 
+    font-weight: 900; 
+    letter-spacing: 0.5px; 
+    cursor: pointer;
+    box-shadow: 0 10px 25px -5px rgba(255, 160, 0, 0.4); 
+    transition: all 0.2s ease; 
+    display: flex; justify-content: center; align-items: center; gap: 8px;
+    margin-top: 10px; 
+    position: relative; overflow: hidden;
 }
 .btn-yellow:active { transform: scale(0.96); box-shadow: 0 5px 10px -5px rgba(255, 160, 0, 0.4); }
 
-.bus-result-main {
-    background: linear-gradient(135deg, #006064 0%, #0097A7 100%); border: none; border-radius: 20px; padding: 25px; text-align: center;
-    margin-bottom: 25px; color: white; box-shadow: 0 15px 30px -5px rgba(0, 96, 100, 0.3); position: relative; animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* Bottone TRAGHETTO (Blu Oceano - Nuovo stile coerente) */
+.btn-blue {
+    width: 100%; 
+    background: linear-gradient(135deg, #29B6F6 0%, #0288D1 100%);
+    color: #ffffff; 
+    border: none; 
+    padding: 16px; 
+    border-radius: 18px; 
+    font-size: 1.1rem; 
+    font-weight: 900; 
+    letter-spacing: 0.5px; 
+    cursor: pointer;
+    box-shadow: 0 10px 25px -5px rgba(2, 136, 209, 0.4); 
+    transition: all 0.2s ease; 
+    display: flex; justify-content: center; align-items: center; gap: 8px;
+    margin-top: 10px; 
+    position: relative; overflow: hidden;
 }
-.bus-time-big { font-size: 3.5rem; font-weight: 900; color: #ffffff; line-height: 1; margin: 10px 0; text-shadow: 0 2px 10px rgba(0,0,0,0.1); letter-spacing: -2px; }
-.bus-list-container { background: transparent; border-radius: 0; border: none; }
-.bus-list-item {
-    padding: 15px 20px; margin-bottom: 8px; background: #f8f9fa; border-radius: 12px; border: 1px solid transparent;
-    display: flex; justify-content: space-between; align-items: center; font-size: 1rem; font-weight: 600; color: #4a5568; transition: all 0.2s;
-}
-.bus-list-item:hover { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transform: translateX(5px); }
+.btn-blue:active { transform: scale(0.96); box-shadow: 0 5px 10px -5px rgba(2, 136, 209, 0.4); }
 
+
+/* --- RISULTATI RICERCA (Card Grande) --- */
+/* Recuperato stile .bus-result-main del backup */
+.next-bus-card {
+    background: linear-gradient(135deg, #006064 0%, #0097A7 100%); 
+    border: none; 
+    border-radius: 20px; 
+    padding: 25px; 
+    text-align: center;
+    margin-bottom: 25px; 
+    color: white; 
+    box-shadow: 0 15px 30px -5px rgba(0, 96, 100, 0.3); 
+    position: relative; 
+    animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bus-time-big { 
+    font-size: 3.5rem; 
+    font-weight: 900; 
+    color: #ffffff; 
+    line-height: 1; 
+    margin: 10px 0; 
+    text-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+    letter-spacing: -2px; 
+}
+
+/* Lista risultati successivi */
+.other-bus-list { background: transparent; }
+
+.bus-list-item {
+    padding: 15px 20px; 
+    margin-bottom: 8px; 
+    background: #f8f9fa; 
+    border-radius: 12px; 
+    border: 1px solid transparent;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    font-size: 1rem; 
+    font-weight: 600; 
+    color: #4a5568; 
+    transition: all 0.2s;
+}
+.bus-list-item:hover { 
+    background: #ffffff; 
+    border-color: #e2e8f0; 
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+    transform: translateX(5px); 
+}
+
+/* --- TENDINE INFORMATIVE (Biglietti/Mappa) --- */
+.toggle-info-btn {
+    width: 100%; 
+    margin-bottom: 12px; 
+    padding: 12px; 
+    border-radius: 12px; 
+    font-weight: 700; 
+    font-size: 0.85rem;
+    cursor: pointer; 
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+/* Stile Tendina Bus */
+.toggle-info-btn.bus-style {
+    background: #FFF8E1; color: #F57F17; border-color: #FFE082;
+}
+.toggle-info-btn.bus-style:active { background: #FFECB3; }
+
+/* Stile Tendina Ferry */
+.toggle-info-btn.ferry-style {
+    background: #E1F5FE; color: #0277BD; border-color: #81D4FA;
+}
+.toggle-info-btn.ferry-style:active { background: #B3E5FC; }
+
+.info-dropdown-content {
+    background: #fff; 
+    padding: 15px; 
+    border-radius: 12px; 
+    border: 1px solid #eee; 
+    margin-bottom: 15px; 
+    font-size: 0.9rem; 
+    color: #455A64; 
+    line-height: 1.5;
+    animation: fadeIn 0.3s ease;
+}
 /* Treni (Rosso) */
 .btn-red {
     width: 100%; background: linear-gradient(135deg, #FF5252 0%, #D32F2F 100%); color: white; border: none; padding: 16px; border-radius: 18px;

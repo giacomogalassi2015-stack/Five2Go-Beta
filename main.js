@@ -1,12 +1,14 @@
 // main.js
-import { switchView, loadTableData, renderServicesGrid, renderSimpleList, toggleTicketInfo, apriTrenitalia } from './router.js';
-import { openModal } from './modals.js';
-import { setCurrentLang } from './state.js';
-import { eseguiRicercaBus, filterDestinations, initFerrySearch, eseguiRicercaTraghetto, loadAllStops } from './busLogic.js';
-import { setBusStop, toggleBusMap } from './mapLogic.js';
-import { t } from './utils.js';
-import { AVAILABLE_LANGS } from './config.js';
+// Aggiornato import di utils per puntare a ./core/utils.js
+import { switchView, loadTableData, renderServicesGrid, renderSimpleList, toggleTicketInfo, apriTrenitalia } from './core/router.js';
+import { openModal } from './ui/modals.js';
+import { setCurrentLang } from './core/state.js';
+import { eseguiRicercaBus, filterDestinations, initFerrySearch, eseguiRicercaTraghetto, loadAllStops } from './servizi/busLogic.js';
+import { setBusStop, toggleBusMap } from './servizi/mapLogic.js';
+import { t } from './core/utils.js'; // <-- CORRETTO
+import { AVAILABLE_LANGS } from './core/config.js'; // <-- Assumendo che config sia in core
 
+// ... (Il resto del codice main.js rimane identico al tuo originale) ...
 // --- BRIDGE: Esposizione Globale per HTML onClick ---
 window.switchView = switchView;
 window.loadTableData = loadTableData;
@@ -16,7 +18,6 @@ window.renderSimpleList = renderSimpleList;
 window.toggleTicketInfo = toggleTicketInfo;
 window.apriTrenitalia = apriTrenitalia;
 
-// Funzioni Bus/Mappa
 window.eseguiRicercaBus = eseguiRicercaBus;
 window.filterDestinations = filterDestinations;
 window.initFerrySearch = initFerrySearch;
@@ -25,7 +26,6 @@ window.loadAllStops = loadAllStops;
 window.setBusStop = setBusStop;
 window.toggleBusMap = toggleBusMap;
 
-// Filtri (BottomSheet)
 window.openFilterSheet = () => { 
     const o = document.getElementById('filter-overlay'); 
     const s = document.getElementById('filter-sheet');
@@ -39,15 +39,11 @@ window.closeFilterSheet = () => {
     if(s) s.classList.remove('active');
 };
 
-// Cambio Lingua
 window.changeLanguage = (langCode) => {
     setCurrentLang(langCode);
-    // Ricarica la vista Home per aggiornare i testi
     switchView('home');
-    // Se c'era un menu attivo, aggiorna anche quello... per semplicità torniamo alla home.
 };
 
-// Dropdown Lingua (per la Home)
 window.toggleLangDropdown = (event) => {
     if(event) event.stopPropagation();
     const dd = document.getElementById('lang-dropdown');
@@ -58,13 +54,11 @@ window.addEventListener('click', () => {
     if(dd) dd.classList.remove('show');
 });
 
-// --- INIT ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log("🚀 App Modulare Avviata");
     switchView('home');
 });
 
-// --- SWIPE LOGIC ---
 const minSwipeDistance = 50; 
 const maxVerticalDistance = 100;
 let touchStartX = 0; let touchStartY = 0; let touchEndX = 0; let touchEndY = 0;
@@ -103,9 +97,9 @@ function handlePageSwipe() {
 
     if (activeIndex === -1) return;
 
-    if (xDiff < 0) { // Swipe Sinistra -> Avanti
+    if (xDiff < 0) { 
         if (activeIndex < tabs.length - 1) tabs[activeIndex + 1].click();
-    } else { // Swipe Destra -> Indietro
+    } else { 
         if (activeIndex > 0) tabs[activeIndex - 1].click();
     }
     touchStartX = null; touchStartY = null;

@@ -1,6 +1,6 @@
 // mapLogic.js
-import { state } from './core/state.js';
-import { t } from './utils.js';
+import { state } from '../core/state.js';
+import { t } from '../core/utils.js';
 
 // Inizializza le mappe dei sentieri in coda
 export function initPendingMaps() {
@@ -44,7 +44,7 @@ export function initBusMap(fermate) {
     const mapContainer = document.getElementById('bus-map');
     if (!mapContainer) return;
     
-    // Rimuovi mappa vecchia se esiste (state.currentBusMap)
+    // Rimuovi mappa vecchia se esiste
     if (state.currentBusMap) { 
         state.currentBusMap.remove(); 
         state.currentBusMap = null; 
@@ -66,24 +66,24 @@ export function initBusMap(fermate) {
                 <div style="text-align:center; min-width:150px;">
                     <h3 style="margin:0 0 10px 0; font-size:1rem;">${f.NOME_FERMATA}</h3>
                     <div style="display:flex; gap:5px; justify-content:center;">
-                        <button onclick="setBusStop('selPartenza', '${f.ID}')" class="btn-popup-start">Partenza</button>
-                        <button onclick="setBusStop('selArrivo', '${f.ID}')" class="btn-popup-end">Arrivo</button>
+                        <button onclick="setBusStop('selPartenza', '${f.ID}')" style="background:#4CAF50; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;">Partenza</button>
+                        <button onclick="setBusStop('selArrivo', '${f.ID}')" style="background:#F44336; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;">Arrivo</button>
                     </div>
                 </div>`);
             markersGroup.addLayer(marker);
         });
         map.addLayer(markersGroup);
     }
+    // Forza ricalcolo dimensioni
     setTimeout(() => { map.invalidateSize(); }, 200);
 }
 
-// Funzione chiamata dai popup della mappa (Globalizzata in main.js)
+// Funzione chiamata dai popup della mappa
 export function setBusStop(selectId, value) {
     const select = document.getElementById(selectId);
     if (select) {
         select.value = value;
         select.style.backgroundColor = "#fff3cd"; 
-        // Triggera l'evento onchange se necessario (per sbloccare arrivo)
         select.dispatchEvent(new Event('change'));
         setTimeout(() => select.style.backgroundColor = "white", 500);
     }
@@ -93,17 +93,31 @@ export function setBusStop(selectId, value) {
 export function toggleBusMap() {
     const container = document.getElementById('bus-map-wrapper');
     const btn = document.getElementById('btn-bus-map-toggle');
-    if (!container || !btn) return;
+    
+    if (!container || !btn) {
+        console.warn("Elementi mappa non trovati");
+        return;
+    }
     
     const isHidden = container.style.display === 'none';
     if (isHidden) {
         container.style.display = 'block';
-        btn.innerHTML = `📍 ${t('hide_map')} ▾`;
+        btn.innerHTML = `📍 NASCONDI MAPPA ▴`; // Testo statico o usa t('hide_map') se preferisci
         btn.style.backgroundColor = '#D1C4E9'; 
-        setTimeout(() => { if (state.currentBusMap) { state.currentBusMap.invalidateSize(); } }, 100);
+        
+        // CRUCIALE: Ricalcola le dimensioni quando diventa visibile
+        setTimeout(() => { 
+            if (state.currentBusMap) { 
+                state.currentBusMap.invalidateSize(); 
+            } 
+        }, 100);
     } else {
         container.style.display = 'none';
-        btn.innerHTML = `🗺️ ${t('show_map')} ▾`;
+        btn.innerHTML = `🗺️ MOSTRA MAPPA FERMATE ▾`;
         btn.style.backgroundColor = '#EDE7F6'; 
     }
 }
+
+// === ESPOSIZIONE GLOBALE (Fondamentale per i pulsanti HTML onclick="") ===
+window.toggleBusMap = toggleBusMap;
+window.setBusStop = setBusStop;
