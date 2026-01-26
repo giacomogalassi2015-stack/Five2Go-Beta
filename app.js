@@ -428,54 +428,26 @@ window.toggleTicketInfo = function() {
 };
 
 // --- LOGICA FILTRI (Tasto Galleggiante in Basso) ---
+// --- LOGICA FILTRI (Bottom Sheet / Cassetto) ---
 function renderGenericFilterableView(allData, filterKey, container, cardRenderer) {
-    // Prepara i contenitori
-    container.innerHTML = `
-        <div class="filter-bar animate-fade" id="dynamic-filters" style="display:none; margin-bottom:15px;"></div>
-        <div class="list-container animate-fade" id="dynamic-list"></div>
-    `;
-    
-    const filterBar = container.querySelector('#dynamic-filters');
+    // 1. Prepara i contenitori base
+    container.innerHTML = `<div class="list-container animate-fade" id="dynamic-list" style="padding-bottom: 80px;"></div>`;
     const listContainer = container.querySelector('#dynamic-list');
-    
-    // --- GESTIONE TASTO FILTRO ---
-    // Cerchiamo il tasto nel documento (fuori dal container, perché è fixed)
-    let filterBtn = document.getElementById('filter-toggle-btn');
-    
-    // Se non esiste, lo creiamo al volo
-    if (!filterBtn) {
-        filterBtn = document.createElement('button');
-        filterBtn.id = 'filter-toggle-btn';
-        document.body.appendChild(filterBtn);
-    }
-    
-    // Impostiamo lo stile e l'ICONA (Imbuto/Filtro)
-    filterBtn.style.display = 'block';
-    filterBtn.innerHTML = '<span class="material-icons">filter_alt</span>'; // Icona Filtro
-    
-    // Gestione Click (Apre/Chiude la barra)
-    // Cloniamo il nodo per rimuovere vecchi event listener di altre pagine
-    const newBtn = filterBtn.cloneNode(true);
-    filterBtn.parentNode.replaceChild(newBtn, filterBtn);
-    
-    newBtn.onclick = () => {
-        const isHidden = filterBar.style.display === 'none';
-        
-        if (isHidden) {
-            filterBar.style.display = 'flex';
-            // Scrolla leggermente in alto per far vedere i filtri
-            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            // Cambia icona in "Chiudi" (X) o lascia filtro colorato?
-            // Lasciamo filtro ma magari cambiamo colore per feedback
-            newBtn.style.color = '#42e695'; // Diventa verde quando aperto
-        } else {
-            filterBar.style.display = 'none';
-            newBtn.style.color = '#ffffff'; // Torna bianco
-        }
-    };
 
-    // --- GENERAZIONE TAG DEI FILTRI ---
+    // 2. Pulizia vecchi elementi filtro (se cambi pagina)
+    const oldSheet = document.getElementById('filter-sheet');
+    if (oldSheet) oldSheet.remove();
+    const oldOverlay = document.getElementById('filter-overlay');
+    if (oldOverlay) oldOverlay.remove();
+    const oldBtn = document.getElementById('filter-toggle-btn');
+    if (oldBtn) oldBtn.remove();
+
+    // 3. Generazione valori unici per i filtri
     let rawValues = allData.map(item => item[filterKey] ? item[filterKey].trim() : null).filter(x => x);
+    
+    // Split per gestire casi con virgole (es. "Manarola, Riomaggiore") se serve, altrimenti lascia così
+    // rawValues = rawValues.flatMap(v => v.split(',').map(s => s.trim())); 
+
     let tagsRaw = [...new Set(rawValues)];
     
     // Ordine personalizzato
@@ -490,38 +462,90 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
         return a.localeCompare(b);
     });
 
+    // 4. CREAZIONE STRUTTURA BOTTOM SHEET (HTML)
+    const overlay = document.createElement('div');
+    overlay.id = 'filter-overlay';
+    overlay.className = 'sheet-overlay';
+    
+    const sheet = document.createElement('div');
+    sheet.id = 'filter-sheet';
+    sheet.className = 'bottom-sheet';
+    sheet.innerHTML = `
+        <div class="sheet-header">
+            <div class="sheet-title">Filtra per</div>
+            <div class="material-icons sheet-close" onclick="closeFilterSheet()">close</div>
+        </div>
+        <div class="filter-grid" id="sheet-options"></div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(sheet);
+
+    // 5. RIEMPIMENTO OPZIONI (PALLINI)
+    const optionsContainer = sheet.querySelector('#sheet-options');
+    let activeTag = 'Tutti'; // Stato interno
+
     uniqueTags.forEach(tag => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-chip';
-        btn.innerText = tag;
-        if (tag === 'Tutti') btn.classList.add('active-filter');
-        
-        btn.onclick = () => {
-            filterBar.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active-filter'));
-            btn.classList.add('active-filter');
+        const chip = document.createElement('button');
+        chip.className = 'sheet-chip';
+        if (tag === 'Tutti') chip.classList.add('active-filter');
+        chip.innerText = tag;
+
+        chip.onclick = () => {
+            // UI Update
+            document.querySelectorAll('.sheet-chip').forEach(c => c.classList.remove('active-filter'));
+            chip.classList.add('active-filter');
+            activeTag = tag;
             
+            // Logica Filtro
             const filtered = tag === 'Tutti' ? allData : allData.filter(item => {
                 const valDB = item[filterKey] ? item[filterKey].trim() : '';
-                return (valDB === tag) || (item.Nome && item.Nome.toLowerCase().includes('emergenza'));
+                // Include supporta anche stringhe parziali o liste
+                return valDB.includes(tag) || (item.Nome && item.Nome.toLowerCase().includes('emergenza'));
             });
+
             updateList(filtered);
+            
+            // Chiudi automaticamente il cassetto dopo la scelta (UX fluida)
+            closeFilterSheet();
         };
-        filterBar.appendChild(btn);
+        optionsContainer.appendChild(chip);
     });
 
+    // 6. TASTO FAB (Galleggiante)
+    const filterBtn = document.createElement('button');
+    filterBtn.id = 'filter-toggle-btn';
+    filterBtn.innerHTML = '<span class="material-icons">filter_list</span>';
+    // Nota: lo stile base #filter-toggle-btn è già nel CSS, assicurati sia visibile
+    filterBtn.style.display = 'block'; 
+    document.body.appendChild(filterBtn);
+
+    // Eventi Apertura/Chiusura
+    window.openFilterSheet = () => {
+        overlay.classList.add('active');
+        sheet.classList.add('active');
+    };
+
+    window.closeFilterSheet = () => {
+        overlay.classList.remove('active');
+        sheet.classList.remove('active');
+    };
+
+    filterBtn.onclick = window.openFilterSheet;
+    overlay.onclick = window.closeFilterSheet;
+
+    // 7. Render Iniziale
     function updateList(items) {
         if (!items || items.length === 0) { 
-            listContainer.innerHTML = `<p style="text-align:center; padding:20px; color:#999;">${window.t('no_results')}</p>`; 
-            if (typeof initPendingMaps === 'function') setTimeout(() => initPendingMaps(), 100);
+            listContainer.innerHTML = `<p style="text-align:center; padding:40px; color:#999;">${window.t('no_results')}</p>`; 
             return; 
         }
         listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
         
-        // Se ci sono mappe da inizializzare
+        // Init mappe se necessario
         if (typeof initPendingMaps === 'function') setTimeout(() => initPendingMaps(), 100);
     }
     
-    // Caricamento iniziale
     updateList(allData);
 }
 document.addEventListener('DOMContentLoaded', () => {
