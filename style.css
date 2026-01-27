@@ -156,7 +156,7 @@ main, #app-content {
 }
 
 /* Pulsanti Generici (Definizione base) */
-.btn-sentiero-small, .btn-azure, .btn-pharmacy-call, .filter-chip {
+ .btn-azure, .btn-pharmacy-call, .filter-chip {
     display: inline-flex; align-items: center; justify-content: center;
     font-family: 'Roboto', sans-serif; font-weight: 600; 
     text-decoration: none; border-radius: 50px; 
@@ -322,58 +322,6 @@ main, #app-content {
     height: 100%;
     object-fit: cover;
 }
-/* Sentiero Moderno */
-.card-sentiero-modern { 
-    position: relative; width: 100%; height: 420px; border-radius: 24px; overflow: hidden; margin-bottom: 25px; 
-    background: #f0f0f0; box-shadow: 0 8px 24px rgba(0,0,0,0.12); 
-}
-.sentiero-map-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-.sentiero-card-overlay { 
-    position: absolute; bottom: 12px; left: 12px; right: 12px; 
-    background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); 
-    border-radius: 20px; padding: 18px 15px; z-index: 2; box-shadow: 0 4px 20px rgba(0,0,0,0.15); text-align: center; 
-}
-/* Titolo Sentiero Adattivo */
-.sentiero-overlay-title {
-    /* 1. Tipografia e Adattamento */
-    font-family: 'Roboto Slab', serif;
-    
-    /* TRUCCO MAGICO: Il testo sarà minimo 1rem, ideale 5% dello schermo, massimo 1.4rem */
-    font-size: clamp(1rem, 5vw, 1.4rem); 
-    
-    line-height: 1.2;       /* Interlinea stretta per quando va su due righe */
-    color: #222;
-    font-weight: 700;
-
-    /* 2. Posizionamento e Centratura */
-    text-align: center;     /* Centra il testo */
-    width: 100%;            /* Occupa tutto lo spazio disponibile */
-    margin: 0 auto 10px auto; /* Centra il blocco e da spazio sotto */
-    
-    /* 3. Gestione Spazi (I "pochi mm" di bordo) */
-    padding: 0 5px;         /* Cuscinetto laterale per non toccare i bordi */
-    
-    /* 4. Gestione Testo Lungo */
-    white-space: normal;    /* Permette di andare a capo se il nome è lungo */
-    overflow: hidden;       /* Nasconde eventuali sbavature */
-    word-wrap: break-word;  /* Spezza le parole lunghissime se serve */
-}
-
-/* Sentiero Stats Grid */
-.trail-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 15px 0 20px 0; }
-.trail-stat-box { 
-    background-color: #f5f5f5; border-radius: 12px; padding: 12px 5px; text-align: center; 
-    display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80px; border: 1px solid #eeeeee; 
-}
-.trail-stat-box span.material-icons { font-size: 1.5rem; color: #555; margin-bottom: 5px; }
-.trail-stat-box span.stat-value { font-size: 0.9rem; font-weight: 700; color: #333; line-height: 1.1; }
-.trail-stat-box span.stat-label { font-size: 0.7rem; color: #888; text-transform: uppercase; margin-top: 3px; }
-.btn-trail-action {
-    background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%); color: white; font-weight: bold; border: none; width: 100%; 
-    padding: 16px; border-radius: 14px; font-size: 1rem; box-shadow: 0 4px 15px rgba(66, 230, 149, 0.4); 
-    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.2s;
-}
-.btn-trail-action:active { transform: scale(0.98); opacity: 0.9; }
 
 /* ============================================================
    INFO CARDS (Farmacie & Numeri Utili - STILE WHITE)
@@ -659,50 +607,14 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 .spin { animation: spin 1s linear infinite; color: #fff; }
 
 
-/* === NUOVO DESIGN SENTIERI (Adventure Style) === */
-.trail-card-modern {
-    background: #fff;
-    border-radius: 28px;
-    box-shadow: 0 15px 40px -10px rgba(0,0,0,0.1);
-    margin-bottom: 25px;
-    overflow: hidden;
-    position: relative;
-}
 
-.trail-map-container {
-    height: 220px; /* Mappa bella grande */
-    background: #eee;
-    position: relative;
-}
-
-.trail-info-overlay {
-    background: white;
-    margin-top: -20px; /* Effetto foglio che copre la mappa */
-    border-radius: 24px 24px 0 0;
-    padding: 25px 20px 20px 20px;
-    position: relative;
-    z-index: 2;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-}
-
-.trail-title-row {
-    display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;
-}
-
-.trail-diff-badge {
-    padding: 6px 14px; border-radius: 12px; color: white; 
-    font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
 
 /* Colori dinamici difficoltà */
 .diff-easy { background: linear-gradient(135deg, #2ecc71, #27ae60); } /* Verde */
 .diff-medium { background: linear-gradient(135deg, #f1c40f, #f39c12); } /* Giallo/Arancio */
 .diff-hard { background: linear-gradient(135deg, #e74c3c, #c0392b); } /* Rosso */
 
-.trail-stats-row {
-    display: flex; gap: 15px; margin-bottom: 20px;
-}
+
 
 .stat-bubble {
     background: #F8F9FA; border-radius: 16px; padding: 10px 15px; 
@@ -711,55 +623,7 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 .stat-bubble strong { display: block; font-size: 1.1rem; color: #2D3436; }
 .stat-bubble span { font-size: 0.7rem; text-transform: uppercase; color: #B2BEC3; font-weight: 700; }
 
-/* Container per i bottoni dei sentieri */
-.trail-actions-container {
-    width: 100%;
-}
 
-/* Bottone Mappa (Gia esistente, lo rifiniamo) */
-.btn-trail-action {
-    width: 100%;
-    padding: 14px;
-    background: #2D3436;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    cursor: pointer;
-    text-decoration: none;
-}
-
-/* NUOVO Bottone Download GPX */
-.btn-download-gpx {
-    width: 100%;
-    padding: 14px;
-    background: #ffffff;
-    color: #27ae60;
-    border: 2px solid #27ae60;
-    border-radius: 12px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    cursor: pointer;
-    text-decoration: none; /* Rimuove sottolineatura se è un tag <a> */
-    box-sizing: border-box;
-    transition: all 0.2s ease;
-}
-
-.btn-download-gpx:active {
-    background: #eef9f1;
-    transform: scale(0.98);
-}
-
-.btn-download-gpx .material-icons {
-    font-size: 20px;
-}
 /* === NUOVO DESIGN CULTURA (Art Gallery Style) === */
 .culture-card-modern {
     background: #ffffff;
@@ -1410,4 +1274,209 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 .culture-card.is-wine .culture-bg-icon i {
     color: #9B2335;
 }
+/* ============================================================
+   1. KOMOOT STYLE - CARD LISTA (Outdoor)
+   ============================================================ */
 
+/* Il contenitore principale della card */
+.komoot-card {
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+    overflow: hidden; 
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    transition: transform 0.2s ease;
+}
+.komoot-card:active { transform: scale(0.98); }
+
+/* La Mappa nella lista */
+.komoot-map-container {
+    height: 220px !important; /* Altezza fissa obbligatoria */
+    width: 100%;
+    background-color: #e0e0e0; 
+    display: block;
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+    /* Opzionale: impedisce di muovere la mappa mentre scrolli la pagina */
+    pointer-events: none; 
+}
+
+/* Parte Info (Bianca) */
+.komoot-info-body {
+    padding: 15px 15px 5px 15px; /* Meno padding sotto */
+    background: white;
+    z-index: 2;
+}
+
+/* Intestazione (Titolo e Badge) */
+.komoot-header-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 10px; gap: 10px;
+}
+.komoot-title {
+    font-family: 'Roboto', sans-serif; font-size: 1.15rem; font-weight: 700;
+    color: #2D3436; margin: 0; line-height: 1.2;
+}
+.komoot-badge {
+    font-size: 0.75rem; font-weight: 800; color: white;
+    padding: 5px 10px; border-radius: 6px; text-transform: uppercase; flex-shrink: 0;
+}
+
+
+/* ============================================================
+   2. PULSANTI AZIONE (Lista e Modale)
+   ============================================================ */
+
+/* Griglia per affiancare i pulsanti (50% e 50%) */
+.trail-actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Due colonne identiche */
+    gap: 12px;
+    padding: 15px;
+    background: #ffffff;
+    border-top: 1px solid #f9f9f9;
+}
+
+/* Stile Base Pulsante */
+.btn-trail-modern {
+    width: 100%;
+    padding: 12px 0; /* Altezza uniforme */
+    border-radius: 12px;
+    border: none;
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    cursor: pointer; transition: all 0.2s;
+}
+.btn-trail-modern:active { transform: scale(0.96); }
+
+/* Varianti Colore */
+.btn-trail-tech {
+    background-color: #2A9D8F; /* Verde Primary */
+    color: white;
+    box-shadow: 0 4px 10px rgba(42, 157, 143, 0.3);
+}
+.btn-trail-info {
+    background-color: #F0F2F5; /* Grigio Chiaro */
+    color: #555;
+    border: 1px solid #eee;
+}
+
+
+/* ============================================================
+   3. DATI TECNICI (Modale)
+   ============================================================ */
+/* Il Box del singolo dato */
+.tech-data-box {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 8px 4px;
+    border: 1px solid #eee;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+}
+/* Il Numero (Grande, in alto) */
+.t-val {
+    font-size: 1.1rem; font-weight: 800; color: #2D3436;
+    line-height: 1.1; margin-bottom: 2px;
+}
+/* L'Etichetta (Piccola, in basso) */
+.t-lbl {
+    font-size: 0.65rem; text-transform: uppercase; color: #999;
+    font-weight: 700; letter-spacing: 0.5px;
+}
+
+
+/* ============================================================
+   4. FIX ALTIMETRIA (Nascondi controlli plugin)
+   ============================================================ */
+/* Nasconde X, Download, Summary interni del plugin */
+.elevation-control .leaflet-control-close,
+.elevation-control .leaflet-control-summary,
+.elevation-control .leaflet-control-download,
+.elevation-toggle-icon {
+    display: none !important;
+}
+
+/* Rimuove spazi bianchi e padding del plugin */
+.elevation-control.leaflet-control {
+    background: transparent !important;
+    box-shadow: none !important;
+    margin: 20 !important; padding: 0 !important; width: 100% !important;
+}
+
+/* Il nostro contenitore grafico */
+#elevation-div {
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    width: 100%;
+    flex-shrink: 0; /* Non si schiaccia mai */
+}
+
+/* Fix Contenitore Modale */
+.tech-container {
+    width: 100%; max-width: 500px;
+    height: 85vh; max-height: 800px;
+    background: white; border-radius: 20px; overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+}
+
+/* --- GRIGLIA PULSANTI MODALE (3 Colonne) --- */
+.modal-actions-grid {
+    display: grid;
+    /* 3 Colonne uguali per GPX | GPS | ALTIMETRIA */
+    grid-template-columns: 1fr 1fr 1fr; 
+    gap: 8px; /* Spazio leggermente ridotto per farci stare tutto */
+    padding: 10px 15px;
+    background: white;
+    border-top: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+/* Stile Pulsante GPS (Blu brillante) */
+.btn-trail-gps {
+    background-color: #29B6F6; 
+    color: white;
+    border: none;
+    box-shadow: 0 4px 10px rgba(41, 182, 246, 0.3);
+}
+
+/* Override per pulsanti nel modale (testo più piccolo se serve) */
+.modal-actions-grid .btn-trail-modern {
+    padding: 12px 5px; /* Meno padding laterale */
+    font-size: 0.85rem; /* Testo leggermente più piccolo per non andare a capo */
+}
+
+/* ============================================================
+   KILL SWITCH PER IL DOWNLOAD LINK
+   ============================================================ */
+
+/* 1. Colpisce la classe specifica del download */
+.leaflet-control-download,
+.elevation-control-download,
+.elevation-control .download {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* 2. Colpisce QUALSIASI link (a) dentro il controllo altimetrico */
+/* Questo è il colpo di grazia: se è un link, sparisce. */
+.elevation-control a {
+    display: none !important;
+}
+
+/* 3. Colpisce eventuali link dentro il riassunto (Summary) se presenti */
+.elevation-summary a {
+    display: none !important;
+}

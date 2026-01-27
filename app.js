@@ -2,7 +2,7 @@ console.log("✅ 3. app.js caricato");
 
 const content = document.getElementById('app-content');
 const viewTitle = document.getElementById('view-title');
-
+window.pendingMaps = []; // Coda per le mappe da caricare nella lista
 // --- MODIFICA 1: Footer Dinamico (funzione invece di costante) ---
 const getGlobalFooter = () => `<footer class="app-footer"><p>© 2026 Five2Go. ${window.t('footer_rights')}</p></footer>`;
 // --- 1. SETUP LINGUA & HEADER (Logic Condizionale) ---
@@ -89,8 +89,6 @@ window.addEventListener('click', () => {
     if(dd) dd.classList.remove('show');
 });
 
-
-// --- 2. NAVIGAZIONE PRINCIPALE ---
 // --- 2. NAVIGAZIONE PRINCIPALE ---
 window.switchView = async function(view, el) {
     if (!content) return;
@@ -265,7 +263,7 @@ window.loadTableData = async function(tableName, btnEl) {
         renderDoubleFilterView(data, culturaConfig, subContent, window.attrazioniRenderer); 
     }
     else if (tableName === 'Ristoranti') { renderGenericFilterableView(data, 'Paesi', subContent, window.ristoranteRenderer); }
-    else if (tableName === 'Sentieri') { renderGenericFilterableView(data, 'Difficolta', subContent, window.sentieroRenderer); }
+   else if (tableName === 'Sentieri') { renderGenericFilterableView(data, 'difficolta_cai', subContent, window.sentieroRenderer); }
     else if (tableName === 'Farmacie') { renderGenericFilterableView(data, 'Paesi', subContent, window.farmacieRenderer); } 
     else if (tableName === 'Numeri_utili') { renderGenericFilterableView(data, 'Comune', subContent, window.numeriUtiliRenderer); }
 };
@@ -522,13 +520,20 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
     filterBtn.onclick = window.openFilterSheet;
     overlay.onclick = window.closeFilterSheet;
 
-    function updateList(items) {
+ function updateList(items) {
         if (!items || items.length === 0) { 
-            listContainer.innerHTML = `<p style="text-align:center; padding:40px; color:#999;">${window.t('no_results')}</p>`; 
-            return; 
+            listContainer.innerHTML = `<p style="...">${window.t('no_results')}</p>`; 
+        } else {
+            // Renderizza l'HTML delle card
+            listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
+            
+            // --- AGGIUNTA FONDAMENTALE ---
+            // Aspetta 100ms che il browser disegni i div, poi carica le mappe
+            setTimeout(() => {
+                if(window.initPendingMaps) window.initPendingMaps();
+            }, 100);
+            // -----------------------------
         }
-        listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
-        if (typeof initPendingMaps === 'function') setTimeout(() => initPendingMaps(), 100);
     }
     
     updateList(allData);
@@ -660,7 +665,7 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
     overlay.onclick = window.closeFilterSheet;
 
     renderChips();
-    updateList(allData);
+    updateList(allData);initLeafletMap
 }
 document.addEventListener('DOMContentLoaded', () => {
     window.currentViewName = 'home'; 
@@ -673,4 +678,145 @@ window.apriTrenitalia = function() {
     // Apre il sito ufficiale Trenitalia.
     // Perfetto per: Acquistare biglietti, vedere prezzi e orari futuri.
     window.open('https://www.trenitalia.com', '_blank');
+};
+// ============================================================
+// FUNZIONE PER ACCENDERE LE MAPPE NELLA LISTA
+// ============================================================
+window.initPendingMaps = function() {
+    console.log("Avvio rendering di " + window.pendingMaps.length + " mappe...");
+    
+    window.pendingMaps.forEach(item => {
+        // Verifica se la mappa esiste già (per evitare doppi caricamenti)
+        const container = document.getElementById(item.id);
+        if (container && !container._leaflet_id) { // Se il div esiste ed è vuoto
+            
+            // 1. Crea Mappa (Senza controlli zoom per pulizia)
+            const map = L.map(item.id, {
+                zoomControl: false,      // Niente pulsanti zoom
+                scrollWheelZoom: false,  // Disabilita zoom con rotella (per poter scrollare la pagina)
+                dragging: false,         // Mappa fissa (clicca per espandere)
+                attributionControl: false // Nascondi attribuzione per pulizia
+            });
+
+            // 2. Tile Layer (OpenTopoMap)
+            L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                maxZoom: 16
+            }).addTo(map);
+
+            // 3. Carica GPX (Linea Rossa)
+            new L.GPX(item.gpx, {
+                async: true,
+                marker_options: {
+                    startIconUrl: null, // Nascondi pin partenza
+                    endIconUrl: null,   // Nascondi pin arrivo
+                    shadowUrl: null
+                },
+                polyline_options: {
+                    color: '#D32F2F', // Rosso CAI
+                    opacity: 1,
+                    weight: 4
+                }
+            }).on('loaded', function(e) {
+                map.fitBounds(e.target.getBounds()); // Centra la mappa sul sentiero
+            }).addTo(map);
+        }
+    });
+
+    // Svuota la coda
+    window.pendingMaps = [];
+};
+
+// ============================================================
+// FUNZIONE GPS (GEOLOCALIZZAZIONE)
+// ============================================================
+window.watchId = null;     // ID per fermare il GPS
+window.userMarker = null;  // Il pallino blu sulla mappa
+
+window.toggleGPS = function() {
+    const map = window.currentMap;
+    const btn = document.getElementById('btn-gps');
+    
+    if (!map) return;
+
+    // SE È ATTIVO -> SPEGNI
+    if (window.watchId !== null) {
+        navigator.geolocation.clearWatch(window.watchId);
+        window.watchId = null;
+        
+        if (window.userMarker) {
+            map.removeLayer(window.userMarker);
+            window.userMarker = null;
+        }
+
+        // Reset Stile Bottone
+        btn.style.backgroundColor = '#29B6F6'; // Blu originale
+        btn.innerHTML = '<span class="material-icons">my_location</span> GPS';
+        return;
+    }
+
+    // SE È SPENTO -> ACCENDI
+    if (!navigator.geolocation) {
+        alert("GPS non supportato dal tuo browser.");
+        return;
+    }
+
+    // Cambia stile bottone (Feedback caricamento/attivo)
+    btn.innerHTML = '<span class="material-icons spin">refresh</span> Cerco...';
+    btn.style.backgroundColor = '#f39c12'; // Arancio mentre cerca
+
+    const options = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+    };
+
+    window.watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const accuracy = pos.coords.accuracy;
+
+            // Se il marker non esiste, crealo (Pallino Blu)
+            if (!window.userMarker) {
+                window.userMarker = L.circleMarker([lat, lng], {
+                    radius: 8,
+                    fillColor: "#2196F3",
+                    color: "#fff",
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 1
+                }).addTo(map);
+                
+                // Prima volta: centra la mappa sull'utente
+                map.setView([lat, lng], 15);
+                
+                // Conferma visiva sul bottone
+                btn.innerHTML = '<span class="material-icons">stop_circle</span> Stop';
+                btn.style.backgroundColor = '#c0392b'; // Rosso per fermare
+            } else {
+                // Aggiorna posizione
+                window.userMarker.setLatLng([lat, lng]);
+            }
+        },
+        (err) => {
+            console.error("Errore GPS:", err);
+            alert("Impossibile trovare la posizione. Verifica i permessi GPS.");
+            // Resetta bottone
+            btn.innerHTML = '<span class="material-icons">error</span> Err';
+            btn.style.backgroundColor = '#7f8c8d';
+            window.watchId = null;
+        },
+        options
+    );
+};
+
+// Quando chiudi il modale, spegni il GPS per risparmiare batteria
+const originalCloseModal = window.closeModal;
+window.closeModal = function() {
+    if (window.watchId !== null) {
+        navigator.geolocation.clearWatch(window.watchId);
+        window.watchId = null;
+        window.userMarker = null;
+    }
+    if(originalCloseModal) originalCloseModal();
 };

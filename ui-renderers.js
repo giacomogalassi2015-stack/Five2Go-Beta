@@ -57,41 +57,191 @@ window.spiaggiaRenderer = function(item) {
     </div>`;
 };
 
-// === RENDERER SENTIERO ===
+// Funzione di utilità per formattare i numeri (evita che lo '0' diventi '--')
+const formatInt = (val) => (val !== null && val !== undefined) ? val : '--';
+// ============================================================
+// RENDERER SENTIERI - KOMOOT STYLE
+// ============================================================
 window.sentieroRenderer = (s) => {
-    const paese = window.dbCol(s, 'Paesi');
-    const titoloMostrato = s.Nome || paese; 
-    const diff = s.Tag || s.Difficolta || 'Media';
-    const gpxUrl = s.Gpxlink || s.gpxlink;
-    const uniqueMapId = `map-trail-${Math.random().toString(36).substr(2, 9)}`;
+    const uniqueId = 'k-map-' + (s.poi_id || Math.floor(Math.random() * 99999));
     const safeObj = encodeURIComponent(JSON.stringify(s)).replace(/'/g, "%27");
+    const nome = s.nome || 'Sentiero';
+    const desc = s.descrizione ? decodeURIComponent(s.descrizione).replace(/'/g, "\\'") : '';
+    
+    let diff = s.difficolta_cai || 'T';
+    let diffColor = '#27ae60'; 
+    if(diff.includes('E')) diffColor = '#f39c12';
+    if(diff.includes('EE')) diffColor = '#c0392b';
 
-    let diffColor = '#f39c12';
-    if (diff.toLowerCase().includes('facile') || diff.toLowerCase().includes('easy')) diffColor = '#27ae60';
-    if (diff.toLowerCase().includes('difficile') || diff.toLowerCase().includes('expert') || diff.toLowerCase().includes('hard')) diffColor = '#c0392b';
-
-    if (gpxUrl) { window.mapsToInit.push({ id: uniqueMapId, gpx: gpxUrl }); }
+    if(s.gpx_url) {
+        if(!window.pendingMaps) window.pendingMaps = [];
+        window.pendingMaps.push({ id: uniqueId, gpx: s.gpx_url });
+    }
 
     return `
-    <div class="trail-card-modern animate-fade">
-        <div id="${uniqueMapId}" class="trail-map-container" 
-             onclick="event.stopPropagation(); openModal('map', '${gpxUrl}')">
-        </div>
-        <div class="trail-info-overlay" style="text-align: center; cursor: default; padding: 25px 15px 15px 15px;"> 
-            <h3 style="margin: 5px 0 5px 0; font-family:'Roboto Slab'; font-size: 1.25rem; color:#222; line-height:1.2;">
-                ${titoloMostrato}
-            </h3>
-            <div style="font-size:0.75rem; font-weight:700; color:${diffColor}; text-transform:uppercase; letter-spacing:1px; margin-bottom:18px;">
-                ${diff}
+    <div class="komoot-card animate-fade">
+        
+        <div id="${uniqueId}" class="komoot-map-container" onclick="window.openTechMap('${safeObj}')"></div>
+
+        <div class="komoot-info-body" style="padding-bottom:5px;">
+            <div class="komoot-header-row">
+                <h3 class="komoot-title">${nome}</h3>
+                <span class="komoot-badge" style="background:${diffColor}">${diff}</span>
             </div>
-            <button onclick="openModal('trail', '${safeObj}')" 
-                    style="width:100%; padding:14px; border:none; background:#2D3436; color:white; border-radius:12px; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:8px; cursor: pointer; transition: background 0.2s;">
-                ${window.t('btn_details')} <span class="material-icons" style="font-size:1.1rem;">arrow_forward</span>
-            </button>
         </div>
+
+        <div class="trail-actions-grid">
+            
+            <button class="btn-trail-modern btn-trail-tech" onclick="window.openTechMap('${safeObj}')">
+                <span class="material-icons" style="font-size:1.1rem;">map</span> Scheda Tecnica
+            </button>
+
+            <button class="btn-trail-modern btn-trail-info" onclick="alert('Descrizione: ' + '${desc}')">
+                <span class="material-icons" style="font-size:1.1rem; color:#777;">info</span> Info
+            </button>
+            
+        </div>
+
     </div>`;
 };
+window.openTechMap = function(safeObj) {
+    try {
+        const s = JSON.parse(decodeURIComponent(safeObj));
+        const gpxUrl = s.gpx_url; 
+        
+        // Dati
+        const dist = s.distanza_km || '--';
+        const dur = s.durata_minuti || '--';
+        const d_plus = s.dislivello_positivo || s.dislivello_passivo || '--';
+        const d_minus = s.dislivello_negativo || '--';
+        const alt_max = s.altitudine_max || '--';
+        const alt_min = s.altitudine_minima || '--';
 
+        const modalHtml = `
+            <div class="tech-container" style="display:flex; flex-direction:column; height:100%; background:white; position:relative;">
+                
+                <button onclick="closeModal()" style="position:absolute; top:10px; right:10px; z-index:1000; width:35px; height:35px; border-radius:50%; background:white; border:none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size:1.5rem; display:flex; align-items:center; justify-content:center;">&times;</button>
+
+                <div class="tech-data-row" style="padding:15px 50px 15px 15px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; text-align:center; background:#fff; border-bottom:1px solid #eee; flex-shrink:0;">
+                    <div class="tech-data-box"><span class="t-val">${dist}</span><span class="t-lbl">km</span></div>
+                    <div class="tech-data-box"><span class="t-val" style="color:#d32f2f;">+${d_plus}</span><span class="t-lbl">Salita</span></div>
+                    <div class="tech-data-box"><span class="t-val">${alt_max}</span><span class="t-lbl">Max</span></div>
+                    <div class="tech-data-box"><span class="t-val">${dur}</span><span class="t-lbl">min</span></div>
+                    <div class="tech-data-box"><span class="t-val" style="color:#27ae60;">-${d_minus}</span><span class="t-lbl">Discesa</span></div>
+                    <div class="tech-data-box"><span class="t-val">${alt_min}</span><span class="t-lbl">Min</span></div>
+                </div>
+
+                <div id="tech-map-canvas" style="flex-grow:1; background:#e0e0e0; width:100%; min-height:100px;"></div>
+                
+                <div id="elevation-div" style="display:none;"></div>
+
+                <div class="modal-actions-grid">
+                    <button class="btn-trail-modern btn-trail-info" onclick="window.downloadGPX('${gpxUrl}')">
+                        <span class="material-icons">download</span> GPX
+                    </button>
+
+                    <button id="btn-gps" class="btn-trail-modern btn-trail-gps" onclick="window.toggleGPS()">
+                        <span class="material-icons">my_location</span> GPS
+                    </button>
+
+                    <button id="btn-toggle-ele" class="btn-trail-modern btn-trail-tech" onclick="toggleElevationChart()">
+                        <span class="material-icons">show_chart</span> Grafico
+                    </button>
+                </div>
+
+            </div>
+        `;
+
+        let modalContainer = document.getElementById('modal-container');
+        if (!modalContainer) {
+            modalContainer = document.createElement('div');
+            modalContainer.id = 'modal-container';
+            modalContainer.className = 'modal-overlay';
+            document.body.appendChild(modalContainer);
+        }
+        modalContainer.innerHTML = modalHtml;
+        modalContainer.style.display = 'block';
+
+        setTimeout(() => { initLeafletMap('tech-map-canvas', gpxUrl); }, 300);
+
+    } catch (e) { console.error(e); }
+};
+// 3. FUNZIONI ACCESSORIE (Download, Toggle Grafico, Chiudi)
+window.downloadGPX = function(url) {
+    if(!url || url === 'undefined' || url === 'null') {
+        alert("GPX non disponibile.");
+        return;
+    }
+    window.open(url, '_blank');
+};
+
+window.toggleElevationChart = function() {
+    const elDiv = document.getElementById('elevation-div');
+    const btn = document.getElementById('btn-toggle-ele');
+    
+    if (elDiv.style.display === 'none') {
+        elDiv.style.display = 'block';
+        btn.innerHTML = '<span class="material-icons" style="font-size:1.2rem;">close</span> Chiudi';
+        btn.style.background = '#ffebee'; 
+        btn.style.color = '#c62828';
+        btn.style.borderColor = '#ffcdd2';
+    } else {
+        elDiv.style.display = 'none';
+        btn.innerHTML = '<span class="material-icons" style="font-size:1.2rem;">show_chart</span> Altimetria';
+        btn.style.background = '#e3f2fd';
+        btn.style.color = '#1565c0';
+        btn.style.borderColor = '#bbdefb';
+    }
+    if(window.currentMap) window.currentMap.invalidateSize();
+};
+
+window.closeModal = function() {
+    const m = document.getElementById('modal-container');
+    if(m) m.style.display = 'none';
+    if(window.currentMap) { 
+        window.currentMap.off();
+        window.currentMap.remove(); 
+        window.currentMap = null; 
+    }
+};
+
+// 4. MOTORE MAPPA (Configurazione Stabile)
+function initLeafletMap(divId, gpxUrl) {
+    if (!document.getElementById(divId)) return;
+    if (window.currentMap) { 
+        window.currentMap.off();
+        window.currentMap.remove(); 
+        window.currentMap = null; 
+    }
+    document.getElementById('elevation-div').innerHTML = '';
+
+    const map = L.map(divId);
+    window.currentMap = map;
+    map.setView([44.118, 9.711], 13); 
+
+    L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        maxZoom: 16, attribution: 'OpenTopoMap'
+    }).addTo(map);
+
+    if (gpxUrl) {
+        try {
+            const elevationOptions = {
+                theme: "steelblue-theme",
+                detached: true,
+                elevationDiv: "#elevation-div",
+                xAttr: 'dist', yAttr: 'altitude', 
+                time: false, summary: false, followMarker: true,
+                margins: { top: 20, right: 20, bottom: 20, left: 50 },
+                polyline: { color: '#D32F2F', opacity: 0.9, weight: 5 }
+            };
+            L.control.elevation(elevationOptions).addTo(map).load(gpxUrl);
+        } catch (e) {
+            new L.GPX(gpxUrl, { async: true, polyline_options: { color: 'red' } })
+              .on('loaded', e => map.fitBounds(e.target.getBounds())).addTo(map);
+        }
+    }
+    setTimeout(() => { map.invalidateSize(); }, 300);
+}
 // === RENDERER VINO ===
 window.vinoRenderer = function(item) {
     const safeId = item.id || item.ID; 
