@@ -1274,69 +1274,39 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 .culture-card.is-wine .culture-bg-icon i {
     color: #9B2335;
 }
+
+
 /* ============================================================
-   1. KOMOOT STYLE - CARD LISTA (Outdoor)
+   SEZIONE SENTIERI - KOMOOT STYLE & MODALE FIX COMPLETO
    ============================================================ */
 
-/* Il contenitore principale della card */
+/* --- 1. CARD LISTA (Outdoor) --- */
 .komoot-card {
     background-color: #ffffff;
     border-radius: 16px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     margin-bottom: 25px;
-    overflow: hidden; 
+    overflow: hidden;
     position: relative;
     border: 1px solid rgba(0,0,0,0.05);
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    transition: transform 0.2s ease;
+    display: flex; flex-direction: column; width: 100%;
 }
-.komoot-card:active { transform: scale(0.98); }
-
-/* La Mappa nella lista */
 .komoot-map-container {
-    height: 220px !important; /* Altezza fissa obbligatoria */
-    width: 100%;
-    background-color: #e0e0e0; 
-    display: block;
-    position: relative;
-    z-index: 1;
-    cursor: pointer;
-    /* Opzionale: impedisce di muovere la mappa mentre scrolli la pagina */
-    pointer-events: none; 
+    height: 220px !important; width: 100%;
+    background-color: #e0e0e0; display: block;
+    position: relative; pointer-events: none;
 }
-
-/* Parte Info (Bianca) */
-.komoot-info-body {
-    padding: 15px 15px 5px 15px; /* Meno padding sotto */
-    background: white;
-    z-index: 2;
-}
-
-/* Intestazione (Titolo e Badge) */
-.komoot-header-row {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    margin-bottom: 10px; gap: 10px;
-}
-.komoot-title {
-    font-family: 'Roboto', sans-serif; font-size: 1.15rem; font-weight: 700;
-    color: #2D3436; margin: 0; line-height: 1.2;
-}
-.komoot-badge {
-    font-size: 0.75rem; font-weight: 800; color: white;
-    padding: 5px 10px; border-radius: 6px; text-transform: uppercase; flex-shrink: 0;
-}
-
-
+.komoot-info-body { padding: 15px 15px 5px 15px; background: white; }
+.komoot-header-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.komoot-title { font-family: 'Roboto', sans-serif; font-size: 1.15rem; font-weight: 700; color: #2D3436; margin: 0; }
+.komoot-badge { font-size: 0.75rem; font-weight: 800; color: white; padding: 5px 10px; border-radius: 6px; text-transform: uppercase; }
 /* ============================================================
    2. PULSANTI AZIONE (Lista e Modale)
    ============================================================ */
-
 /* Griglia per affiancare i pulsanti (50% e 50%) */
 .trail-actions-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Due colonne identiche */
+    grid-template-columns: 1fr 1fr; 
     gap: 12px;
     padding: 15px;
     background: #ffffff;
@@ -1346,7 +1316,7 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 /* Stile Base Pulsante */
 .btn-trail-modern {
     width: 100%;
-    padding: 12px 0; /* Altezza uniforme */
+    padding: 12px 0; 
     border-radius: 12px;
     border: none;
     font-family: 'Roboto', sans-serif;
@@ -1358,125 +1328,92 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 .btn-trail-modern:active { transform: scale(0.96); }
 
 /* Varianti Colore */
-.btn-trail-tech {
-    background-color: #2A9D8F; /* Verde Primary */
-    color: white;
-    box-shadow: 0 4px 10px rgba(42, 157, 143, 0.3);
-}
-.btn-trail-info {
-    background-color: #F0F2F5; /* Grigio Chiaro */
-    color: #555;
-    border: 1px solid #eee;
-}
-
+.btn-trail-tech { background-color: #2A9D8F; color: white; box-shadow: 0 4px 10px rgba(42, 157, 143, 0.3); }
+.btn-trail-info { background-color: #F0F2F5; color: #555; border: 1px solid #eee; }
 
 /* ============================================================
-   3. DATI TECNICI (Modale)
+   3. MODALE STRUTTURALE (Layout Flex Perfetto)
    ============================================================ */
-/* Il Box del singolo dato */
-.tech-data-box {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 8px 4px;
-    border: 1px solid #eee;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-}
-/* Il Numero (Grande, in alto) */
-.t-val {
-    font-size: 1.1rem; font-weight: 800; color: #2D3436;
-    line-height: 1.1; margin-bottom: 2px;
-}
-/* L'Etichetta (Piccola, in basso) */
-.t-lbl {
-    font-size: 0.65rem; text-transform: uppercase; color: #999;
-    font-weight: 700; letter-spacing: 0.5px;
-}
-
-
-/* ============================================================
-   4. FIX ALTIMETRIA (Nascondi controlli plugin)
-   ============================================================ */
-/* Nasconde X, Download, Summary interni del plugin */
-.elevation-control .leaflet-control-close,
-.elevation-control .leaflet-control-summary,
-.elevation-control .leaflet-control-download,
-.elevation-toggle-icon {
-    display: none !important;
-}
-
-/* Rimuove spazi bianchi e padding del plugin */
-.elevation-control.leaflet-control {
-    background: transparent !important;
-    box-shadow: none !important;
-    margin: 20 !important; padding: 0 !important; width: 100% !important;
-}
-
-/* Il nostro contenitore grafico */
-#elevation-div {
-    background: #fff;
-    border-bottom: 1px solid #eee;
-    width: 100%;
-    flex-shrink: 0; /* Non si schiaccia mai */
-}
-
-/* Fix Contenitore Modale */
 .tech-container {
     width: 100%; max-width: 500px;
     height: 85vh; max-height: 800px;
-    background: white; border-radius: 20px; overflow: hidden;
-    display: flex; flex-direction: column;
+    background: white; border-radius: 20px; overflow: hidden; /* Nascondiamo overflow generale */
+    
+    /* Layout Verticale Rigido */
+    display: flex; 
+    flex-direction: column;
+    
     box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    position: relative;
 }
 
-/* --- GRIGLIA PULSANTI MODALE (3 Colonne) --- */
-.modal-actions-grid {
-    display: grid;
-    /* 3 Colonne uguali per GPX | GPS | ALTIMETRIA */
-    grid-template-columns: 1fr 1fr 1fr; 
-    gap: 8px; /* Spazio leggermente ridotto per farci stare tutto */
-    padding: 10px 15px;
-    background: white;
-    border-top: 1px solid #eee;
-    flex-shrink: 0;
+/* NUOVO: Questo contenitore avvolge Mappa e Grafico e gestisce lo scroll */
+/* Occupa tutto lo spazio tranne quello dei pulsanti */
+.tech-scroll-wrapper {
+    flex-grow: 1; /* Si espande */
+    overflow-y: auto; /* Abilita lo scroll QUI dentro */
+    overflow-x: hidden;
+    position: relative;
+    padding-bottom: 20px; /* Spazio extra in fondo allo scroll */
 }
 
-/* Stile Pulsante GPS (Blu brillante) */
-.btn-trail-gps {
-    background-color: #29B6F6; 
-    color: white;
-    border: none;
-    box-shadow: 0 4px 10px rgba(41, 182, 246, 0.3);
+/* Mappa */
+#tech-map-canvas {
+    width: 100%; 
+    min-height: 350px; /* Altezza minima garantita */
+    background: #e0e0e0; display: block;
+    /* La mappa non deve flex-grow qui, ha la sua altezza */
 }
 
-/* Override per pulsanti nel modale (testo più piccolo se serve) */
-.modal-actions-grid .btn-trail-modern {
-    padding: 12px 5px; /* Meno padding laterale */
-    font-size: 0.85rem; /* Testo leggermente più piccolo per non andare a capo */
+/* Grafico Altimetrico */
+#elevation-div {
+    background: #fff; border-bottom: 1px solid #eee;
+    width: 100%; height: 160px !important;
+    display: none; flex-shrink: 0;
+    
+    /* Nessun margine strano, ci pensa il wrapper */
+    margin: 0 !important; 
 }
 
 /* ============================================================
-   KILL SWITCH PER IL DOWNLOAD LINK
+   4. DATI TECNICI (Griglia)
    ============================================================ */
+.tech-data-row {
+    padding: 20px 15px 15px 15px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    text-align: center; background: #fff; border-bottom: 1px solid #eee;
+    flex-shrink: 0;
+}
+.tech-data-group {
+    background: #ffffff; border-radius: 12px; border: 1px solid #e0e0e0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 8px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+.tech-data-item { width: 100%; padding: 2px 0; display:flex; flex-direction:column; align-items:center; }
+.tech-divider { width: 50%; height: 1px; background: #eee; margin: 4px 0; }
 
-/* 1. Colpisce la classe specifica del download */
-.leaflet-control-download,
-.elevation-control-download,
-.elevation-control .download {
-    display: none !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    width: 0 !important;
-    height: 0 !important;
+.t-val { font-size: 1.1rem; font-weight: 800; color: #2D3436; line-height: 1; display: inline-flex; align-items: baseline; gap: 2px; }
+.t-unit { font-size: 0.75rem; font-weight: 600; color: #7f8c8d; }
+.t-lbl { font-size: 0.65rem; text-transform: uppercase; color: #999; font-weight: 700; margin-top: 2px; }
+
+/* ============================================================
+   5. GRIGLIA PULSANTI (Fissa in basso)
+   ============================================================ */
+.modal-actions-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+    padding: 15px; background: white; border-top: 1px solid #eee;
+    
+    /* FONDAMENTALE: Non si schiaccia e sta sempre in vista */
+    flex-shrink: 0; 
+    z-index: 10;
+    padding-bottom: 25px; /* Spazio per gesture bar */
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.05); /* Ombra per staccare visivamente */
 }
 
-/* 2. Colpisce QUALSIASI link (a) dentro il controllo altimetrico */
-/* Questo è il colpo di grazia: se è un link, sparisce. */
-.elevation-control a {
-    display: none !important;
-}
+/* Stili pulsanti */
+.btn-trail-gps { background-color: #29B6F6; color: white; border: none; box-shadow: 0 4px 10px rgba(41, 182, 246, 0.3); }
+.modal-actions-grid .btn-trail-modern { padding: 12px 2px; font-size: 0.8rem; }
 
-/* 3. Colpisce eventuali link dentro il riassunto (Summary) se presenti */
-.elevation-summary a {
-    display: none !important;
-}
+/* Reset Plugin */
+.elevation-control.leaflet-control { background: transparent !important; margin: 0 !important; padding: 0 !important; width: 100% !important; box-shadow: none !important; }
+.leaflet-control-download, .elevation-control-download, .elevation-control .download, .elevation-control a { display: none !important; }

@@ -107,9 +107,8 @@ window.sentieroRenderer = (s) => {
 window.openTechMap = function(safeObj) {
     try {
         const s = JSON.parse(decodeURIComponent(safeObj));
-        const gpxUrl = s.gpx_url; 
-        
-        // Dati
+        let gpxUrl = s.gpx_url ? s.gpx_url.trim() : null;
+
         const dist = s.distanza_km || '--';
         const dur = s.durata_minuti || '--';
         const d_plus = s.dislivello_positivo || s.dislivello_passivo || '--';
@@ -118,32 +117,47 @@ window.openTechMap = function(safeObj) {
         const alt_min = s.altitudine_minima || '--';
 
         const modalHtml = `
-            <div class="tech-container" style="display:flex; flex-direction:column; height:100%; background:white; position:relative;">
+            <div class="tech-container">
                 
-                <button onclick="closeModal()" style="position:absolute; top:10px; right:10px; z-index:1000; width:35px; height:35px; border-radius:50%; background:white; border:none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size:1.5rem; display:flex; align-items:center; justify-content:center;">&times;</button>
+                <button onclick="closeModal()" style="
+                    position: absolute; top: 15px; right: 15px; z-index: 2000;
+                    width: 35px; height: 35px; border-radius: 50%; background: white; border: none;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 1.5rem; 
+                    display: flex; align-items: center; justify-content: center; cursor:pointer;">
+                    &times;
+                </button>
 
-                <div class="tech-data-row" style="padding:15px 50px 15px 15px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; text-align:center; background:#fff; border-bottom:1px solid #eee; flex-shrink:0;">
-                    <div class="tech-data-box"><span class="t-val">${dist}</span><span class="t-lbl">km</span></div>
-                    <div class="tech-data-box"><span class="t-val" style="color:#d32f2f;">+${d_plus}</span><span class="t-lbl">Salita</span></div>
-                    <div class="tech-data-box"><span class="t-val">${alt_max}</span><span class="t-lbl">Max</span></div>
-                    <div class="tech-data-box"><span class="t-val">${dur}</span><span class="t-lbl">min</span></div>
-                    <div class="tech-data-box"><span class="t-val" style="color:#27ae60;">-${d_minus}</span><span class="t-lbl">Discesa</span></div>
-                    <div class="tech-data-box"><span class="t-val">${alt_min}</span><span class="t-lbl">Min</span></div>
-                </div>
+                <div class="tech-scroll-wrapper">
+                    
+                    <div class="tech-data-row">
+                        <div class="tech-data-group">
+                            <div class="tech-data-item"><span class="t-val">${dist}<span class="t-unit">km</span></span><span class="t-lbl">Distanza</span></div>
+                            <div class="tech-divider"></div>
+                            <div class="tech-data-item"><span class="t-val">${dur}<span class="t-unit">min</span></span><span class="t-lbl">Durata</span></div>
+                        </div>
+                        <div class="tech-data-group">
+                            <div class="tech-data-item"><span class="t-val" style="color:#d32f2f;">+${d_plus}<span class="t-unit">m</span></span><span class="t-lbl">D+</span></div>
+                            <div class="tech-divider"></div>
+                            <div class="tech-data-item"><span class="t-val" style="color:#27ae60;">-${d_minus}<span class="t-unit">m</span></span><span class="t-lbl">D-</span></div>
+                        </div>
+                        <div class="tech-data-group">
+                            <div class="tech-data-item"><span class="t-val">${alt_max}<span class="t-unit">m</span></span><span class="t-lbl">Alt. Max</span></div>
+                            <div class="tech-divider"></div>
+                            <div class="tech-data-item"><span class="t-val">${alt_min}<span class="t-unit">m</span></span><span class="t-lbl">Alt. Min</span></div>
+                        </div>
+                    </div>
 
-                <div id="tech-map-canvas" style="flex-grow:1; background:#e0e0e0; width:100%; min-height:100px;"></div>
-                
-                <div id="elevation-div" style="display:none;"></div>
-
-                <div class="modal-actions-grid">
+                    <div id="tech-map-canvas"></div>
+                    
+                    <div id="elevation-div"></div>
+                    
+                </div> <div class="modal-actions-grid">
                     <button class="btn-trail-modern btn-trail-info" onclick="window.downloadGPX('${gpxUrl}')">
                         <span class="material-icons">download</span> GPX
                     </button>
-
                     <button id="btn-gps" class="btn-trail-modern btn-trail-gps" onclick="window.toggleGPS()">
                         <span class="material-icons">my_location</span> GPS
                     </button>
-
                     <button id="btn-toggle-ele" class="btn-trail-modern btn-trail-tech" onclick="toggleElevationChart()">
                         <span class="material-icons">show_chart</span> Grafico
                     </button>
@@ -160,21 +174,130 @@ window.openTechMap = function(safeObj) {
             document.body.appendChild(modalContainer);
         }
         modalContainer.innerHTML = modalHtml;
-        modalContainer.style.display = 'block';
+        modalContainer.style.display = 'flex';
 
         setTimeout(() => { initLeafletMap('tech-map-canvas', gpxUrl); }, 300);
 
     } catch (e) { console.error(e); }
 };
-// 3. FUNZIONI ACCESSORIE (Download, Toggle Grafico, Chiudi)
-window.downloadGPX = function(url) {
-    if(!url || url === 'undefined' || url === 'null') {
-        alert("GPX non disponibile.");
-        return;
+
+// ============================================================
+// LOGICA TOGGLE GRAFICO (Engine)
+// ============================================================
+window.toggleElevationChart = function() {
+    const elDiv = document.getElementById('elevation-div');
+    const btn = document.getElementById('btn-toggle-ele');
+    
+    // Controllo di sicurezza se gli elementi non esistono
+    if (!elDiv || !btn) return;
+
+    // LOGICA ROBUSTA:
+    // Verifica se è nascosto.
+    // Controlla sia 'none' (inline) sia '' (se nascosto dal CSS)
+    const isHidden = elDiv.style.display === 'none' || elDiv.style.display === '';
+
+    if (isHidden) {
+        // --- AZIONE: APRI ---
+        elDiv.style.display = 'block';
+        
+        // Cambia tasto in "Chiudi" (Rosso)
+        btn.innerHTML = '<span class="material-icons">close</span> Chiudi';
+        btn.style.backgroundColor = '#FFEBEE'; 
+        btn.style.color = '#c62828';
+        
+        // Forza l'aggiornamento della mappa principale per adattarsi
+        if (window.currentMap) {
+            setTimeout(() => { window.currentMap.invalidateSize(); }, 100);
+        }
+
+        // Scroll automatico verso il basso per mostrare il grafico
+        const container = document.querySelector('.tech-container');
+        if (container) {
+            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        }
+
+    } else {
+        // --- AZIONE: CHIUDI ---
+        elDiv.style.display = 'none';
+        
+        // Ripristina tasto "Grafico" (Verde)
+        btn.innerHTML = '<span class="material-icons">show_chart</span> Grafico';
+        btn.style.backgroundColor = '#2A9D8F'; 
+        btn.style.color = 'white';
+        
+        // Aggiorna mappa
+        if (window.currentMap) {
+            setTimeout(() => { window.currentMap.invalidateSize(); }, 50);
+        }
     }
-    window.open(url, '_blank');
 };
 
+// ============================================================
+// FUNZIONI ACCESSORIE (GPX e GPS) - Se ti mancano
+// ============================================================
+
+// Download GPX
+window.downloadGPX = function(url) {
+    if(!url) return;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = url.split('/').pop();
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+// Funzione GPS REALE
+window.toggleGPS = function() {
+    // 1. Controlla se la mappa esiste
+    if (!window.currentMap) {
+        console.error("Mappa non trovata");
+        return;
+    }
+
+    const btn = document.getElementById('btn-gps');
+    
+    // Cambia icona per far capire che sta caricando
+    if(btn) btn.innerHTML = '<span class="material-icons check-icon">hourglass_empty</span> Cerco...';
+
+    // 2. Usa il sistema di localizzazione di Leaflet
+    window.currentMap.locate({
+        setView: true,       // Sposta la mappa su di te
+        maxZoom: 16,         // Zoom a livello stradale
+        enableHighAccuracy: true // Usa il GPS preciso
+    });
+
+    // 3. Quando ti trova:
+    window.currentMap.once('locationfound', function(e) {
+        const radius = e.accuracy / 2; // Raggio di precisione
+
+        // Rimuovi vecchio marker se esiste
+        if (window.userMarker) {
+            window.currentMap.removeLayer(window.userMarker);
+            window.currentMap.removeLayer(window.userCircle);
+        }
+
+        // Aggiungi un pallino blu
+        window.userMarker = L.marker(e.latlng).addTo(window.currentMap)
+            .bindPopup("Sei qui (precisione " + Math.round(radius) + "m)").openPopup();
+
+        window.userCircle = L.circle(e.latlng, radius).addTo(window.currentMap);
+
+        // Ripristina il bottone
+        if(btn) btn.innerHTML = '<span class="material-icons">my_location</span> Trovato';
+        
+        // Dopo 2 secondi rimetti la scritta GPS normale
+        setTimeout(() => {
+             if(btn) btn.innerHTML = '<span class="material-icons">my_location</span> GPS';
+        }, 2000);
+    });
+
+    // 4. Se c'è un errore (es. GPS spento o permesso negato)
+    window.currentMap.once('locationerror', function(e) {
+        alert("Impossibile trovare la tua posizione: " + e.message);
+        if(btn) btn.innerHTML = '<span class="material-icons">error_outline</span> Errore';
+    });
+};
 window.toggleElevationChart = function() {
     const elDiv = document.getElementById('elevation-div');
     const btn = document.getElementById('btn-toggle-ele');
@@ -187,7 +310,7 @@ window.toggleElevationChart = function() {
         btn.style.borderColor = '#ffcdd2';
     } else {
         elDiv.style.display = 'none';
-        btn.innerHTML = '<span class="material-icons" style="font-size:1.2rem;">show_chart</span> Altimetria';
+        btn.innerHTML = '<span class="material-icons" style="font-size:1.2rem;">show_chart</span> Grafico';
         btn.style.background = '#e3f2fd';
         btn.style.color = '#1565c0';
         btn.style.borderColor = '#bbdefb';
