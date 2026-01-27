@@ -1,4 +1,4 @@
-/* utils.js - Helpers DOM, Traduzioni e Utility */
+/* utils.js - Helpers, Traduzioni e Utility (No MK) */
 
 import { UI_TEXT, CLOUDINARY_BASE_URL } from './config.js';
 
@@ -17,26 +17,15 @@ export const t = (key) => {
     return langDict[key] || key;
 };
 
-// Helper creazione elementi DOM
-export const mk = (tag, props = {}, children = []) => {
-    const el = document.createElement(tag);
-    if (props) {
-        Object.entries(props).forEach(([key, val]) => {
-            if (key === 'class' || key === 'className') el.className = val;
-            else if (key === 'style' && typeof val === 'object') Object.assign(el.style, val);
-            else if (key.startsWith('on') && typeof val === 'function') el[key.toLowerCase()] = val;
-            else if (key === 'html') el.innerHTML = val;
-            else if (val !== null && val !== undefined) el.setAttribute(key, val);
-        });
-    }
-    if (children) {
-        const kids = Array.isArray(children) ? children : [children];
-        kids.forEach(child => {
-            if (child instanceof Node) el.appendChild(child);
-            else if (child !== null && child !== undefined) el.appendChild(document.createTextNode(String(child)));
-        });
-    }
-    return el;
+// Sanitizzazione HTML per prevenire XSS nelle template string
+export const escapeHTML = (str) => {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 };
 
 // Helper lettura colonna DB multilingua

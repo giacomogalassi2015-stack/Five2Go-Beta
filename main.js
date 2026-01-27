@@ -1,24 +1,36 @@
-/* main.js - Entry Point, Router e Setup */
+/* main.js - Entry Point, Router e Global App Object */
 
 import { AVAILABLE_LANGS } from './config.js';
-import { mk, t, getLang, setLang, getSmartUrl } from './utils.js';
+import { t, getLang, setLang } from './utils.js';
 import { supabaseClient } from './api.js';
 import { viewStrategyContext } from './views.js';
 import { openModal } from './modals.js';
 import { renderGenericFilterableView, numeriUtiliRenderer, farmacieRenderer } from './components.js';
+import { filterDestinations } from './api.js'; // Import per esporlo globalmente
 
-console.log("✅ main.js caricato (Modular ES6 Mode)");
+console.log("✅ main.js caricato (Template Strings Mode)");
+
+// --- SETUP GLOBAL APP NAMESPACE ---
+// Questo oggetto serve a esporre le funzioni ai gestori onclick nell'HTML (stringhe)
+window.app = {
+    dataStore: {
+        currentList: [],
+        transportList: []
+    },
+    actions: {
+        openModal: (type, payload) => openModal(type, payload),
+        filterDestinations: (val) => filterDestinations(val)
+    }
+};
 
 // --- STATE GLOBALE APP ---
 let currentViewName = 'home';
 const content = document.getElementById('app-content');
 
 // --- SETUP HEADER ---
-const createGlobalFooter = () => mk('footer', { class: 'app-footer' }, 
-    mk('p', {}, `© 2026 Five2Go. ${t('footer_rights')}`)
-);
+const createGlobalFooter = () => `<footer class="app-footer"><p>© 2026 Five2Go. ${t('footer_rights')}</p></footer>`;
 
-// Esposizione funzioni globali necessarie per il DOM legacy/onclick
+// Esposizione Eventi Mappa
 window.addEventListener('init-map', (e) => {
     if(window.L && window.L.GPX) {
         const { id, url } = e.detail;
@@ -31,45 +43,54 @@ window.addEventListener('init-map', (e) => {
 function setupHeaderElements() {
     const header = document.querySelector('header');
     
+    // Pulizia Header
     const oldActions = header.querySelector('.header-actions-container');
     if (oldActions) oldActions.remove();
-    header.querySelectorAll('.material-icons').forEach(i => i.remove());
-
+    // Nota: usando innerHTML, rimuoviamo tutto facilmente se necessario, ma qui preserviamo struttura base
+    
     if (currentViewName !== 'home') return; 
 
     const currLang = getLang();
-    const currFlag = AVAILABLE_LANGS.find(l => l.code === currLang).flag;
+    const langObj = AVAILABLE_LANGS.find(l => l.code === currLang);
+    const currFlag = langObj ? langObj.flag : '🇮🇹';
     const currCode = currLang.toUpperCase();
     
-    // Dropdown
-    const dropdown = mk('div', { class: 'lang-dropdown lang-dropdown-wrapper', id: 'lang-dropdown' });
-    AVAILABLE_LANGS.forEach(l => {
-        const btn = mk('button', { 
-            class: `lang-opt ${l.code === currLang ? 'active' : ''}`,
-            onclick: () => changeLanguage(l.code)
-        }, [
-            mk('span', { class: 'lang-flag' }, l.flag),
-            ` ${l.label}`
-        ]);
-        dropdown.appendChild(btn);
-    });
+    // Generazione HTML Dropdown
+    const dropdownOpts = AVAILABLE_LANGS.map(l => `
+        <button class="lang-opt ${l.code === currLang ? 'active' : ''}" onclick="window.appCalls.changeLanguage('${l.code}')">
+            <span class="lang-flag">${l.flag}</span> ${l.label}
+        </button>
+    `).join('');
 
-    // Selettore
-    const langSelector = mk('div', { class: 'lang-selector' }, [
-        mk('button', { class: 'current-lang-btn', onclick: toggleLangDropdown }, [
-            mk('span', { class: 'lang-flag' }, currFlag), 
-            ` ${currCode} ▾`
-        ]),
-        dropdown
-    ]);
+    const actionsHtml = `
+    <div id="header-btn-lang" class="header-actions animate-fade header-actions-container">
+        <div class="lang-selector">
+            <button class="current-lang-btn" id="lang-btn-toggle">
+                <span class="lang-flag">${currFlag}</span> ${currCode} ▾
+            </button>
+            <div class="lang-dropdown lang-dropdown-wrapper" id="lang-dropdown">
+                ${dropdownOpts}
+            </div>
+        </div>
+    </div>`;
 
-    const actionsContainer = mk('div', { 
-        id: 'header-btn-lang',
-        class: 'header-actions animate-fade header-actions-container' 
-    }, langSelector);
+    header.insertAdjacentHTML('beforeend', actionsHtml);
 
-    header.appendChild(actionsContainer);
+    // Binding Eventi Header
+    const toggleBtn = document.getElementById('lang-btn-toggle');
+    if(toggleBtn) {
+        toggleBtn.onclick = (e) => {
+            e.stopPropagation();
+            const dd = document.getElementById('lang-dropdown');
+            if(dd) dd.classList.toggle('show');
+        };
+    }
 }
+
+// Espongo changeLanguage per l'HTML string generato sopra
+window.appCalls = {
+    changeLanguage: (code) => changeLanguage(code)
+};
 
 function updateNavBar() {
     const labels = document.querySelectorAll('.nav-label');
@@ -84,6 +105,11 @@ function updateNavBar() {
 // Funzioni Cambio Lingua
 function changeLanguage(langCode) {
     setLang(langCode);
+    
+    // Rimuovi vecchio header actions per ricrearlo
+    const old = document.querySelector('.header-actions-container');
+    if(old) old.remove();
+    
     setupHeaderElements(); 
     updateNavBar(); 
     
@@ -95,12 +121,6 @@ function changeLanguage(langCode) {
     } else {
         switchView('home');
     }
-}
-
-function toggleLangDropdown(event) {
-    event.stopPropagation();
-    const dd = document.getElementById('lang-dropdown');
-    if(dd) dd.classList.toggle('show');
 }
 
 window.addEventListener('click', () => {
@@ -147,55 +167,54 @@ async function switchView(view, el) {
         else if (view === 'mappe_monumenti') renderSubMenu([{ label: t('menu_map'), table: "Mappe" }], 'Mappe');
     } catch (err) {
         console.error(err);
-        content.innerHTML = '';
-        content.appendChild(mk('div', { class: 'error-msg' }, `${t('error')}: ${err.message}`));
+        content.innerHTML = `<div class="error-msg">${t('error')}: ${err.message}</div>`;
     }
 }
 
 function renderHome() {
     const bgImage = "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
-    content.innerHTML = '';
     
-    const langGrid = mk('div', { class: 'lang-grid' });
-    AVAILABLE_LANGS.forEach(l => {
-        langGrid.appendChild(mk('button', { 
-            class: `lang-tile ${l.code === getLang() ? 'active' : ''}`,
-            onclick: () => changeLanguage(l.code)
-        }, [
-            mk('span', { class: 'lang-flag-large' }, l.flag),
-            mk('span', { class: 'lang-label' }, l.label)
-        ]));
-    });
+    const langTiles = AVAILABLE_LANGS.map(l => `
+        <button class="lang-tile ${l.code === getLang() ? 'active' : ''}" onclick="window.appCalls.changeLanguage('${l.code}')">
+            <span class="lang-flag-large">${l.flag}</span>
+            <span class="lang-label">${l.label}</span>
+        </button>
+    `).join('');
 
-    const welcomeCard = mk('div', { class: 'welcome-card animate-fade', style: { backgroundImage: `url('${bgImage}')` } }, 
-        mk('div', { class: 'welcome-overlay' }, 
-            mk('div', { class: 'welcome-content' }, [
-                mk('h1', { class: 'welcome-title' }, t('welcome_app_name')),
-                mk('div', { class: 'welcome-divider' }),
-                langGrid
-            ])
-        )
-    );
-    content.appendChild(welcomeCard);
+    content.innerHTML = `
+    <div class="welcome-card animate-fade" style="background-image: url('${bgImage}')">
+        <div class="welcome-overlay">
+            <div class="welcome-content">
+                <h1 class="welcome-title">${t('welcome_app_name')}</h1>
+                <div class="welcome-divider"></div>
+                <div class="lang-grid">${langTiles}</div>
+            </div>
+        </div>
+    </div>`;
 }
 
 function renderSubMenu(options, defaultTable) {
-    content.innerHTML = '';
-    const scrollContainer = mk('div', { class: 'nav-scroll-container' });
-    options.forEach(opt => {
-        const btn = mk('button', { 
-            class: 'btn-3d', 
-            onclick: function() { loadTableData(opt.table, this); } 
-        }, opt.label);
-        scrollContainer.appendChild(btn);
+    const btnsHtml = options.map(opt => 
+        `<button class="btn-3d" data-table="${opt.table}">${opt.label}</button>`
+    ).join('');
+
+    content.innerHTML = `
+    <div class="nav-sticky-header animate-fade">
+        <div class="nav-scroll-container">${btnsHtml}</div>
+    </div>
+    <div id="sub-content"></div>`;
+    
+    const scrollContainer = content.querySelector('.nav-scroll-container');
+    const subContent = content.querySelector('#sub-content');
+
+    // Binding click handlers sui bottoni appena creati
+    scrollContainer.querySelectorAll('.btn-3d').forEach(btn => {
+        btn.onclick = function() { loadTableData(this.getAttribute('data-table'), this); };
     });
 
-    const stickyHeader = mk('div', { class: 'nav-sticky-header animate-fade' }, scrollContainer);
-    const subContent = mk('div', { id: 'sub-content' });
-    content.append(stickyHeader, subContent);
-    
-    if (scrollContainer.firstChild) {
-        loadTableData(defaultTable, scrollContainer.firstChild);
+    // Load default
+    if (scrollContainer.firstElementChild) {
+        loadTableData(defaultTable, scrollContainer.firstElementChild);
     }
 }
 
@@ -214,8 +233,7 @@ async function loadTableData(tableName, btnEl) {
     const filterBtn = document.getElementById('filter-toggle-btn');
     if(filterBtn) filterBtn.style.display = 'none';
 
-    subContent.innerHTML = '';
-    subContent.appendChild(mk('div', { class: 'loader', style: { marginTop:'20px' } }, `${t('loading')}...`));
+    subContent.innerHTML = `<div class="loader" style="margin-top:20px">${t('loading')}...</div>`;
     
     try {
         const strategy = viewStrategyContext.getStrategy(tableName);
@@ -227,8 +245,7 @@ async function loadTableData(tableName, btnEl) {
         }
     } catch (err) {
         console.error(err);
-        subContent.innerHTML = '';
-        subContent.appendChild(mk('p', { class: 'error-msg' }, `${t('error')}: ${err.message}`));
+        subContent.innerHTML = `<p class="error-msg">${t('error')}: ${err.message}</p>`;
     }
 }
 
@@ -237,9 +254,12 @@ async function renderServicesGrid() {
     
     const { data, error } = await supabaseClient.from('Trasporti').select('*');
     if (error) { 
-        content.innerHTML = ''; content.appendChild(mk('p', { class: 'error-msg' }, t('error'))); 
+        content.innerHTML = `<p class="error-msg">${t('error')}</p>`; 
         return;
     }
+    
+    // Salviamo i dati per la modale trasporti
+    window.app.dataStore.transportList = data;
 
     function getServiceIcon(name) {
         const n = name.toLowerCase();
@@ -250,55 +270,68 @@ async function renderServicesGrid() {
         return 'confirmation_number';
     }
 
-    const grid = mk('div', { class: 'services-grid-modern animate-fade' });
-
-    data.forEach((tVal, index) => {
+    const gridItems = data.map((tVal, index) => {
         const nome = tVal.Mezzo || tVal.Località || 'Trasporto';
         const icon = getServiceIcon(nome);
-        const widget = mk('div', { class: 'service-widget', onclick: () => openModal('transport', index, [], data) }, [
-            mk('span', { class: 'material-icons widget-icon' }, icon),
-            mk('span', { class: 'widget-label' }, nome)
-        ]);
-        grid.appendChild(widget);
-    });
+        // onclick usa l'indice per recuperare il dato da app.dataStore.transportList
+        return `
+        <div class="service-widget" onclick="app.actions.openModal('transport', '${index}')">
+            <span class="material-icons widget-icon">${icon}</span>
+            <span class="widget-label">${nome}</span>
+        </div>`;
+    }).join('');
 
-    grid.appendChild(mk('div', { class: 'service-widget', onclick: () => renderSimpleList('Numeri_utili') }, [
-        mk('span', { class: 'material-icons widget-icon' }, 'phonelink_ring'),
-        mk('span', { class: 'widget-label' }, t('menu_num'))
-    ]));
-    
-    grid.appendChild(mk('div', { class: 'service-widget', onclick: () => renderSimpleList('Farmacie') }, [
-        mk('span', { class: 'material-icons widget-icon' }, 'medical_services'),
-        mk('span', { class: 'widget-label' }, t('menu_pharm'))
-    ]));
+    // Aggiunta bottoni extra manualmente
+    const extraItems = `
+        <div class="service-widget" id="btn-serv-numeri">
+            <span class="material-icons widget-icon">phonelink_ring</span>
+            <span class="widget-label">${t('menu_num')}</span>
+        </div>
+        <div class="service-widget" id="btn-serv-farmacie">
+            <span class="material-icons widget-icon">medical_services</span>
+            <span class="widget-label">${t('menu_pharm')}</span>
+        </div>
+    `;
 
-    content.innerHTML = '';
-    content.append(grid, createGlobalFooter());
+    content.innerHTML = `
+        <div class="services-grid-modern animate-fade">
+            ${gridItems}
+            ${extraItems}
+        </div>
+        ${createGlobalFooter()}
+    `;
+
+    // Binding manuale per gli elementi extra
+    document.getElementById('btn-serv-numeri').onclick = () => renderSimpleList('Numeri_utili');
+    document.getElementById('btn-serv-farmacie').onclick = () => renderSimpleList('Farmacie');
 }
 
 async function renderSimpleList(tableName) {
     const cleanTitle = tableName.replace('_', ' '); 
     const content = document.getElementById('app-content');
-    content.innerHTML = '';
+    
+    content.innerHTML = `
+    <div class="header-simple-list animate-fade">
+        <button class="btn-back-custom" id="simple-list-back">
+            <span class="material-icons">arrow_back</span>
+        </button>
+        <h2>${cleanTitle}</h2>
+    </div>
+    <div id="sub-content">
+        <div class="loader">${t('loading')}...</div>
+    </div>`;
 
-    const header = mk('div', { class: 'header-simple-list animate-fade' }, [
-        mk('button', { class: 'btn-back-custom', onclick: renderServicesGrid }, 
-            mk('span', { class: 'material-icons' }, 'arrow_back')
-        ),
-        mk('h2', {}, cleanTitle)
-    ]);
+    document.getElementById('simple-list-back').onclick = renderServicesGrid;
 
-    const subContent = mk('div', { id: 'sub-content' }, 
-        mk('div', { class: 'loader' }, `${t('loading')}...`)
-    );
-
-    content.append(header, subContent);
+    const subContent = document.getElementById('sub-content');
     
     try {
         const { data, error } = await supabaseClient.from(tableName).select('*');
         if(error) throw error;
         
-        subContent.innerHTML = '';
+        // Salviamo comunque nello store anche se per questi non usiamo modale dettagli complessa
+        window.app.dataStore.currentList = data;
+
         if(tableName === 'Numeri_utili') renderGenericFilterableView(data, 'Comune', subContent, numeriUtiliRenderer);
         if(tableName === 'Farmacie') renderGenericFilterableView(data, 'Paesi', subContent, farmacieRenderer);
 
@@ -345,7 +378,6 @@ function handlePageSwipe() {
 }
 
 // --- INITIALIZATION ---
-// FIX: Gestione corretta del caricamento modulo vs DOM
 const initApp = () => {
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {

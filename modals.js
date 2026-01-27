@@ -1,29 +1,47 @@
-/* modals.js - Factory e Generatori Modali */
+/* modals.js - Factory e Generatori Modali (Template Strings) */
 
-import { mk, t, dbCol, getSmartUrl } from './utils.js';
+import { t, dbCol, getSmartUrl, escapeHTML } from './utils.js';
 import { loadAllStops, filterDestinations, eseguiRicercaBus, initFerrySearch, eseguiRicercaTraghetto } from './api.js';
 
-// Funzione globale di apertura Modale (esportata)
-export const openModal = async (type, payload, currentTableData = [], tempTransportData = []) => {
+// Funzione globale di apertura Modale
+export const openModal = async (type, payload) => {
+    // Recupera i dati dal global store (definito in main.js/app.dataStore)
+    const currentTableData = window.app.dataStore.currentList || [];
+    const tempTransportData = window.app.dataStore.transportList || [];
+
     const generator = ModalContentFactory.create(type, payload, currentTableData, tempTransportData);
-    const contentEl = generator.generate(); 
+    const contentHtml = generator.generateHtml(); 
     const modalClass = generator.getClass();
 
-    const overlay = mk('div', { class: 'modal-overlay animate-fade', onclick: (e) => { if(e.target === overlay) overlay.remove(); } });
-    
-    const contentWrapper = mk('div', { class: modalClass }, [
-        mk('span', { class: 'close-modal', onclick: () => overlay.remove() }, '×'),
-        contentEl
-    ]);
+    // Creazione Overlay HTML
+    const overlayHtml = `
+    <div class="modal-overlay animate-fade" id="active-modal-overlay">
+        <div class="${modalClass}">
+            <span class="close-modal" id="close-modal-btn">×</span>
+            ${contentHtml}
+        </div>
+    </div>`;
 
-    overlay.appendChild(contentWrapper);
-    document.body.appendChild(overlay);
+    document.body.insertAdjacentHTML('beforeend', overlayHtml);
+
+    // Binding Eventi chiusura
+    const overlay = document.getElementById('active-modal-overlay');
+    const closeBtn = document.getElementById('close-modal-btn');
+    
+    const closeModal = () => overlay.remove();
+    closeBtn.onclick = closeModal;
+    overlay.onclick = (e) => { if(e.target === overlay) closeModal(); };
+
+    // Esecuzione script post-render (es. init mappe o bus search)
+    if (generator.postRender) {
+        setTimeout(() => generator.postRender(), 50);
+    }
 };
 
 // Funzione inizializzazione mappa modale (GPX)
 const initGpxMap = (divId, gpxUrl) => {
     const element = document.getElementById(divId);
-    if (element) {
+    if (element && window.L && window.L.GPX) {
         const map = L.map(divId);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap, © CARTO', maxZoom: 20 }).addTo(map);
         new L.GPX(gpxUrl, {
@@ -44,16 +62,13 @@ class ModalContentFactory {
 
         if (currentTableData) {
             const searchId = String(payload);
-            item = currentTableData.find(i => {
-                const itemId = String(i.id || i.ID || i.POI_ID);
-                return itemId === searchId;
-            });
+            item = currentTableData.find(i => String(i.id || i.ID || i.POI_ID) === searchId);
         }
 
         if (!item) {
             console.warn(`Oggetto non trovato per ID: ${payload}.`);
             return { 
-                generate: () => mk('div', { class: 'modal-body-pad' }, mk('p', {}, `Dati non disponibili o ID non trovato (${payload}).`)), 
+                generateHtml: () => `<div class="modal-body-pad"><p>Dati non disponibili o ID non trovato (${payload}).</p></div>`, 
                 getClass: () => 'modal-content' 
             };
         }
@@ -66,7 +81,7 @@ class ModalContentFactory {
             case 'Vini': case 'wine': return new WineModalGenerator(item);
             case 'Attrazioni': case 'attrazione': return new AttractionModalGenerator(item);
             case 'Spiagge': return new BeachModalGenerator(item);
-            default: return { generate: () => mk('p', {}, 'Content not found'), getClass: () => 'modal-content' };
+            default: return { generateHtml: () => '<p>Content not found</p>', getClass: () => 'modal-content' };
         }
     }
 }
@@ -74,22 +89,25 @@ class ModalContentFactory {
 class ProductModalGenerator {
     constructor(item) { this.p = item; }
     getClass() { return 'modal-content glass-modal'; }
-    generate() {
-        const nome = dbCol(this.p, 'Prodotti') || dbCol(this.p, 'Nome');
-        const desc = dbCol(this.p, 'Descrizione');   
-        const ideale = dbCol(this.p, 'Ideale per'); 
+    generateHtml() {
+        const nome = escapeHTML(dbCol(this.p, 'Prodotti') || dbCol(this.p, 'Nome'));
+        const desc = escapeHTML(dbCol(this.p, 'Descrizione'));   
+        const ideale = escapeHTML(dbCol(this.p, 'Ideale per')); 
         const bigImg = getSmartUrl(this.p.Prodotti_foto || nome, '', 800);
 
-        return mk('div', {}, [
-            mk('div', { class: 'modal-hero-wrapper' }, 
-                mk('img', { src: bigImg, class: 'modal-hero-img', onerror: function() { this.style.display='none'; } })
-            ),
-            mk('div', { class: 'modal-body-pad' }, [
-                mk('h2', { class: 'modal-title-lg' }, nome),
-                ideale ? mk('div', { class: 'mb-20' }, mk('span', { class: 'glass-tag' }, `✨ ${t('ideal_for')}: ${ideale}`)) : null,
-                mk('p', { class: 'modal-desc-text' }, desc)
-            ])
-        ]);
+        const tagHtml = ideale ? `<div class="mb-20"><span class="glass-tag">✨ ${t('ideal_for')}: ${ideale}</span></div>` : '';
+
+        return `
+        <div>
+            <div class="modal-hero-wrapper">
+                <img src="${bigImg}" class="modal-hero-img" onerror="this.style.display='none'">
+            </div>
+            <div class="modal-body-pad">
+                <h2 class="modal-title-lg">${nome}</h2>
+                ${tagHtml}
+                <p class="modal-desc-text">${desc}</p>
+            </div>
+        </div>`;
     }
 }
 
@@ -99,323 +117,339 @@ class TransportModalGenerator {
     }
     getClass() { return 'modal-content'; }
     
-    generate() {
-        if (!this.item) return mk('div', { class: 'modal-body-pad' }, mk('p', {}, 'Errore caricamento dati trasporto.'));
+    generateHtml() {
+        if (!this.item) return `<div class="modal-body-pad"><p>Errore caricamento dati trasporto.</p></div>`;
         
         const searchStr = ((dbCol(this.item, 'Nome') || '') + ' ' + (dbCol(this.item, 'Località') || '') + ' ' + (dbCol(this.item, 'Mezzo') || '')).toLowerCase();
 
         if (searchStr.includes('bus') || searchStr.includes('autobus') || searchStr.includes('atc')) {
-            setTimeout(() => { if(loadAllStops) loadAllStops(document.getElementById('selPartenza')); }, 100);
-            return this._createBusDOM(this.item);
+            return this._createBusHTML(this.item);
         }
         if (searchStr.includes('battello') || searchStr.includes('traghetto')) {
-            setTimeout(() => initFerrySearch(), 100);
-            return this._createFerryDOM();
+            return this._createFerryHTML();
         }
         
-        const nome = dbCol(this.item, 'Nome') || 'Trasporto';
-        return mk('div', { class: 'modal-body-pad mt-10' }, [
-            mk('h2', {}, nome),
-            mk('p', { class: 'color-gray' }, dbCol(this.item, 'Descrizione'))
-        ]);
+        const nome = escapeHTML(dbCol(this.item, 'Nome') || 'Trasporto');
+        return `
+        <div class="modal-body-pad mt-10">
+            <h2>${nome}</h2>
+            <p class="color-gray">${escapeHTML(dbCol(this.item, 'Descrizione'))}</p>
+        </div>`;
     }
 
-    _createBusDOM(item) {
-        const container = mk('div', { class: 'bus-search-box animate-fade' });
+    postRender() {
+        const searchStr = ((dbCol(this.item, 'Nome') || '') + ' ' + (dbCol(this.item, 'Località') || '') + ' ' + (dbCol(this.item, 'Mezzo') || '')).toLowerCase();
         
-        container.appendChild(mk('div', { class: 'bus-title', style: { paddingBottom:'15px' } }, [
-            mk('span', { class: 'material-icons' }, 'directions_bus'), 
-            ` ${t('plan_trip')}`
-        ]));
+        if (searchStr.includes('bus') || searchStr.includes('autobus') || searchStr.includes('atc')) {
+            loadAllStops(document.getElementById('selPartenza'));
+            
+            // Re-bind click handlers for toggle buttons
+            const tBtn = document.getElementById('btn-ticket-toggle');
+            if(tBtn) tBtn.onclick = () => { const e = document.getElementById('ticket-info-box'); if(e) e.style.display = (e.style.display === 'none') ? 'block' : 'none'; };
+            
+            const mBtn = document.getElementById('btn-map-toggle');
+            if(mBtn) mBtn.onclick = () => { const m = document.getElementById('bus-map-wrapper'); if(m) m.style.display = (m.style.display === 'none') ? 'block' : 'none'; };
+            
+            const sBtn = document.getElementById('btnSearchBus');
+            if(sBtn) sBtn.onclick = () => eseguiRicercaBus();
+        } 
+        else if (searchStr.includes('battello') || searchStr.includes('traghetto')) {
+            initFerrySearch();
+            const tBtn = document.getElementById('btn-ticket-toggle-ferry');
+            if(tBtn) tBtn.onclick = () => { const e = document.getElementById('ticket-info-box-ferry'); if(e) e.style.display = (e.style.display === 'none') ? 'block' : 'none'; };
+            
+            const sBtn = document.getElementById('btnSearchFerry');
+            if(sBtn) sBtn.onclick = () => eseguiRicercaTraghetto();
+        }
+    }
 
-        const infoSms = dbCol(item, 'Info_SMS');
-        const infoApp = dbCol(item, 'Info_App');
-        const infoAvvisi = dbCol(item, 'Info_Avvisi');
+    _createBusHTML(item) {
+        const infoSms = escapeHTML(dbCol(item, 'Info_SMS'));
+        const infoApp = escapeHTML(dbCol(item, 'Info_App'));
+        const infoAvvisi = escapeHTML(dbCol(item, 'Info_Avvisi'));
 
+        let ticketInfo = '';
         if (infoSms || infoApp || infoAvvisi) {
-            const ticketBox = mk('div', { id: 'ticket-info-box', class: 'ticket-info-content', style: { display: 'none' } });
-            if(infoSms) ticketBox.appendChild(mk('p', { class: 'mb-10' }, [mk('strong', {}, '📱 SMS'), mk('br'), infoSms]));
-            if(infoApp) ticketBox.appendChild(mk('p', { class: 'mb-10' }, [mk('strong', {}, '📲 APP'), mk('br'), infoApp]));
-            if(infoAvvisi) ticketBox.appendChild(mk('div', { class: 'warning-box' }, [mk('strong', {}, `⚠️ ${t('label_warning')}: `), infoAvvisi]));
-
-            const toggleBtn = mk('button', { 
-                class: 'ticket-toggle-btn', 
-                onclick: () => { 
-                    const e = document.getElementById('ticket-info-box'); 
-                    if(e) e.style.display = (e.style.display === 'none') ? 'block' : 'none'; 
-                } 
-            }, `🎟️ ${t('how_to_ticket')} ▾`);
-
-            container.append(toggleBtn, ticketBox);
+            ticketInfo = `
+            <button id="btn-ticket-toggle" class="ticket-toggle-btn">🎟️ ${t('how_to_ticket')} ▾</button>
+            <div id="ticket-info-box" class="ticket-info-content" style="display: none;">
+                ${infoSms ? `<p class="mb-10"><strong>📱 SMS</strong><br>${infoSms}</p>` : ''}
+                ${infoApp ? `<p class="mb-10"><strong>📲 APP</strong><br>${infoApp}</p>` : ''}
+                ${infoAvvisi ? `<div class="warning-box"><strong>⚠️ ${t('label_warning')}: </strong>${infoAvvisi}</div>` : ''}
+            </div>`;
         }
 
-        const mapBox = mk('div', { id: 'bus-map-wrapper', class: 'map-hidden-container', style: { display: 'none' } }, [
-            mk('div', { id: 'bus-map', class: 'bus-map-frame' }),
-            mk('p', { class: 'map-modal-hint' }, t('map_hint'))
-        ]);
-        
-        const mapBtn = mk('button', { 
-            class: 'map-toggle-btn',
-            onclick: () => {
-                const m = document.getElementById('bus-map-wrapper');
-                if(m) m.style.display = (m.style.display === 'none') ? 'block' : 'none';
-            }
-        }, `🗺️ ${t('show_map')} ▾`);
+        return `
+        <div class="bus-search-box animate-fade">
+            <div class="bus-title" style="padding-bottom:15px;">
+                <span class="material-icons">directions_bus</span> ${t('plan_trip')}
+            </div>
+            
+            ${ticketInfo}
 
-        container.append(mapBtn, mapBox);
+            <button id="btn-map-toggle" class="map-toggle-btn">🗺️ ${t('show_map')} ▾</button>
+            <div id="bus-map-wrapper" class="map-hidden-container" style="display: none;">
+                <div id="bus-map" class="bus-map-frame"></div>
+                <p class="map-modal-hint">${t('map_hint')}</p>
+            </div>
 
-        const inputs = mk('div', {}, [
-            mk('div', { class: 'bus-inputs' }, [
-                mk('div', { style: { flex:1 } }, [
-                    mk('label', { class: 'input-label-sm' }, t('departure')),
-                    mk('select', { id: 'selPartenza', class: 'bus-select', onchange: function(){ filterDestinations(this.value) } }, 
-                        mk('option', { disabled: true, selected: true }, t('loading'))
-                    )
-                ]),
-                mk('div', { style: { flex:1 } }, [
-                    mk('label', { class: 'input-label-sm' }, t('arrival')),
-                    mk('select', { id: 'selArrivo', class: 'bus-select', disabled: true }, 
-                        mk('option', { disabled: true, selected: true }, t('select_start'))
-                    )
-                ])
-            ]),
-            mk('div', { class: 'bus-inputs' }, [
-                mk('div', { style: { flex:1 } }, [
-                    mk('label', { class: 'input-label-sm' }, t('date_trip')),
-                    mk('input', { type: 'date', id: 'selData', class: 'bus-select', value: new Date().toISOString().split('T')[0] })
-                ]),
-                mk('div', { style: { flex:1 } }, [
-                    mk('label', { class: 'input-label-sm' }, t('time_trip')),
-                    mk('input', { type: 'time', id: 'selOra', class: 'bus-select', value: new Date().toTimeString().substring(0,5) })
-                ])
-            ])
-        ]);
+            <div>
+                <div class="bus-inputs">
+                    <div style="flex:1">
+                        <label class="input-label-sm">${t('departure')}</label>
+                        <select id="selPartenza" class="bus-select" onchange="window.app.actions.filterDestinations(this.value)">
+                            <option disabled selected>${t('loading')}</option>
+                        </select>
+                    </div>
+                    <div style="flex:1">
+                        <label class="input-label-sm">${t('arrival')}</label>
+                        <select id="selArrivo" class="bus-select" disabled>
+                            <option disabled selected>${t('select_start')}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="bus-inputs">
+                    <div style="flex:1">
+                        <label class="input-label-sm">${t('date_trip')}</label>
+                        <input type="date" id="selData" class="bus-select" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div style="flex:1">
+                        <label class="input-label-sm">${t('time_trip')}</label>
+                        <input type="time" id="selOra" class="bus-select" value="${new Date().toTimeString().substring(0,5)}">
+                    </div>
+                </div>
+            </div>
 
-        const btnSearch = mk('button', { 
-            id: 'btnSearchBus', 
-            class: 'btn-yellow', 
-            style: { width: '100%', marginTop: '5px', opacity: '0.5', pointerEvents: 'none' },
-            onclick: () => eseguiRicercaBus()
-        }, t('find_times'));
+            <button id="btnSearchBus" class="btn-yellow" style="width: 100%; margin-top: 5px; opacity: 0.5; pointer-events: none;">
+                ${t('find_times')}
+            </button>
 
-        const results = mk('div', { id: 'busResultsContainer', class: 'd-none mt-20' }, [
-            mk('div', { id: 'nextBusCard', class: 'bus-result-main' }),
-            mk('div', { style: { fontSize:'0.8rem', fontWeight:'bold', color:'#666', marginTop:'15px' } }, `${t('next_runs')}:`),
-            mk('div', { id: 'otherBusList', class: 'bus-list-container' })
-        ]);
-
-        container.append(inputs, btnSearch, results);
-        return container;
+            <div id="busResultsContainer" class="d-none mt-20">
+                <div id="nextBusCard" class="bus-result-main"></div>
+                <div style="font-size:0.8rem; fontWeight:bold; color:#666; margin-top:15px;">${t('next_runs')}:</div>
+                <div id="otherBusList" class="bus-list-container"></div>
+            </div>
+        </div>`;
     }
 
-    _createFerryDOM() {
-        const container = mk('div', { class: 'bus-search-box animate-fade' });
-        
-        const headerIcon = mk('span', { 
-            class: 'material-icons', 
-            style: { background: 'linear-gradient(135deg, #0288D1, #0277BD)', boxShadow: '0 4px 6px rgba(2, 119, 189, 0.3)' } 
-        }, 'directions_boat');
-        
-        container.appendChild(mk('div', { class: 'bus-title', style: { paddingBottom:'15px' } }, [headerIcon, ` ${t('plan_trip')} (Battello)`]));
+    _createFerryHTML() {
+        return `
+        <div class="bus-search-box animate-fade">
+            <div class="bus-title" style="padding-bottom:15px;">
+                <span class="material-icons" style="background: linear-gradient(135deg, #0288D1, #0277BD); box-shadow: 0 4px 6px rgba(2, 119, 189, 0.3);">directions_boat</span> 
+                ${t('plan_trip')} (Battello)
+            </div>
 
-        const ticketBox = mk('div', { id: 'ticket-info-box-ferry', class: 'ticket-info-content', style: { display: 'none' } }, [
-            mk('p', {}, 'I biglietti sono acquistabili presso le biglietterie al molo.'),
-            mk('div', { class: 'warning-box' }, [mk('strong', {}, '⚠️ INFO METEO:'), ' In caso di mare mosso il servizio è sospeso.'])
-        ]);
+            <button id="btn-ticket-toggle-ferry" class="ticket-toggle-btn" style="background:#e1f5fe; color:#01579b; border-color:#b3e5fc;">
+                🎟️ ${t('how_to_ticket')} ▾
+            </button>
+            <div id="ticket-info-box-ferry" class="ticket-info-content" style="display: none;">
+                <p>I biglietti sono acquistabili presso le biglietterie al molo.</p>
+                <div class="warning-box"><strong>⚠️ INFO METEO:</strong> In caso di mare mosso il servizio è sospeso.</div>
+            </div>
 
-        const toggleBtn = mk('button', { 
-            class: 'ticket-toggle-btn', 
-            style: { background:'#e1f5fe', color:'#01579b', borderColor:'#b3e5fc' },
-            onclick: () => { 
-                const e = document.getElementById('ticket-info-box-ferry'); 
-                if(e) e.style.display = (e.style.display === 'none') ? 'block' : 'none'; 
-            } 
-        }, `🎟️ ${t('how_to_ticket')} ▾`);
+            <div>
+                <div class="bus-inputs">
+                    <div style="flex:1">
+                        <label class="input-label-sm">${t('departure')}</label>
+                        <select id="selPartenzaFerry" class="bus-select">
+                            <option disabled selected>${t('loading')}</option>
+                        </select>
+                    </div>
+                    <div style="flex:1">
+                        <label class="input-label-sm">${t('arrival')}</label>
+                        <select id="selArrivoFerry" class="bus-select">
+                            <option disabled selected>${t('select_start')}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="bus-inputs">
+                    <div style="flex:1">
+                        <label class="input-label-sm">${t('date_trip')}</label>
+                        <input type="date" id="selDataFerry" class="bus-select" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div style="flex:1">
+                        <label class="input-label-sm">${t('time_trip')}</label>
+                        <input type="time" id="selOraFerry" class="bus-select" value="${new Date().toTimeString().substring(0,5)}">
+                    </div>
+                </div>
+            </div>
 
-        container.append(toggleBtn, ticketBox);
+            <button id="btnSearchFerry" class="btn-yellow" style="background: linear-gradient(135deg, #0288D1 0%, #01579b 100%); color: white; width: 100%; font-weight: bold; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(2, 136, 209, 0.4);">
+                ${t('find_times')}
+            </button>
 
-        const inputs = mk('div', {}, [
-            mk('div', { class: 'bus-inputs' }, [
-                mk('div', { style: { flex:1 } }, [
-                    mk('label', { class: 'input-label-sm' }, t('departure')),
-                    mk('select', { id: 'selPartenzaFerry', class: 'bus-select' }, 
-                        mk('option', { disabled: true, selected: true }, t('loading'))
-                    )
-                ]),
-                mk('div', { style: { flex:1 } }, [
-                    mk('label', { class: 'input-label-sm' }, t('arrival')),
-                    mk('select', { id: 'selArrivoFerry', class: 'bus-select' }, 
-                        mk('option', { disabled: true, selected: true }, t('select_start'))
-                    )
-                ])
-            ]),
-            mk('div', { class: 'bus-inputs' }, [
-                mk('div', { style: { flex:1 } }, [
-                    mk('label', { class: 'input-label-sm' }, t('date_trip')),
-                    mk('input', { type: 'date', id: 'selDataFerry', class: 'bus-select', value: new Date().toISOString().split('T')[0] })
-                ]),
-                mk('div', { style: { flex:1 } }, [
-                    mk('label', { class: 'input-label-sm' }, t('time_trip')),
-                    mk('input', { type: 'time', id: 'selOraFerry', class: 'bus-select', value: new Date().toTimeString().substring(0,5) })
-                ])
-            ])
-        ]);
-
-        const btnSearch = mk('button', { 
-            class: 'btn-yellow', 
-            style: { 
-                background: 'linear-gradient(135deg, #0288D1 0%, #01579b 100%)', 
-                color: 'white', width: '100%', fontWeight: 'bold', marginTop: '5px', 
-                boxShadow: '0 10px 25px -5px rgba(2, 136, 209, 0.4)'
-            },
-            onclick: () => eseguiRicercaTraghetto()
-        }, t('find_times'));
-
-        const results = mk('div', { id: 'ferryResultsContainer', class: 'd-none mt-20' }, [
-            mk('div', { 
-                id: 'nextFerryCard', 
-                class: 'bus-result-main', 
-                style: { background: 'linear-gradient(135deg, #0277BD 0%, #01579b 100%)', boxShadow: '0 15px 30px -5px rgba(1, 87, 155, 0.3)' } 
-            }),
-            mk('div', { style: { fontSize:'0.8rem', fontWeight:'bold', color:'#666', marginTop:'15px' } }, `${t('next_runs')}:`),
-            mk('div', { id: 'otherFerryList', class: 'bus-list-container' })
-        ]);
-
-        container.append(inputs, btnSearch, results);
-        return container;
+            <div id="ferryResultsContainer" class="d-none mt-20">
+                <div id="nextFerryCard" class="bus-result-main" style="background: linear-gradient(135deg, #0277BD 0%, #01579b 100%); box-shadow: 0 15px 30px -5px rgba(1, 87, 155, 0.3);"></div>
+                <div style="font-size:0.8rem; fontWeight:bold; color:#666; margin-top:15px;">${t('next_runs')}:</div>
+                <div id="otherFerryList" class="bus-list-container"></div>
+            </div>
+        </div>`;
     }
 }
 
 class TrailModalGenerator {
     constructor(item) { this.p = item; }
     getClass() { return 'modal-content'; }
-    generate() {
+    generateHtml() {
         const p = this.p;
-        const titolo = dbCol(p, 'Paesi') || p.Nome;
+        const titolo = escapeHTML(dbCol(p, 'Paesi') || p.Nome);
         const linkGpx = p.Link_Gpx || p.gpxlink || p.Mappa;
 
-        return mk('div', { class: 'trail-modal-pad' }, [
-            mk('h2', { class: 'trail-modal-title' }, titolo),
-            mk('div', { class: 'trail-stats-grid' }, [
-                mk('div', { class: 'trail-stat-box' }, [mk('span', { class: 'material-icons' }, 'straighten'), mk('span', { class: 'stat-value' }, p.Distanza||'--')]),
-                mk('div', { class: 'trail-stat-box' }, [mk('span', { class: 'material-icons' }, 'schedule'), mk('span', { class: 'stat-value' }, p.Durata||'--')]),
-                mk('div', { class: 'trail-stat-box' }, [mk('span', { class: 'material-icons' }, 'terrain'), mk('span', { class: 'stat-value' }, p.Tag||'Media')])
-            ]),
-            mk('div', { class: 'trail-actions-group' }, 
-                linkGpx ? mk('a', { href: linkGpx, download: '', class: 'btn-download-gpx', target: '_blank' }, [
-                    mk('span', { class: 'material-icons' }, 'file_download'), ` ${t('btn_download_gpx')}`
-                ]) : mk('div', { class: 'gpx-error-box' }, t('gpx_missing'))
-            ),
-            mk('div', { class: 'text-justify mt-10 line-height-relaxed color-dark' }, dbCol(p, 'Descrizione'))
-        ]);
+        const gpxBtn = linkGpx 
+            ? `<a href="${linkGpx}" download class="btn-download-gpx" target="_blank">
+                 <span class="material-icons">file_download</span> ${t('btn_download_gpx')}
+               </a>`
+            : `<div class="gpx-error-box">${t('gpx_missing')}</div>`;
+
+        return `
+        <div class="trail-modal-pad">
+            <h2 class="trail-modal-title">${titolo}</h2>
+            <div class="trail-stats-grid">
+                <div class="trail-stat-box"><span class="material-icons">straighten</span><span class="stat-value">${p.Distanza||'--'}</span></div>
+                <div class="trail-stat-box"><span class="material-icons">schedule</span><span class="stat-value">${p.Durata||'--'}</span></div>
+                <div class="trail-stat-box"><span class="material-icons">terrain</span><span class="stat-value">${p.Tag||'Media'}</span></div>
+            </div>
+            <div class="trail-actions-group">${gpxBtn}</div>
+            <div class="text-justify mt-10 line-height-relaxed color-dark">${escapeHTML(dbCol(p, 'Descrizione'))}</div>
+        </div>`;
     }
 }
 
 class MapModalGenerator {
     constructor(url) { this.url = url; }
     getClass() { return 'modal-content'; }
-    generate() {
+    generateHtml() {
         const uniqueMapId = 'modal-map-' + Math.random().toString(36).substr(2, 9);
-        setTimeout(() => initGpxMap(uniqueMapId, this.url), 100);
-        return mk('div', {}, [
-            mk('h3', { class: 'text-center mb-10' }, t('map_route_title')),
-            mk('div', { id: uniqueMapId, class: 'map-modal-frame' }),
-            mk('p', { class: 'map-modal-hint' }, t('map_zoom_hint'))
-        ]);
+        return `
+        <div>
+            <h3 class="text-center mb-10">${t('map_route_title')}</h3>
+            <div id="${uniqueMapId}" class="map-modal-frame"></div>
+            <p class="map-modal-hint">${t('map_zoom_hint')}</p>
+        </div>`;
+    }
+    postRender() {
+        // Cerca l'ID della mappa nell'HTML generato
+        const frame = document.querySelector('.map-modal-frame');
+        if(frame) initGpxMap(frame.id, this.url);
     }
 }
 
 class RestaurantModalGenerator {
     constructor(item) { this.item = item; }
     getClass() { return 'modal-content'; }
-    generate() {
-        return mk('div', { class: 'rest-modal-wrapper' }, [
-            mk('div', { class: 'rest-header' }, [
-                mk('h2', {}, dbCol(this.item, 'Nome')),
-                mk('div', { class: 'rest-location' }, [mk('span', { class: 'material-icons' }, 'place'), ` ${dbCol(this.item, 'Paesi')}`]),
-                mk('div', { class: 'rest-divider' })
-            ]),
-            mk('div', { class: 'rest-body' }, dbCol(this.item, 'Descrizioni') || t('desc_missing'))
-        ]);
+    generateHtml() {
+        const nome = escapeHTML(dbCol(this.item, 'Nome'));
+        const paese = escapeHTML(dbCol(this.item, 'Paesi'));
+        const desc = escapeHTML(dbCol(this.item, 'Descrizioni') || t('desc_missing'));
+        
+        return `
+        <div class="rest-modal-wrapper">
+            <div class="rest-header">
+                <h2>${nome}</h2>
+                <div class="rest-location"><span class="material-icons">place</span> ${paese}</div>
+                <div class="rest-divider"></div>
+            </div>
+            <div class="rest-body">${desc}</div>
+        </div>`;
     }
 }
 
 class PharmacyModalGenerator {
     constructor(item) { this.item = item; }
     getClass() { return 'modal-content'; }
-    generate() {
-        return mk('div', { class: 'modal-body-pad' }, [
-            mk('h2', {}, dbCol(this.item, 'Nome')),
-            mk('p', {}, `📍 ${this.item.Indirizzo}, ${dbCol(this.item, 'Paesi')}`),
-            mk('p', {}, mk('a', { href: `tel:${this.item.Numero}` }, `📞 ${this.item.Numero}`))
-        ]);
+    generateHtml() {
+        const nome = escapeHTML(dbCol(this.item, 'Nome'));
+        const indirizzo = escapeHTML(this.item.Indirizzo);
+        const paese = escapeHTML(dbCol(this.item, 'Paesi'));
+        const numero = this.item.Numero;
+
+        return `
+        <div class="modal-body-pad">
+            <h2>${nome}</h2>
+            <p>📍 ${indirizzo}, ${paese}</p>
+            <p><a href="tel:${numero}">📞 ${numero}</a></p>
+        </div>`;
     }
 }
 
 class WineModalGenerator {
     constructor(item) { this.item = item; }
     getClass() { return 'modal-content'; }
-    generate() {
-        if (!this.item) return mk('div', {});
+    generateHtml() {
+        if (!this.item) return '<div></div>';
         const tVal = String(this.item.Tipo).toLowerCase();
         let color = '#9B2335'; 
         if (tVal.includes('bianco')) color = '#F4D03F'; 
         if (tVal.includes('rosato')) color = '#E67E22'; 
         const foto = dbCol(this.item, 'Foto');
+        const nome = escapeHTML(dbCol(this.item, 'Nome'));
+        const produttore = escapeHTML(dbCol(this.item, 'Produttore'));
+        const desc = escapeHTML(dbCol(this.item, 'Descrizione'));
 
-        return mk('div', { class: 'mb-20' }, [
-            foto ? mk('img', { src: foto, class: 'wine-hero-img' }) : 
-            mk('div', { class: 'wine-placeholder-box' }, mk('i', { class: 'fa-solid fa-wine-bottle wine-placeholder-icon', style: { color } })),
+        const hero = foto 
+            ? `<img src="${foto}" class="wine-hero-img">`
+            : `<div class="wine-placeholder-box"><i class="fa-solid fa-wine-bottle wine-placeholder-icon" style="color:${color}"></i></div>`;
+
+        return `
+        <div class="mb-20">
+            ${hero}
+            <div class="${foto ? 'wine-header-pad-img' : 'wine-header-pad'}">
+                <h2 class="wine-title">${nome}</h2>
+                <div class="wine-producer"><span class="material-icons icon-sm">storefront</span> ${produttore}</div>
+            </div>
             
-            mk('div', { class: foto ? 'wine-header-pad-img' : 'wine-header-pad' }, [
-                mk('h2', { class: 'wine-title' }, dbCol(this.item, 'Nome')),
-                mk('div', { class: 'wine-producer' }, [mk('span', { class: 'material-icons icon-sm' }, 'storefront'), ` ${dbCol(this.item, 'Produttore')}`])
-            ]),
+            <div class="wine-stats-grid">
+                <div class="wine-stat-card">
+                    <div class="wine-stat-label">${t('wine_type')}</div>
+                    <div class="wine-stat-value" style="color:${color}">${this.item.Tipo}</div>
+                </div>
+                <div class="wine-stat-card">
+                    <div class="wine-stat-label">${t('wine_deg')}</div>
+                    <div class="wine-stat-value">${this.item.Gradi}</div>
+                </div>
+            </div>
             
-            mk('div', { class: 'wine-stats-grid' }, [
-                mk('div', { class: 'wine-stat-card' }, [
-                    mk('div', { class: 'wine-stat-label' }, t('wine_type')),
-                    mk('div', { class: 'wine-stat-value', style: { color } }, this.item.Tipo)
-                ]),
-                mk('div', { class: 'wine-stat-card' }, [
-                    mk('div', { class: 'wine-stat-label' }, t('wine_deg')),
-                    mk('div', { class: 'wine-stat-value' }, this.item.Gradi)
-                ])
-            ]),
-            
-            mk('div', { class: 'modal-body-pad' }, [
-                mk('p', { class: 'modal-desc-text mt-10' }, dbCol(this.item, 'Descrizione'))
-            ])
-        ]);
+            <div class="modal-body-pad">
+                <p class="modal-desc-text mt-10">${desc}</p>
+            </div>
+        </div>`;
     }
 }
 
 class AttractionModalGenerator {
     constructor(item) { this.item = item; }
     getClass() { return 'modal-content'; }
-    generate() {
+    generateHtml() {
         const img = dbCol(this.item, 'Immagine');
-        return mk('div', {}, [
-            img ? mk('img', { src: img, class: 'monument-header-img' }) : 
-            mk('div', { class: 'monument-header-icon' }, mk('i', { class: 'fa-solid fa-landmark', style: { fontSize:'4rem', color:'#546e7a' } })),
-            
-            mk('div', { class: 'monument-body-pad' }, [
-                mk('h2', { class: 'monument-title', style: { marginTop: img ? '0' : '20px' } }, dbCol(this.item, 'Attrazioni')),
-                mk('div', { class: 'monument-divider' }),
-                mk('p', { class: 'modal-desc-text text-justify' }, dbCol(this.item, 'Descrizione'))
-            ])
-        ]);
+        const titolo = escapeHTML(dbCol(this.item, 'Attrazioni'));
+        const desc = escapeHTML(dbCol(this.item, 'Descrizione'));
+
+        const header = img 
+            ? `<img src="${img}" class="monument-header-img">`
+            : `<div class="monument-header-icon"><i class="fa-solid fa-landmark" style="font-size:4rem; color:#546e7a;"></i></div>`;
+
+        return `
+        <div>
+            ${header}
+            <div class="monument-body-pad">
+                <h2 class="monument-title" style="margin-top: ${img ? '0' : '20px'}">${titolo}</h2>
+                <div class="monument-divider"></div>
+                <p class="modal-desc-text text-justify">${desc}</p>
+            </div>
+        </div>`;
     }
 }
 
 class BeachModalGenerator {
     constructor(item) { this.item = item; }
     getClass() { return 'modal-content'; }
-    generate() {
-        return mk('div', { class: 'modal-body-pad' }, [
-            mk('h2', { style: { fontFamily:'Roboto Slab', color:'#00695C' } }, this.item.Nome),
-            mk('span', { class: 'c-pill mb-15', style: { display:'inline-block' } }, this.item.Tipo),
-            mk('p', { class: 'line-height-relaxed color-444' }, dbCol(this.item, 'Descrizione'))
-        ]);
+    generateHtml() {
+        return `
+        <div class="modal-body-pad">
+            <h2 style="font-family:'Roboto Slab'; color:#00695C;">${escapeHTML(this.item.Nome)}</h2>
+            <span class="c-pill mb-15" style="display:inline-block;">${escapeHTML(this.item.Tipo)}</span>
+            <p class="line-height-relaxed color-444">${escapeHTML(dbCol(this.item, 'Descrizione'))}</p>
+        </div>`;
     }
 }

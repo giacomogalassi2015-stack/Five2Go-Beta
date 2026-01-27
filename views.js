@@ -1,7 +1,7 @@
-/* views.js - Strategy Pattern per le Viste */
+/* views.js - Strategy Pattern per le Viste (Template Strings) */
 
 import { supabaseClient } from './api.js';
-import { mk, t, dbCol, getSmartUrl } from './utils.js';
+import { t, dbCol, getSmartUrl, escapeHTML } from './utils.js';
 import { openModal } from './modals.js';
 import * as Renderers from './components.js';
 
@@ -24,6 +24,7 @@ class BaseViewStrategy {
 class WineStrategy extends BaseViewStrategy {
     async load(container) {
         const data = await this.fetchData('Vini');
+        window.app.dataStore.currentList = data; // Aggiorna store globale
         Renderers.renderGenericFilterableView(data, 'Tipo', container, Renderers.vinoRenderer);
     }
 }
@@ -31,6 +32,7 @@ class WineStrategy extends BaseViewStrategy {
 class BeachStrategy extends BaseViewStrategy {
     async load(container) {
         const data = await this.fetchData('Spiagge');
+        window.app.dataStore.currentList = data;
         Renderers.renderGenericFilterableView(data, 'Paesi', container, Renderers.spiaggiaRenderer);
     }
 }
@@ -38,36 +40,38 @@ class BeachStrategy extends BaseViewStrategy {
 class ProductStrategy extends BaseViewStrategy {
     async load(container) {
         const data = await this.fetchData('Prodotti');
-        container.innerHTML = '';
-        const listDiv = mk('div', { class: 'list-container animate-fade', style: { paddingBottom:'20px' } });
-        data.forEach(p => listDiv.appendChild(Renderers.prodottoRenderer(p, data)));
-        container.appendChild(listDiv);
+        window.app.dataStore.currentList = data;
+        
+        const cardsHtml = data.map(p => Renderers.prodottoRenderer(p)).join('');
+        container.innerHTML = `<div class="list-container animate-fade" style="padding-bottom:20px;">${cardsHtml}</div>`;
     }
 }
 
 class TransportStrategy extends BaseViewStrategy {
     async load(container) {
         const data = await this.fetchData('Trasporti');
-        container.innerHTML = '';
-        const listDiv = mk('div', { class: 'list-container animate-fade' });
+        window.app.dataStore.transportList = data; // Salva in store dedicato per i trasporti
         
-        data.forEach((tVal, index) => {
-            const nomeDisplay = dbCol(tVal, 'Località') || dbCol(tVal, 'Mezzo');
+        const cardsHtml = data.map((tVal, index) => {
+            const nomeDisplay = escapeHTML(dbCol(tVal, 'Località') || dbCol(tVal, 'Mezzo'));
             const imgUrl = getSmartUrl(tVal.Mezzo, '', 400);
             
-            const card = mk('div', { class: 'card-product', onclick: () => openModal('transport', index, [], data) }, [
-                mk('div', { class: 'prod-info' }, mk('div', { class: 'prod-title' }, nomeDisplay)),
-                mk('img', { src: imgUrl, class: 'prod-thumb', loading: 'lazy' })
-            ]);
-            listDiv.appendChild(card);
-        });
-        container.appendChild(listDiv);
+            // Nota: qui passiamo l'index perché la modale trasporti lavora su indice
+            return `
+            <div class="card-product" onclick="app.actions.openModal('transport', '${index}')">
+                <div class="prod-info"><div class="prod-title">${nomeDisplay}</div></div>
+                <img src="${imgUrl}" class="prod-thumb" loading="lazy">
+            </div>`;
+        }).join('');
+        
+        container.innerHTML = `<div class="list-container animate-fade">${cardsHtml}</div>`;
     }
 }
 
 class AttractionStrategy extends BaseViewStrategy {
     async load(container) {
         const data = await this.fetchData('Attrazioni');
+        window.app.dataStore.currentList = data;
         const culturaConfig = {
             primary: { key: 'Paese', title: '📍 ' + (t('nav_villages') || 'Borgo'), customOrder: ["Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso"] },
             secondary: { key: 'Label', title: '🏷️ Categoria' }
@@ -79,6 +83,7 @@ class AttractionStrategy extends BaseViewStrategy {
 class RestaurantStrategy extends BaseViewStrategy {
     async load(container) {
         const data = await this.fetchData('Ristoranti');
+        window.app.dataStore.currentList = data;
         Renderers.renderGenericFilterableView(data, 'Paesi', container, Renderers.ristoranteRenderer);
     }
 }
@@ -86,6 +91,7 @@ class RestaurantStrategy extends BaseViewStrategy {
 class TrailStrategy extends BaseViewStrategy {
     async load(container) {
         const data = await this.fetchData('Sentieri');
+        window.app.dataStore.currentList = data;
         Renderers.renderGenericFilterableView(data, 'Difficolta', container, Renderers.sentieroRenderer);
     }
 }
@@ -93,6 +99,7 @@ class TrailStrategy extends BaseViewStrategy {
 class PharmacyStrategy extends BaseViewStrategy {
     async load(container) {
         const data = await this.fetchData('Farmacie');
+        window.app.dataStore.currentList = data;
         Renderers.renderGenericFilterableView(data, 'Paesi', container, Renderers.farmacieRenderer);
     }
 }
@@ -100,21 +107,17 @@ class PharmacyStrategy extends BaseViewStrategy {
 class UsefulNumbersStrategy extends BaseViewStrategy {
     async load(container) {
         const data = await this.fetchData('Numeri_utili');
+        // Non serve salvare in store qui perché i numeri non hanno modale dettagli complessa che richiede lookup per ID
         Renderers.renderGenericFilterableView(data, 'Comune', container, Renderers.numeriUtiliRenderer);
     }
 }
 
 class MapStrategy extends BaseViewStrategy {
     async load(container) {
-        container.innerHTML = '';
-        container.appendChild(
-            mk('div', { class: 'map-container animate-fade' }, 
-                mk('iframe', { 
-                    src: 'https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1', 
-                    width: '640', height: '480', style: { border: 'none' } 
-                })
-            )
-        );
+        container.innerHTML = `
+        <div class="map-container animate-fade">
+            <iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="640" height="480" style="border:none"></iframe>
+        </div>`;
     }
 }
 

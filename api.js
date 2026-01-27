@@ -1,7 +1,7 @@
-/* api.js - Logica Backend e Bus/Traghetti */
+/* api.js - Logica Backend e Bus/Traghetti (HTML Strings) */
 
 import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
-import { mk, t, isItalianHoliday } from './utils.js';
+import { t, isItalianHoliday, escapeHTML } from './utils.js';
 
 // Inizializza Supabase
 export const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -37,17 +37,13 @@ export const loadAllStops = async (selPartenza) => {
         
     } catch (err) {
         console.error("Errore caricamento fermate:", err);
-        selPartenza.innerHTML = '';
-        selPartenza.appendChild(mk('option', {}, "Errore caricamento"));
+        selPartenza.innerHTML = `<option>Errore caricamento</option>`;
     }
 };
 
 function populateStartSelect(data, selectEl) {
-    selectEl.innerHTML = '';
-    selectEl.appendChild(mk('option', { value: '', disabled: true, selected: true }, t('select_placeholder')));
-    data.forEach(stop => {
-        selectEl.appendChild(mk('option', { value: stop.id }, stop.nome));
-    });
+    const options = data.map(stop => `<option value="${stop.id}">${escapeHTML(stop.nome)}</option>`).join('');
+    selectEl.innerHTML = `<option value="" disabled selected>${t('select_placeholder')}</option>` + options;
     selectEl.disabled = false;
 }
 
@@ -57,8 +53,7 @@ export const filterDestinations = (startId) => {
     
     if (!selArrivo) return;
     
-    selArrivo.innerHTML = '';
-    selArrivo.appendChild(mk('option', { value: '', disabled: true, selected: true }, t('select_placeholder')));
+    selArrivo.innerHTML = `<option value="" disabled selected>${t('select_placeholder')}</option>`;
     selArrivo.disabled = true;
 
     if (btnSearch) {
@@ -70,9 +65,8 @@ export const filterDestinations = (startId) => {
         const stops = busStopsCache || [];
         const validDestinations = stops.filter(s => String(s.id) !== String(startId));
         
-        validDestinations.forEach(stop => {
-            selArrivo.appendChild(mk('option', { value: stop.id }, stop.nome));
-        });
+        const options = validDestinations.map(stop => `<option value="${stop.id}">${escapeHTML(stop.nome)}</option>`).join('');
+        selArrivo.insertAdjacentHTML('beforeend', options);
         
         if (validDestinations.length > 0) {
             selArrivo.disabled = false;
@@ -87,8 +81,7 @@ export const filterDestinations = (startId) => {
 
     } catch (err) {
         console.error(err);
-        selArrivo.innerHTML = '';
-        selArrivo.appendChild(mk('option', {}, "Errore"));
+        selArrivo.innerHTML = `<option>Errore</option>`;
     }
 };
 
@@ -113,11 +106,10 @@ export const eseguiRicercaBus = async () => {
 
     resultsContainer.classList.remove('d-none');
     resultsContainer.style.display = 'block';
-    nextCard.innerHTML = '';
-    nextCard.appendChild(mk('div', { style: { textAlign:'center', padding:'20px' } }, [
-        'Cercando... ', 
-        mk('span', { class: 'material-icons spin' }, 'sync')
-    ]));
+    nextCard.innerHTML = `
+        <div style="text-align:center; padding:20px;">
+            Cercando... <span class="material-icons spin">sync</span>
+        </div>`;
     list.innerHTML = '';
 
     const dateObj = new Date(dataScelta);
@@ -132,18 +124,17 @@ export const eseguiRicercaBus = async () => {
 
     if (error) { 
         console.error("❌ ERRORE SQL:", error);
-        nextCard.innerHTML = '';
-        nextCard.appendChild(mk('div', { style: { color:'red', textAlign:'center' } }, `Errore: ${error.message}`));
+        nextCard.innerHTML = `<div style="color:red; text-align:center;">Errore: ${error.message}</div>`;
         return; 
     }
 
     if (!data || data.length === 0) { 
-        nextCard.innerHTML = '';
-        nextCard.appendChild(mk('div', { style: { textAlign:'center', padding:'15px', color:'#c62828' } }, [
-            mk('span', { class: 'material-icons' }, 'event_busy'), mk('br'),
-            mk('strong', {}, t('bus_not_found')), mk('br'),
-            mk('small', {}, t('bus_try_change'))
-        ]));
+        nextCard.innerHTML = `
+        <div style="text-align:center; padding:15px; color:#c62828;">
+            <span class="material-icons">event_busy</span><br>
+            <strong>${t('bus_not_found')}</strong><br>
+            <small>${t('bus_try_change')}</small>
+        </div>`;
         return; 
     }
 
@@ -153,32 +144,29 @@ export const eseguiRicercaBus = async () => {
     const badgeClass = isFestivo ? 'badge-holiday' : 'badge-weekday';
     const badgeText = isFestivo ? t('badge_holiday') : t('badge_weekday');
 
-    nextCard.innerHTML = '';
-    nextCard.append(
-        mk('div', { style: { display:'flex', justifyContent:'space-between', alignItems:'center' } }, [
-            mk('div', { style: { fontSize:'0.75rem', color:'#e0f7fa', textTransform:'uppercase', fontWeight:'bold' } }, t('next_departure')),
-            mk('span', { class: badgeClass }, badgeText)
-        ]),
-        mk('div', { class: 'bus-time-big' }, pOra),
-        mk('div', { style: { fontSize:'1rem', color:'#fff' } }, [
-            t('arrival') + ': ', mk('strong', {}, aOra)
-        ]),
-        mk('div', { style: { fontSize:'0.8rem', color:'#b2ebf2', marginTop:'5px' } }, primo.nome_linea || 'Linea Bus')
-    );
+    nextCard.innerHTML = `
+        <div style="display:flex; justifyContent:space-between; alignItems:center;">
+            <div style="fontSize:0.75rem; color:#e0f7fa; textTransform:uppercase; fontWeight:bold;">${t('next_departure')}</div>
+            <span class="${badgeClass}">${badgeText}</span>
+        </div>
+        <div class="bus-time-big">${pOra}</div>
+        <div style="fontSize:1rem; color:#fff;">
+            ${t('arrival')}: <strong>${aOra}</strong>
+        </div>
+        <div style="fontSize:0.8rem; color:#b2ebf2; marginTop:5px;">${primo.nome_linea || 'Linea Bus'}</div>
+    `;
 
     const successivi = data.slice(1);
-    list.innerHTML = '';
     
     if (successivi.length > 0) {
-        successivi.forEach(b => {
-            const row = mk('div', { class: 'bus-list-item' }, [
-                mk('span', { style: { fontWeight:'bold', color:'#333' } }, b.ora_partenza.slice(0,5)),
-                mk('span', { style: { color:'#666' } }, `➜ ${b.ora_arrivo.slice(0,5)}`)
-            ]);
-            list.appendChild(row);
-        });
+        list.innerHTML = successivi.map(b => `
+            <div class="bus-list-item">
+                <span style="fontWeight:bold; color:#333;">${b.ora_partenza.slice(0,5)}</span>
+                <span style="color:#666;">➜ ${b.ora_arrivo.slice(0,5)}</span>
+            </div>
+        `).join('');
     } else {
-        list.appendChild(mk('div', { style: { padding:'10px', color:'#999', fontSize:'0.9rem' } }, "Nessun'altra corsa oggi."));
+        list.innerHTML = `<div style="padding:10px; color:#999; fontSize:0.9rem;">Nessun'altra corsa oggi.</div>`;
     }
 };
 
@@ -205,9 +193,8 @@ export const initFerrySearch = async () => {
         const selArrivo = document.getElementById('selArrivoFerry');
         const valid = ferryPorts.filter(p => String(p.id) !== selPartenza.value);
         
-        selArrivo.innerHTML = '';
-        selArrivo.appendChild(mk('option', { value:'', disabled:true, selected:true }, t('select_placeholder')));
-        valid.forEach(p => selArrivo.appendChild(mk('option', { value: p.id }, p.nome)));
+        const options = valid.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+        selArrivo.innerHTML = `<option value="" disabled selected>${t('select_placeholder')}</option>` + options;
         selArrivo.disabled = false;
     };
 };
@@ -225,10 +212,10 @@ export const eseguiRicercaTraghetto = async () => {
     resultsContainer.classList.remove('d-none');
     resultsContainer.style.display = 'block';
     
-    nextCard.innerHTML = '';
-    nextCard.appendChild(mk('div', { style: { padding:'20px', textAlign:'center', color:'white' } }, [
-        'Ricerca Battelli...', mk('span', { class: 'material-icons spin' }, 'sync')
-    ]));
+    nextCard.innerHTML = `
+        <div style="padding:20px; textAlign:center; color:white;">
+            Ricerca Battelli... <span class="material-icons spin">sync</span>
+        </div>`;
     list.innerHTML = '';
 
     const ora = selOra.value;
@@ -241,27 +228,24 @@ export const eseguiRicercaTraghetto = async () => {
         ].filter(c => c.ora_partenza >= ora);
 
         if (mockData.length === 0) {
-            nextCard.innerHTML = '';
-            nextCard.appendChild(mk('div', { style: { textAlign:'center', padding:'15px', color:'white' } }, t('bus_not_found')));
+            nextCard.innerHTML = `<div style="textAlign:center; padding:15px; color:white;">${t('bus_not_found')}</div>`;
             return;
         }
 
         const primo = mockData[0];
-        nextCard.innerHTML = '';
-        nextCard.append(
-            mk('div', { style: { fontSize:'0.75rem', color:'#e1f5fe', textTransform:'uppercase', fontWeight:'bold' } }, t('next_departure')),
-            mk('div', { class: 'bus-time-big' }, primo.ora_partenza.slice(0,5)),
-            mk('div', { style: { fontSize:'1rem', color:'#fff' } }, `${t('arrival')}: ${primo.ora_arrivo.slice(0,5)}`),
-            mk('div', { style: { fontSize:'0.8rem', color:'#b3e5fc', marginTop:'5px' } }, "Navigazione Golfo dei Poeti")
-        );
+        nextCard.innerHTML = `
+            <div style="fontSize:0.75rem; color:#e1f5fe; textTransform:uppercase; fontWeight:bold;">${t('next_departure')}</div>
+            <div class="bus-time-big">${primo.ora_partenza.slice(0,5)}</div>
+            <div style="fontSize:1rem; color:#fff;">${t('arrival')}: ${primo.ora_arrivo.slice(0,5)}</div>
+            <div style="fontSize:0.8rem; color:#b3e5fc; marginTop:5px;">Navigazione Golfo dei Poeti</div>
+        `;
 
-        list.innerHTML = '';
-        mockData.slice(1).forEach(b => {
-            list.appendChild(mk('div', { class: 'bus-list-item' }, [
-                mk('span', { style: { fontWeight:'bold', color:'#333' } }, b.ora_partenza.slice(0,5)),
-                mk('span', { style: { color:'#666' } }, `➜ ${b.ora_arrivo.slice(0,5)}`)
-            ]));
-        });
+        list.innerHTML = mockData.slice(1).map(b => `
+            <div class="bus-list-item">
+                <span style="fontWeight:bold; color:#333;">${b.ora_partenza.slice(0,5)}</span>
+                <span style="color:#666;">➜ ${b.ora_arrivo.slice(0,5)}</span>
+            </div>
+        `).join('');
 
     }, 800);
 };
