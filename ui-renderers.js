@@ -131,19 +131,17 @@ window.openTechMap = function(safeObj) {
                     <div class="tech-data-box"><span class="t-val">${alt_min}</span><span class="t-lbl">Min</span></div>
                 </div>
 
-                <div id="tech-map-canvas" style="flex-grow:1; background:#e0e0e0; width:100%; min-height:100px;"></div>
+                <div id="tech-map-canvas" style="flex-grow:1; background:#e0e0e0; width:100%; min-height:150px;"></div>
                 
-                <div id="elevation-div" style="display:none;"></div>
+                <div id="elevation-div" style="display:none; height:140px;"></div>
 
                 <div class="modal-actions-grid">
                     <button class="btn-trail-modern btn-trail-info" onclick="window.downloadGPX('${gpxUrl}')">
                         <span class="material-icons">download</span> GPX
                     </button>
-
                     <button id="btn-gps" class="btn-trail-modern btn-trail-gps" onclick="window.toggleGPS()">
                         <span class="material-icons">my_location</span> GPS
                     </button>
-
                     <button id="btn-toggle-ele" class="btn-trail-modern btn-trail-tech" onclick="toggleElevationChart()">
                         <span class="material-icons">show_chart</span> Grafico
                     </button>

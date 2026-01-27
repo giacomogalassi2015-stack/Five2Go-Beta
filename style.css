@@ -1409,7 +1409,7 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 .elevation-control.leaflet-control {
     background: transparent !important;
     box-shadow: none !important;
-    margin: 20 !important; padding: 0 !important; width: 100% !important;
+    margin: 0 !important; padding: 0 !important; width: 100% !important;
 }
 
 /* Il nostro contenitore grafico */
@@ -1417,7 +1417,10 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
     background: #fff;
     border-bottom: 1px solid #eee;
     width: 100%;
-    flex-shrink: 0; /* Non si schiaccia mai */
+    flex-shrink: 0; /* Non si schiaccia mai *//* MODIFICA CHIAVE: Altezza ridotta drasticamente */
+    height: 140px !important; 
+    
+    padding-bottom: 5px; /* Giusto un respiro */
 }
 
 /* Fix Contenitore Modale */
