@@ -118,17 +118,11 @@ window.openTechMap = function(safeObj) {
         const alt_min = s.altitudine_minima || '--';
 
         const modalHtml = `
-            <div class="tech-container">
+            <div class="tech-container" style="display:flex; flex-direction:column; height:100%; background:white; position:relative;">
                 
-                <button onclick="closeModal()" style="
-                    position: absolute; top: 10px; right: 10px; z-index: 1000;
-                    width: 35px; height: 35px; border-radius: 50%; background: white; border: none;
-                    box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 1.5rem; 
-                    display: flex; align-items: center; justify-content: center; cursor:pointer;">
-                    &times;
-                </button>
+                <button onclick="closeModal()" style="position:absolute; top:10px; right:10px; z-index:1000; width:35px; height:35px; border-radius:50%; background:white; border:none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size:1.5rem; display:flex; align-items:center; justify-content:center;">&times;</button>
 
-                <div class="tech-data-row" style="padding: 20px 50px 15px 15px; display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; text-align: center; background: #fff; border-bottom: 1px solid #eee;">
+                <div class="tech-data-row" style="padding:15px 50px 15px 15px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; text-align:center; background:#fff; border-bottom:1px solid #eee; flex-shrink:0;">
                     <div class="tech-data-box"><span class="t-val">${dist}</span><span class="t-lbl">km</span></div>
                     <div class="tech-data-box"><span class="t-val" style="color:#d32f2f;">+${d_plus}</span><span class="t-lbl">Salita</span></div>
                     <div class="tech-data-box"><span class="t-val">${alt_max}</span><span class="t-lbl">Max</span></div>
@@ -137,7 +131,7 @@ window.openTechMap = function(safeObj) {
                     <div class="tech-data-box"><span class="t-val">${alt_min}</span><span class="t-lbl">Min</span></div>
                 </div>
 
-                <div id="tech-map-canvas"></div>
+                <div id="tech-map-canvas" style="flex-grow:1; background:#e0e0e0; width:100%; min-height:100px;"></div>
                 
                 <div id="elevation-div" style="display:none;"></div>
 
@@ -145,9 +139,11 @@ window.openTechMap = function(safeObj) {
                     <button class="btn-trail-modern btn-trail-info" onclick="window.downloadGPX('${gpxUrl}')">
                         <span class="material-icons">download</span> GPX
                     </button>
+
                     <button id="btn-gps" class="btn-trail-modern btn-trail-gps" onclick="window.toggleGPS()">
                         <span class="material-icons">my_location</span> GPS
                     </button>
+
                     <button id="btn-toggle-ele" class="btn-trail-modern btn-trail-tech" onclick="toggleElevationChart()">
                         <span class="material-icons">show_chart</span> Grafico
                     </button>
@@ -164,7 +160,7 @@ window.openTechMap = function(safeObj) {
             document.body.appendChild(modalContainer);
         }
         modalContainer.innerHTML = modalHtml;
-        modalContainer.style.display = 'flex'; // Flex serve per centrare il modale nello schermo
+        modalContainer.style.display = 'block';
 
         setTimeout(() => { initLeafletMap('tech-map-canvas', gpxUrl); }, 300);
 
@@ -184,36 +180,19 @@ window.toggleElevationChart = function() {
     const btn = document.getElementById('btn-toggle-ele');
     
     if (elDiv.style.display === 'none') {
-        // MOSTRA
         elDiv.style.display = 'block';
-        
-        btn.innerHTML = '<span class="material-icons">close</span> Chiudi';
-        btn.style.backgroundColor = '#FFEBEE';
+        btn.innerHTML = '<span class="material-icons" style="font-size:1.2rem;">close</span> Chiudi';
+        btn.style.background = '#ffebee'; 
         btn.style.color = '#c62828';
-        
-        // SCROLL AUTOMATICO VERSO IL BASSO
-        // Usiamo setTimeout per dare tempo al browser di disegnare il div
-        setTimeout(() => {
-            const container = document.querySelector('.tech-container');
-            if(container) {
-                 // Scorre fino in fondo dolcemente
-                 container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-            }
-            if(window.currentMap) window.currentMap.invalidateSize();
-        }, 100);
-
+        btn.style.borderColor = '#ffcdd2';
     } else {
-        // NASCONDI
         elDiv.style.display = 'none';
-        
-        btn.innerHTML = '<span class="material-icons">show_chart</span> Grafico';
-        btn.style.backgroundColor = '#2A9D8F';
-        btn.style.color = 'white';
-        
-        if(window.currentMap) {
-            setTimeout(() => { window.currentMap.invalidateSize(); }, 50);
-        }
+        btn.innerHTML = '<span class="material-icons" style="font-size:1.2rem;">show_chart</span> Altimetria';
+        btn.style.background = '#e3f2fd';
+        btn.style.color = '#1565c0';
+        btn.style.borderColor = '#bbdefb';
     }
+    if(window.currentMap) window.currentMap.invalidateSize();
 };
 
 window.closeModal = function() {

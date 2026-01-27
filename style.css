@@ -1275,44 +1275,41 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
     color: #9B2335;
 }
 /* ============================================================
-   SEZIONE SENTIERI - KOMOOT STYLE & MODALE TECNICO
+   1. KOMOOT STYLE - CARD LISTA (Outdoor)
    ============================================================ */
 
-/* --- 1. CARD LISTA (Outdoor) --- */
-
+/* Il contenitore principale della card */
 .komoot-card {
     background-color: #ffffff;
     border-radius: 16px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08); /* Ombra morbida moderna */
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
     margin-bottom: 25px;
-    overflow: hidden;
+    overflow: hidden; 
     position: relative;
     border: 1px solid rgba(0,0,0,0.05);
     display: flex;
     flex-direction: column;
     width: 100%;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease;
 }
-.komoot-card:active {
-    transform: scale(0.98);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-}
+.komoot-card:active { transform: scale(0.98); }
 
-/* La Mappa nella card (Lista) */
+/* La Mappa nella lista */
 .komoot-map-container {
-    height: 220px !important; /* Altezza fissa */
+    height: 220px !important; /* Altezza fissa obbligatoria */
     width: 100%;
-    background-color: #e0e0e0;
+    background-color: #e0e0e0; 
     display: block;
     position: relative;
     z-index: 1;
     cursor: pointer;
-    pointer-events: none; /* Permette di scrollare la pagina toccando la mappa */
+    /* Opzionale: impedisce di muovere la mappa mentre scrolli la pagina */
+    pointer-events: none; 
 }
 
-/* Corpo Info */
+/* Parte Info (Bianca) */
 .komoot-info-body {
-    padding: 15px 15px 5px 15px;
+    padding: 15px 15px 5px 15px; /* Meno padding sotto */
     background: white;
     z-index: 2;
 }
@@ -1332,8 +1329,11 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 }
 
 
-/* --- 2. PULSANTI LISTA (Griglia 50/50) --- */
+/* ============================================================
+   2. PULSANTI AZIONE (Lista e Modale)
+   ============================================================ */
 
+/* Griglia per affiancare i pulsanti (50% e 50%) */
 .trail-actions-grid {
     display: grid;
     grid-template-columns: 1fr 1fr; /* Due colonne identiche */
@@ -1346,7 +1346,7 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 /* Stile Base Pulsante */
 .btn-trail-modern {
     width: 100%;
-    padding: 12px 0;
+    padding: 12px 0; /* Altezza uniforme */
     border-radius: 12px;
     border: none;
     font-family: 'Roboto', sans-serif;
@@ -1359,7 +1359,7 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 
 /* Varianti Colore */
 .btn-trail-tech {
-    background-color: #2A9D8F; /* Primary Teal */
+    background-color: #2A9D8F; /* Verde Primary */
     color: white;
     box-shadow: 0 4px 10px rgba(42, 157, 143, 0.3);
 }
@@ -1368,39 +1368,12 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
     color: #555;
     border: 1px solid #eee;
 }
-.btn-trail-gps {
-    background-color: #29B6F6; /* Blu GPS */
-    color: white;
-    box-shadow: 0 4px 10px rgba(41, 182, 246, 0.3);
-}
 
 
-/* --- 3. MODALE SCHEDA TECNICA (Layout Mobile-First) --- */
-
-.tech-container {
-    width: 100%; max-width: 500px;
-    height: 85vh; max-height: 800px;
-    background: white; border-radius: 20px;
-    
-    /* Layout Flessibile Verticale */
-    display: flex; 
-    flex-direction: column;
-    
-    /* Abilita Scroll */
-    overflow-y: auto; 
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch; /* Scroll fluido iOS */
-    
-    position: relative;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-}
-
-/* Griglia Dati (In alto) */
-.tech-data-row {
-    flex-shrink: 0; /* Non si schiaccia */
-}
-
-/* Box Dati Singolo */
+/* ============================================================
+   3. DATI TECNICI (Modale)
+   ============================================================ */
+/* Il Box del singolo dato */
 .tech-data-box {
     background: #ffffff;
     border-radius: 12px;
@@ -1409,67 +1382,101 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
 }
-.t-val { font-size: 1.1rem; font-weight: 800; color: #2D3436; line-height: 1.1; margin-bottom: 2px; }
-.t-lbl { font-size: 0.65rem; text-transform: uppercase; color: #999; font-weight: 700; letter-spacing: 0.5px; }
-
-/* Mappa Modale */
-#tech-map-canvas {
-    width: 100%;
-    height: 350px !important; /* Altezza fissa generosa */
-    flex-shrink: 0; /* Non si riduce mai */
-    background: #e0e0e0;
-    display: block;
+/* Il Numero (Grande, in alto) */
+.t-val {
+    font-size: 1.1rem; font-weight: 800; color: #2D3436;
+    line-height: 1.1; margin-bottom: 2px;
 }
-
-/* Grafico Altimetrico */
-#elevation-div {
-    background: #fff;
-    border-bottom: 1px solid #eee;
-    width: 100%;
-    height: 160px !important; /* Altezza quando aperto */
-    flex-shrink: 0;
-}
-
-/* Griglia Pulsanti Modale (3 Colonne) */
-.modal-actions-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr; /* GPX | GPS | GRAFICO */
-    gap: 8px;
-    padding: 15px;
-    background: white;
-    border-top: 1px solid #eee;
-    
-    flex-shrink: 0; /* Sempre in fondo */
-    margin-top: auto; /* Spinge verso il basso */
-    padding-bottom: 20px; /* Sicurezza per gesture bar */
-}
-/* Testo più piccolo per i 3 pulsanti */
-.modal-actions-grid .btn-trail-modern {
-    padding: 12px 2px;
-    font-size: 0.8rem; 
+/* L'Etichetta (Piccola, in basso) */
+.t-lbl {
+    font-size: 0.65rem; text-transform: uppercase; color: #999;
+    font-weight: 700; letter-spacing: 0.5px;
 }
 
 
-/* --- 4. FIX CLEANUP PLUGIN (Kill Switch) --- */
-
+/* ============================================================
+   4. FIX ALTIMETRIA (Nascondi controlli plugin)
+   ============================================================ */
 /* Nasconde X, Download, Summary interni del plugin */
 .elevation-control .leaflet-control-close,
 .elevation-control .leaflet-control-summary,
 .elevation-control .leaflet-control-download,
-.elevation-toggle-icon,
-.elevation-control a, /* Colpisce qualsiasi link interno */
-.leaflet-control-download {
+.elevation-toggle-icon {
     display: none !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    width: 0 !important; height: 0 !important;
 }
 
-/* Pulisce il contenitore del plugin */
+/* Rimuove spazi bianchi e padding del plugin */
 .elevation-control.leaflet-control {
     background: transparent !important;
     box-shadow: none !important;
-    margin: 0 !important; 
-    padding: 0 !important; 
-    width: 100% !important;
+    margin: 20 !important; padding: 0 !important; width: 100% !important;
+}
+
+/* Il nostro contenitore grafico */
+#elevation-div {
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    width: 100%;
+    flex-shrink: 0; /* Non si schiaccia mai */
+}
+
+/* Fix Contenitore Modale */
+.tech-container {
+    width: 100%; max-width: 500px;
+    height: 85vh; max-height: 800px;
+    background: white; border-radius: 20px; overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+}
+
+/* --- GRIGLIA PULSANTI MODALE (3 Colonne) --- */
+.modal-actions-grid {
+    display: grid;
+    /* 3 Colonne uguali per GPX | GPS | ALTIMETRIA */
+    grid-template-columns: 1fr 1fr 1fr; 
+    gap: 8px; /* Spazio leggermente ridotto per farci stare tutto */
+    padding: 10px 15px;
+    background: white;
+    border-top: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+/* Stile Pulsante GPS (Blu brillante) */
+.btn-trail-gps {
+    background-color: #29B6F6; 
+    color: white;
+    border: none;
+    box-shadow: 0 4px 10px rgba(41, 182, 246, 0.3);
+}
+
+/* Override per pulsanti nel modale (testo più piccolo se serve) */
+.modal-actions-grid .btn-trail-modern {
+    padding: 12px 5px; /* Meno padding laterale */
+    font-size: 0.85rem; /* Testo leggermente più piccolo per non andare a capo */
+}
+
+/* ============================================================
+   KILL SWITCH PER IL DOWNLOAD LINK
+   ============================================================ */
+
+/* 1. Colpisce la classe specifica del download */
+.leaflet-control-download,
+.elevation-control-download,
+.elevation-control .download {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* 2. Colpisce QUALSIASI link (a) dentro il controllo altimetrico */
+/* Questo è il colpo di grazia: se è un link, sparisce. */
+.elevation-control a {
+    display: none !important;
+}
+
+/* 3. Colpisce eventuali link dentro il riassunto (Summary) se presenti */
+.elevation-summary a {
+    display: none !important;
 }
