@@ -1,4 +1,4 @@
-console.log("✅ 3. app.js caricato (Controller)");
+console.log("✅ 3. app.js caricato (Controller - Refactored Clean)");
 
 const content = document.getElementById('app-content');
 
@@ -18,20 +18,21 @@ function setupHeaderElements() {
 
     // 3. COSTRUZIONE (Solo per Home)
     const actionsContainer = document.createElement('div');
-    actionsContainer.className = 'header-actions animate-fade'; 
+    actionsContainer.className = 'header-actions animate-fade header-actions-container'; // USA LA NUOVA CLASSE
     actionsContainer.id = 'header-btn-lang'; 
-    Object.assign(actionsContainer.style, { position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', zIndex: '20' });
+    // NOTA: Ho rimosso Object.assign con stili inline, ora è tutto in .header-actions-container
 
     const currFlag = window.AVAILABLE_LANGS.find(l => l.code === window.currentLang).flag;
     const currCode = window.currentLang.toUpperCase();
 
     const langSelector = document.createElement('div');
     langSelector.className = 'lang-selector';
+    // Ho aggiunto la classe lang-dropdown-wrapper al dropdown
     langSelector.innerHTML = `
         <button class="current-lang-btn" onclick="toggleLangDropdown(event)">
             <span class="lang-flag">${currFlag}</span> ${currCode} ▾
         </button>
-        <div class="lang-dropdown" id="lang-dropdown" style="left: 0; right: auto;">
+        <div class="lang-dropdown lang-dropdown-wrapper" id="lang-dropdown">
             ${window.AVAILABLE_LANGS.map(l => `
                 <button class="lang-opt ${l.code === window.currentLang ? 'active' : ''}" onclick="changeLanguage('${l.code}')">
                     <span class="lang-flag">${l.flag}</span> ${l.label}
@@ -330,7 +331,12 @@ function renderSimpleList(tableName) {
 
 window.toggleTicketInfo = function() {
     const box = document.getElementById('ticket-info-box');
-    if (box) { box.style.display = (box.style.display === 'none') ? 'block' : 'none'; }
+    if (box) { box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'block' : 'none'; }
+};
+
+window.toggleBusMap = function() {
+    const wrapper = document.getElementById('bus-map-wrapper');
+    if (wrapper) { wrapper.style.display = (wrapper.style.display === 'none' || wrapper.style.display === '') ? 'block' : 'none'; }
 };
 
 document.addEventListener('DOMContentLoaded', () => {

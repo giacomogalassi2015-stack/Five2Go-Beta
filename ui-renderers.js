@@ -1,7 +1,7 @@
-console.log("✅ 2. ui-renderers.js caricato (Refactored)");
+console.log("✅ 2. ui-renderers.js caricato (Refactored Clean)");
 
 // ============================================================
-// 1. RENDERER DELLE CARD (LISTE - Invariati per aspetto grafico)
+// 1. RENDERER DELLE CARD (LISTE)
 // ============================================================
 
 window.ristoranteRenderer = (r) => {
@@ -9,7 +9,7 @@ window.ristoranteRenderer = (r) => {
     const paesi = window.dbCol(r, 'Paesi') || '';
     const numero = r.Numero || r.Telefono || '';
     const safeObj = encodeURIComponent(JSON.stringify(r)).replace(/'/g, "%27");
-    const mapLink = r.Mappa || `https://www.google.com/maps/search/?api=1&query=$?q=${encodeURIComponent(nome + ' ' + paesi)}`;
+    const mapLink = r.Mappa || `https://www.google.com/maps/search/?api=1&query=$?q=$?q=${encodeURIComponent(nome + ' ' + paesi)}`;
 
     return `
     <div class="restaurant-glass-card"> 
@@ -25,15 +25,12 @@ window.ristoranteRenderer = (r) => {
     </div>`;
 };
 
-// ... [MANTIENI TUTTI GLI ALTRI RENDERER: spiaggiaRenderer, sentieroRenderer, vinoRenderer, numeriUtiliRenderer, farmacieRenderer, attrazioniRenderer, prodottoRenderer ESATTAMENTE COME ERANO] ...
-// PER BREVITÀ NON LI RICOPIO TUTTI QUI MA VANNO INCLUSI
-
 window.spiaggiaRenderer = function(item) {
     const nome = item.Nome || 'Spiaggia';
     const comune = item.Paese || item.Comune || '';
     const tipo = item.Tipo || 'Spiaggia'; 
     const iconClass = 'fa-water';
-    return `<div class="culture-card is-beach animate-fade" onclick="openModal('Spiagge', '${item.id}')"><div class="culture-info">${comune ? `<div class="culture-location"><span class="material-icons" style="font-size:0.9rem">place</span> ${comune}</div>` : ''}<h3 class="culture-title">${nome}</h3><div class="culture-tags"><span class="c-pill">${tipo}</span></div></div><div class="culture-bg-icon"><i class="fa-solid ${iconClass}"></i></div></div>`;
+    return `<div class="culture-card is-beach animate-fade" onclick="openModal('Spiagge', '${item.id}')"><div class="culture-info">${comune ? `<div class="culture-location"><span class="material-icons icon-sm">place</span> ${comune}</div>` : ''}<h3 class="culture-title">${nome}</h3><div class="culture-tags"><span class="c-pill">${tipo}</span></div></div><div class="culture-bg-icon"><i class="fa-solid ${iconClass}"></i></div></div>`;
 };
 
 window.sentieroRenderer = (s) => {
@@ -47,7 +44,7 @@ window.sentieroRenderer = (s) => {
     if (diff.toLowerCase().includes('facile') || diff.toLowerCase().includes('easy')) diffColor = '#27ae60';
     if (diff.toLowerCase().includes('difficile') || diff.toLowerCase().includes('hard')) diffColor = '#c0392b';
     if (gpxUrl) { window.mapsToInit.push({ id: uniqueMapId, gpx: gpxUrl }); }
-    return `<div class="trail-card-modern animate-fade"><div id="${uniqueMapId}" class="trail-map-container" onclick="event.stopPropagation(); openModal('map', '${gpxUrl}')"></div><div class="trail-info-overlay" style="text-align: center; cursor: default; padding: 25px 15px 15px 15px;"><h3 style="margin: 5px 0 5px 0; font-family:'Roboto Slab'; font-size: 1.25rem; color:#222; line-height:1.2;">${titoloMostrato}</h3><div style="font-size:0.75rem; font-weight:700; color:${diffColor}; text-transform:uppercase; letter-spacing:1px; margin-bottom:18px;">${diff}</div><button onclick="openModal('trail', '${safeObj}')" style="width:100%; padding:14px; border:none; background:#2D3436; color:white; border-radius:12px; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:8px; cursor: pointer; transition: background 0.2s;">${window.t('btn_details')} <span class="material-icons" style="font-size:1.1rem;">arrow_forward</span></button></div></div>`;
+    return `<div class="trail-card-modern animate-fade"><div id="${uniqueMapId}" class="trail-map-container" onclick="event.stopPropagation(); openModal('map', '${gpxUrl}')"></div><div class="trail-info-overlay"><h3 class="text-center font-bold color-dark" style="margin: 5px 0; font-family:'Roboto Slab'; font-size: 1.25rem;">${titoloMostrato}</h3><div class="text-center text-uppercase font-bold mb-20" style="font-size:0.75rem; color:${diffColor}; letter-spacing:1px;">${diff}</div><button onclick="openModal('trail', '${safeObj}')" class="btn-trail-action">${window.t('btn_details')} <span class="material-icons" style="font-size:1.1rem;">arrow_forward</span></button></div></div>`;
 };
 
 window.vinoRenderer = function(item) {
@@ -58,7 +55,7 @@ window.vinoRenderer = function(item) {
     let themeClass = 'is-wine-red'; 
     if (tipo.includes('bianco')) themeClass = 'is-wine-white';
     if (tipo.includes('rosato') || tipo.includes('orange')) themeClass = 'is-wine-orange';
-    return `<div class="culture-card ${themeClass} animate-fade" onclick="openModal('Vini', '${safeId}')"><div class="culture-info">${cantina ? `<div class="culture-location"><span class="material-icons" style="font-size:0.9rem">storefront</span> ${cantina}</div>` : ''}<div class="culture-title">${nome}</div><div class="culture-tags"><span class="c-pill" style="text-transform: capitalize;">${item.Tipo || 'Vino'}</span></div></div><div class="culture-bg-icon"><i class="fa-solid fa-wine-bottle"></i></div></div>`;
+    return `<div class="culture-card ${themeClass} animate-fade" onclick="openModal('Vini', '${safeId}')"><div class="culture-info">${cantina ? `<div class="culture-location"><span class="material-icons icon-sm">storefront</span> ${cantina}</div>` : ''}<div class="culture-title">${nome}</div><div class="culture-tags"><span class="c-pill" style="text-transform: capitalize;">${item.Tipo || 'Vino'}</span></div></div><div class="culture-bg-icon"><i class="fa-solid fa-wine-bottle"></i></div></div>`;
 };
 
 window.numeriUtiliRenderer = (n) => {
@@ -71,14 +68,14 @@ window.numeriUtiliRenderer = (n) => {
     else if (nLower.includes('medica') || nLower.includes('croce')) icon = 'medical_services';
     else if (nLower.includes('taxi')) icon = 'local_taxi';
     else if (nLower.includes('farmacia')) icon = 'local_pharmacy';
-    return `<div class="info-card animate-fade"><div class="info-icon-box"><span class="material-icons">${icon}</span></div><div class="info-text-col"><h3>${nome}</h3><p><span class="material-icons" style="font-size: 0.9rem;">place</span> ${paesi}</p></div><div class="action-btn btn-call" onclick="window.location.href='tel:${numero}'"><span class="material-icons">call</span></div></div>`;
+    return `<div class="info-card animate-fade"><div class="info-icon-box"><span class="material-icons">${icon}</span></div><div class="info-text-col"><h3>${nome}</h3><p><span class="material-icons icon-sm">place</span> ${paesi}</p></div><div class="action-btn btn-call" onclick="window.location.href='tel:${numero}'"><span class="material-icons">call</span></div></div>`;
 };
 
 window.farmacieRenderer = (f) => {
     const nome = window.dbCol(f, 'Farmacia') || window.dbCol(f, 'Nome') || 'Farmacia';
     const paese = window.dbCol(f, 'Paese') || window.dbCol(f, 'Paesi') || '';
     const numero = f.Telefono || f.Numero || '';
-    return `<div class="info-card animate-fade"><div class="info-icon-box"><span class="material-icons">local_pharmacy</span></div><div class="info-text-col"><h3>${nome}</h3><p><span class="material-icons" style="font-size: 0.9rem;">place</span> ${paese}</p></div><div class="action-btn btn-call" onclick="window.location.href='tel:${numero}'"><span class="material-icons">call</span></div></div>`;
+    return `<div class="info-card animate-fade"><div class="info-icon-box"><span class="material-icons">local_pharmacy</span></div><div class="info-text-col"><h3>${nome}</h3><p><span class="material-icons icon-sm">place</span> ${paese}</p></div><div class="action-btn btn-call" onclick="window.location.href='tel:${numero}'"><span class="material-icons">call</span></div></div>`;
 };
 
 window.attrazioniRenderer = (item) => {
@@ -95,7 +92,7 @@ window.attrazioniRenderer = (item) => {
     if (label === 'religioso') { themeClass = 'is-church'; iconClass = 'fa-church'; }
     else if (label === 'panorama') { themeClass = 'is-view'; iconClass = 'fa-mountain-sun'; }
     else if (label === 'storico') { themeClass = 'is-monument'; iconClass = 'fa-chess-rook'; }
-    return `<div class="culture-card ${themeClass} animate-fade" onclick="openModal('attrazione', ${myId})"><div class="culture-info"><div class="culture-location"><span class="material-icons" style="font-size:0.9rem;">place</span> ${paese}</div><div class="culture-title">${titolo}</div><div class="culture-tags"><span class="c-pill"><span class="material-icons" style="font-size:0.8rem;">schedule</span> ${tempo}</span><span class="c-pill">${diff}</span></div></div><div class="culture-bg-icon"><i class="fa-solid ${iconClass}"></i></div></div>`;
+    return `<div class="culture-card ${themeClass} animate-fade" onclick="openModal('attrazione', ${myId})"><div class="culture-info"><div class="culture-location"><span class="material-icons icon-sm">place</span> ${paese}</div><div class="culture-title">${titolo}</div><div class="culture-tags"><span class="c-pill"><span class="material-icons icon-xs">schedule</span> ${tempo}</span><span class="c-pill">${diff}</span></div></div><div class="culture-bg-icon"><i class="fa-solid ${iconClass}"></i></div></div>`;
 };
 
 window.prodottoRenderer = (p) => {
@@ -107,31 +104,25 @@ window.prodottoRenderer = (p) => {
     return `<div class="culture-card is-product animate-fade" onclick="openModal('product', '${safeObj}')"><div class="culture-info"><div class="culture-title">${titolo}</div><div class="product-subtitle"><span class="material-icons">stars</span> ${window.t('ideal_for')}: ${ideale}</div></div><div class="culture-product-thumb"><img src="${imgUrl}" loading="lazy" alt="${titolo}"></div></div>`;
 };
 
-
 // ============================================================
 // 2. LOGICA MODALE (Refactored con Factory)
 // ============================================================
 
 window.openModal = async function(type, payload) {
     console.log("Opening Modal (Pattern):", type, payload);
-    
-    // 1. Usa la Factory per ottenere il generatore
     const generator = window.ModalFactory.create(type, payload);
     const contentHtml = generator.generate();
     const modalClass = generator.getClass();
 
-    // 2. Crea DOM (Parte View)
     const modal = document.createElement('div');
     modal.className = 'modal-overlay animate-fade';
     document.body.appendChild(modal);
     modal.onclick = (e) => { if(e.target === modal) modal.remove(); };
-
     modal.innerHTML = `<div class="${modalClass}"><span class="close-modal" onclick="this.parentElement.parentElement.remove()">×</span>${contentHtml}</div>`;
 };
 
-
 // ============================================================
-// 3. TEMPLATE HELPERS (Per i Trasporti - spostati qui per pulizia)
+// 3. TEMPLATE HELPERS (Per i Trasporti)
 // ============================================================
 
 window.renderBusTemplate = (item) => {
@@ -143,17 +134,17 @@ window.renderBusTemplate = (item) => {
     let ticketSection = '';
     if (hasTicketInfo) {
         ticketSection = `
-        <button onclick="toggleTicketInfo()" style="width:100%; margin-bottom:15px; background:#e0f7fa; color:#006064; border:1px solid #b2ebf2; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">🎟️ ${window.t('how_to_ticket')} ▾</button>
-        <div id="ticket-info-box" style="display:none; background:#fff; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:15px; font-size:0.9rem; color:#333; line-height:1.5;">
-            ${infoSms ? `<p style="margin-bottom:10px;"><strong>📱 SMS</strong><br>${infoSms}</p>` : ''}
-            ${infoApp ? `<p style="margin-bottom:10px;"><strong>📲 APP</strong><br>${infoApp}</p>` : ''}
-            ${infoAvvisi ? `<div style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.85rem; border:1px solid #ffeeba; margin-top:10px;"><strong>⚠️ ${window.t('label_warning')}:</strong> ${infoAvvisi}</div>` : ''}
+        <button onclick="toggleTicketInfo()" class="ticket-toggle-btn">🎟️ ${window.t('how_to_ticket')} ▾</button>
+        <div id="ticket-info-box" class="ticket-info-content">
+            ${infoSms ? `<p class="mb-10"><strong>📱 SMS</strong><br>${infoSms}</p>` : ''}
+            ${infoApp ? `<p class="mb-10"><strong>📲 APP</strong><br>${infoApp}</p>` : ''}
+            ${infoAvvisi ? `<div class="warning-box"><strong>⚠️ ${window.t('label_warning')}:</strong> ${infoAvvisi}</div>` : ''}
         </div>`;
     }
 
     const mapToggleSection = `
-        <button id="btn-bus-map-toggle" onclick="toggleBusMap()" style="width:100%; margin-bottom:15px; background:#EDE7F6; color:#4527A0; border:1px solid #D1C4E9; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition: background 0.3s;">🗺️ ${window.t('show_map')} ▾</button>
-        <div id="bus-map-wrapper" style="display:none; margin-bottom: 20px;"><div id="bus-map" style="height: 280px; width: 100%; border-radius: 12px; z-index: 1; border: 2px solid #EDE7F6;"></div><p style="font-size:0.75rem; text-align:center; color:#999; margin-top:5px;">${window.t('map_hint')}</p></div>`;
+        <button id="btn-bus-map-toggle" onclick="toggleBusMap()" class="map-toggle-btn">🗺️ ${window.t('show_map')} ▾</button>
+        <div id="bus-map-wrapper" class="map-hidden-container"><div id="bus-map" class="bus-map-frame"></div><p class="map-modal-hint">${window.t('map_hint')}</p></div>`;
 
     const now = new Date();
     const todayISO = now.toISOString().split('T')[0];
@@ -164,15 +155,15 @@ window.renderBusTemplate = (item) => {
         <div class="bus-title" style="margin-bottom: 0px; padding-bottom: 15px;"><span class="material-icons">directions_bus</span> ${window.t('plan_trip')}</div>
         ${ticketSection} ${mapToggleSection}
         <div class="bus-inputs">
-            <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('departure')}</label><select id="selPartenza" class="bus-select" onchange="filterDestinations(this.value)"><option value="" disabled selected>${window.t('loading')}...</option></select></div>
-            <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('arrival')}</label><select id="selArrivo" class="bus-select" disabled><option value="" disabled selected>${window.t('select_start')}</option></select></div>
+            <div style="flex:1;"><label class="input-label-sm">${window.t('departure')}</label><select id="selPartenza" class="bus-select" onchange="filterDestinations(this.value)"><option value="" disabled selected>${window.t('loading')}...</option></select></div>
+            <div style="flex:1;"><label class="input-label-sm">${window.t('arrival')}</label><select id="selArrivo" class="bus-select" disabled><option value="" disabled selected>${window.t('select_start')}</option></select></div>
         </div>
         <div class="bus-inputs">
-            <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('date_trip')}</label><input type="date" id="selData" class="bus-select" value="${todayISO}"></div>
-            <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('time_trip')}</label><input type="time" id="selOra" class="bus-select" value="${nowTime}"></div>
+            <div style="flex:1;"><label class="input-label-sm">${window.t('date_trip')}</label><input type="date" id="selData" class="bus-select" value="${todayISO}"></div>
+            <div style="flex:1;"><label class="input-label-sm">${window.t('time_trip')}</label><input type="time" id="selOra" class="bus-select" value="${nowTime}"></div>
         </div>
         <button id="btnSearchBus" onclick="eseguiRicercaBus()" class="btn-yellow" style="width:100%; font-weight:bold; margin-top:5px; opacity: 0.5; pointer-events: none;">${window.t('find_times')}</button>
-        <div id="busResultsContainer" style="display:none; margin-top:20px;"><div id="nextBusCard" class="bus-result-main"></div><div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">${window.t('next_runs')}:</div><div id="otherBusList" class="bus-list-container"></div></div>
+        <div id="busResultsContainer" class="d-none mt-20"><div id="nextBusCard" class="bus-result-main"></div><div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">${window.t('next_runs')}:</div><div id="otherBusList" class="bus-list-container"></div></div>
     </div>`;
 };
 
@@ -184,18 +175,18 @@ window.renderFerryTemplate = () => {
     return `
     <div class="bus-search-box animate-fade">
         <div class="bus-title" style="margin-bottom: 0px; padding-bottom: 15px;"><span class="material-icons" style="background: linear-gradient(135deg, #0288D1, #0277BD); box-shadow: 0 4px 6px rgba(2, 119, 189, 0.3);">directions_boat</span> ${window.t('plan_trip')} (Battello)</div>
-        <button onclick="toggleTicketInfo()" style="width:100%; margin-bottom:15px; background:#e1f5fe; color:#01579b; border:1px solid #b3e5fc; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">🎟️ ${window.t('how_to_ticket')} ▾</button>
-        <div id="ticket-info-box" style="display:none; background:#fff; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:15px; font-size:0.9rem; color:#333; line-height:1.5;"><p>I biglietti sono acquistabili presso le biglietterie al molo.</p><div style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.85rem; border:1px solid #ffeeba; margin-top:10px;"><strong>⚠️ INFO METEO:</strong> In caso di mare mosso il servizio è sospeso.</div></div>
+        <button onclick="toggleTicketInfo()" class="ticket-toggle-btn" style="background:#e1f5fe; color:#01579b; border-color:#b3e5fc;">🎟️ ${window.t('how_to_ticket')} ▾</button>
+        <div id="ticket-info-box" class="ticket-info-content"><p>I biglietti sono acquistabili presso le biglietterie al molo.</p><div class="warning-box"><strong>⚠️ INFO METEO:</strong> In caso di mare mosso il servizio è sospeso.</div></div>
         <div class="bus-inputs">
-            <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('departure')}</label><select id="selPartenzaFerry" class="bus-select"><option value="" disabled selected>${window.t('loading')}...</option></select></div>
-            <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('arrival')}</label><select id="selArrivoFerry" class="bus-select"><option value="" disabled selected>${window.t('select_start')}</option></select></div>
+            <div style="flex:1;"><label class="input-label-sm">${window.t('departure')}</label><select id="selPartenzaFerry" class="bus-select"><option value="" disabled selected>${window.t('loading')}...</option></select></div>
+            <div style="flex:1;"><label class="input-label-sm">${window.t('arrival')}</label><select id="selArrivoFerry" class="bus-select"><option value="" disabled selected>${window.t('select_start')}</option></select></div>
         </div>
         <div class="bus-inputs">
-            <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('date_trip')}</label><input type="date" id="selDataFerry" class="bus-select" value="${todayISO}"></div>
-            <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('time_trip')}</label><input type="time" id="selOraFerry" class="bus-select" value="${nowTime}"></div>
+            <div style="flex:1;"><label class="input-label-sm">${window.t('date_trip')}</label><input type="date" id="selDataFerry" class="bus-select" value="${todayISO}"></div>
+            <div style="flex:1;"><label class="input-label-sm">${window.t('time_trip')}</label><input type="time" id="selOraFerry" class="bus-select" value="${nowTime}"></div>
         </div>
         <button onclick="eseguiRicercaTraghetto()" class="btn-yellow" style="background: linear-gradient(135deg, #0288D1 0%, #01579b 100%); color:white; width:100%; font-weight:bold; margin-top:5px; box-shadow: 0 10px 25px -5px rgba(2, 136, 209, 0.4);">${window.t('find_times')}</button>
-        <div id="ferryResultsContainer" style="display:none; margin-top:20px;"><div id="nextFerryCard" class="bus-result-main" style="background: linear-gradient(135deg, #0277BD 0%, #01579b 100%); box-shadow: 0 15px 30px -5px rgba(1, 87, 155, 0.3);"></div><div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">${window.t('next_runs')}:</div><div id="otherFerryList" class="bus-list-container"></div></div>
+        <div id="ferryResultsContainer" class="d-none mt-20"><div id="nextFerryCard" class="bus-result-main" style="background: linear-gradient(135deg, #0277BD 0%, #01579b 100%); box-shadow: 0 15px 30px -5px rgba(1, 87, 155, 0.3);"></div><div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">${window.t('next_runs')}:</div><div id="otherFerryList" class="bus-list-container"></div></div>
     </div>`;
 };
 
@@ -266,7 +257,6 @@ window.renderGenericFilterableView = function(allData, filterKey, container, car
 };
 
 window.renderDoubleFilterView = function(allData, filtersConfig, container, cardRenderer) {
-    // Logica identica a prima, spostata qui per essere chiamata dalle Strategies
     container.innerHTML = `<div class="list-container animate-fade" id="dynamic-list" style="padding-bottom: 80px;"></div>`;
     const listContainer = container.querySelector('#dynamic-list');
     const oldSheet = document.getElementById('filter-sheet'); if (oldSheet) oldSheet.remove();
