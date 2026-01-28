@@ -127,30 +127,44 @@ window.switchView = async function(view, el) {
         content.innerHTML = `<div class="error-msg">${window.t('error')}: ${err.message}</div>`;
     }
 };
-// --- NUOVA RENDER HOME (Corretta senza scritta doppia) ---
+
+// --- NUOVA RENDER HOME (Fullscreen - Pulita) ---
 function renderHome() {
     const bgImage = "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
 
+    // 1. Aggiungiamo la classe al body (FONDAMENTALE per far scattare il CSS della home)
+    document.body.classList.add('is-home');
+
     content.innerHTML = `
-    <div class="welcome-card animate-fade" style="background-image: url('${bgImage}');">
-        <div class="welcome-overlay">
-            <div class="welcome-content">
-                <h1 class="welcome-title">${window.t('welcome_app_name')}</h1>
-    
-                <div class="welcome-divider"></div>
-                
-                <div class="lang-grid">
-                    ${window.AVAILABLE_LANGS.map(l => `
-                        <button class="lang-tile ${l.code === window.currentLang ? 'active' : ''}" onclick="changeLanguage('${l.code}')">
-                            <span class="lang-flag-large">${l.flag}</span>
-                            <span class="lang-label">${l.label}</span>
-                        </button>
-                    `).join('')}
-                </div>
+    <div class="home-hero-fullscreen animate-fade">
+        <img src="${bgImage}" alt="Cinque Terre">
+    </div>
+
+    <div class="welcome-overlay">
+        <div class="welcome-content">
+            
+            <h1 class="welcome-title">${window.t('welcome_app_name')}</h1>
+            
+            <div class="welcome-divider"></div>
+            
+            <div class="lang-grid">
+                ${window.AVAILABLE_LANGS.map(l => `
+                    <button class="lang-tile ${l.code === window.currentLang ? 'active' : ''}" onclick="changeLanguage('${l.code}')">
+                        <span class="lang-flag-large">${l.flag}</span>
+                        <span class="lang-label">${l.label}</span>
+                    </button>
+                `).join('')}
             </div>
         </div>
     </div>`;
 }
+// IMPORTANTE: Quando cambi vista (es. vai a Cibo), devi rimuovere la classe 'is-home'
+// Aggiungi questa riga all'inizio della funzione switchView:
+/*
+   window.switchView = async function(view, el) {
+       document.body.classList.remove('is-home'); // <--- AGGIUNGI QUESTO
+       // ... resto del codice
+*/
 
 // ============================================================
 // 1. RENDER MENU (Stile 3D)
