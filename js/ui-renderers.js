@@ -43,9 +43,7 @@ window.prodottoRenderer = (p) => {
     <div class="culture-card is-product animate-fade" onclick="openModal('product', '${safeObj}')">
         <div class="culture-info">
             <div class="culture-title">${titolo}</div>
-            <div class="product-subtitle">
-                <span class="material-icons">stars</span> ${window.t('ideal_for')}: ${ideale}
-            </div>
+
         </div>
         <div class="culture-product-thumb">
             <img src="${imgUrl}" loading="lazy" alt="${titolo}">

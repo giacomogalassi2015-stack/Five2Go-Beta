@@ -448,33 +448,36 @@ window.getModalContent = function(type, payload, item) {
 return { html: contentHtml, class: modalClass, onRender: onRender };
 
 }
-    window.trainSearchRenderer = (data, nowTime) => {
+window.trainSearchRenderer = (data, nowTime) => {
     return `
-    <div class="bus-search-box animate-fade" style="border-top: 4px solid #c0392b; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); color: white; border-radius: 20px;">
+    <div class="bus-search-box train-box animate-fade">
         <div class="bus-title">
-            <span class="material-icons" style="background: rgba(255, 255, 255, 0.3); color:#e74c3c;">train</span> 
+            <span class="material-icons">train</span> 
             Cinque Terre Express
         </div>
-        <div style="padding: 0 5px;">
-            <p style="font-size:0.9rem; color:#ccc; line-height:1.5; margin-bottom:15px;">${window.t('train_desc')}</p>
-            <div style="background: rgba(255, 255, 255, 0.19); border-radius:12px; padding:15px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.1);">
-                <h4 style="margin:0 0 10px 0; font-size:0.8rem; color:#aaa; text-transform:uppercase;">⏱️ ${window.t('avg_times')}</h4>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.1); padding:8px 0;">
-                    <span>La Spezia ↔ Riomaggiore</span> <b style="color:white;">7 min</b>
+        
+        <div class="transport-details">
+            <p class="transport-desc">${window.t('train_desc')}</p>
+            
+            <div class="avg-times-container">
+                <h4 class="avg-times-title">⏱️ ${window.t('avg_times')}</h4>
+                <div class="avg-time-row">
+                    <span>La Spezia ↔ Riomaggiore</span> <b>7 min</b>
                 </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255, 255, 255, 0.25); padding:8px 0;">
-                    <span>${window.t('between_villages')}</span> <b style="color:white;">2-4 min</b>
+                <div class="avg-time-row">
+                    <span>${window.t('between_villages')}</span> <b>2-4 min</b>
                 </div>
-                <div style="display:flex; justify-content:space-between; padding:8px 0;">
-                    <span>Monterosso ↔ Levanto</span> <b style="color:white;">5 min</b>
+                <div class="avg-time-row">
+                    <span>Monterosso ↔ Levanto</span> <b>5 min</b>
                 </div>
             </div>
         </div>
-        <button onclick="apriTrenitalia()" class="btn-yellow" style="background: #c0392b; color: white; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4); display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:15px; border-radius:12px;">
-            <span class="material-icons" style="font-size:1.2rem;">confirmation_number</span> 
-            <span style="font-weight:bold;">${window.t('train_cta')}</span>
+
+        <button onclick="apriTrenitalia()" class="btn-red">
+            <span>${window.t('train_cta')}</span>
         </button>
-        <p style="font-size:0.75rem; text-align:center; color:#888; margin-top:10px;">${window.t('check_site')}</p>
+        
+        <p class="transport-disclaimer">${window.t('check_site')}</p>
     </div>`;
 };
 

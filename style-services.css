@@ -42,14 +42,90 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 }
 .bus-list-item:hover { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transform: translateX(5px); }
 
-/* Treni (Rosso) */
-.btn-red {
-    width: 100%; background: linear-gradient(135deg, #FF5252 0%, #D32F2F 100%); color: white; border: none; padding: 16px; border-radius: 18px;
-    font-size: 1.1rem; font-weight: 900; letter-spacing: 0.5px; cursor: pointer; box-shadow: 0 10px 25px -5px rgba(211, 47, 47, 0.4);
-    transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; margin-top: 10px; position: relative; overflow: hidden;
+/* Stile base trasporti (Valido per Bus, Treni, Traghetti) */
+.transport-details {
+    padding: 0 5px;
 }
-.btn-red:active { transform: scale(0.96); box-shadow: 0 5px 10px -5px rgba(211, 47, 47, 0.4); }
-.bus-title .icon-red { background: linear-gradient(135deg, #FF5252, #D32F2F) !important; box-shadow: 0 4px 6px rgba(211, 47, 47, 0.25) !important; color: white !important; }
+
+.transport-desc {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+/* Il contenitore degli orari medi */
+.avg-times-container {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #eee;
+}
+
+.avg-times-title {
+    margin: 0 0 10px 0;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.avg-time-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #eee;
+    color: var(--text-main);
+}
+
+.avg-time-row:last-child {
+    border-bottom: none;
+}
+
+.avg-time-row b {
+    color: var(--primary-dark);
+}
+
+.transport-disclaimer {
+    font-size: 0.75rem;
+    text-align: center;
+    color: var(--text-light);
+    margin-top: 12px;
+}
+
+/* Personalizzazione specifica per Treni (opzionale, se vuoi un tocco di rosso nell'icona) */
+.train-box .bus-title .material-icons {
+    background: linear-gradient(135deg, #FF5252, #D32F2F);
+    box-shadow: 0 4px 6px rgba(211, 47, 47, 0.25);
+}
+
+/* Pulsante Rosso Treni - Omogeneo al giallo dei Bus */
+.btn-red {
+    width: 100%; 
+    background: linear-gradient(135deg, #FF5252 0%, #D32F2F 100%); 
+    color: white; 
+    border: none; 
+    padding: 16px; 
+    border-radius: 18px; 
+    font-size: 1.1rem; 
+    font-weight: 900; 
+    letter-spacing: 0.5px; 
+    cursor: pointer; 
+    box-shadow: 0 10px 25px -5px rgba(211, 47, 47, 0.4); 
+    transition: all 0.2s ease; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    margin-top: 10px;
+}
+
+.btn-red:active { 
+    transform: scale(0.96); 
+    box-shadow: 0 5px 10px -5px rgba(211, 47, 47, 0.4); 
+}
 
 /* Griglia Servizi Nera */
 .services-grid-modern { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 25px; max-width: 600px; margin: 0 auto; }
