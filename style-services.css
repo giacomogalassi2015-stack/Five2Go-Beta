@@ -63,7 +63,28 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 .service-widget .widget-icon { font-size: 3rem; color: #ffffff; opacity: 0.95; margin-bottom: 10px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
 .service-widget .widget-label { font-size: 1.1rem; font-weight: 600; color: #ffffff; line-height: 1.2; letter-spacing: 0.5px; }
 
+/* Badge Giorno Bus */
+.badge-holiday {
+    background-color: #ff5252;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
 
+.badge-weekday {
+    background-color: #26a69a; /* Colore Teal per matchare con il tema */
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
 /* ============================================================
    INFO CARDS (Farmacie & Numeri Utili - STILE WHITE)
    ============================================================ */

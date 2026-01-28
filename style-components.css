@@ -1,7 +1,3 @@
-
-/* ============================================================
-   8. MODALI & MAPPE & FILTRI
-   ============================================================ */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(38, 70, 83, 0.4); backdrop-filter: blur(8px);
     z-index: 2000; display: flex; justify-content: center; align-items: center; padding: 20px; opacity: 0; animation: fadeIn 0.3s forwards;
@@ -22,13 +18,6 @@
 .map-note {
     position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px); padding: 8px 20px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; color: var(--primary-dark); box-shadow: 0 4px 15px rgba(0,0,0,0.15); pointer-events: none; letter-spacing: 0.5px;
 }
-.monument-meta { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-.meta-badge { font-size: 0.7rem; padding: 6px 12px; border-radius: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-.badge-easy { background-color: #E8F5E9; color: #2E7D32; } 
-.badge-hard { background-color: #FFEBEE; color: #a12222; } 
-.badge-time { background-color: #E3F2FD; color: #1565C0; } 
-.card-list-item.monument-mode { border-left: none; border-bottom: 3px solid #9C27B0; }
-.card-full-width { grid-column: 1 / -1 !important; width: 100% !important; aspect-ratio: unset !important; height: 120px !important; background-size: cover !important; background-position: center !important; }
 
 /*Filtro Galleggiante */
 #filter-toggle-btn {
@@ -41,10 +30,6 @@
 }
 .filter-chip:active { transform: scale(0.95); background: rgba(0, 0, 0, 0.8); }
 .active-filter { background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%); border: 1px solid transparent; color: #000000; font-weight: 700; box-shadow: 0 4px 12px rgba(66, 230, 149, 0.4); }
-
-/* ============================================================
-   FILTRO BOTTOM SHEET (Cassetto dal Basso)
-   ============================================================ */
 
 /* 1. L'Overlay scuro dietro il pannello */
 .sheet-overlay {
@@ -142,9 +127,6 @@
 @keyframes popIn { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; color: #fff; }
-
-
-
 
 /* Colori dinamici difficoltà */
 .diff-easy { background: linear-gradient(135deg, #2ecc71, #27ae60); } /* Verde */
@@ -254,10 +236,6 @@
     -webkit-text-fill-color: transparent;
 }
 
-/* ============================================================
-   MENU 3D "PREMIUM" & SPAZIO COMPATTO
-   ============================================================ */
-
 /* 1. BARRA FISSA (Spazio ridotto al minimo) */
 .nav-sticky-header {
     position: sticky;
@@ -343,4 +321,43 @@
 #sub-content {
     padding-top: 15px !important; /* Solo 15px di aria dal menu */
     min-height: 300px;
+}
+
+
+/* ============================================================
+   3. CLASSI CARD GENERALI
+   ============================================================ */
+.card-list-item {
+    background-color: var(--surface) !important;
+    border-radius: var(--card-radius); 
+    box-shadow: var(--shadow-soft); 
+    margin-bottom: 20px; 
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.25s ease;
+    border: none; position: relative; overflow: hidden; 
+}
+.card-list-item:active {
+    transform: scale(0.97); 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+}
+
+/* Tipografia Card */
+.item-title, .prod-title, .transport-title, .pharmacy-name {
+    font-family: 'Roboto Slab', sans-serif; font-weight: 700;
+    color: var(--primary-dark); font-size: 1.15rem;
+    line-height: 1.3; margin-bottom: 4px;
+}
+.item-subtitle, .transport-desc, .pharmacy-address {
+    font-family: 'Roboto Slab', sans-serif; font-size: 0.9rem;
+    color: var(--text-light); font-weight: 600; 
+    display: flex; align-items: center; gap: 4px; 
+}
+
+/* Pulsanti Generici (Definizione base) */
+ .btn-azure, .btn-pharmacy-call, .filter-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Roboto', sans-serif; font-weight: 600; 
+    text-decoration: none; border-radius: 50px; 
+    cursor: pointer; transition: all 0.2s ease;
+    letter-spacing: 0.3px; border: none; 
 }

@@ -1,3 +1,23 @@
+/* --- 1. CARD LISTA (Outdoor) --- */
+.komoot-card {
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.05);
+    display: flex; flex-direction: column; width: 100%;
+}
+.komoot-map-container {
+    height: 220px !important; width: 100%;
+    background-color: #e0e0e0; display: block;
+    position: relative; pointer-events: none;
+}
+.komoot-info-body { padding: 15px 15px 5px 15px; background: white; }
+.komoot-header-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.komoot-title { font-family: 'Roboto', sans-serif; font-size: 1.15rem; font-weight: 700; color: #2D3436; margin: 0; }
+.komoot-badge { font-size: 0.75rem; font-weight: 800; color: white; padding: 5px 10px; border-radius: 6px; text-transform: uppercase; }
 
 /* --- VARIANTE SPIAGGE (Blu Oceano & Onde) --- */
 /* Classe da aggiungere nel JS: .culture-card.is-beach */
@@ -23,10 +43,13 @@
     margin-top: 8px; /* Un po' di spazio sopra i tag */
 } 
 
-
-/* =========================================
-   STYLE SCHEDE ATTRAZIONI (CULTURA)
-   ========================================= */
+.monument-meta { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.meta-badge { font-size: 0.7rem; padding: 6px 12px; border-radius: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge-easy { background-color: #E8F5E9; color: #2E7D32; } 
+.badge-hard { background-color: #FFEBEE; color: #a12222; } 
+.badge-time { background-color: #E3F2FD; color: #1565C0; } 
+.card-list-item.monument-mode { border-left: none; border-bottom: 3px solid #9C27B0; }
+.card-full-width { grid-column: 1 / -1 !important; width: 100% !important; aspect-ratio: unset !important; height: 120px !important; background-size: cover !important; background-position: center !important; }
 
 /* 1. STRUTTURA DELLA SCHEDA */
 .culture-card {

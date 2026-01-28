@@ -294,9 +294,6 @@ window.getModalContent = function(type, payload, item) {
         const isTrain = searchStr.includes('tren') || searchStr.includes('ferrovi') || searchStr.includes('stazione');
 
         let customContent = '';
-
-        
-
     
     // --- INTERFACCIA BUS ---
         if (isBus) {
