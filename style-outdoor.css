@@ -13,16 +13,9 @@
 }
 
 .komoot-map-container {
-    height: 220px !important; 
-    width: 100%;
-    background-color: #e0e0e0; 
-    display: block;
-    position: relative; 
-    
-    /* IMPORTANTE: Auto permette di cliccare, trascinare e zoomare la mappa */
-    pointer-events: auto !important; 
-    
-    z-index: 1;
+    height: 220px !important; width: 100%;
+    background-color: #e0e0e0; display: block;
+    position: relative; pointer-events: none;
 }
 
 .komoot-info-body { padding: 15px 15px 5px 15px; background: white; }

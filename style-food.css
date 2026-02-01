@@ -10,7 +10,7 @@
     padding: 20px 25px; margin-bottom: 25px;
 
     /* Sfondo: Gradiente profondo e scuro */
-    background: linear-gradient(145deg, #7b2c35, #260509) !important;
+    background: linear-gradient(145deg, #40E0D0, #0d564f) !important;
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     
     /* Bordi quasi invisibili per pulizia */
@@ -57,7 +57,7 @@
     
     /* 1. Colore: Un tono su tono scuro, non un gradiente forte. 
        Molto più piatto e opaco. */
-    background: #4a1218; 
+    background: #2ecdbd; 
     
     /* 2. Ombre: */
     box-shadow: 
