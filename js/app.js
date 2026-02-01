@@ -105,16 +105,16 @@ window.switchView = async function(view, el) {
         if (view === 'home') renderHome();
         else if (view === 'cibo') {
             renderSubMenu([
-                { label: window.t('menu_rest'), table: "Ristoranti" },
                 { label: window.t('menu_prod'), table: "Prodotti" },
-                { label: window.t('menu_wine'), table: "Vini" } 
-            ], 'Ristoranti');
+                { label: window.t('menu_wine'), table: "Vini" },
+                { label: window.t('menu_rest'), table: "Ristoranti" } 
+            ], 'Prodotti');
         } else if (view === 'outdoor') {
             renderSubMenu([
-                { label: window.t('menu_trail'), table: "Sentieri" },
+                { label: window.t('menu_monu'), table: "Attrazioni" },
                 { label: window.t('menu_beach'), table: "Spiagge" },
-                { label: window.t('menu_monu'), table: "Attrazioni" }
-            ], 'Sentieri');
+                { label: window.t('menu_trail'), table: "Sentieri" }
+            ], 'Attrazioni');
         }
         else if (view === 'servizi') await renderServicesGrid();
         else if (view === 'mappe_monumenti') renderSubMenu([{ label: window.t('menu_map'), table: "Mappe" }], 'Mappe');

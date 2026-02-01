@@ -120,32 +120,47 @@ window.sentieroRenderer = (s) => {
     </div>`;
 };
 
-// === RENDERER SPIAGGE ===
+// === RENDERER SPIAGGE (Con Pulsante Mappa Tondo) ===
 window.spiaggiaRenderer = function(item) {
     const nome = item.Nome || 'Spiaggia';
     const comune = item.Paese || item.Comune || '';
-    const tipo = item.Tipo || 'Spiaggia'; 
+    const paesi = item.Paesi || 'Paesi'; 
     const iconClass = 'fa-water';
 
+    // Coordinate da Supabase (Colonne specifiche spiagge)
+    const lat = item.lat_sp;
+    const lon = item.long_sp;
+
+    // Generazione Pulsante Mappa (Stesso stile delle Attrazioni)
+    let mapBtnHtml = '';
+    if (lat && lon) {
+        mapBtnHtml = `
+        <button class="btn-culture-map" onclick="event.stopPropagation(); window.open('https://www.google.com/maps?q=${lat},${lon}', '_blank')">
+            <span class="material-icons">map</span>
+        </button>`;
+    }
+
     return `
-    <div class="culture-card is-beach animate-fade" onclick="openModal('Spiagge', '${item.id}')">
+    <div class="culture-card is-beach animate-fade" onclick="openModal('Spiagge', '${item.id}')" style="position: relative;">
         <div class="culture-info">
             ${comune ? `<div class="culture-location"><span class="material-icons" style="font-size:0.9rem">place</span> ${comune}</div>` : ''}
             <h3 class="culture-title">${nome}</h3>
             <div class="culture-tags">
-                 <span class="c-pill">${tipo}</span>
+                 <span class="c-pill">${paesi}</span>
             </div>
         </div>
+        
+        ${mapBtnHtml}
+
         <div class="culture-bg-icon">
             <i class="fa-solid ${iconClass}"></i>
         </div>
     </div>`;
 };
-
 // Funzione di utilità per formattare i numeri
 const formatInt = (val) => (val !== null && val !== undefined) ? val : '--';
 
-// === RENDERER ATTRAZIONI ===
+// === RENDERER ATTRAZIONI (Versione Bottone Tondo) ===
 window.attrazioniRenderer = (item) => {
     const safeId = item.POI_ID || item.id;
     const titolo = window.dbCol(item, 'Attrazioni') || 'Attrazione';
@@ -153,6 +168,10 @@ window.attrazioniRenderer = (item) => {
     const myId = (item._tempIndex !== undefined) ? item._tempIndex : 0;
     const tempo = item.Tempo_visita || '--'; 
     const diff = window.dbCol(item, 'Difficoltà Accesso') || 'Accessibile';
+    
+    // Coordinate
+    const lat = item.lat_at;
+    const lon = item.long_at;
     
     const rawLabel = window.dbCol(item, 'Label') || 'Storico';
     const label = rawLabel.toLowerCase().trim(); 
@@ -164,18 +183,32 @@ window.attrazioniRenderer = (item) => {
     else if (label === 'panorama') { themeClass = 'is-view'; iconClass = 'fa-mountain-sun'; }
     else if (label === 'storico') { themeClass = 'is-monument'; iconClass = 'fa-chess-rook'; }
 
+    // Generazione Pulsante Mappa (Solo Icona)
+    let mapBtnHtml = '';
+    if (lat && lon) {
+        // Ho cambiato l'icona in 'map' e tolto il testo
+        mapBtnHtml = `
+        <button class="btn-culture-map" onclick="event.stopPropagation(); window.open('https://www.google.com/maps/search/?api=1&query=${lat},${lon}', '_blank')">
+            <span class="material-icons">map</span>
+        </button>`;
+    }
+
     return `
-    <div class="culture-card ${themeClass} animate-fade" onclick="openModal('attrazione', ${myId})">
+    <div class="culture-card ${themeClass} animate-fade" onclick="openModal('attrazione', ${myId})" style="position: relative;">
         <div class="culture-info">
             <div class="culture-location">
                 <span class="material-icons" style="font-size:0.9rem;">place</span> ${paese}
             </div>
             <div class="culture-title">${titolo}</div>
+            
             <div class="culture-tags">
                 <span class="c-pill"><span class="material-icons" style="font-size:0.8rem;">schedule</span> ${tempo}</span>
                 <span class="c-pill">${diff}</span>
             </div>
         </div>
+        
+        ${mapBtnHtml}
+
         <div class="culture-bg-icon"><i class="fa-solid ${iconClass}"></i></div>
     </div>`;
 };

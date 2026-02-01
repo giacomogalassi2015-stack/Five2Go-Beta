@@ -77,7 +77,45 @@
 .culture-bg-icon i {
     font-size: 7rem; display: block;
 }
+ /* Bottone Mappa Tondo e Azzurro */
+.btn-culture-map {
+    /* Posizionamento a Destra */
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
+    z-index: 10; /* Sopra l'icona di sfondo */
 
+    /* Aspetto Tondo */
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    
+    /* Colore Azzurro Solido */
+    background-color: #03A9F4; /* Azzurro Material Design */
+    color: white;
+    border: 2px solid white; /* Bordo bianco per staccare dallo sfondo */
+    
+    /* Ombra per visibilità */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    
+    /* Allineamento Icona */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s;
+}
+
+.btn-culture-map .material-icons {
+    font-size: 24px; /* Dimensione icona */
+}
+
+/* Effetto al click */
+.btn-culture-map:active {
+    transform: scale(0.9);
+    background-color: #0288D1; /* Azzurro più scuro */
+}
 /* ============================================================
    VARIANTI TEMATICHE (Colori & Icone)
    ============================================================ */
