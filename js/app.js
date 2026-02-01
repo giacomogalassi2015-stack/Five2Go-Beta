@@ -713,49 +713,97 @@ function initLeafletMap(divId, gpxUrl) {
 }
 
 // --- MAPPE LISTA (Piccole) ---
+// --- MAPPE LISTA (Con Start/End Label da Database) ---
 window.initPendingMaps = function() {
-    console.log("Rendering mappe lista (Sfondo Semplice)...");
+    console.log("Rendering mappe con etichette...");
     
     window.pendingMaps.forEach(item => {
         const container = document.getElementById(item.id);
         if (container && !container._leaflet_id) { 
             
             const map = L.map(item.id, {
-                zoomControl: false,      
-                scrollWheelZoom: false,  
-                dragging: false,         
-                touchZoom: false,        
-                doubleClickZoom: false,
-                boxZoom: false,
-                tap: false,              
-                attributionControl: false,
-                keyboard: false
+                zoomControl: false, scrollWheelZoom: false, dragging: false,         
+                touchZoom: false, doubleClickZoom: false, boxZoom: false,
+                tap: false, attributionControl: false, keyboard: false
             });
 
-            // Disabilita interazioni (la mappa è statica)
             map.dragging.disable();
             map.touchZoom.disable();
             map.doubleClickZoom.disable();
             if (map.tap) map.tap.disable();
 
-            // *** MODIFICA QUI: CAMBIO SFONDO MAPPA ***
-            // Prima era: OpenTopoMap (complessa)
-            // Adesso è: CartoDB Voyager (pulita, chiara, semplice)
+            // Sfondo Semplice (CartoDB)
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                 maxZoom: 20
             }).addTo(map);
 
-            // Caricamento Percorso Rosso (GPX) - Resta uguale
+            // Caricamento GPX
             new L.GPX(item.gpx, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { 
-                    color: '#D32F2F', 
-                    opacity: 1, 
-                    weight: 4 
-                }
+                polyline_options: { color: '#D32F2F', opacity: 1, weight: 4 }
             }).on('loaded', function(e) {
-                map.fitBounds(e.target.getBounds()); 
+                const gpxLayer = e.target;
+                map.fitBounds(gpxLayer.getBounds(), { padding: [20, 20] }); 
+
+                // --- LOGICA PER ETICHETTE START/END ---
+                // Cerchiamo le coordinate dentro i layer del GPX
+                let layers = gpxLayer.getLayers();
+                let points = [];
+                
+                // Estrae i punti dalla linea del percorso
+                layers.forEach(layer => {
+                    if (layer instanceof L.Polyline) {
+                        const latlngs = layer.getLatLngs();
+                        // Gestisce gpx complessi (array di array) o semplici
+                        if (latlngs.length > 0) {
+                            if (Array.isArray(latlngs[0])) { 
+                                latlngs.forEach(segment => points = points.concat(segment));
+                            } else {
+                                points = points.concat(latlngs);
+                            }
+                        }
+                    }
+                });
+
+                if (points.length > 0) {
+                    const startPoint = points[0];
+                    const endPoint = points[points.length - 1];
+
+                    // Funzione helper per creare l'icona HTML
+                    const createLabelIcon = (text, color, isStart) => {
+                        return L.divIcon({
+                            className: 'custom-map-label',
+                            html: `
+                                <div style="display:flex; flex-direction:column; align-items:center;">
+                                    <div style="background:white; padding:2px 6px; border-radius:4px; border:1px solid #ccc; font-size:10px; font-weight:bold; color:#333; white-space:nowrap; box-shadow:0 2px 4px rgba(0,0,0,0.2); margin-bottom:2px;">
+                                        ${text}
+                                    </div>
+                                    <div style="width:10px; height:10px; background:${color}; border:2px solid white; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
+                                </div>
+                            `,
+                            iconSize: [100, 40], // Dimensione contenitore virtuale
+                            iconAnchor: [50, 38] // Punta esattamente sul pallino (regolato per centrare)
+                        });
+                    };
+
+                    // Aggiungi Marker PARTENZA (Se c'è il nome nel DB)
+                    if (item.startLabel) {
+                        L.marker(startPoint, { 
+                            icon: createLabelIcon(item.startLabel, '#27ae60', true),
+                            interactive: false 
+                        }).addTo(map);
+                    }
+
+                    // Aggiungi Marker ARRIVO (Se c'è il nome nel DB)
+                    if (item.endLabel) {
+                        L.marker(endPoint, { 
+                            icon: createLabelIcon(item.endLabel, '#c0392b', false),
+                            interactive: false
+                        }).addTo(map);
+                    }
+                }
+
             }).addTo(map);
         }
     });

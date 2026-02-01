@@ -90,7 +90,13 @@ window.sentieroRenderer = (s) => {
 
     if(s.gpx_url) {
         if(!window.pendingMaps) window.pendingMaps = [];
-        window.pendingMaps.push({ id: uniqueId, gpx: s.gpx_url });
+        window.pendingMaps.push({ 
+            id: uniqueId, 
+            gpx: s.gpx_url,
+            
+            startLabel: s.nome_partenza, 
+            endLabel: s.nome_arrivo
+        });
     }
 
     return `

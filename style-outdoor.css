@@ -19,9 +19,60 @@
 }
 
 .komoot-info-body { padding: 15px 15px 5px 15px; background: white; }
-.komoot-header-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-.komoot-title { font-family: 'Roboto', sans-serif; font-size: 1.15rem; font-weight: 700; color: #2D3436; margin: 0; }
-.komoot-badge { font-size: 0.75rem; font-weight: 800; color: white; padding: 5px 10px; border-radius: 6px; text-transform: uppercase; }
+/* Contenitore della riga Titolo + Badge */
+.komoot-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* FONDAMENTALE: Allinea in alto, non "stretcha" */
+    gap: 15px; /* Spazio minimo tra titolo e badge */
+    width: 100%;
+}
+
+/* Il Titolo */
+.komoot-title {
+    margin: 0; 
+    font-family: 'Roboto', sans-serif; 
+    font-size: 1.15rem; 
+    font-weight: 700; 
+    color: #2D3436;
+    
+    /* Permette al titolo di andare a capo senza rompere tutto */
+    flex: 1; 
+    word-wrap: break-word;
+    text-align: left;
+}
+
+/* Il Badge (Difficoltà) */
+.komoot-badge {
+    font-size: 0.75rem; 
+    font-weight: 800; 
+    color: white; 
+    padding: 5px 10px; 
+    border-radius: 6px; 
+    text-transform: uppercase;
+    
+    /* FONDAMENTALE PER IL FIX: */
+    white-space: nowrap; /* Il testo dentro non va a capo */
+    flex-shrink: 0;      /* Il badge non si schiaccia mai */
+    margin-top: 3px;     /* Allineamento ottico con la prima riga del titolo */
+}
+
+/* Stile Etichette Mappa Render */
+.trail-label-tooltip {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #222;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    white-space: nowrap;
+}
+/* Rimuove la freccetta standard del tooltip per pulizia */
+.leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before, .leaflet-tooltip-left:before, .leaflet-tooltip-right:before {
+    display: none; 
+}
 
 /* ============================================================
    CULTURE CARD (Attrazioni, Spiagge, Vini)
