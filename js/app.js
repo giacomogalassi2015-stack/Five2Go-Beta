@@ -656,6 +656,63 @@ window.apriTrenitalia = function() {
 // ============================================================
 // FUNZIONE PER ACCENDERE LE MAPPE NELLA LISTA
 // ============================================================
+
+// --- MAPPA SCHEDA TECNICA (Grande) ---
+function initLeafletMap(divId, gpxUrl) {
+    if (!document.getElementById(divId)) return;
+    
+    // Pulizia
+    if (window.currentMap) { 
+        window.currentMap.off();
+        window.currentMap.remove(); 
+        window.currentMap = null; 
+    }
+    document.getElementById('elevation-div').innerHTML = '';
+
+    // Mappa Grande: COMPLETAMENTE INTERATTIVA
+    const map = L.map(divId, {
+        zoomControl: false, // Lo aggiungiamo dopo
+        scrollWheelZoom: true,
+        dragging: true,
+        touchZoom: true,
+        doubleClickZoom: true,
+        boxZoom: true,
+        tap: true
+    });
+
+    // Aggiungo zoom in basso a destra
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    window.currentMap = map;
+    map.setView([44.118, 9.711], 13); 
+
+    L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        maxZoom: 16, attribution: 'OpenTopoMap'
+    }).addTo(map);
+
+    if (gpxUrl) {
+        try {
+            // TENTATIVO GRAFICO ALTIMETRICO (Tuo codice originale)
+            const elevationOptions = {
+                theme: "steelblue-theme",
+                detached: true,
+                elevationDiv: "#elevation-div",
+                xAttr: 'dist', yAttr: 'altitude', 
+                time: false, summary: false, followMarker: true,
+                margins: { top: 20, right: 20, bottom: 20, left: 50 },
+                polyline: { color: '#D32F2F', opacity: 0.9, weight: 5 }
+            };
+            L.control.elevation(elevationOptions).addTo(map).load(gpxUrl);
+        } catch (e) {
+            // Fallback
+            new L.GPX(gpxUrl, { async: true, polyline_options: { color: 'red' } })
+              .on('loaded', e => map.fitBounds(e.target.getBounds())).addTo(map);
+        }
+    }
+    setTimeout(() => { map.invalidateSize(); }, 300);
+}
+
+// --- MAPPE LISTA (Piccole) ---
 window.initPendingMaps = function() {
     console.log("Avvio rendering di " + window.pendingMaps.length + " mappe...");
     
@@ -663,10 +720,15 @@ window.initPendingMaps = function() {
         const container = document.getElementById(item.id);
         if (container && !container._leaflet_id) { 
             
+            // Mappa Piccola: INTERATTIVA (Zoom + Pan)
             const map = L.map(item.id, {
-                zoomControl: false,      
-                scrollWheelZoom: false,  
-                dragging: false,         
+                zoomControl: false,      // Niente bottoni ingombranti
+                scrollWheelZoom: false,  // False per non bloccare lo scroll pagina (Best Practice)
+                dragging: true,          // SI: Spostamento
+                touchZoom: true,         // SI: Zoom con due dita
+                doubleClickZoom: true,   
+                boxZoom: false,
+                tap: true,
                 attributionControl: false 
             });
 
@@ -676,16 +738,8 @@ window.initPendingMaps = function() {
 
             new L.GPX(item.gpx, {
                 async: true,
-                marker_options: {
-                    startIconUrl: null, 
-                    endIconUrl: null,   
-                    shadowUrl: null
-                },
-                polyline_options: {
-                    color: '#D32F2F', 
-                    opacity: 1,
-                    weight: 4
-                }
+                marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
+                polyline_options: { color: '#D32F2F', opacity: 1, weight: 4 }
             }).on('loaded', function(e) {
                 map.fitBounds(e.target.getBounds()); 
             }).addTo(map);

@@ -96,17 +96,16 @@ window.sentieroRenderer = (s) => {
     return `
     <div class="komoot-card animate-fade">
         
-        <div id="${uniqueId}" class="komoot-map-container" onclick="window.openTechMap('${safeObj}')"></div>
+        <div id="${uniqueId}" class="komoot-map-container"></div>
 
         <div class="komoot-info-body" style="padding-bottom:5px;">
-            <div class="komoot-header-row">
-                <h3 class="komoot-title">${nome}</h3>
+            <div class="komoot-header-row" onclick="window.openTechMap('${safeObj}')" style="cursor:pointer;">
+                <h3 class="komoot-title">${nome} <span style="font-size:0.8rem; color:#2A9D8F; font-weight:normal;">(Info ℹ️)</span></h3>
                 <span class="komoot-badge" style="background:${diffColor}">${diff}</span>
             </div>
         </div>
 
         <div class="trail-actions-grid">
-            
             <button class="btn-trail-modern btn-trail-tech" onclick="window.openTechMap('${safeObj}')">
                 <span class="material-icons" style="font-size:1.1rem;">map</span> Scheda Tecnica
             </button>
@@ -114,9 +113,7 @@ window.sentieroRenderer = (s) => {
             <button class="btn-trail-modern btn-trail-info" onclick="alert('Descrizione: ' + '${desc}')">
                 <span class="material-icons" style="font-size:1.1rem; color:#777;">info</span> Info
             </button>
-            
         </div>
-
     </div>`;
 };
 
