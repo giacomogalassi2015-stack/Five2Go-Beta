@@ -10,7 +10,7 @@
     padding: 20px 25px; margin-bottom: 25px;
 
     /* Sfondo: Gradiente profondo e scuro */
-    background: linear-gradient(145deg, #40E0D0, #0d564f) !important;
+    background: linear-gradient(145deg, #33b5a8, #0d564f) !important;
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     
     /* Bordi quasi invisibili per pulizia */

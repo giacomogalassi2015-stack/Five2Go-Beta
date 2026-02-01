@@ -714,32 +714,46 @@ function initLeafletMap(divId, gpxUrl) {
 
 // --- MAPPE LISTA (Piccole) ---
 window.initPendingMaps = function() {
-    console.log("Avvio rendering di " + window.pendingMaps.length + " mappe...");
+    console.log("Rendering mappe lista (Sfondo Semplice)...");
     
     window.pendingMaps.forEach(item => {
         const container = document.getElementById(item.id);
         if (container && !container._leaflet_id) { 
             
-            // Mappa Piccola: INTERATTIVA (Zoom + Pan)
             const map = L.map(item.id, {
-                zoomControl: false,      // Niente bottoni ingombranti
-                scrollWheelZoom: false,  // False per non bloccare lo scroll pagina (Best Practice)
-                dragging: true,          // SI: Spostamento
-                touchZoom: true,         // SI: Zoom con due dita
-                doubleClickZoom: true,   
+                zoomControl: false,      
+                scrollWheelZoom: false,  
+                dragging: false,         
+                touchZoom: false,        
+                doubleClickZoom: false,
                 boxZoom: false,
-                tap: true,
-                attributionControl: false 
+                tap: false,              
+                attributionControl: false,
+                keyboard: false
             });
 
-            L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-                maxZoom: 16
+            // Disabilita interazioni (la mappa è statica)
+            map.dragging.disable();
+            map.touchZoom.disable();
+            map.doubleClickZoom.disable();
+            if (map.tap) map.tap.disable();
+
+            // *** MODIFICA QUI: CAMBIO SFONDO MAPPA ***
+            // Prima era: OpenTopoMap (complessa)
+            // Adesso è: CartoDB Voyager (pulita, chiara, semplice)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 20
             }).addTo(map);
 
+            // Caricamento Percorso Rosso (GPX) - Resta uguale
             new L.GPX(item.gpx, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: '#D32F2F', opacity: 1, weight: 4 }
+                polyline_options: { 
+                    color: '#D32F2F', 
+                    opacity: 1, 
+                    weight: 4 
+                }
             }).on('loaded', function(e) {
                 map.fitBounds(e.target.getBounds()); 
             }).addTo(map);
