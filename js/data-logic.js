@@ -371,3 +371,49 @@ function isItalianHoliday(dateObj) {
     
     return false;
 }
+
+// IL CERVELLO DI CHICCO (Frasi pre-impostate)
+const CHICCO_BRAIN = {
+    it: {
+        default: [
+            "Ciao! Io sono Chicco. Sapevi che l'uva qui cresce guardando il mare?",
+            "Hai bisogno di una pausa? Cerca un bar qui vicino!",
+            "Non dimenticare di assaggiare lo Sciacchetrà!"
+        ],
+        vini: [
+            "Ah, il mio regno! Il bianco delle Cinque Terre va servito fresco.",
+            "Cerchi un abbinamento? Acciughe salate e vino bianco!",
+            "Lo Sciacchetrà è un vino passito: dolce, come me!"
+        ],
+        sentieri: [
+            "Uff, che fatica! Ricorda l'acqua, i sentieri sono ripidi.",
+            "Dopo la camminata ci sta un bel bicchiere, vero?",
+            "Guarda dove metti i piedi, non guardare solo il panorama!"
+        ],
+        trasporti: [
+            "Se il mare è mosso, il battello non parte. Meglio il treno!",
+            "I biglietti del bus si comprano prima di salire, mi raccomando."
+        ]
+    },
+    // Qui potresti aggiungere en, fr, etc...
+};
+
+// Funzione per far parlare Chicco
+window.askChicco = function() {
+    // 1. Capiamo in che lingua siamo
+    const lang = window.currentLang || 'it';
+    // 2. Capiamo dove siamo (Home, Vini, Sentieri...)
+    const view = window.currentViewName || 'home';
+    
+    // 3. Selezioniamo il "cassetto" di frasi giusto
+    let topic = 'default';
+    if (view === 'cibo' || view === 'Vini') topic = 'vini';
+    if (view === 'outdoor' || view === 'Sentieri') topic = 'sentieri';
+    if (view === 'servizi' || view === 'Trasporti') topic = 'trasporti';
+
+    // 4. Peschiamo una frase a caso
+    const phrases = CHICCO_BRAIN[lang][topic] || CHICCO_BRAIN[lang]['default'];
+    const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+    
+    return randomPhrase;
+};

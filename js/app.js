@@ -152,6 +152,29 @@ function renderHome() {
             </div>
         </div>
     </div>`;
+
+    const chiccoImg = "https://cdn-icons-png.flaticon.com/256/7835/7835532.png"; 
+    
+    const mascotHTML = `
+    <div id="mascot-container" style="position: fixed; bottom: 70px; right: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end;">
+        
+        <div id="chicco-bubble" class="animate-fade" style="display: none; background: white; padding: 15px; border-radius: 15px 15px 0 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-bottom: 10px; max-width: 200px; font-size: 0.9rem; color: #333; border: 2px solid #8E44AD;">
+            <span id="chicco-text">Ciao!</span>
+        </div>
+
+        <div onclick="toggleChicco()" style="cursor: pointer; transition: transform 0.2s;">
+            <img src="${chiccoImg}" style="width: 90px; height: 90px; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.3));" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+        </div>
+    </div>
+
+    <div style="position: fixed; bottom: 5px; left: 5px; z-index: 9998; background: rgba(255,255,255,0.7); padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; backdrop-filter: blur(2px);">
+        <a href="https://www.flaticon.com/free-stickers/grapes" title="grapes stickers" target="_blank" style="text-decoration: none; color: #555;">
+            Grapes stickers created by Stickers - Flaticon
+        </a>
+    </div>`;
+
+    content.insertAdjacentHTML('beforeend', mascotHTML);
+   
 }
 
 // ============================================================
@@ -894,4 +917,27 @@ window.closeModal = function() {
         window.userMarker = null;
     }
     if(originalCloseModal) originalCloseModal();
+};
+
+window.toggleChicco = function() {
+    const bubble = document.getElementById('chicco-bubble');
+    const textSpan = document.getElementById('chicco-text');
+    
+    if (!bubble || !textSpan) return;
+
+    // Se è chiuso, aprilo e fallo parlare
+    if (bubble.style.display === 'none') {
+        // 1. Chiedi al cervello cosa dire
+        const frase = window.askChicco();
+        
+        // 2. Scrivi la frase
+        textSpan.innerText = frase;
+        
+        // 3. Mostra il fumetto
+        bubble.style.display = 'block';
+    } 
+    // Se è aperto, chiudilo
+    else {
+        bubble.style.display = 'none';
+    }
 };
