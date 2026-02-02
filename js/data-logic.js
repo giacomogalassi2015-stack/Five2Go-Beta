@@ -372,48 +372,61 @@ function isItalianHoliday(dateObj) {
     return false;
 }
 
-// IL CERVELLO DI CHICCO (Frasi pre-impostate)
-const CHICCO_BRAIN = {
-    it: {
-        default: [
-            "Ciao! Io sono Chicco. Sapevi che l'uva qui cresce guardando il mare?",
-            "Hai bisogno di una pausa? Cerca un bar qui vicino!",
-            "Non dimenticare di assaggiare lo Sciacchetrà!"
-        ],
-        vini: [
-            "Ah, il mio regno! Il bianco delle Cinque Terre va servito fresco.",
-            "Cerchi un abbinamento? Acciughe salate e vino bianco!",
-            "Lo Sciacchetrà è un vino passito: dolce, come me!"
-        ],
-        sentieri: [
-            "Uff, che fatica! Ricorda l'acqua, i sentieri sono ripidi.",
-            "Dopo la camminata ci sta un bel bicchiere, vero?",
-            "Guarda dove metti i piedi, non guardare solo il panorama!"
-        ],
-        trasporti: [
-            "Se il mare è mosso, il battello non parte. Meglio il treno!",
-            "I biglietti del bus si comprano prima di salire, mi raccomando."
-        ]
-    },
-    // Qui potresti aggiungere en, fr, etc...
-};
+// --- DATA-LOGIC.JS (Aggiornamento) ---
 
-// Funzione per far parlare Chicco
-window.askChicco = function() {
-    // 1. Capiamo in che lingua siamo
-    const lang = window.currentLang || 'it';
-    // 2. Capiamo dove siamo (Home, Vini, Sentieri...)
-    const view = window.currentViewName || 'home';
-    
-    // 3. Selezioniamo il "cassetto" di frasi giusto
-    let topic = 'default';
-    if (view === 'cibo' || view === 'Vini') topic = 'vini';
-    if (view === 'outdoor' || view === 'Sentieri') topic = 'sentieri';
-    if (view === 'servizi' || view === 'Trasporti') topic = 'trasporti';
+// Consigli da dare in base al meteo o a caso
+const CHICCO_ADVENTURES = [
+    { text: "Potresti visitare il Castello Doria a Vernazza!", view: "Attrazioni", id: "vernazza" },
+    { text: "Che ne dici di un calice di vino locale?", view: "Vini", id: null },
+    { text: "Il Sentiero Azzurro ti aspetta!", view: "Sentieri", id: null },
+    { text: "Fame? Cerca una focaccia nei paraggi!", view: "Ristoranti", id: null }
+];
 
-    // 4. Peschiamo una frase a caso
-    const phrases = CHICCO_BRAIN[lang][topic] || CHICCO_BRAIN[lang]['default'];
-    const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-    
-    return randomPhrase;
+window.getChiccoRealTimeAdvice = async function() {
+    try {
+        // 1. Scarichiamo il meteo di Riomaggiore da OpenMeteo (Gratis)
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=44.098&longitude=9.738&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto");
+        const data = await response.json();
+        
+        const temp = Math.round(data.current.temperature_2m);
+        const hum = Math.round(data.current.relative_humidity_2m);
+        const wind = data.current.wind_speed_10m;
+        
+        // Simuliamo le onde in base al vento (l'API marina è complessa, questa stima basta per Chicco)
+        let onde = "calmo";
+        if (wind > 15) onde = "mosso";
+        if (wind > 25) onde = "agitato";
+
+        // 2. Costruiamo la frase del meteo
+        let weatherPhrase = `A Riomaggiore ci sono <b>${temp}°C</b> con <b>${hum}%</b> di umidità. Mare ${onde}.`;
+
+        // 3. Scegliamo un consiglio intelligente
+        let suggestion;
+        
+        if (temp > 28) {
+            suggestion = { text: "Fa caldo! Meglio un tuffo in mare o una granita.", view: "Spiagge", label: "Vedi Spiagge" };
+        } else if (wind > 20) {
+             suggestion = { text: "C'è vento, i traghetti potrebbero saltare. Meglio il treno!", view: "Trasporti", label: "Vedi Treni" };
+        } else {
+            // Consiglio a caso dalla lista
+            const randomAdv = CHICCO_ADVENTURES[Math.floor(Math.random() * CHICCO_ADVENTURES.length)];
+            suggestion = { text: randomAdv.text, view: randomAdv.view, label: `Vai a ${randomAdv.view}` };
+        }
+
+        return {
+            weather: weatherPhrase,
+            advice: suggestion.text,
+            action: suggestion.view,
+            btnLabel: suggestion.label
+        };
+
+    } catch (error) {
+        console.error("Chicco si è confuso:", error);
+        return {
+            weather: "Oggi non riesco a sentire il meteo...",
+            advice: "Comunque è sempre bello qui!",
+            action: "home",
+            btnLabel: "Torna alla Home"
+        };
+    }
 };
