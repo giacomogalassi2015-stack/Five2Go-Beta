@@ -361,6 +361,10 @@ function handlePageSwipe() {
 window.renderServicesGrid = async function() {
     console.log("🔘 Avvio renderServicesGrid (Modalità Statica)...");
     const targetEl = document.getElementById('app-content');
+    const globalFilterBtn = document.querySelector('body > #filter-toggle-btn');
+    if (globalFilterBtn) {
+        globalFilterBtn.remove();
+    }
     if (!targetEl) return;
 
     // 1. Definiamo i mezzi manualmente con le chiavi di traduzione
