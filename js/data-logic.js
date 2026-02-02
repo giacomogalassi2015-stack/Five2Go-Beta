@@ -382,35 +382,82 @@ const CHICCO_ADVENTURES = [
     { text: "Fame? Cerca una focaccia nei paraggi!", view: "Ristoranti", id: null }
 ];
 
+// --- INIZIO NUOVA LOGICA METEO PRECISA ---
+
+// 1. Tabella di traduzione dei codici meteo (WMO Codes)
+function decodeWMO(code) {
+    // Codici ufficiali OpenMeteo
+    if (code === 0) return { label: "Cielo Sereno", icon: "☀️", type: "good" };
+    if (code >= 1 && code <= 3) return { label: "Nuvoloso", icon: "☁️", type: "neutral" };
+    if (code >= 45 && code <= 48) return { label: "Nebbia", icon: "🌫️", type: "bad" };
+    if (code >= 51 && code <= 55) return { label: "Pioggerellina", icon: "🌦️", type: "bad" };
+    if (code >= 61 && code <= 67) return { label: "Pioggia", icon: "🌧️", type: "bad" };
+    if (code >= 80 && code <= 82) return { label: "Rovesci", icon: "☔", type: "bad" };
+    if (code >= 95 && code <= 99) return { label: "Temporale", icon: "⚡", type: "bad" };
+    
+    return { label: "Variabile", icon: "🌤️", type: "neutral" };
+}
+
 window.getChiccoRealTimeAdvice = async function() {
     try {
-        // 1. Scarichiamo il meteo di Riomaggiore da OpenMeteo (Gratis)
-        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=44.098&longitude=9.738&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto");
+        // 2. Chiamata API aggiornata: Richiediamo 'weather_code' per avere il meteo preciso
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=44.098&longitude=9.738&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto");
         const data = await response.json();
         
+        // Dati grezzi
         const temp = Math.round(data.current.temperature_2m);
         const hum = Math.round(data.current.relative_humidity_2m);
         const wind = data.current.wind_speed_10m;
-        
-        // Simuliamo le onde in base al vento (l'API marina è complessa, questa stima basta per Chicco)
-        let onde = "calmo";
-        if (wind > 15) onde = "mosso";
-        if (wind > 25) onde = "agitato";
+        const wmo = data.current.weather_code; // Il codice magico (0, 1, 61...)
 
-        // 2. Costruiamo la frase del meteo
-        let weatherPhrase = `A Riomaggiore ci sono <b>${temp}°C</b> con <b>${hum}%</b> di umidità. Mare ${onde}.`;
+        // Traduciamo il codice in parole (es. "Pioggia")
+        const weatherStatus = decodeWMO(wmo);
 
-        // 3. Scegliamo un consiglio intelligente
-        let suggestion;
-        
-        if (temp > 28) {
-            suggestion = { text: "Fa caldo! Meglio un tuffo in mare o una granita.", view: "Spiagge", label: "Vedi Spiagge" };
-        } else if (wind > 20) {
-             suggestion = { text: "C'è vento, i traghetti potrebbero saltare. Meglio il treno!", view: "Trasporti", label: "Vedi Treni" };
-        } else {
-            // Consiglio a caso dalla lista
-            const randomAdv = CHICCO_ADVENTURES[Math.floor(Math.random() * CHICCO_ADVENTURES.length)];
-            suggestion = { text: randomAdv.text, view: randomAdv.view, label: `Vai a ${randomAdv.view}` };
+        // Calcolo Onde (Stimato sul vento, per renderlo preciso servirebbe un'altra API marina complessa)
+        let onde = "calmo 🌊";
+        if (wind > 15) onde = "mosso 〰️";
+        if (wind > 25) onde = "agitato 🌊!";
+
+        // 3. Costruiamo la frase descrittiva
+        // Esempio: "☀️ Cielo Sereno, 22°C. Mare calmo."
+        let weatherPhrase = `${weatherStatus.icon} <b>${weatherStatus.label}</b>, ${temp}°C.<br>💧 Umidità ${hum}% - Mare ${onde}`;
+
+        // 4. Logica Consigli Intelligente
+        let suggestion = {};
+
+        // PRIORITÀ 1: PIOGGIA o BRUTTO TEMPO
+        if (weatherStatus.type === "bad") {
+            suggestion = { 
+                text: "Uhm, piove... Meglio stare al coperto! Che ne dici di un buon pranzo o una degustazione?", 
+                view: "Ristoranti", 
+                label: "Cerca Ristoranti" 
+            };
+        }
+        // PRIORITÀ 2: TROPPO CALDO
+        else if (temp > 28) {
+            suggestion = { 
+                text: "Fa caldissimo! Direi che è il momento perfetto per un tuffo.", 
+                view: "Spiagge", 
+                label: "Vedi Spiagge" 
+            };
+        }
+        // PRIORITÀ 3: VENTO FORTE
+        else if (wind > 25) {
+            suggestion = { 
+                text: "C'è molto vento, occhio ai traghetti. Meglio spostarsi in treno oggi.", 
+                view: "Trasporti", 
+                label: "Orari Treni" 
+            };
+        }
+        // PRIORITÀ 4: TEMPO PERFETTO (Sole o Nuvoloso ma non piove)
+        else {
+            // Scegliamo a caso tra attività all'aperto
+            const goodActivities = [
+                { text: "Tempo ideale per camminare! Hai visto il Sentiero Azzurro?", view: "Sentieri", label: "Vedi Sentieri" },
+                { text: "Giornata perfetta per esplorare Vernazza e il suo castello.", view: "Attrazioni", label: "Scopri Vernazza" },
+                { text: "Con questo clima, un aperitivo vista mare è d'obbligo.", view: "Vini", label: "Vini Locali" }
+            ];
+            suggestion = goodActivities[Math.floor(Math.random() * goodActivities.length)];
         }
 
         return {
@@ -421,12 +468,12 @@ window.getChiccoRealTimeAdvice = async function() {
         };
 
     } catch (error) {
-        console.error("Chicco si è confuso:", error);
+        console.error("Errore Meteo Chicco:", error);
         return {
-            weather: "Oggi non riesco a sentire il meteo...",
-            advice: "Comunque è sempre bello qui!",
+            weather: "😴 Sto riposando un attimo...",
+            advice: "Benvenuto alle Cinque Terre!",
             action: "home",
-            btnLabel: "Torna alla Home"
+            btnLabel: "Esplora"
         };
     }
 };
