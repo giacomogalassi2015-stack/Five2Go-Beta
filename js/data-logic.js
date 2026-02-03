@@ -211,7 +211,7 @@ const UI_TEXT = {
     zh: {
         loading: "加载中...", error: "错误", no_results: "无结果",
         home_title: "欢迎", nav_villages: "首页", nav_food: "美食", nav_outdoor: "户外", nav_services: "服务",
-        menu_prod: "产品", menu_rest: "餐厅", menu_trail: "步道", menu_beach: "海滩", 
+        menu_prod: "产品", menu_rest: "餐厅", menu_trail: "步道", menu_beach: "海滩", menu_wine: "葡萄酒",
         menu_trans: "交通", menu_num: "常用号码", menu_pharm: "药房", menu_map: "地图", menu_monu: "景点",
         menu_legal: "法律与隐私",
         // 名称 (New)

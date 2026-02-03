@@ -149,10 +149,13 @@ window.spiaggiaRenderer = function(item) {
     return `
     <div class="culture-card is-beach animate-fade" onclick="openModal('Spiagge', '${item.id}')" style="position: relative;">
         <div class="culture-info">
+         <div class="culture-location">
+                <span class="material-icons" style="font-size:0.9rem;">place</span> ${paesi}
+            </div>
             ${comune ? `<div class="culture-location"><span class="material-icons" style="font-size:0.9rem">place</span> ${comune}</div>` : ''}
             <h3 class="culture-title">${nome}</h3>
-            <div class="culture-tags">
-                 <span class="c-pill">${paesi}</span>
+           <div class="culture-tags">
+                <span class="c-pill"><span class="material-icons" style="font-size:0.8rem;">schedule</span> ${paesi}</span>
             </div>
         </div>
         

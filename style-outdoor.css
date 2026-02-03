@@ -99,11 +99,7 @@
     flex: 1; z-index: 5; padding-right: 10px;
 }
 
-.culture-location {
-    font-size: 0.75rem; color: #95a5a6; text-transform: uppercase;
-    font-weight: 700; letter-spacing: 0.5px;
-    margin-bottom: 5px; display: flex; align-items: center; gap: 4px;
-}
+
 
 .culture-title {
     font-family: 'Roboto Slab', serif; font-size: 1.2rem;
@@ -118,16 +114,6 @@
     display: flex; align-items: center; gap: 4px;
 }
 
-/* --- ICONE DI SFONDO (Watermark) --- */
-.culture-bg-icon {
-    position: absolute; right: -10px; bottom: -15px;
-    opacity: 0.12; transform: rotate(-15deg);
-    pointer-events: none; z-index: 0;
-}
-
-.culture-bg-icon i {
-    font-size: 7rem; display: block;
-}
  /* Bottone Mappa Tondo e Azzurro */
 .btn-culture-map {
     /* Posizionamento a Destra */
