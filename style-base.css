@@ -6,10 +6,10 @@
 
 :root {
     /* Palette */
-    --primary-col: #2A9D8F; 
+    --primary-col: #4A6B57; 
     --primary-dark: #264653; 
-    --accent-col:  #E76F51; 
-    --accent-soft: #F4A261; 
+    --accent-col:  #D06F5B; 
+    --accent-soft: #F2A68D; 
     
     --bg-body:     #FDFCF8; 
     --surface:     #FFFFFF; 

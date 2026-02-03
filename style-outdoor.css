@@ -158,31 +158,31 @@
    ============================================================ */
 
 /* 1. SPIAGGE (Blu Oceano) */
-.culture-card.is-beach { border-left-color: #008B8B; }
-.culture-card.is-beach .culture-title { color: #00695C; }
-.culture-card.is-beach .culture-bg-icon i { color: #008B8B; }
+.culture-card.is-beach { border-left-color: #F2A68D; }
+.culture-card.is-beach .culture-title { color: #F2A68D; }
+.culture-card.is-beach .culture-bg-icon i { color: #F2A68D; }
 
 /* 2. CHIESA (Viola) */
-.culture-card.is-church { border-left-color: #9B59B6; }
-.culture-card.is-church .culture-title { color: #8E44AD; }
-.culture-card.is-church .culture-bg-icon i { color: #9B59B6; }
+.culture-card.is-church { border-left-color: #EAC67A; }
+.culture-card.is-church .culture-title { color: #EAC67A; }
+.culture-card.is-church .culture-bg-icon i { color: #EAC67A; }
 
 /* 3. MONUMENTO (Terracotta) */
-.culture-card.is-monument { border-left-color: #D35400; }
-.culture-card.is-monument .culture-title { color: #C0392B; }
-.culture-card.is-monument .culture-bg-icon i { color: #D35400; }
+.culture-card.is-monument { border-left-color: #D06F5B; }
+.culture-card.is-monument .culture-title { color: #D06F5B; }
+.culture-card.is-monument .culture-bg-icon i { color: #D06F5B; }
 
 /* 4. PANORAMA (Verde Acqua) */
-.culture-card.is-view { border-left-color: #00897B; }
-.culture-card.is-view .culture-title { color: #00695C; }
-.culture-card.is-view .culture-bg-icon i { color: #00897B; }
+.culture-card.is-view { border-left-color: #4A6B57; }
+.culture-card.is-view .culture-title { color: #4A6B57; }
+.culture-card.is-view .culture-bg-icon i { color: #4A6B57; }
 
 /* --- META TAGS (Helpers) --- */
 .monument-meta { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .meta-badge { font-size: 0.7rem; padding: 6px 12px; border-radius: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-.badge-easy { background-color: #E8F5E9; color: #2E7D32; } 
-.badge-hard { background-color: #FFEBEE; color: #a12222; } 
-.badge-time { background-color: #E3F2FD; color: #1565C0; } 
+.badge-easy { background-color: #E8F5E9; color: #4A6B57; } 
+.badge-hard { background-color: #FFEBEE; color: #D06F5B; } 
+.badge-time { background-color: #E3F2FD; color: #F2A68D; } 
 
-.card-list-item.monument-mode { border-left: none; border-bottom: 3px solid #9C27B0; }
+.card-list-item.monument-mode { border-left: none; border-bottom: 3px solid #D06F5B; }
 .card-full-width { grid-column: 1 / -1 !important; width: 100% !important; aspect-ratio: unset !important; height: 120px !important; background-size: cover !important; background-position: center !important; }

@@ -1,4 +1,4 @@
-console.log("✅ 4. ui-modal.js caricato (Localizzato & Fixato)");
+console.log("✅ 5. ui-modal.js caricato (Localizzato & Fixato)");
 
 window.openModal = async function(type, payload) {
     const modal = document.createElement('div');

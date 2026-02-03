@@ -32,7 +32,7 @@
 }
 
 .rest-card-subtitle .material-icons {
-    color: #FBC02D;
+    color: #EAC67A;
     font-size: 1.1rem;
 }
 
@@ -65,12 +65,12 @@
 
 /* 1. MAPPA (Azzurro richiesto) */
 .btn-map {
-    background-color: #03A9F4; 
+    background-color: #D06F5B; 
 }
 
 /* 2. INFO (Viola - per distinguersi) */
 .btn-info {
-    background-color: #d7a831; 
+    background-color: #EAC67A; 
 }
 
 /* 3. CHIAMATE (Verde - Standard ma con il nuovo stile) */
@@ -100,7 +100,7 @@
    PRODOTTI 
    ============================================================ */
 .culture-card.is-product {
-    border-left-color: #FFB300; 
+    border-left-color: #EAC67A; 
     align-items: center;        
     padding-right: 15px;        
     

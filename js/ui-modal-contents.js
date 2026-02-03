@@ -1,4 +1,4 @@
-console.log("✅ 5. ui-modal-contents.js caricato (Localizzato & Fixato)");
+console.log("✅ 4. ui-modal-contents.js caricato (Localizzato & Fixato)");
 
 // 2. FUNZIONE PRINCIPALE (Il Generatore)
 window.getModalContent = function(type, payload, item) {
