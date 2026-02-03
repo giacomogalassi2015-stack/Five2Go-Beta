@@ -158,9 +158,9 @@
    ============================================================ */
 
 /* 1. SPIAGGE (Blu Oceano) */
-.culture-card.is-beach { border-left-color: #F2A68D; }
-.culture-card.is-beach .culture-title { color: #F2A68D; }
-.culture-card.is-beach .culture-bg-icon i { color: #F2A68D; }
+.culture-card.is-beach { border-left-color: #0288D1; }
+.culture-card.is-beach .culture-title { color: #0288D1; }
+.culture-card.is-beach .culture-bg-icon i { color: #0288D1; }
 
 /* 2. CHIESA (Viola) */
 .culture-card.is-church { border-left-color: #EAC67A; }

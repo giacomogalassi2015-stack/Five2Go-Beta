@@ -65,7 +65,7 @@
 
 /* 1. MAPPA (Azzurro richiesto) */
 .btn-map {
-    background-color: #D06F5B; 
+    background-color: #0288D1; 
 }
 
 /* 2. INFO (Viola - per distinguersi) */
@@ -100,7 +100,7 @@
    PRODOTTI 
    ============================================================ */
 .culture-card.is-product {
-    border-left-color: #EAC67A; 
+    border-left-color: #D06F5B; 
     align-items: center;        
     padding-right: 15px;        
     
@@ -111,7 +111,7 @@
 }
 
 .culture-card.is-product .culture-title {
-    color: #E65100; margin-bottom: 6px; font-size: 1.15rem; 
+    color: #D06F5B; margin-bottom: 6px; font-size: 1.15rem; 
 }
 
 .product-subtitle {
@@ -135,14 +135,14 @@
 /* ============================================================
    VINI (Color Coding)
    ============================================================ */
-.culture-card.is-wine { border-left-color: #9B2335; }
-.culture-card.is-wine .culture-title { color: #801C2C; }
-.culture-card.is-wine .culture-bg-icon i { color: #9B2335; }
+.culture-card.is-wine { border-left-color: #D06F5B; }
+.culture-card.is-wine .culture-title { color: #D06F5B; }
+.culture-card.is-wine .culture-bg-icon i { color: #D06F5B; }
 
 /* Bianco (Oro) */
-.culture-card.is-wine-white { border-left-color: #F4D03F; }
-.culture-card.is-wine-white .culture-title { color: #B7950B; }
-.culture-card.is-wine-white .culture-bg-icon i { color: #F4D03F; }
+.culture-card.is-wine-white { border-left-color: #EAC67A; }
+.culture-card.is-wine-white .culture-title { color: #EAC67A; }
+.culture-card.is-wine-white .culture-bg-icon i { color: #EAC67A; }
 
 /* Rosato/Orange (Ambra) */
 .culture-card.is-wine-orange { border-left-color: #E67E22; }
@@ -174,8 +174,8 @@
 }
 
 /* Colori Vini */
-.is-wine-red .culture-bg-icon { color: #800020; }    /* Rosso */
-.is-wine-white .culture-bg-icon { color: #E6C665; }  /* Oro paglierino */
+.is-wine-red .culture-bg-icon { color: #D06F5B; }    /* Rosso */
+.is-wine-white .culture-bg-icon { color: #EAC67A; }  /* Oro paglierino */
 .is-wine-orange .culture-bg-icon { color: #E67E22; } /* Rosato */
 
 /* Effetto Hover */
