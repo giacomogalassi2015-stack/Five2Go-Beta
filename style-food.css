@@ -1,6 +1,9 @@
 /* ============================================================
    SCHEDA RISTORANTE (LUXURY GLASS DESIGN - ELEGANT MATTE)
    ============================================================ */
+/* ============================================================
+   SCHEDA RISTORANTE (Ottimizzata: Bianco "Ceramica")
+   ============================================================ */
 .restaurant-glass-card {
     cursor: default;
     display: flex; flex-direction: column; 
@@ -9,110 +12,98 @@
     position: relative; overflow: hidden;
     padding: 20px 25px; margin-bottom: 25px;
 
-    /* Sfondo: Gradiente profondo e scuro */
-    background: linear-gradient(145deg, #33b5a8, #0d564f) !important;
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    /* NUOVO SFONDO: Bianco pulito, luminoso, non grigio */
+    background: rgba(255, 255, 255, 0.92) !important;
     
-    /* Bordi quasi invisibili per pulizia */
-    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-    border-left: 1px solid rgba(255, 255, 255, 0.05) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+    /* Effetto sfocatura dietro */
+    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    
+    /* Bordo sottile e luminoso */
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    
+    /* Ombra più morbida ed elegante per dare profondità */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     
     border-radius: 32px;
-
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.restaurant-glass-card:active {
-    transform: scale(0.97);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
 }
 
 .rest-card-title {
-    margin: 0 0 8px 0; font-size: 1.6rem; color: #ffffff;
+    margin: 0 0 8px 0; font-size: 1.6rem; color: #2c3e50; /* Grigio scuro elegante */
     font-family: 'Roboto Slab', serif; font-weight: 700;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.3); letter-spacing: 0.5px;
+    letter-spacing: 0.5px;
 }
 
 .rest-card-subtitle {
-    margin: 0; color: #e0e0e0; font-size: 1rem; 
+    margin: 0; color: #555; font-size: 1rem; 
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    font-weight: 500; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;
+    font-weight: 500; text-transform: uppercase; letter-spacing: 1px;
 }
 
 .rest-card-subtitle .material-icons {
-    color: #FFD700; font-size: 1.1rem;
-    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.4));
+    color: #FBC02D; /* Oro più scuro per contrasto su bianco */
+    font-size: 1.1rem;
 }
-
-.rest-card-actions {
-    display: flex; justify-content: center; gap: 25px; 
-    width: 100%; margin-top: 40px; 
-}
-
-/* --- NUOVI BOTTONI --- */
-.rest-card-actions .action-btn {
-    width: 55px; height: 55px; border-radius: 50%;
-    
-    /* 1. Colore: Un tono su tono scuro, non un gradiente forte. 
-       Molto più piatto e opaco. */
-    background: #1d968a; 
-    
-    /* 2. Ombre: */
-    box-shadow: 
-        0 8px 20px rgba(0,0,0,0.4),       /* Ombra esterna morbida */
-        inset 0 1px 1px rgba(255,255,255,0.1); /* Luce di taglio sottilissima in alto */
-
-    border: 1px solid rgba(0,0,0,0.2); /* Bordo scuro per definizione */
-    
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.rest-card-actions .action-btn:active {
-    background:#12625a;
-    transform: translateY(2px);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
-.rest-card-actions .action-btn .material-icons { font-size: 1.6rem; }
-
-/* Colori Pulsanti */
-.btn-call .material-icons { color: #4CAF50; } 
-.btn-map .material-icons  { color: #29B6F6; } 
-.btn-info .material-icons { color: #ffffff; font-weight: 300; }
 
 /* ============================================================
-   MODALE RISTORANTE DETTAGLIO
+   PULSANTI (Nuovo Standard: Tondi con Bordo Bianco)
    ============================================================ */
-.rest-modal-wrapper {
-    padding: 10px 5px; color: #333; text-align: center;
+.rest-card-actions {
+    display: flex; justify-content: center; gap: 20px; 
+    width: 100%; margin-top: 35px; 
 }
 
-.rest-header h2 {
-    font-family: 'Playfair Display', 'Roboto Slab', serif;
-    font-size: 2rem; font-weight: 700; color: #1a1a1a;
-    margin: 0 0 10px 0; letter-spacing: -0.5px; line-height: 1.1;
+/* Stile Base Unificato (Come .btn-culture-map) */
+.rest-card-actions .action-btn {
+    width: 55px; height: 55px; /* Dimensione comoda */
+    border-radius: 50%; /* Perfettamente tondi */
+    
+    display: flex; justify-content: center; align-items: center;
+    color: white;
+    
+    /* IL BORDO BIANCO (Chiave del design richiesto) */
+    border: 3px solid white; 
+    
+    /* Ombra per staccare */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Rimbalzo leggero */
 }
 
-.rest-location {
-    display: flex; justify-content: center; align-items: center; gap: 5px;
-    font-size: 0.85rem; color: #888; text-transform: uppercase;
-    letter-spacing: 2px; font-weight: 600;
+/* --- COLORI SPECIFICI --- */
+
+/* 1. MAPPA (Azzurro richiesto) */
+.btn-map {
+    background-color: #03A9F4; 
 }
 
+/* 2. INFO (Viola - per distinguersi) */
+.btn-info {
+    background-color: #d7a831; 
+}
+
+/* 3. CHIAMATE (Verde - Standard ma con il nuovo stile) */
+.btn-call {
+    background-color: #2ECC71;
+}
+
+/* --- EFFETTO PRESSIONE (Per tutti) --- */
+.rest-card-actions .action-btn:active {
+    transform: scale(0.85); /* Si rimpicciolisce visibilmente */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.rest-card-actions .action-btn .material-icons { 
+    font-size: 1.5rem; 
+}
+
+/* Modale invariata */
+.rest-modal-wrapper { padding: 10px 5px; color: #333; text-align: center; }
+.rest-header h2 { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: #1a1a1a; margin: 0 0 10px 0; }
+.rest-location { display: flex; justify-content: center; align-items: center; gap: 5px; font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
 .rest-location .material-icons { font-size: 1rem; color: #d4af37; }
-
-.rest-divider {
-    width: 40px; height: 3px; background-color: #d4af37;
-    margin: 20px auto; border-radius: 2px;
-}
-
-.rest-body {
-    font-family: 'Roboto', sans-serif; font-size: 1.1rem; line-height: 1.6;      
-    color: #555; text-align: center;     
-    padding: 0 15px; margin-bottom: 20px;
-}
+.rest-divider { width: 40px; height: 3px; background-color: #d4af37; margin: 20px auto; border-radius: 2px; }
+.rest-body { font-family: 'Roboto', sans-serif; font-size: 1.1rem; line-height: 1.6; color: #555; text-align: center; padding: 0 15px; margin-bottom: 20px; }
 
 /* ============================================================
    PRODOTTI (Compact Style)
