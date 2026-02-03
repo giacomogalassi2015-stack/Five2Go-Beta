@@ -372,108 +372,99 @@ function isItalianHoliday(dateObj) {
     return false;
 }
 
-// --- DATA-LOGIC.JS (Aggiornamento) ---
+// --- DATA-LOGIC.JS: VERSIONE SOLO TRIVIA + METEO DISPLAY ---
 
-// Consigli da dare in base al meteo o a caso
-const CHICCO_ADVENTURES = [
-    { text: "Potresti visitare il Castello Doria a Vernazza!", view: "Attrazioni", id: "vernazza" },
-    { text: "Che ne dici di un calice di vino locale?", view: "Vini", id: null },
-    { text: "Il Sentiero Azzurro ti aspetta!", view: "Sentieri", id: null },
-    { text: "Fame? Cerca una focaccia nei paraggi!", view: "Ristoranti", id: null }
+// 1. CURIOSITÀ (TRIVIA)
+const CHICCO_TRIVIA = [
+    { text: "Lo sapevi? Lo Sciacchetrà è un vino dolce e prezioso, prodotto con uve passite al sole.", action: "Vini", label: "Scopri i Vini" },
+    { text: "Sai perché il vino qui è eroico? Perché coltiviamo l'uva su pendenze impossibili!", action: "Vini", label: "Vini Eroici" },
+    { text: "I limoni delle Cinque Terre sono enormi e profumatissimi. Hai provato i prodotti locali?", action: "Prodotti", label: "Prodotti Tipici" },
+    { text: "Pesto Genovese: Basilico, pinoli, aglio, parmigiano, pecorino, olio e sale.", action: "Ristoranti", label: "Pasta al Pesto" },
+    { text: "La Torta Monterossina è un dolce segreto con cioccolato, marmellata e crema. Una bomba!", action: "Ristoranti", label: "Pasticcerie" },
+    { text: "Hai mai visto il trenino tra le vigne? Spesso è l'unico modo per trasportare l'uva da lassù.", action: "Vini", label: "Vigneti" },
+    { text: "A Monterosso c'è un Gigante di pietra alto 14 metri che sorregge una terrazza sul mare.", action: "Attrazioni", label: "Il Gigante" },
+    { text: "Corniglia è l'unico borgo che non tocca il mare. Per arrivarci ci sono 382 gradini o il bus!", action: "Trasporti", label: "Bus Info" },
+    { text: "Se mettessimo in fila tutti i muretti a secco delle Cinque Terre, supereremmo la Muraglia Cinese!", action: "Outdoor", label: "I Muretti" },
+    { text: "Le Cinque Terre sono Patrimonio UNESCO dal 1997. Trattale con cura!", action: "Outdoor", label: "Regole Parco" },
+    { text: "Eugenio Montale, premio Nobel, passava le estati qui e dedicò poesie a Monterosso.", action: "Attrazioni", label: "Cultura" },
+    { text: "Il film Disney 'Luca' è ispirato proprio ai borghi delle Cinque Terre. 'Silenzio Bruno!'", action: "Attrazioni", label: "Luoghi di Luca" },
+    { text: "Manarola ospita il Presepe Luminoso più grande del mondo, ma si accende solo a Dicembre!", action: "Attrazioni", label: "Manarola" },
+    { text: "Il dialetto locale cambia leggermente da un paese all'altro, anche se sono vicinissimi!", action: "Servizi", label: "Curiosità" },
+    { text: "Psst! Non servono scarponi da Everest, ma le infradito sui sentieri sono vietate (e pericolose).", action: "Outdoor", label: "Info Scarpe" },
+    { text: "Il Falco Pellegrino nidifica sulle nostre scogliere. Alza gli occhi ogni tanto!", action: "Outdoor", label: "Fauna" },
+    { text: "Sotto il mare c'è un mondo: l'Area Marina Protetta è piena di pesci e gorgonie.", action: "Spiagge", label: "Snorkeling" },
+    { text: "Vuoi evitare la folla? I sentieri alti (verso i Santuari) sono spesso deserti e bellissimi.", action: "Sentieri", label: "Sentieri Alti" },
+    { text: "Il sentiero da Corniglia a Vernazza è considerato uno dei più panoramici in assoluto.", action: "Sentieri", label: "Vedi Mappa" },
+    { text: "Camminare tra i vigneti ti fa capire quanto è duro lavorare questa terra. Rispetto!", action: "Vini", label: "Vigne" },
+    { text: "Il treno è il tuo migliore amico qui. L'auto? Un incubo di parcheggi!", action: "Trasporti", label: "Orari Treni" },
+    { text: "Ricorda di convalidare il biglietto del treno se è cartaceo, o rischi una multa salata!", action: "Trasporti", label: "Info Biglietti" },
+    { text: "Il traghetto è il modo migliore per vedere la costa dal mare. Una prospettiva unica.", action: "Trasporti", label: "Traghetti" },
+    { text: "In estate fa caldo! Porta sempre una borraccia e un cappello se cammini ed evita le ore più calde.", action: "Outdoor", label: "Consigli Estate" },
+    { text: "Se c'è allerta meteo (Arancione/Rossa), i sentieri vengono chiusi per sicurezza.", action: "Outdoor", label: "Meteo Sentieri" },
+    { text: "Goditi il momento. Metti via il telefono per 5 minuti e ascolta il rumore del mare.", action: "Home", label: "Relax" }
 ];
 
-// --- INIZIO NUOVA LOGICA METEO PRECISA ---
-
-// 1. Tabella di traduzione dei codici meteo (WMO Codes)
-function decodeWMO(code) {
-    // Codici ufficiali OpenMeteo
-    if (code === 0) return { label: "Cielo Sereno", icon: "☀️", type: "good" };
-    if (code >= 1 && code <= 3) return { label: "Nuvoloso", icon: "☁️", type: "neutral" };
-    if (code >= 45 && code <= 48) return { label: "Nebbia", icon: "🌫️", type: "bad" };
-    if (code >= 51 && code <= 55) return { label: "Pioggerellina", icon: "🌦️", type: "bad" };
-    if (code >= 61 && code <= 67) return { label: "Pioggia", icon: "🌧️", type: "bad" };
-    if (code >= 80 && code <= 82) return { label: "Rovesci", icon: "☔", type: "bad" };
-    if (code >= 95 && code <= 99) return { label: "Temporale", icon: "⚡", type: "bad" };
-    
-    return { label: "Variabile", icon: "🌤️", type: "neutral" };
-}
-
+// 2. FUNZIONE PRINCIPALE
 window.getChiccoRealTimeAdvice = async function() {
     try {
-        // 2. Chiamata API aggiornata: Richiediamo 'weather_code' per avere il meteo preciso
-        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=44.098&longitude=9.738&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto");
+        // A. ONBOARDING (Una volta nella vita)
+        if (!localStorage.getItem('chicco_intro_done')) {
+            localStorage.setItem('chicco_intro_done', 'true');
+            return {
+                type: 'intro',
+                weather: "👋 Piacere, sono Chicco!",
+                advice: "Sono il tuo assistente locale. Cliccami quando vuoi per meteo, orari e consigli segreti!",
+                action: "home", 
+                btnLabel: "Capito!"
+            };
+        }
+
+        // B. DATI ESTERNI (Meteo)
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=44.098&longitude=9.738&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=sunset&timezone=auto");
         const data = await response.json();
         
-        // Dati grezzi
+        // --- CALCOLO DATI METEO (Solo per visualizzazione) ---
         const temp = Math.round(data.current.temperature_2m);
         const hum = Math.round(data.current.relative_humidity_2m);
         const wind = data.current.wind_speed_10m;
-        const wmo = data.current.weather_code; // Il codice magico (0, 1, 61...)
+        const wmo = data.current.weather_code;
+        
+        // Icona e Stato Mare
+        let seaIcon = "🌊"; let seaStatus = "calmo";
+        if (wind > 15) { seaIcon = "〰️"; seaStatus = "mosso"; }
+        if (wind > 25) { seaIcon = "🌊"; seaStatus = "agitato!"; }
 
-        // Traduciamo il codice in parole (es. "Pioggia")
-        const weatherStatus = decodeWMO(wmo);
+        // Icona e Descrizione Cielo
+        let icon = "🌤️"; let weatherDesc = "Variabile";
+        if (wmo === 0) { icon = "☀️"; weatherDesc = "Cielo Sereno"; }
+        else if (wmo >= 1 && wmo <= 3) { icon = "☁️"; weatherDesc = "Nuvoloso"; }
+        else if (wmo >= 45 && wmo <= 48) { icon = "🌫️"; weatherDesc = "Nebbia"; }
+        else if (wmo >= 51 && wmo <= 67) { icon = "🌧️"; weatherDesc = "Pioggia"; }
+        else if (wmo >= 95) { icon = "⚡"; weatherDesc = "Temporale"; }
 
-        // Calcolo Onde (Stimato sul vento, per renderlo preciso servirebbe un'altra API marina complessa)
-        let onde = "calmo 🌊";
-        if (wind > 15) onde = "mosso 〰️";
-        if (wind > 25) onde = "agitato 🌊!";
+        // COSTRUZIONE FRASE METEO (La parte fissa in alto)
+        const weatherPhrase = `${icon} <b>${weatherDesc}</b>, ${temp}°C.<br>💧 Umidità ${hum}%<br>${seaIcon} Mare ${seaStatus}`;
 
-        // 3. Costruiamo la frase descrittiva
-        // Esempio: "☀️ Cielo Sereno, 22°C. Mare calmo."
-        let weatherPhrase = `${weatherStatus.icon} <b>${weatherStatus.label}</b>, ${temp}°C.<br>💧 Umidità ${hum}% - Mare ${onde}`;
+        // ==========================================================
+        // LOGICA
+        // ==========================================================
 
-        // 4. Logica Consigli Intelligente
-        let suggestion = {};
-
-        // PRIORITÀ 1: PIOGGIA o BRUTTO TEMPO
-        if (weatherStatus.type === "bad") {
-            suggestion = { 
-                text: "Uhm, piove... Meglio stare al coperto! Che ne dici di un buon pranzo o una degustazione?", 
-                view: "Ristoranti", 
-                label: "Cerca Ristoranti" 
-            };
-        }
-        // PRIORITÀ 2: TROPPO CALDO
-        else if (temp > 28) {
-            suggestion = { 
-                text: "Fa caldissimo! Direi che è il momento perfetto per un tuffo.", 
-                view: "Spiagge", 
-                label: "Vedi Spiagge" 
-            };
-        }
-        // PRIORITÀ 3: VENTO FORTE
-        else if (wind > 25) {
-            suggestion = { 
-                text: "C'è molto vento, occhio ai traghetti. Meglio spostarsi in treno oggi.", 
-                view: "Trasporti", 
-                label: "Orari Treni" 
-            };
-        }
-        // PRIORITÀ 4: TEMPO PERFETTO (Sole o Nuvoloso ma non piove)
-        else {
-            // Scegliamo a caso tra attività all'aperto
-            const goodActivities = [
-                { text: "Tempo ideale per camminare! Hai visto il Sentiero Azzurro?", view: "Sentieri", label: "Vedi Sentieri" },
-                { text: "Giornata perfetta per esplorare Vernazza e il suo castello.", view: "Attrazioni", label: "Scopri Vernazza" },
-                { text: "Con questo clima, un aperitivo vista mare è d'obbligo.", view: "Vini", label: "Vini Locali" }
-            ];
-            suggestion = goodActivities[Math.floor(Math.random() * goodActivities.length)];
-        }
+        const randomTrivia = CHICCO_TRIVIA[Math.floor(Math.random() * CHICCO_TRIVIA.length)];
 
         return {
-            weather: weatherPhrase,
-            advice: suggestion.text,
-            action: suggestion.view,
-            btnLabel: suggestion.label
+            weather: weatherPhrase,      // Il meteo aggiornato
+            advice: randomTrivia.text,   // La curiosità casuale
+            action: randomTrivia.action, // Il link
+            btnLabel: randomTrivia.label // Il testo del bottone
         };
 
     } catch (error) {
-        console.error("Errore Meteo Chicco:", error);
-        return {
-            weather: "😴 Sto riposando un attimo...",
-            advice: "Benvenuto alle Cinque Terre!",
-            action: "home",
-            btnLabel: "Esplora"
+        console.error("Chicco Error:", error);
+        return { 
+            weather: "😴 Sto riposando...", 
+            advice: "Benvenuto alle Cinque Terre! Esplora i borghi con me.", 
+            action: "home", 
+            btnLabel: "Esplora" 
         };
     }
 };

@@ -141,7 +141,28 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; 
     cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
-.btn-call { background: linear-gradient(135deg, #4A6B57 0%, #2E7D32 100%); }
+/* Stile specifico per il bottone chiamata (Verde + Bordo Bianco) */
+.btn-call {
+    /* 1. Il tuo colore verde */
+    background: linear-gradient(135deg, #4A6B57 0%, #2E7D32 100%);
+
+    /* 2. Lo stile "Cerchio con Bordo Bianco" che volevi */
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;      /* Tondo */
+    border: 3px solid white; /* Bordo bianco spesso */
+    
+    /* 3. Allineamento icona e Ombra */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    
+    /* Per evitare che si schiacci se è in una lista */
+    flex-shrink: 0; 
+}
 .action-btn .material-icons { color: #fff; font-size: 1.5rem; }
 
 /* Header Liste Semplici */

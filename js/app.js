@@ -958,30 +958,36 @@ window.toggleChicco = async function() {
     }
 };
 
-// Funzione helper per navigare dal fumetto
-window.viaggiaConChicco = function(viewName) {
-    // 1. Chiudi il fumetto
-    document.getElementById('chicco-bubble').style.display = 'none';
+// --- APP.JS: GESTIONE CLICK E ONBOARDING ---
+
+// 1. Funzione che gestisce il click sul bottone del fumetto
+window.viaggiaConChicco = function(viewName, targetId) {
+    // Chiudi il fumetto
+    const bubble = document.getElementById('chicco-bubble');
+    if(bubble) bubble.style.display = 'none';
     
-    // 2. Se è una vista principale (home, cibo, outdoor...)
+    // CASO SPECIALE: DEEP LINKING (Apre direttamente una scheda specifica)
+    // Se la logica ci ha passato un ID specifico (es. per il tramonto)
+    if (targetId && targetId !== 'undefined') {
+        // Prima andiamo alla vista giusta
+        window.switchView(getViewCategory(viewName)); 
+        // Poi apriamo la modale (piccolo ritardo per caricare il DOM)
+        setTimeout(() => {
+            window.openModal(viewName, targetId);
+        }, 100);
+        return;
+    }
+
+    // CASO NORMALE: Navigazione tra pagine
     if (['home', 'cibo', 'outdoor', 'servizi'].includes(viewName)) {
-        // Trova il bottone nella navbar e cliccalo (così si aggiorna anche la grafica del menu)
         const navBtn = document.querySelector(`.nav-item[onclick*="${viewName}"]`);
         if (navBtn) navBtn.click();
         else window.switchView(viewName);
     } 
-    // 3. Se è una sottocategoria (Vini, Spiagge, Sentieri...)
     else {
-        // Bisogna capire in che sezione principale sta quella tabella
-        let parentView = 'home';
-        if (viewName === 'Ristoranti' || viewName === 'Vini' || viewName === 'Prodotti') parentView = 'cibo';
-        if (viewName === 'Sentieri' || viewName === 'Spiagge' || viewName === 'Attrazioni') parentView = 'outdoor';
-        if (viewName === 'Trasporti' || viewName === 'Farmacie') parentView = 'servizi';
-
-        // Cambia vista principale
+        // Navigazione sottocategorie (Vini, Sentieri...)
+        let parentView = getViewCategory(viewName);
         window.switchView(parentView);
-        
-        // Aspetta un attimo che carichi il menu e poi carica la tabella specifica
         setTimeout(() => {
             const subBtn = document.querySelector(`.btn-3d[onclick*="${viewName}"]`);
             if (subBtn) subBtn.click();
@@ -989,3 +995,23 @@ window.viaggiaConChicco = function(viewName) {
         }, 300);
     }
 };
+
+// Helper per capire la categoria genitore
+function getViewCategory(subView) {
+    if (['Ristoranti', 'Vini', 'Prodotti'].includes(subView)) return 'cibo';
+    if (['Sentieri', 'Spiagge', 'Attrazioni'].includes(subView)) return 'outdoor';
+    if (['Trasporti', 'Farmacie'].includes(subView)) return 'servizi';
+    return 'home';
+}
+
+// 2. ONBOARDING AUTOMATICO
+// Aggiungi questa chiamata alla fine del tuo 'DOMContentLoaded' o 'window.onload'
+// Controlla se è la prima visita e apre Chicco da solo
+setTimeout(async () => {
+    // Se non è mai stato aperto, simuliamo il click
+    if (!localStorage.getItem('chicco_intro_done')) {
+        await window.toggleChicco(); 
+        // Nota: Il flag 'chicco_intro_done' viene settato dentro getChiccoRealTimeAdvice
+        // quindi la prossima volta non si aprirà da solo.
+    }
+}, 3000); // Si apre dopo 3 secondi che l'utente guarda la home
