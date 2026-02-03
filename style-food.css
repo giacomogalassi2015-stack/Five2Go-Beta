@@ -153,3 +153,34 @@
 .culture-card.is-wine-red { border-left-color: #9B2335; }
 .culture-card.is-wine-red .culture-title { color: #801C2C; }
 .culture-card.is-wine-red .culture-bg-icon i { color: #9B2335; }
+
+/* --- ICONA SFONDO PHOSPHOR --- */
+.culture-bg-icon {
+    position: absolute;
+    right: -10px;
+    bottom: -5px;      /* ALZATA: Cosi si vede lo stelo del calice! */
+    z-index: 0;
+    
+    opacity: 0.12;     /* Trasparenza delicata */
+    transform: rotate(-10deg);
+    pointer-events: none;
+}
+
+/* Stilizziamo l'icona Phosphor */
+.culture-bg-icon i {
+    font-size: 7.5rem;   /* Molto grande */
+    line-height: 1;
+    display: block;
+}
+
+/* Colori Vini */
+.is-wine-red .culture-bg-icon { color: #800020; }    /* Rosso */
+.is-wine-white .culture-bg-icon { color: #E6C665; }  /* Oro paglierino */
+.is-wine-orange .culture-bg-icon { color: #E67E22; } /* Rosato */
+
+/* Effetto Hover */
+.culture-card:hover .culture-bg-icon {
+    opacity: 0.20;
+    transform: rotate(0deg) scale(1.05);
+    transition: all 0.3s ease;
+}

@@ -50,7 +50,7 @@ window.prodottoRenderer = (p) => {
     </div>`;
 };
 
-// === RENDERER VINO ===
+// === RENDERER VINO (Usa Phosphor Icons) ===
 window.vinoRenderer = function(item) {
     const safeId = item.id || item.ID; 
     const nome = item.Nome || 'Vino';
@@ -70,8 +70,9 @@ window.vinoRenderer = function(item) {
                  <span class="c-pill" style="text-transform: capitalize;">${item.Tipo || 'Vino'}</span>
             </div>
         </div>
+        
         <div class="culture-bg-icon">
-            <i class="fa-solid fa-wine-bottle"></i>
+            <i class="ph-fill ph-wine"></i>
         </div>
     </div>`;
 };

@@ -1,3 +1,5 @@
+console.log("✅ 4. ui-modal.js caricato (Localizzato & Fixato)");
+
 window.openModal = async function(type, payload) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay animate-fade';

@@ -1,4 +1,4 @@
-console.log("✅ 3. app.js caricato");
+console.log("✅ 6. app.js caricato");
 
 const content = document.getElementById('app-content');
 const viewTitle = document.getElementById('view-title');
