@@ -133,10 +133,6 @@
 @keyframes spin { 100% { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; color: #fff; }
 
-.diff-easy { background: linear-gradient(135deg, #2ecc71, #27ae60); } 
-.diff-medium { background: linear-gradient(135deg, #f1c40f, #f39c12); } 
-.diff-hard { background: linear-gradient(135deg, #e74c3c, #c0392b); } 
-
 .stat-bubble {
     background: #F8F9FA; border-radius: 16px; padding: 10px 15px; 
     flex: 1; text-align: center; border: 1px solid #eee;
@@ -182,18 +178,7 @@
     padding: 4px 10px; border-radius: 8px; font-size: 0.7rem;
     font-weight: 700; display: flex; align-items: center; gap: 4px;
 }
-.pill-time { background: #F3E5F5; color: #8E2DE2; } 
-.pill-diff { background: #f0f0f0; color: #555; }
 
-.culture-icon-deco {
-    width: 60px; display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, rgba(142, 45, 226, 0.1), rgba(74, 0, 224, 0.05));
-    border-left: 1px solid rgba(0,0,0,0.03);
-}
-.culture-icon-deco .material-icons {
-    font-size: 1.8rem; background: -webkit-linear-gradient(#8E2DE2, #4A00E0);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
 
 /* ============================================================
    NAVBAR 3D & PULSANTI
