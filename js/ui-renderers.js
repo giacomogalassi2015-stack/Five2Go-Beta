@@ -77,20 +77,22 @@ window.vinoRenderer = function(item) {
     </div>`;
 };
 
-// === RENDERER SENTIERO ===
+// === RENDERER SENTIERO (Versione Pulita: Passa l'oggetto intero) ===
 window.sentieroRenderer = (s) => {
     const uniqueId = 'k-map-' + (s.poi_id || Math.floor(Math.random() * 99999));
-    const safeObj = encodeURIComponent(JSON.stringify(s)).replace(/'/g, "%27");
-    const nome = s.nome || 'Sentiero';
-    const desc = s.descrizione ? decodeURIComponent(s.descrizione).replace(/'/g, "\\'") : '';
+    const nome = s.nome || s.Titolo || 'Sentiero';
     
- 
+    // CREAZIONE OGGETTO SICURO
+    // Prendiamo tutto l'oggetto 's' (che contiene Descrizione in JSON), 
+    // lo trasformiamo in stringa e proteggiamo gli apici.
+    const safeObj = encodeURIComponent(JSON.stringify(s)).replace(/'/g, "%27");
+
+    // Gestione Mappe (Invariata)
     if(s.gpx_url) {
         if(!window.pendingMaps) window.pendingMaps = [];
         window.pendingMaps.push({ 
             id: uniqueId, 
-            gpx: s.gpx_url,
-            
+            gpx: s.gpx_url, 
             startLabel: s.nome_partenza, 
             endLabel: s.nome_arrivo
         });
@@ -113,7 +115,7 @@ window.sentieroRenderer = (s) => {
                 <span class="material-icons" style="font-size:1.1rem;">map</span> Scheda Tecnica
             </button>
 
-            <button class="btn-trail-modern btn-trail-info" onclick="alert('Descrizione: ' + '${desc}')">
+            <button class="btn-trail-modern btn-trail-info" onclick="window.openModal('sentieroInfo', '${safeObj}')">
                 <span class="material-icons" style="font-size:1.1rem; color:#777;">info</span> Info
             </button>
             

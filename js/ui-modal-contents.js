@@ -149,6 +149,40 @@ window.getModalContent = function(type, payload, item) {
         </div>`;
     }
 
+    // --- INFO SENTIERI (Versione Standardizzata - Come Ristoranti/Prodotti) ---
+    else if (type === 'sentieroInfo') {
+        
+        // 1. Decodifica standard (uguale a Ristorante)
+        let item = {};
+        try {
+            item = JSON.parse(decodeURIComponent(payload));
+        } catch(e) {
+            return { html: '<p>Errore lettura dati.</p>', class: 'modal-content' };
+        }
+
+        // 2. Usa window.dbCol come fanno tutti gli altri (Magia!)
+        // Cerca 'Descrizione' (maiuscolo) o 'descrizione' (minuscolo)
+        const desc = window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione');
+        const nome = item.nome || item.Titolo || 'Info Sentiero';
+
+        // 3. Render HTML pulito
+        contentHtml = `
+            <div style="padding: 25px;">
+                <h2 style="font-family:'Roboto Slab'; color:#2E7D32; margin-bottom: 20px;">${nome}</h2>
+                
+                <div class="info-content-text" style="line-height:1.6; color:#444; font-size: 1.05rem;">
+                    ${desc || 'Nessuna informazione disponibile.'}
+                </div>
+
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+                    <button class="btn-trail-modern" onclick="this.closest('.modal-overlay').remove()" style="width: auto; padding: 10px 30px;">
+                        Chiudi
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
     // --- MAPPA GPX ---
     else if (type === 'map') {
         const gpxUrl = payload;
