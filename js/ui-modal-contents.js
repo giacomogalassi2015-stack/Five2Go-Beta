@@ -161,18 +161,55 @@ window.getModalContent = function(type, payload, item) {
         `;
     }
 
-    // --- SPIAGGE ---
+// --- SPIAGGE ---
     else if (type === 'Spiagge') {
-        if (!item) { modal.remove(); return; }
-        const nome = item.Nome || 'Spiaggia';
-        const desc = window.dbCol(item, 'Descrizione') || '';
-        const tipo = item.Tipo || '';
+        
+        if (!item) {
+            return { 
+                html: `<div style="padding:30px; text-align:center;"><h3>${window.t('error_title') || 'Dati non trovati'}</h3></div>`, 
+                class: 'modal-content' 
+            };
+        }
+
+        // Funzione helper interna per forzare la traduzione nella modale
+        const getTranslatedField = (data, fieldName) => {
+            const lang = localStorage.getItem('language') || window.currentLanguage || 'it';
+            
+            // 1. Prova prima la funzione nativa del tuo sistema (se esiste)
+            if (window.dbCol) {
+                const val = window.dbCol(data, fieldName);
+                if (val && val !== 'undefined') return val;
+            }
+
+            // 2. Fallback manuale robusto
+            let val = data[fieldName];
+            if (!val) return '';
+
+            // Se è una stringa JSON
+            if (typeof val === 'string' && val.trim().startsWith('{')) {
+                try { val = JSON.parse(val); } catch(e){}
+            }
+
+            // Se è un oggetto
+            if (typeof val === 'object') {
+                return val[lang] || val['it'] || '';
+            }
+            
+            // Stringa semplice
+            return val;
+        };
+
+        const nome = getTranslatedField(item, 'Nome') || 'Spiaggia';
+        const tipo = getTranslatedField(item, 'Tipo');
+        const desc = getTranslatedField(item, 'Descrizione');
         
         contentHtml = `
              <div style="padding: 25px;">
                 <h2 style="font-family:'Roboto Slab'; color:#00695C;">${nome}</h2>
-                <span class="c-pill" style="margin-bottom:15px; display:inline-block;">${tipo}</span>
-                <p style="line-height:1.6; color:#444;">${desc}</p>
+                ${tipo ? `<span class="c-pill" style="margin-bottom:15px; display:inline-block;">${tipo}</span>` : ''}
+                <div style="line-height:1.6; color:#444; margin-top:10px; text-align:justify;">
+                    ${desc || window.t('desc_missing') || 'Descrizione non disponibile.'}
+                </div>
              </div>
         `;
     }

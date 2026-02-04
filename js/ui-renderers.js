@@ -122,36 +122,80 @@ window.sentieroRenderer = (s) => {
     </div>`;
 };
 
-// === RENDERER SPIAGGE (Con Pulsante Mappa Tondo) ===
+// === 1. FUNZIONE DI SICUREZZA PER LA MAPPA (Da lasciare fuori) ===
+window.openMapBtn = function(e, lat, lon) {
+    if (!e) return;
+    // Blocca la propagazione verso la card (evita che si apra la modale)
+    e.stopPropagation(); 
+    e.preventDefault();  
+    
+    // URL Standard Google Maps
+    const url = `https://www.google.com/maps?q=${lat},${lon}`;
+    window.open(url, '_blank');
+};
+
+// === 2. RENDERER SPIAGGE PERFETTO (Posizione angolo destro + Traduzioni) ===
 window.spiaggiaRenderer = function(item) {
-    const nome = item.Nome || 'Spiaggia';
+    
+    // RECUPERO ID SICURO
+    const safeId = item.id || item.ID || item.POI_ID || item.Codice;
+
+    // TRADUZIONI (Sincronizzate con la modale)
+    let nome, tipo, paesi;
+
+    if (typeof window.dbCol === 'function') {
+        nome = window.dbCol(item, 'Nome');
+        tipo = window.dbCol(item, 'tipo') || 'Spiaggia';
+        paesi = window.dbCol(item, 'Paesi'); 
+    } else {
+        // Fallback manuale
+        const lang = localStorage.getItem('language') || window.currentLanguage || 'it';
+        const getVal = (val) => (typeof val === 'object' ? (val[lang] || val['it']) : val);
+        
+        nome = getVal(item.Nome);
+        tipo = getVal(item.Tipo) || 'Spiaggia';
+        paesi = item.Paesi;
+    }
+
+    if (!nome) nome = 'Spiaggia';
+    if (!paesi) paesi = 'Paesi';
+    
     const comune = item.Paese || item.Comune || '';
-    const paesi = item.Paesi || 'Paesi'; 
     const iconClass = 'fa-water';
 
-    // Coordinate da Supabase (Colonne specifiche spiagge)
+    // MAPPA E COORDINATE
     const lat = item.lat_sp;
     const lon = item.long_sp;
 
-    // Generazione Pulsante Mappa (Stesso stile delle Attrazioni)
     let mapBtnHtml = '';
+    
     if (lat && lon) {
+        // FIX POSIZIONE: position: absolute + bottom/right per metterlo nell'angolo
+        // FIX CLICK: Chiama window.openMapBtn definita sopra
         mapBtnHtml = `
-        <button class="btn-culture-map" onclick="event.stopPropagation(); window.open('https://www.google.com/maps?q=${lat},${lon}', '_blank')">
+        <button class="btn-culture-map" 
+                onclick="window.openMapBtn(event, ${lat}, ${lon})" 
+                style="position: absolute; bottom: 15px; right: 15px; z-index: 20; cursor: pointer;">
             <span class="material-icons">map</span>
         </button>`;
     }
 
     return `
-    <div class="culture-card is-beach animate-fade" onclick="openModal('Spiagge', '${item.id}')" style="position: relative;">
+    <div class="culture-card is-beach animate-fade" onclick="openModal('Spiagge', '${safeId}')" style="position: relative; overflow: hidden;">
         <div class="culture-info">
-         <div class="culture-location">
+            
+            <div class="culture-location">
                 <span class="material-icons" style="font-size:0.9rem;">place</span> ${paesi}
             </div>
+            
             ${comune ? `<div class="culture-location"><span class="material-icons" style="font-size:0.9rem">place</span> ${comune}</div>` : ''}
-            <h3 class="culture-title">${nome}</h3>
-           <div class="culture-tags">
-                <span class="c-pill"><span class="material-icons" style="font-size:0.8rem;">schedule</span> ${paesi}</span>
+            
+            <h3 class="culture-title" style="padding-right: 40px;">${nome}</h3>
+            
+            <div class="culture-tags">
+                <span class="c-pill" style="text-transform: capitalize;">
+                    ${tipo}
+                </span>
             </div>
         </div>
         
