@@ -18,7 +18,7 @@
 .btn-trail-modern:active { transform: scale(0.96); }
 
 /* Varianti Colore */
-.btn-trail-tech { background-color: #D06F5B; color: white; box-shadow: 0 4px 10px rgba(42, 157, 143, 0.3); }
+.btn-trail-tech { background-color: #D06F5B; color: white; box-shadow: 0 4px 10px rgba(157, 71, 42, 0.3); }
 .btn-trail-info { background-color: #F0F2F5; color: #555; border: 1px solid #eee; }
 .btn-trail-gps  { background-color: #29B6F6; color: white; border: none; box-shadow: 0 4px 10px rgba(41, 182, 246, 0.3); }
 
