@@ -42,20 +42,7 @@
     text-align: left;
 }
 
-/* Il Badge (Difficoltà) */
-.komoot-badge {
-    font-size: 0.75rem; 
-    font-weight: 800; 
-    color: white; 
-    padding: 5px 10px; 
-    border-radius: 6px; 
-    text-transform: uppercase;
-    
-    /* FONDAMENTALE PER IL FIX: */
-    white-space: nowrap; /* Il testo dentro non va a capo */
-    flex-shrink: 0;      /* Il badge non si schiaccia mai */
-    margin-top: 3px;     /* Allineamento ottico con la prima riga del titolo */
-}
+
 
 /* Stile Etichette Mappa Render */
 .trail-label-tooltip {
@@ -168,20 +155,20 @@
 .culture-card.is-church .culture-bg-icon i { color: #EAC67A; }
 
 /* 3. MONUMENTO (Terracotta) */
-.culture-card.is-monument { border-left-color: #D06F5B; }
-.culture-card.is-monument .culture-title { color: #D06F5B; }
-.culture-card.is-monument .culture-bg-icon i { color: #D06F5B; }
+.culture-card.is-monument { border-left-color: #F2A68D; }
+.culture-card.is-monument .culture-title { color: #F2A68D; }
+.culture-card.is-monument .culture-bg-icon i { color: #F2A68D; }
 
 /* 4. PANORAMA (Verde Acqua) */
-.culture-card.is-view { border-left-color: #4A6B57; }
-.culture-card.is-view .culture-title { color: #4A6B57; }
-.culture-card.is-view .culture-bg-icon i { color: #4A6B57; }
+.culture-card.is-view { border-left-color: #D06F5B; }
+.culture-card.is-view .culture-title { color: #D06F5B; }
+.culture-card.is-view .culture-bg-icon i { color: #D06F5B; }
 
 /* --- META TAGS (Helpers) --- */
 .monument-meta { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .meta-badge { font-size: 0.7rem; padding: 6px 12px; border-radius: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-.badge-easy { background-color: #E8F5E9; color: #4A6B57; } 
-.badge-hard { background-color: #FFEBEE; color: #D06F5B; } 
+.badge-easy { background-color: #E8F5E9; color: #EAC67A; } 
+.badge-hard { background-color: #030303; color: #D06F5B; } 
 .badge-time { background-color: #E3F2FD; color: #F2A68D; } 
 
 .card-list-item.monument-mode { border-left: none; border-bottom: 3px solid #D06F5B; }

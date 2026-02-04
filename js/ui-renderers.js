@@ -84,11 +84,7 @@ window.sentieroRenderer = (s) => {
     const nome = s.nome || 'Sentiero';
     const desc = s.descrizione ? decodeURIComponent(s.descrizione).replace(/'/g, "\\'") : '';
     
-    let diff = s.difficolta_cai || 'T';
-    let diffColor = '#27ae60'; 
-    if(diff.includes('E')) diffColor = '#f39c12';
-    if(diff.includes('EE')) diffColor = '#c0392b';
-
+ 
     if(s.gpx_url) {
         if(!window.pendingMaps) window.pendingMaps = [];
         window.pendingMaps.push({ 
@@ -108,7 +104,6 @@ window.sentieroRenderer = (s) => {
         <div class="komoot-info-body" style="padding-bottom:5px;">
             <div class="komoot-header-row">
                 <h3 class="komoot-title">${nome}</h3>
-                <span class="komoot-badge" style="background:${diffColor}">${diff}</span>
             </div>
         </div>
 
