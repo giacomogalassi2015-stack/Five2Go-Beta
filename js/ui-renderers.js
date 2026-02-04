@@ -209,59 +209,88 @@ window.spiaggiaRenderer = function(item) {
 // Funzione di utilità per formattare i numeri
 const formatInt = (val) => (val !== null && val !== undefined) ? val : '--';
 
-// === RENDERER ATTRAZIONI (Versione Bottone Tondo) ===
-window.attrazioniRenderer = (item) => {
-    const safeId = item.POI_ID || item.id;
-    const titolo = window.dbCol(item, 'Attrazioni') || 'Attrazione';
-    const paese = window.dbCol(item, 'Paese');
-    const myId = (item._tempIndex !== undefined) ? item._tempIndex : 0;
-    const tempo = item.Tempo_visita || '--'; 
-    const diff = window.dbCol(item, 'Difficoltà Accesso') || 'Accessibile';
+// === RENDERER ATTRAZIONI (FIX ID STRINGA: Aggiunti apici a safeId) ===
+window.attrazioniRenderer = function(item) {
     
-    // Coordinate
-    const lat = item.lat_at;
-    const lon = item.long_at;
-    
-    const rawLabel = window.dbCol(item, 'Label') || 'Storico';
-    const label = rawLabel.toLowerCase().trim(); 
+    // 1. RECUPERO ID
+    // Se l'ID è una stringa (es. "P02"), deve essere trattato con cura
+    const safeId = item.POI_ID || item.id || item._tempIndex || 0;
 
+    // 2. RECUPERO DATI E TRADUZIONI (Logica dbCol clonata da Spiagge)
+    let titolo, paese, tempo;
+
+    if (typeof window.dbCol === 'function') {
+        titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
+        paese = window.dbCol(item, 'Paese');
+        tempo = window.dbCol(item, 'Tempo_visita'); 
+    } else {
+        // Fallback
+        const lang = localStorage.getItem('language') || window.currentLanguage || 'it';
+        const getVal = (val) => {
+            if (!val) return '';
+            if (typeof val === 'object') return val[lang] || val['it'];
+            if (typeof val === 'string' && val.includes('{')) {
+                try { return JSON.parse(val)[lang] || JSON.parse(val)['it'] || val; } catch(e) { return val; }
+            }
+            return val;
+        };
+        titolo = getVal(item.Attrazioni || item.Titolo);
+        paese = getVal(item.Paese);
+        tempo = getVal(item.Tempo_visita);
+    }
+
+    if (!tempo || tempo === 'undefined') tempo = '--';
+    if (!paese) paese = '';
+
+    // 3. LOGICA ICONE
+    const rawLabel = window.dbCol ? window.dbCol(item, 'Label') : (item.Label || 'Storico');
+    const label = String(rawLabel).toLowerCase(); 
     let themeClass = 'is-monument';
     let iconClass = 'fa-landmark'; 
-    
-    if (label === 'religioso') { themeClass = 'is-church'; iconClass = 'fa-church'; }
-    else if (label === 'panorama') { themeClass = 'is-view'; iconClass = 'fa-mountain-sun'; }
-    else if (label === 'storico') { themeClass = 'is-monument'; iconClass = 'fa-chess-rook'; }
 
-    // Generazione Pulsante Mappa (Solo Icona)
+    if (label.includes('religioso') || label.includes('chiesa')) { themeClass = 'is-church'; iconClass = 'fa-church'; }
+    else if (label.includes('panorama') || label.includes('vista')) { themeClass = 'is-view'; iconClass = 'fa-mountain-sun'; }
+    else if (label.includes('storico') || label.includes('castello')) { themeClass = 'is-monument'; iconClass = 'fa-chess-rook'; }
+
+    // 4. MAPPA
+    const lat = item.lat_at;
+    const lon = item.long_at;
     let mapBtnHtml = '';
+
     if (lat && lon) {
-        // Ho cambiato l'icona in 'map' e tolto il testo
         mapBtnHtml = `
-        <button class="btn-culture-map" onclick="event.stopPropagation(); window.open('https://www.google.com/maps/search/?api=1&query=${lat},${lon}', '_blank')">
+        <button class="btn-culture-map" 
+                onclick="window.openMapBtn(event, ${lat}, ${lon})" 
+                style="position: absolute; bottom: 15px; right: 15px; z-index: 20; cursor: pointer;">
             <span class="material-icons">map</span>
         </button>`;
     }
 
+    // 5. RENDER HTML (CORREZIONE QUI SOTTO: '${safeId}')
     return `
-    <div class="culture-card ${themeClass} animate-fade" onclick="openModal('attrazione', ${myId})" style="position: relative;">
+    <div class="culture-card ${themeClass} animate-fade" 
+         onclick="openModal('attrazione', '${safeId}')" 
+         style="position: relative; overflow: hidden;">
+        
         <div class="culture-info">
             <div class="culture-location">
                 <span class="material-icons" style="font-size:0.9rem;">place</span> ${paese}
             </div>
-            <div class="culture-title">${titolo}</div>
+            
+            <div class="culture-title" style="padding-right: 40px;">${titolo}</div>
             
             <div class="culture-tags">
-                <span class="c-pill"><span class="material-icons" style="font-size:0.8rem;">schedule</span> ${tempo}</span>
-                <span class="c-pill">${diff}</span>
+                <span class="c-pill">${tempo}</span>
             </div>
         </div>
         
         ${mapBtnHtml}
 
-        <div class="culture-bg-icon"><i class="fa-solid ${iconClass}"></i></div>
+        <div class="culture-bg-icon">
+             <i class="fa-solid ${iconClass}"></i>
+        </div>
     </div>`;
 };
-
 // === RENDERER FARMACIE ===
 window.farmacieRenderer = (f) => {
     const nome = window.dbCol(f, 'Farmacia') || window.dbCol(f, 'Nome') || 'Farmacia';
