@@ -6,10 +6,10 @@
 
 :root {
     /* Palette */
-    --primary-col: #2A9D8F; 
+    --primary-col: #4A6B57; 
     --primary-dark: #264653; 
-    --accent-col:  #E76F51; 
-    --accent-soft: #F4A261; 
+    --accent-col:  #D06F5B; 
+    --accent-soft: #F2A68D; 
     
     --bg-body:     #FDFCF8; 
     --surface:     #FFFFFF; 
@@ -65,39 +65,19 @@ body {
     background: rgba(0, 0, 0, 0.3); 
 }
 
-/* Rende trasparente il contenuto sopra la home */
-#sub-content:empty + .home-hero-fullscreen,
-.is-home #sub-content {
-    background: transparent;
-}
-
 /* ============================================================
    2. HEADER & NAVIGAZIONE
    ============================================================ */
-header, #app-header {
-    background-color: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    height: 65px;
-    display: none !important; 
-    justify-content: space-between; 
-    align-items: center;
-    position: sticky; top: 0; z-index: 1000;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    padding: 0 20px; 
-    width: 100%; 
-}
 
 /* Main Content */
-main, #app-content { 
+main { 
     max-width: 600px; 
     margin: 0 auto; 
     padding: 5px 20px; 
 }
 
 /* Bottom Navigation */
-#bottom-nav, #nav-bar {
+#bottom-nav{
     position: fixed; bottom: 20px; left: 20px; right: 20px; 
     width: auto; height: 70px;
     background-color: var(--surface);
@@ -129,44 +109,47 @@ main, #app-content {
 /* ============================================================
    4. HOME & BENVENUTO
    ============================================================ */
-.welcome-card {
-    width: 100%;          
-    margin: 10px auto;   
-    height: calc(98vh - var(--nav-height)); 
-    min-height: 500px;
-    background-size: cover; 
-    background-position: center;
-    border-radius: 20px; 
-    overflow: hidden;
-    position: relative;
-    box-shadow: var(--shadow-soft);
-    opacity: 0; 
-    animation: fadeIn 0.5s forwards;
+.lang-grid { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 10px;
+    margin-top: 30px; /* ✅ AGGIUNTO: Sposta tutto il blocco giù di 30px */
 }
 
-.welcome-overlay {
-    width: 100%; height: 100%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%);
-    display: flex; flex-direction: column; justify-content: flex-end; padding: 30px;
-}
-.welcome-desc {
-    font-size: 1rem; color: rgba(255, 255, 255, 0.95);
-    margin-bottom: 25px; line-height: 1.5; text-align: center;
-    margin-left: auto; margin-right: auto; max-width: 90%;
-}
-.lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+/* Il resto rimane identico a prima */
 .lang-tile {
-    background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 16px;
-    padding: 12px 5px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    cursor: pointer; transition: transform 0.2s ease, background 0.2s; color: white;
+    background: rgba(255, 255, 255, 0.2); 
+    backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3); 
+    border-radius: 16px;
+    padding: 12px 5px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
+    cursor: pointer; 
+    transition: transform 0.2s ease, background 0.2s; 
+    color: white;
 }
-.lang-tile.active {
-    background: white; color: var(--primary-dark); border-color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-.lang-flag-large { font-size: 1.8rem; margin-bottom: 4px; }
-.lang-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
 
+.lang-tile.active {
+    background: white; 
+    color: var(--primary-dark); 
+    border-color: white; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.lang-flag-large { 
+    font-size: 1.8rem; 
+    margin-bottom: 4px; 
+}
+
+.lang-label { 
+    font-size: 0.7rem; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+}
 /* Lingua Header */
 .header-actions { display: flex; align-items: center; gap: 15px; }
 .current-lang-btn {

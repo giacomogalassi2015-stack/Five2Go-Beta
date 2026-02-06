@@ -13,7 +13,7 @@
 }
 
 .bus-title .material-icons {
-    color: #fff; background: linear-gradient(135deg, #FFC107, #FF9800); 
+    color: #fff; background: linear-gradient(135deg, #EAC67A, #F2A68D); 
     padding: 8px; border-radius: 12px; font-size: 1.3rem; 
     box-shadow: 0 4px 6px rgba(255, 152, 0, 0.25);
 }
@@ -29,12 +29,12 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A0AEC0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
 }
-.bus-select:focus { background: #ffffff; border-color: #FFC107; box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.15); transform: translateY(-1px); }
+.bus-select:focus { background: #ffffff; border-color: #EAC67A; box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.15); transform: translateY(-1px); }
 input[type="date"].bus-select, input[type="time"].bus-select { background-image: none; min-height: 52px; }
 
 /* Bottoni */
 .btn-yellow {
-    width: 100%; background: linear-gradient(135deg, #FFC107 0%, #FF8F00 100%);
+    width: 100%; background: linear-gradient(135deg, #EAC67A 0%, #F2A68D 100%);
     color: #422006; border: none; padding: 16px; border-radius: 18px; font-size: 1.1rem; 
     font-weight: 900; letter-spacing: 0.5px; cursor: pointer;
     box-shadow: 0 10px 25px -5px rgba(255, 160, 0, 0.4); transition: all 0.2s ease; 
@@ -44,7 +44,7 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 .btn-yellow:active { transform: scale(0.96); box-shadow: 0 5px 10px -5px rgba(255, 160, 0, 0.4); }
 
 .btn-red {
-    width: 100%; background: linear-gradient(135deg, #FF5252 0%, #D32F2F 100%); 
+    width: 100%; background: linear-gradient(135deg, #F2A68D 0%, #D06F5B 100%); 
     color: white; border: none; padding: 16px; border-radius: 18px; 
     font-size: 1.1rem; font-weight: 900; letter-spacing: 0.5px; cursor: pointer; 
     box-shadow: 0 10px 25px -5px rgba(211, 47, 47, 0.4); transition: all 0.2s ease; 
@@ -54,7 +54,7 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 
 /* Risultati */
 .bus-result-main {
-    background: linear-gradient(135deg, #006064 0%, #0097A7 100%); border: none; border-radius: 20px; 
+    background: linear-gradient(135deg, #006064 0%, #4A6B57 100%); border: none; border-radius: 20px; 
     padding: 25px; text-align: center; margin-bottom: 25px; color: white; 
     box-shadow: 0 15px 30px -5px rgba(0, 96, 100, 0.3); position: relative; 
     animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -91,7 +91,7 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
 
 /* Personalizzazione Treni */
 .train-box .bus-title .material-icons {
-    background: linear-gradient(135deg, #FF5252, #D32F2F);
+    background: linear-gradient(135deg, #F2A68D, #D06F5B);
     box-shadow: 0 4px 6px rgba(211, 47, 47, 0.25);
 }
 
@@ -102,15 +102,15 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
     display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
     position: relative; overflow: hidden; cursor: pointer; transition: transform 0.2s ease-out;
     background-color: #ffffff; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 .service-widget:active { transform: scale(0.96); background-color: #ffffff; }
-.service-widget .widget-icon { font-size: 3rem; color: #9D2A38; opacity: 0.95; margin-bottom: 10px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
-.service-widget .widget-label { font-size: 1.1rem; font-weight: 600; color: #9D2A38; line-height: 1.2; letter-spacing: 0.5px; }
+.service-widget .widget-icon { font-size: 3rem; color: #D06F5B; opacity: 0.95; margin-bottom: 10px; }
+.service-widget .widget-label { font-size: 1.1rem; font-weight: 600; color: #D06F5B; line-height: 1.2; letter-spacing: 0.5px; }
 
 /* Badges */
-.badge-holiday { background-color: #ff5252; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-.badge-weekday { background-color: #26a69a; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.badge-holiday { background-color: #D06F5B; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.badge-weekday { background-color: #4A6B57; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
 /* ============================================================
    INFO CARDS (Farmacie & Numeri Utili)
@@ -141,7 +141,28 @@ input[type="date"].bus-select, input[type="time"].bus-select { background-image:
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; 
     cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
-.btn-call { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); }
+/* Stile specifico per il bottone chiamata (Verde + Bordo Bianco) */
+.btn-call {
+    /* 1. Il tuo colore verde */
+    background: linear-gradient(135deg, #4A6B57 0%, #2E7D32 100%);
+
+    /* 2. Lo stile "Cerchio con Bordo Bianco" che volevi */
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;      /* Tondo */
+    border: 3px solid white; /* Bordo bianco spesso */
+    
+    /* 3. Allineamento icona e Ombra */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    
+    /* Per evitare che si schiacci se è in una lista */
+    flex-shrink: 0; 
+}
 .action-btn .material-icons { color: #fff; font-size: 1.5rem; }
 
 /* Header Liste Semplici */

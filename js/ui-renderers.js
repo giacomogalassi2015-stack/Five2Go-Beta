@@ -50,7 +50,7 @@ window.prodottoRenderer = (p) => {
     </div>`;
 };
 
-// === RENDERER VINO ===
+// === RENDERER VINO (Usa Phosphor Icons) ===
 window.vinoRenderer = function(item) {
     const safeId = item.id || item.ID; 
     const nome = item.Nome || 'Vino';
@@ -70,30 +70,29 @@ window.vinoRenderer = function(item) {
                  <span class="c-pill" style="text-transform: capitalize;">${item.Tipo || 'Vino'}</span>
             </div>
         </div>
+        
         <div class="culture-bg-icon">
-            <i class="fa-solid fa-wine-bottle"></i>
+            <i class="ph-fill ph-wine"></i>
         </div>
     </div>`;
 };
 
-// === RENDERER SENTIERO ===
+// === RENDERER SENTIERO (Versione Pulita: Passa l'oggetto intero) ===
 window.sentieroRenderer = (s) => {
     const uniqueId = 'k-map-' + (s.poi_id || Math.floor(Math.random() * 99999));
-    const safeObj = encodeURIComponent(JSON.stringify(s)).replace(/'/g, "%27");
-    const nome = s.nome || 'Sentiero';
-    const desc = s.descrizione ? decodeURIComponent(s.descrizione).replace(/'/g, "\\'") : '';
+    const nome = s.nome || s.Titolo || 'Sentiero';
     
-    let diff = s.difficolta_cai || 'T';
-    let diffColor = '#27ae60'; 
-    if(diff.includes('E')) diffColor = '#f39c12';
-    if(diff.includes('EE')) diffColor = '#c0392b';
+    // CREAZIONE OGGETTO SICURO
+    // Prendiamo tutto l'oggetto 's' (che contiene Descrizione in JSON), 
+    // lo trasformiamo in stringa e proteggiamo gli apici.
+    const safeObj = encodeURIComponent(JSON.stringify(s)).replace(/'/g, "%27");
 
+    // Gestione Mappe (Invariata)
     if(s.gpx_url) {
         if(!window.pendingMaps) window.pendingMaps = [];
         window.pendingMaps.push({ 
             id: uniqueId, 
-            gpx: s.gpx_url,
-            
+            gpx: s.gpx_url, 
             startLabel: s.nome_partenza, 
             endLabel: s.nome_arrivo
         });
@@ -107,7 +106,6 @@ window.sentieroRenderer = (s) => {
         <div class="komoot-info-body" style="padding-bottom:5px;">
             <div class="komoot-header-row">
                 <h3 class="komoot-title">${nome}</h3>
-                <span class="komoot-badge" style="background:${diffColor}">${diff}</span>
             </div>
         </div>
 
@@ -117,7 +115,7 @@ window.sentieroRenderer = (s) => {
                 <span class="material-icons" style="font-size:1.1rem;">map</span> Scheda Tecnica
             </button>
 
-            <button class="btn-trail-modern btn-trail-info" onclick="alert('Descrizione: ' + '${desc}')">
+            <button class="btn-trail-modern btn-trail-info" onclick="window.openModal('sentieroInfo', '${safeObj}')">
                 <span class="material-icons" style="font-size:1.1rem; color:#777;">info</span> Info
             </button>
             
@@ -126,33 +124,80 @@ window.sentieroRenderer = (s) => {
     </div>`;
 };
 
-// === RENDERER SPIAGGE (Con Pulsante Mappa Tondo) ===
+// === 1. FUNZIONE DI SICUREZZA PER LA MAPPA (Da lasciare fuori) ===
+window.openMapBtn = function(e, lat, lon) {
+    if (!e) return;
+    // Blocca la propagazione verso la card (evita che si apra la modale)
+    e.stopPropagation(); 
+    e.preventDefault();  
+    
+    // URL Standard Google Maps
+    const url = `https://www.google.com/maps?q=${lat},${lon}`;
+    window.open(url, '_blank');
+};
+
+// === 2. RENDERER SPIAGGE PERFETTO (Posizione angolo destro + Traduzioni) ===
 window.spiaggiaRenderer = function(item) {
-    const nome = item.Nome || 'Spiaggia';
+    
+    // RECUPERO ID SICURO
+    const safeId = item.id || item.ID || item.POI_ID || item.Codice;
+
+    // TRADUZIONI (Sincronizzate con la modale)
+    let nome, tipo, paesi;
+
+    if (typeof window.dbCol === 'function') {
+        nome = window.dbCol(item, 'Nome');
+        tipo = window.dbCol(item, 'tipo') || 'Spiaggia';
+        paesi = window.dbCol(item, 'Paesi'); 
+    } else {
+        // Fallback manuale
+        const lang = localStorage.getItem('language') || window.currentLanguage || 'it';
+        const getVal = (val) => (typeof val === 'object' ? (val[lang] || val['it']) : val);
+        
+        nome = getVal(item.Nome);
+        tipo = getVal(item.Tipo) || 'Spiaggia';
+        paesi = item.Paesi;
+    }
+
+    if (!nome) nome = 'Spiaggia';
+    if (!paesi) paesi = 'Paesi';
+    
     const comune = item.Paese || item.Comune || '';
-    const paesi = item.Paesi || 'Paesi'; 
     const iconClass = 'fa-water';
 
-    // Coordinate da Supabase (Colonne specifiche spiagge)
+    // MAPPA E COORDINATE
     const lat = item.lat_sp;
     const lon = item.long_sp;
 
-    // Generazione Pulsante Mappa (Stesso stile delle Attrazioni)
     let mapBtnHtml = '';
+    
     if (lat && lon) {
+        // FIX POSIZIONE: position: absolute + bottom/right per metterlo nell'angolo
+        // FIX CLICK: Chiama window.openMapBtn definita sopra
         mapBtnHtml = `
-        <button class="btn-culture-map" onclick="event.stopPropagation(); window.open('https://www.google.com/maps?q=${lat},${lon}', '_blank')">
+        <button class="btn-culture-map" 
+                onclick="window.openMapBtn(event, ${lat}, ${lon})" 
+                style="position: absolute; bottom: 15px; right: 15px; z-index: 20; cursor: pointer;">
             <span class="material-icons">map</span>
         </button>`;
     }
 
     return `
-    <div class="culture-card is-beach animate-fade" onclick="openModal('Spiagge', '${item.id}')" style="position: relative;">
+    <div class="culture-card is-beach animate-fade" onclick="openModal('Spiagge', '${safeId}')" style="position: relative; overflow: hidden;">
         <div class="culture-info">
+            
+            <div class="culture-location">
+                <span class="material-icons" style="font-size:0.9rem;">place</span> ${paesi}
+            </div>
+            
             ${comune ? `<div class="culture-location"><span class="material-icons" style="font-size:0.9rem">place</span> ${comune}</div>` : ''}
-            <h3 class="culture-title">${nome}</h3>
+            
+            <h3 class="culture-title" style="padding-right: 40px;">${nome}</h3>
+            
             <div class="culture-tags">
-                 <span class="c-pill">${paesi}</span>
+                <span class="c-pill" style="text-transform: capitalize;">
+                    ${tipo}
+                </span>
             </div>
         </div>
         
@@ -166,59 +211,88 @@ window.spiaggiaRenderer = function(item) {
 // Funzione di utilità per formattare i numeri
 const formatInt = (val) => (val !== null && val !== undefined) ? val : '--';
 
-// === RENDERER ATTRAZIONI (Versione Bottone Tondo) ===
-window.attrazioniRenderer = (item) => {
-    const safeId = item.POI_ID || item.id;
-    const titolo = window.dbCol(item, 'Attrazioni') || 'Attrazione';
-    const paese = window.dbCol(item, 'Paese');
-    const myId = (item._tempIndex !== undefined) ? item._tempIndex : 0;
-    const tempo = item.Tempo_visita || '--'; 
-    const diff = window.dbCol(item, 'Difficoltà Accesso') || 'Accessibile';
+// === RENDERER ATTRAZIONI (FIX ID STRINGA: Aggiunti apici a safeId) ===
+window.attrazioniRenderer = function(item) {
     
-    // Coordinate
-    const lat = item.lat_at;
-    const lon = item.long_at;
-    
-    const rawLabel = window.dbCol(item, 'Label') || 'Storico';
-    const label = rawLabel.toLowerCase().trim(); 
+    // 1. RECUPERO ID
+    // Se l'ID è una stringa (es. "P02"), deve essere trattato con cura
+    const safeId = item.POI_ID || item.id || item._tempIndex || 0;
 
+    // 2. RECUPERO DATI E TRADUZIONI (Logica dbCol clonata da Spiagge)
+    let titolo, paese, tempo;
+
+    if (typeof window.dbCol === 'function') {
+        titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
+        paese = window.dbCol(item, 'Paese');
+        tempo = window.dbCol(item, 'Tempo_visita'); 
+    } else {
+        // Fallback
+        const lang = localStorage.getItem('language') || window.currentLanguage || 'it';
+        const getVal = (val) => {
+            if (!val) return '';
+            if (typeof val === 'object') return val[lang] || val['it'];
+            if (typeof val === 'string' && val.includes('{')) {
+                try { return JSON.parse(val)[lang] || JSON.parse(val)['it'] || val; } catch(e) { return val; }
+            }
+            return val;
+        };
+        titolo = getVal(item.Attrazioni || item.Titolo);
+        paese = getVal(item.Paese);
+        tempo = getVal(item.Tempo_visita);
+    }
+
+    if (!tempo || tempo === 'undefined') tempo = '--';
+    if (!paese) paese = '';
+
+    // 3. LOGICA ICONE
+    const rawLabel = window.dbCol ? window.dbCol(item, 'Label') : (item.Label || 'Storico');
+    const label = String(rawLabel).toLowerCase(); 
     let themeClass = 'is-monument';
     let iconClass = 'fa-landmark'; 
-    
-    if (label === 'religioso') { themeClass = 'is-church'; iconClass = 'fa-church'; }
-    else if (label === 'panorama') { themeClass = 'is-view'; iconClass = 'fa-mountain-sun'; }
-    else if (label === 'storico') { themeClass = 'is-monument'; iconClass = 'fa-chess-rook'; }
 
-    // Generazione Pulsante Mappa (Solo Icona)
+    if (label.includes('religioso') || label.includes('chiesa')) { themeClass = 'is-church'; iconClass = 'fa-church'; }
+    else if (label.includes('panorama') || label.includes('vista')) { themeClass = 'is-view'; iconClass = 'fa-mountain-sun'; }
+    else if (label.includes('storico') || label.includes('castello')) { themeClass = 'is-monument'; iconClass = 'fa-chess-rook'; }
+
+    // 4. MAPPA
+    const lat = item.lat_at;
+    const lon = item.long_at;
     let mapBtnHtml = '';
+
     if (lat && lon) {
-        // Ho cambiato l'icona in 'map' e tolto il testo
         mapBtnHtml = `
-        <button class="btn-culture-map" onclick="event.stopPropagation(); window.open('https://www.google.com/maps/search/?api=1&query=${lat},${lon}', '_blank')">
+        <button class="btn-culture-map" 
+                onclick="window.openMapBtn(event, ${lat}, ${lon})" 
+                style="position: absolute; bottom: 15px; right: 15px; z-index: 20; cursor: pointer;">
             <span class="material-icons">map</span>
         </button>`;
     }
 
+    // 5. RENDER HTML (CORREZIONE QUI SOTTO: '${safeId}')
     return `
-    <div class="culture-card ${themeClass} animate-fade" onclick="openModal('attrazione', ${myId})" style="position: relative;">
+    <div class="culture-card ${themeClass} animate-fade" 
+         onclick="openModal('attrazione', '${safeId}')" 
+         style="position: relative; overflow: hidden;">
+        
         <div class="culture-info">
             <div class="culture-location">
                 <span class="material-icons" style="font-size:0.9rem;">place</span> ${paese}
             </div>
-            <div class="culture-title">${titolo}</div>
+            
+            <div class="culture-title" style="padding-right: 40px;">${titolo}</div>
             
             <div class="culture-tags">
-                <span class="c-pill"><span class="material-icons" style="font-size:0.8rem;">schedule</span> ${tempo}</span>
-                <span class="c-pill">${diff}</span>
+                <span class="c-pill">${tempo}</span>
             </div>
         </div>
         
         ${mapBtnHtml}
 
-        <div class="culture-bg-icon"><i class="fa-solid ${iconClass}"></i></div>
+        <div class="culture-bg-icon">
+             <i class="fa-solid ${iconClass}"></i>
+        </div>
     </div>`;
 };
-
 // === RENDERER FARMACIE ===
 window.farmacieRenderer = (f) => {
     const nome = window.dbCol(f, 'Farmacia') || window.dbCol(f, 'Nome') || 'Farmacia';

@@ -211,7 +211,7 @@ const UI_TEXT = {
     zh: {
         loading: "加载中...", error: "错误", no_results: "无结果",
         home_title: "欢迎", nav_villages: "首页", nav_food: "美食", nav_outdoor: "户外", nav_services: "服务",
-        menu_prod: "产品", menu_rest: "餐厅", menu_trail: "步道", menu_beach: "海滩", 
+        menu_prod: "产品", menu_rest: "餐厅", menu_trail: "步道", menu_beach: "海滩", menu_wine: "葡萄酒",
         menu_trans: "交通", menu_num: "常用号码", menu_pharm: "药房", menu_map: "地图", menu_monu: "景点",
         menu_legal: "法律与隐私",
         // 名称 (New)
@@ -372,48 +372,99 @@ function isItalianHoliday(dateObj) {
     return false;
 }
 
-// IL CERVELLO DI CHICCO (Frasi pre-impostate)
-const CHICCO_BRAIN = {
-    it: {
-        default: [
-            "Ciao! Io sono Chicco. Sapevi che l'uva qui cresce guardando il mare?",
-            "Hai bisogno di una pausa? Cerca un bar qui vicino!",
-            "Non dimenticare di assaggiare lo Sciacchetrà!"
-        ],
-        vini: [
-            "Ah, il mio regno! Il bianco delle Cinque Terre va servito fresco.",
-            "Cerchi un abbinamento? Acciughe salate e vino bianco!",
-            "Lo Sciacchetrà è un vino passito: dolce, come me!"
-        ],
-        sentieri: [
-            "Uff, che fatica! Ricorda l'acqua, i sentieri sono ripidi.",
-            "Dopo la camminata ci sta un bel bicchiere, vero?",
-            "Guarda dove metti i piedi, non guardare solo il panorama!"
-        ],
-        trasporti: [
-            "Se il mare è mosso, il battello non parte. Meglio il treno!",
-            "I biglietti del bus si comprano prima di salire, mi raccomando."
-        ]
-    },
-    // Qui potresti aggiungere en, fr, etc...
-};
+// --- DATA-LOGIC.JS: VERSIONE SOLO TRIVIA + METEO DISPLAY ---
 
-// Funzione per far parlare Chicco
-window.askChicco = function() {
-    // 1. Capiamo in che lingua siamo
-    const lang = window.currentLang || 'it';
-    // 2. Capiamo dove siamo (Home, Vini, Sentieri...)
-    const view = window.currentViewName || 'home';
-    
-    // 3. Selezioniamo il "cassetto" di frasi giusto
-    let topic = 'default';
-    if (view === 'cibo' || view === 'Vini') topic = 'vini';
-    if (view === 'outdoor' || view === 'Sentieri') topic = 'sentieri';
-    if (view === 'servizi' || view === 'Trasporti') topic = 'trasporti';
+// 1. CURIOSITÀ (TRIVIA)
+const CHICCO_TRIVIA = [
+    { text: "Lo sapevi? Lo Sciacchetrà è un vino dolce e prezioso, prodotto con uve passite al sole." },
+    { text: "Sai perché il vino qui è eroico? Perché coltiviamo l'uva su pendenze impossibili!"},
+    { text: "I limoni delle Cinque Terre sono enormi e profumatissimi. Hai provato i prodotti locali?"},
+    { text: "Pesto Genovese: Basilico, pinoli, aglio, parmigiano, pecorino, olio e sale."},
+    { text: "La Torta Monterossina è un dolce segreto con cioccolato, marmellata e crema. Una bomba!" },
+    { text: "Hai mai visto il trenino tra le vigne? Spesso è l'unico modo per trasportare l'uva da lassù." },
+    { text: "A Monterosso c'è un Gigante di pietra alto 14 metri che sorregge una terrazza sul mare."},
+    { text: "Corniglia è l'unico borgo che non tocca il mare. Per arrivarci ci sono 382 gradini o il bus!" },
+    { text: "Se mettessimo in fila tutti i muretti a secco delle Cinque Terre, supereremmo la Muraglia Cinese!" },
+    { text: "Le Cinque Terre sono Patrimonio UNESCO dal 1997. Trattale con cura!" },
+    { text: "Eugenio Montale, premio Nobel, passava le estati qui e dedicò poesie a Monterosso." },
+    { text: "Il film Disney 'Luca' è ispirato proprio ai borghi delle Cinque Terre. 'Silenzio Bruno!'" },
+    { text: "Manarola ospita il Presepe Luminoso più grande del mondo, ma si accende solo a Dicembre!" },
+    { text: "Il dialetto locale cambia leggermente da un paese all'altro, anche se sono vicinissimi!" },
+    { text: "Psst! Non servono scarponi da Everest, ma le infradito sui sentieri sono vietate (e pericolose)." },
+    { text: "Il Falco Pellegrino nidifica sulle nostre scogliere. Alza gli occhi ogni tanto!" },
+    { text: "Sotto il mare c'è un mondo: l'Area Marina Protetta è piena di pesci e gorgonie." },
+    { text: "Vuoi evitare la folla? I sentieri alti (verso i Santuari) sono spesso deserti e bellissimi." },
+    { text: "Il sentiero da Corniglia a Vernazza è considerato uno dei più panoramici in assoluto."},
+    { text: "Camminare tra i vigneti ti fa capire quanto è duro lavorare questa terra. Rispetto!" },
+    { text: "Il treno è il tuo migliore amico qui. L'auto? Un incubo di parcheggi!" },
+    { text: "Ricorda di convalidare il biglietto del treno se è cartaceo, o rischi una multa salata!" },
+    { text: "Il traghetto è il modo migliore per vedere la costa dal mare. Una prospettiva unica." },
+    { text: "In estate fa caldo! Porta sempre una borraccia e un cappello se cammini ed evita le ore più calde." },
+    { text: "Se c'è allerta meteo (Arancione/Rossa), i sentieri vengono chiusi per sicurezza." },
+    { text: "Goditi il momento. Metti via il telefono per 5 minuti e ascolta il rumore del mare." }
+];
 
-    // 4. Peschiamo una frase a caso
-    const phrases = CHICCO_BRAIN[lang][topic] || CHICCO_BRAIN[lang]['default'];
-    const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-    
-    return randomPhrase;
+// 2. FUNZIONE PRINCIPALE
+window.getChiccoRealTimeAdvice = async function() {
+    try {
+        // A. ONBOARDING (Una volta nella vita)
+        if (!localStorage.getItem('chicco_intro_done')) {
+            localStorage.setItem('chicco_intro_done', 'true');
+            return {
+                type: 'intro',
+                weather: "👋 Piacere, sono Chicco!",
+                advice: "Sono il tuo assistente locale. Cliccami quando vuoi per meteo, orari e consigli segreti!",
+                action: "home", 
+                btnLabel: "Capito!"
+            };
+        }
+
+        // B. DATI ESTERNI (Meteo)
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=44.098&longitude=9.738&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=sunset&timezone=auto");
+        const data = await response.json();
+        
+        // --- CALCOLO DATI METEO (Solo per visualizzazione) ---
+        const temp = Math.round(data.current.temperature_2m);
+        const hum = Math.round(data.current.relative_humidity_2m);
+        const wind = data.current.wind_speed_10m;
+        const wmo = data.current.weather_code;
+        
+        // Icona e Stato Mare
+        let seaIcon = "🌊"; let seaStatus = "calmo";
+        if (wind > 15) { seaIcon = "〰️"; seaStatus = "mosso"; }
+        if (wind > 25) { seaIcon = "🌊"; seaStatus = "agitato!"; }
+
+        // Icona e Descrizione Cielo
+        let icon = "🌤️"; let weatherDesc = "Variabile";
+        if (wmo === 0) { icon = "☀️"; weatherDesc = "Cielo Sereno"; }
+        else if (wmo >= 1 && wmo <= 3) { icon = "☁️"; weatherDesc = "Nuvoloso"; }
+        else if (wmo >= 45 && wmo <= 48) { icon = "🌫️"; weatherDesc = "Nebbia"; }
+        else if (wmo >= 51 && wmo <= 67) { icon = "🌧️"; weatherDesc = "Pioggia"; }
+        else if (wmo >= 95) { icon = "⚡"; weatherDesc = "Temporale"; }
+
+        // COSTRUZIONE FRASE METEO (La parte fissa in alto)
+        const weatherPhrase = `${icon} <b>${weatherDesc}</b>, ${temp}°C.<br>💧 Umidità ${hum}%<br>${seaIcon} Mare ${seaStatus}`;
+
+        // ==========================================================
+        // LOGICA
+        // ==========================================================
+
+        const randomTrivia = CHICCO_TRIVIA[Math.floor(Math.random() * CHICCO_TRIVIA.length)];
+
+        return {
+            weather: weatherPhrase,      // Il meteo aggiornato
+            advice: randomTrivia.text,   // La curiosità casuale
+            action: randomTrivia.action, // Il link
+            btnLabel: randomTrivia.label // Il testo del bottone
+        };
+
+    } catch (error) {
+        console.error("Chicco Error:", error);
+        return { 
+            weather: "😴 Sto riposando...", 
+            advice: "Benvenuto alle Cinque Terre! Esplora i borghi con me.", 
+            action: "home", 
+            btnLabel: "Esplora" 
+        };
+    }
 };

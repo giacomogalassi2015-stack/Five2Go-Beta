@@ -1,4 +1,4 @@
-console.log("✅ 3. app.js caricato");
+console.log("✅ 6. app.js caricato");
 
 const content = document.getElementById('app-content');
 const viewTitle = document.getElementById('view-title');
@@ -153,7 +153,7 @@ function renderHome() {
         </div>
     </div>`;
 
-    const chiccoImg = "https://cdn-icons-png.flaticon.com/256/7835/7835532.png"; 
+ const chiccoImg = "https://cdn-icons-png.flaticon.com/256/7835/7835532.png"; 
     
     const mascotHTML = `
     <div id="mascot-container" style="position: fixed; bottom: 70px; right: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end;">
@@ -173,8 +173,9 @@ function renderHome() {
         </a>
     </div>`;
 
+    // Aggiungiamo tutto alla pagina
     content.insertAdjacentHTML('beforeend', mascotHTML);
-   
+
 }
 
 // ============================================================
@@ -923,25 +924,98 @@ window.closeModal = function() {
     if(originalCloseModal) originalCloseModal();
 };
 
-window.toggleChicco = function() {
+// --- APP.JS (Sostituisci la vecchia toggleChicco) ---
+
+window.toggleChicco = async function() {
     const bubble = document.getElementById('chicco-bubble');
     const textSpan = document.getElementById('chicco-text');
     
     if (!bubble || !textSpan) return;
 
-    // Se è chiuso, aprilo e fallo parlare
+    // SE È CHIUSO: APRILO E CARICA
     if (bubble.style.display === 'none') {
-        // 1. Chiedi al cervello cosa dire
-        const frase = window.askChicco();
-        
-        // 2. Scrivi la frase
-        textSpan.innerText = frase;
-        
-        // 3. Mostra il fumetto
         bubble.style.display = 'block';
+        
+        // 1. Mostra stato di caricamento
+        textSpan.innerHTML = `Let me check... <span class="material-icons spin" style="font-size:0.9rem;">sync</span>`;
+        
+        // 2. Chiedi al cervello (Aspetta la risposta)
+        const info = await window.getChiccoRealTimeAdvice();
+        
+        // 3. Mostra il risultato formattato
+        textSpan.innerHTML = `
+            <div style="font-size:0.85rem; color:#555; margin-bottom:5px;">
+                ${info.weather}
+            </div>
+            <div style="font-weight:bold; color:#8E44AD; margin-bottom:8px;">
+                ${info.advice}
+            </div>
+            ${info.action ? `
+            <button onclick="viaggiaConChicco('${info.action}')" style="background:#8E44AD; color:white; border:none; padding:4px 10px; border-radius:10px; font-size:0.75rem; cursor:pointer; width:100%;">
+                ${info.btnLabel} ➜
+            </button>` : ''}
+        `;
     } 
-    // Se è aperto, chiudilo
+    // SE È APERTO: CHIUDILO
     else {
         bubble.style.display = 'none';
     }
 };
+
+// --- APP.JS: GESTIONE CLICK E ONBOARDING ---
+
+// 1. Funzione che gestisce il click sul bottone del fumetto
+window.viaggiaConChicco = function(viewName, targetId) {
+    // Chiudi il fumetto
+    const bubble = document.getElementById('chicco-bubble');
+    if(bubble) bubble.style.display = 'none';
+    
+    // CASO SPECIALE: DEEP LINKING (Apre direttamente una scheda specifica)
+    // Se la logica ci ha passato un ID specifico (es. per il tramonto)
+    if (targetId && targetId !== 'undefined') {
+        // Prima andiamo alla vista giusta
+        window.switchView(getViewCategory(viewName)); 
+        // Poi apriamo la modale (piccolo ritardo per caricare il DOM)
+        setTimeout(() => {
+            window.openModal(viewName, targetId);
+        }, 100);
+        return;
+    }
+
+    // CASO NORMALE: Navigazione tra pagine
+    if (['home', 'cibo', 'outdoor', 'servizi'].includes(viewName)) {
+        const navBtn = document.querySelector(`.nav-item[onclick*="${viewName}"]`);
+        if (navBtn) navBtn.click();
+        else window.switchView(viewName);
+    } 
+    else {
+        // Navigazione sottocategorie (Vini, Sentieri...)
+        let parentView = getViewCategory(viewName);
+        window.switchView(parentView);
+        setTimeout(() => {
+            const subBtn = document.querySelector(`.btn-3d[onclick*="${viewName}"]`);
+            if (subBtn) subBtn.click();
+            else window.loadTableData(viewName);
+        }, 300);
+    }
+};
+
+// Helper per capire la categoria genitore
+function getViewCategory(subView) {
+    if (['Ristoranti', 'Vini', 'Prodotti'].includes(subView)) return 'cibo';
+    if (['Sentieri', 'Spiagge', 'Attrazioni'].includes(subView)) return 'outdoor';
+    if (['Trasporti', 'Farmacie'].includes(subView)) return 'servizi';
+    return 'home';
+}
+
+// 2. ONBOARDING AUTOMATICO
+// Aggiungi questa chiamata alla fine del tuo 'DOMContentLoaded' o 'window.onload'
+// Controlla se è la prima visita e apre Chicco da solo
+setTimeout(async () => {
+    // Se non è mai stato aperto, simuliamo il click
+    if (!localStorage.getItem('chicco_intro_done')) {
+        await window.toggleChicco(); 
+        // Nota: Il flag 'chicco_intro_done' viene settato dentro getChiccoRealTimeAdvice
+        // quindi la prossima volta non si aprirà da solo.
+    }
+}, 3000); // Si apre dopo 3 secondi che l'utente guarda la home

@@ -1,3 +1,5 @@
+console.log("✅ 4. ui-modal-contents.js caricato (Localizzato & Fixato)");
+
 // 2. FUNZIONE PRINCIPALE (Il Generatore)
 window.getModalContent = function(type, payload, item) {
     
@@ -147,6 +149,40 @@ window.getModalContent = function(type, payload, item) {
         </div>`;
     }
 
+    // --- INFO SENTIERI (Versione Standardizzata - Come Ristoranti/Prodotti) ---
+    else if (type === 'sentieroInfo') {
+        
+        // 1. Decodifica standard (uguale a Ristorante)
+        let item = {};
+        try {
+            item = JSON.parse(decodeURIComponent(payload));
+        } catch(e) {
+            return { html: '<p>Errore lettura dati.</p>', class: 'modal-content' };
+        }
+
+        // 2. Usa window.dbCol come fanno tutti gli altri (Magia!)
+        // Cerca 'Descrizione' (maiuscolo) o 'descrizione' (minuscolo)
+        const desc = window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione');
+        const nome = item.nome || item.Titolo || 'Info Sentiero';
+
+        // 3. Render HTML pulito
+        contentHtml = `
+            <div style="padding: 25px;">
+                <h2 style="font-family:'Roboto Slab'; color:#2E7D32; margin-bottom: 20px;">${nome}</h2>
+                
+                <div class="info-content-text" style="line-height:1.6; color:#444; font-size: 1.05rem;">
+                    ${desc || 'Nessuna informazione disponibile.'}
+                </div>
+
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+                    <button class="btn-trail-modern" onclick="this.closest('.modal-overlay').remove()" style="width: auto; padding: 10px 30px;">
+                        Chiudi
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
     // --- MAPPA GPX ---
     else if (type === 'map') {
         const gpxUrl = payload;
@@ -159,18 +195,55 @@ window.getModalContent = function(type, payload, item) {
         `;
     }
 
-    // --- SPIAGGE ---
+// --- SPIAGGE ---
     else if (type === 'Spiagge') {
-        if (!item) { modal.remove(); return; }
-        const nome = item.Nome || 'Spiaggia';
-        const desc = window.dbCol(item, 'Descrizione') || '';
-        const tipo = item.Tipo || '';
+        
+        if (!item) {
+            return { 
+                html: `<div style="padding:30px; text-align:center;"><h3>${window.t('error_title') || 'Dati non trovati'}</h3></div>`, 
+                class: 'modal-content' 
+            };
+        }
+
+        // Funzione helper interna per forzare la traduzione nella modale
+        const getTranslatedField = (data, fieldName) => {
+            const lang = localStorage.getItem('language') || window.currentLanguage || 'it';
+            
+            // 1. Prova prima la funzione nativa del tuo sistema (se esiste)
+            if (window.dbCol) {
+                const val = window.dbCol(data, fieldName);
+                if (val && val !== 'undefined') return val;
+            }
+
+            // 2. Fallback manuale robusto
+            let val = data[fieldName];
+            if (!val) return '';
+
+            // Se è una stringa JSON
+            if (typeof val === 'string' && val.trim().startsWith('{')) {
+                try { val = JSON.parse(val); } catch(e){}
+            }
+
+            // Se è un oggetto
+            if (typeof val === 'object') {
+                return val[lang] || val['it'] || '';
+            }
+            
+            // Stringa semplice
+            return val;
+        };
+
+        const nome = getTranslatedField(item, 'Nome') || 'Spiaggia';
+        const tipo = getTranslatedField(item, 'Tipo');
+        const desc = getTranslatedField(item, 'Descrizione');
         
         contentHtml = `
              <div style="padding: 25px;">
                 <h2 style="font-family:'Roboto Slab'; color:#00695C;">${nome}</h2>
-                <span class="c-pill" style="margin-bottom:15px; display:inline-block;">${tipo}</span>
-                <p style="line-height:1.6; color:#444;">${desc}</p>
+                ${tipo ? `<span class="c-pill" style="margin-bottom:15px; display:inline-block;">${tipo}</span>` : ''}
+                <div style="line-height:1.6; color:#444; margin-top:10px; text-align:justify;">
+                    ${desc || window.t('desc_missing') || 'Descrizione non disponibile.'}
+                </div>
              </div>
         `;
     }
