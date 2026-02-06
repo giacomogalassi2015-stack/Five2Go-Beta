@@ -444,11 +444,13 @@ window.toggleTicketInfo = function() {
     if (box) { box.style.display = (box.style.display === 'none') ? 'block' : 'none'; }
 };
 
+
 // --- LOGICA FILTRI (Bottom Sheet) ---
 function renderGenericFilterableView(allData, filterKey, container, cardRenderer) {
     container.innerHTML = `<div class="list-container animate-fade" id="dynamic-list" style="padding-bottom: 80px;"></div>`;
     const listContainer = container.querySelector('#dynamic-list');
 
+    // Pulizia vecchi elementi UI
     const oldSheet = document.getElementById('filter-sheet');
     if (oldSheet) oldSheet.remove();
     const oldOverlay = document.getElementById('filter-overlay');
@@ -456,10 +458,51 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
     const oldBtn = document.getElementById('filter-toggle-btn');
     if (oldBtn) oldBtn.remove();
 
-    let rawValues = allData.map(item => item[filterKey] ? item[filterKey].trim() : null).filter(x => x);
+    // === 1. IDENTIFICAZIONE ROBUSTA DEL "NUMERO UNICO" ===
+    // Cerchiamo l'elemento 112 indipendentemente da come è scritto nel DB
+    const pinnedItem = allData.find(item => {
+        // Funzione helper per leggere i campi in modo sicuro (ignora maiuscole/minuscole delle chiavi)
+        const getField = (keys) => {
+            for (let k of keys) {
+                if (item[k] !== undefined) return item[k];
+                if (item[k.toLowerCase()] !== undefined) return item[k.toLowerCase()];
+            }
+            return '';
+        };
+
+        // Recuperiamo Nome e Numero in modo sicuro
+        // Nota: window.dbCol gestisce già le traduzioni se il campo è un oggetto JSON
+        let nome = window.dbCol ? window.dbCol(item, 'Nome') : getField(['Nome', 'name']);
+        if (!nome) nome = getField(['Nome', 'name']); // Fallback se dbCol fallisce o non trova nulla
+        
+        let numero = getField(['Numero', 'telefono', 'phone']);
+        
+        // Normalizziamo le stringhe per il confronto
+        const nomeNorm = String(nome).toLowerCase();
+        const numNorm = String(numero).replace(/\s+/g, '').trim(); // Rimuove tutti gli spazi (es. "1 1 2" -> "112")
+
+        // Criteri di ricerca:
+        // - Il numero è "112"
+        // - Oppure il nome contiene "numero unico", "emergency" o "112"
+        return numNorm === '112' || nomeNorm.includes('numero unico') || nomeNorm.includes('emergency') || nomeNorm.includes('ue 112');
+    });
+
+    // === 2. SEPARAZIONE DATI ===
+    // Togliamo il pinnedItem dalla lista "filtrabile" per non duplicarlo
+    const otherData = pinnedItem ? allData.filter(i => i !== pinnedItem) : allData;
+
+    // === 3. ESTRAZIONE TAG DAI DATI RIMANENTI ===
+    let rawValues = otherData.map(item => {
+        // Cerchiamo il valore del filtro (es. 'Comune')
+        // Gestiamo sia la chiave diretta che quella lowercase (es. 'Comune' o 'comune')
+        let val = item[filterKey] || item[filterKey.toLowerCase()] || item[filterKey.charAt(0).toUpperCase() + filterKey.slice(1)];
+        return val ? String(val).trim() : null;
+    }).filter(x => x);
+
     let tagsRaw = [...new Set(rawValues)];
     
-    const customOrder = ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso", "Facile", "Media", "Difficile"];
+    // Ordine personalizzato per i borghi (utile se il filtro è 'Comune' o 'Paesi')
+    const customOrder = ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso", "La Spezia", "Levanto", "Facile", "Media", "Difficile"];
     
     if (!tagsRaw.includes('Tutti')) tagsRaw.unshift('Tutti');
 
@@ -471,6 +514,7 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
         return a.localeCompare(b);
     });
 
+    // Costruzione UI Filtri (Sheet)
     const overlay = document.createElement('div');
     overlay.id = 'filter-overlay';
     overlay.className = 'sheet-overlay';
@@ -504,10 +548,19 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
             chip.classList.add('active-filter');
             activeTag = tag;
             
-            const filtered = tag === 'Tutti' ? allData : allData.filter(item => {
-                const valDB = item[filterKey] ? item[filterKey].trim() : '';
-                return valDB.includes(tag) || (item.Nome && item.Nome.toLowerCase().includes('emergenza'));
+            // 1. Filtra la lista "normale"
+            let filtered = tag === 'Tutti' ? otherData : otherData.filter(item => {
+                // Recupero valore sicuro per il confronto
+                let valDB = item[filterKey] || item[filterKey.toLowerCase()];
+                if (!valDB) return false;
+                return String(valDB).trim().includes(tag);
             });
+
+            // 2. Riattacca il Pinned Item in CIMA (se esiste)
+            // Questo assicura che il 112 ci sia SEMPRE, anche se il filtro "Vernazza" lo escluderebbe
+            if (pinnedItem) {
+                filtered = [pinnedItem, ...filtered];
+            }
 
             updateList(filtered);
             closeFilterSheet();
@@ -515,6 +568,7 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
         optionsContainer.appendChild(chip);
     });
 
+    // Bottone Fluttuante
     const filterBtn = document.createElement('button');
     filterBtn.id = 'filter-toggle-btn';
     filterBtn.innerHTML = '<span class="material-icons">filter_list</span>';
@@ -529,17 +583,29 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
 
     function updateList(items) {
         if (!items || items.length === 0) { 
-            listContainer.innerHTML = `<p style="...">${window.t('no_results')}</p>`; 
+            listContainer.innerHTML = `<p style="text-align:center; padding:40px; color:#999;">${window.t('no_results')}</p>`; 
         } else {
+            // Render
             listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
             
+            // Inizializza eventuali mappe (se presenti nelle card renderizzate)
             setTimeout(() => {
                 if(window.initPendingMaps) window.initPendingMaps();
             }, 100);
         }
     }
     
-    updateList(allData);
+    // Render Iniziale: Metti il pinned item in cima anche all'avvio
+    let initialList = [...otherData];
+    if (pinnedItem) {
+        initialList = [pinnedItem, ...initialList];
+        // (Opzionale) Debug console per confermare che l'abbia trovato
+        console.log("✅ Numero Unico bloccato in alto:", pinnedItem); 
+    } else {
+        console.warn("⚠️ Numero Unico (112) non trovato nei dati. Controlla Nome/Numero nel DB.");
+    }
+
+    updateList(initialList);
 }
 
 // --- LOGICA FILTRO DOPPIO ---

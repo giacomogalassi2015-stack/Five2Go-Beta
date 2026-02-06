@@ -243,82 +243,8 @@ function initLeafletMap(divId, gpxUrl) {
     setTimeout(() => { map.invalidateSize(); }, 300);
 }
 
-window.loadAllStops = async function() {
-    const selPart = document.getElementById('selPartenza');
-    if(!selPart) return;
 
-    if (!window.cachedStops) {
-        const { data, error } = await window.supabaseClient
-            .from('Fermate_bus')
-            .select('ID, NOME_FERMATA, LAT, LONG') 
-            .order('NOME_FERMATA', { ascending: true });
-        
-        if (error) { console.error("Errore fermate:", error); return; }
-        window.cachedStops = data;
-    }
 
-    const options = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
-    selPart.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` + options;
-
-    if (window.cachedStops && window.initBusMap) {
-        window.initBusMap(window.cachedStops);
-    }
-};
-
-window.filterDestinations = async function(startId) {
-    const selArr = document.getElementById('selArrivo');
-    const btnSearch = document.getElementById('btnSearchBus');
-    
-    if(!startId || !selArr) return;
-
-    selArr.innerHTML = `<option>${window.t('bus_searching')}</option>`;
-    selArr.disabled = true;
-    btnSearch.style.opacity = '0.5';
-    btnSearch.style.pointerEvents = 'none';
-
-    try {
-        const { data: corsePassanti } = await window.supabaseClient
-            .from('Orari_bus')
-            .select('ID_CORSA')
-            .eq('ID_FERMATA', startId);
-        
-        const runIds = corsePassanti.map(c => c.ID_CORSA);
-        
-        if (runIds.length === 0) {
-            selArr.innerHTML = `<option disabled>${window.t('bus_no_conn')}</option>`;
-            return;
-        }
-
-        const { data: fermateCollegate } = await window.supabaseClient
-            .from('Orari_bus')
-            .select('ID_FERMATA')
-            .in('ID_CORSA', runIds);
-
-        const destIds = [...new Set(fermateCollegate.map(x => x.ID_FERMATA))].filter(id => id != startId);
-
-        let validDestinations = [];
-        if (window.cachedStops) {
-            validDestinations = window.cachedStops.filter(s => destIds.includes(s.ID));
-        }
-
-        if (validDestinations.length > 0) {
-            validDestinations.sort((a, b) => a.NOME_FERMATA.localeCompare(b.NOME_FERMATA));
-            
-            selArr.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` + 
-                               validDestinations.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
-            selArr.disabled = false;
-            
-            btnSearch.style.opacity = '1';
-            btnSearch.style.pointerEvents = 'auto';
-        } else {
-            selArr.innerHTML = `<option disabled>${window.t('bus_no_dest')}</option>`;
-        }
-
-    } catch (err) {
-        console.error(err);
-        selArr.innerHTML = `<option>${window.t('error')}</option>`;
-    }
-};
 
 window.eseguiRicercaBus = async function() {
     const selPartenza = document.getElementById('selPartenza');
@@ -390,46 +316,188 @@ window.eseguiRicercaBus = async function() {
     setTimeout(() => { resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
 };
 
+// --- Sostituisci in ui-modal.js ---
+
+// 1. CARICAMENTO INIZIALE: Popola entrambi i box
+window.loadAllStops = async function() {
+    const selPart = document.getElementById('selPartenza');
+    const selArr = document.getElementById('selArrivo');
+    if(!selPart || !selArr) return;
+
+    if (!window.cachedStops) {
+        const { data, error } = await window.supabaseClient
+            .from('Fermate_bus')
+            .select('ID, NOME_FERMATA, LAT, LONG') 
+            .order('NOME_FERMATA', { ascending: true });
+        
+        if (error) { console.error("Errore fermate:", error); return; }
+        window.cachedStops = data;
+    }
+
+    const options = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+    
+    // Popoliamo entrambi i menu inizialmente
+    const placeholder = `<option value="" disabled selected>${window.t('select_placeholder')}</option>`;
+    if (selPart.innerHTML.includes(window.t('loading'))) selPart.innerHTML = placeholder + options;
+    if (selArr.innerHTML.includes(window.t('loading')) || selArr.value === "") selArr.innerHTML = placeholder + options;
+
+    if (window.cachedStops && window.initBusMap) {
+        window.initBusMap(window.cachedStops);
+    }
+};
+
+// 2. NUOVA FUNZIONE BIDIREZIONALE: Gestisce il cambio di selezione
+window.handleBusSelectionChange = async function(source) {
+    const selPart = document.getElementById('selPartenza');
+    const selArr = document.getElementById('selArrivo');
+    
+    if (!selPart || !selArr) return;
+
+    // Determiniamo chi sta filtrando chi
+    const isPartenzaChanged = (source === 'partenza');
+    const changedSelect = isPartenzaChanged ? selPart : selArr;
+    const targetSelect = isPartenzaChanged ? selArr : selPart;
+    
+    const selectedId = changedSelect.value;
+    if (!selectedId) return;
+
+    // Salviamo il valore corrente dell'altro box (se esiste) per tentare di mantenerlo
+    const currentTargetValue = targetSelect.value;
+
+    // Feedback visivo di caricamento sul target
+    const originalTargetOptions = targetSelect.innerHTML;
+    // Non cancelliamo tutto, mostriamo opzione di ricerca mantenendo la larghezza
+    // targetSelect.disabled = true; // Opzionale: disabilitare durante la ricerca
+
+    try {
+        // Logica: Troviamo le corse che passano per la fermata selezionata
+        const { data: corsePassanti } = await window.supabaseClient
+            .from('Orari_bus')
+            .select('ID_CORSA')
+            .eq('ID_FERMATA', selectedId);
+        
+        const runIds = corsePassanti.map(c => c.ID_CORSA);
+        
+        if (runIds.length === 0) {
+            alert(window.t('bus_not_found'));
+            return;
+        }
+
+        // Troviamo tutte le ALTRE fermate collegate a queste corse
+        const { data: fermateCollegate } = await window.supabaseClient
+            .from('Orari_bus')
+            .select('ID_FERMATA')
+            .in('ID_CORSA', runIds);
+
+        // Creiamo lista unica di ID escludendo quello appena selezionato
+        const validIds = [...new Set(fermateCollegate.map(x => x.ID_FERMATA))]
+                         .filter(id => id != selectedId);
+
+        // Filtriamo l'array cachedStops
+        let validStops = [];
+        if (window.cachedStops) {
+            validStops = window.cachedStops.filter(s => validIds.includes(s.ID));
+        }
+        
+        validStops.sort((a, b) => a.NOME_FERMATA.localeCompare(b.NOME_FERMATA));
+
+        // Ricostruiamo le opzioni del target
+        const placeholder = `<option value="" disabled selected>${window.t('select_placeholder')}</option>`;
+        const newOptions = validStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+        
+        targetSelect.innerHTML = placeholder + newOptions;
+        
+        // Se il valore che c'era prima è ancora valido, lo riselezioniamo
+        if (currentTargetValue && validIds.includes(parseInt(currentTargetValue))) {
+            targetSelect.value = currentTargetValue;
+        } else {
+            // Se non è più valido o era vuoto, resetta
+            targetSelect.value = "";
+        }
+        
+        targetSelect.disabled = false;
+
+    } catch (err) {
+        console.error("Errore filtro bus:", err);
+        targetSelect.innerHTML = originalTargetOptions; // Ripristina in caso di errore
+        targetSelect.disabled = false;
+    }
+};
+
+// 3. INIT MAPPA BUS (Invariato, ma essenziale per il contesto)
 window.initBusMap = function(fermate) {
     const mapContainer = document.getElementById('bus-map');
     if (!mapContainer) return;
     
+    // Rimuove la mappa precedente se esiste per evitare duplicati
     if (window.currentBusMap) { window.currentBusMap.remove(); window.currentBusMap = null; }
 
+    // Inizializza la mappa centrata sulle 5 Terre (o coordinate default)
     const map = L.map('bus-map').setView([44.1000, 9.7385], 13);
     window.currentBusMap = map; 
 
+    // Tile Layer (sfondo mappa)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap, © CARTO', subdomains: 'abcd', maxZoom: 20
     }).addTo(map);
 
+    // Gruppo per i marker
     const markersGroup = new L.FeatureGroup();
+    
+    // Recupera le etichette tradotte (usa le chiavi esistenti in data-logic.js)
+    // Se window.t non trova la chiave, usa un fallback
+    const labelPartenza = window.t('departure') || 'Partenza';
+    const labelArrivo = window.t('arrival') || 'Arrivo';
+
     fermate.forEach(f => {
         if (!f.LAT || !f.LONG) return;
         const marker = L.marker([f.LAT, f.LONG]).addTo(map);
+        
+        // Popup con bottoni tradotti
         marker.bindPopup(`
             <div style="text-align:center; min-width:150px;">
-                <h3 style="margin:0 0 10px 0; font-size:1rem;">${f.NOME_FERMATA}</h3>
+                <h3 style="margin:0 0 10px 0; font-size:1rem; color:#333;">${f.NOME_FERMATA}</h3>
                 <div style="display:flex; gap:5px; justify-content:center;">
-                    <button onclick="setBusStop('selPartenza', '${f.ID}')" class="btn-popup-start">Partenza</button>
-                    <button onclick="setBusStop('selArrivo', '${f.ID}')" class="btn-popup-end">Arrivo</button>
+                    <button onclick="setBusStop('partenza', '${f.ID}')" class="btn-popup-start" style="background:#27ae60; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:0.75rem; font-weight:bold; text-transform:uppercase;">
+                        ${labelPartenza}
+                    </button>
+                    <button onclick="setBusStop('arrivo', '${f.ID}')" class="btn-popup-end" style="background:#c0392b; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:0.75rem; font-weight:bold; text-transform:uppercase;">
+                        ${labelArrivo}
+                    </button>
                 </div>
             </div>`);
         markersGroup.addLayer(marker);
     });
+    
     map.addLayer(markersGroup);
+    
+    // Forza il ricalcolo delle dimensioni della mappa (utile se è in una modale/tab nascosta)
     setTimeout(() => { map.invalidateSize(); }, 200);
 };
 
-window.setBusStop = function(selectId, value) {
+// 4. SET BUS STOP (AGGIORNATA): Gestisce la selezione da Mappa
+window.setBusStop = function(type, value) {
+    // type è 'partenza' o 'arrivo'
+    const selectId = (type === 'partenza') ? 'selPartenza' : 'selArrivo';
     const select = document.getElementById(selectId);
+    
     if (select) {
+        // 1. Imposta il valore visivo
         select.value = value;
+        
+        // 2. Feedback visivo (flash giallo)
         select.style.backgroundColor = "#fff3cd"; 
         setTimeout(() => select.style.backgroundColor = "white", 500);
+        
+        // 3. CHIAMA LA FUNZIONE DI FILTRO
+        // Questo è il passaggio mancante nel tuo codice originale.
+        // Simuliamo l'azione dell'utente chiamando manualmente la logica.
+        window.handleBusSelectionChange(type);
+        
+        // 4. Chiude il popup della mappa (opzionale, per pulizia)
+        if(window.currentBusMap) window.currentBusMap.closePopup();
     }
 };
-
 
 window.toggleBusMap = function() {
     const container = document.getElementById('bus-map-wrapper');

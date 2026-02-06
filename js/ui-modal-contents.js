@@ -318,14 +318,14 @@ window.getModalContent = function(type, payload, item) {
                 <div class="bus-inputs">
                     <div style="flex:1;">
                         <label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('departure')}</label>
-                        <select id="selPartenza" class="bus-select" onchange="filterDestinations(this.value)">
+                        <select id="selPartenza" class="bus-select" onchange="window.handleBusSelectionChange('partenza')">
                             <option value="" disabled selected>${window.t('loading')}...</option>
                         </select>
                     </div>
                     <div style="flex:1;">
                         <label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('arrival')}</label>
-                        <select id="selArrivo" class="bus-select" disabled>
-                            <option value="" disabled selected>${window.t('select_start')}</option>
+                        <select id="selArrivo" class="bus-select" onchange="window.handleBusSelectionChange('arrivo')">
+                            <option value="" disabled selected>${window.t('select_placeholder')}</option>
                         </select>
                     </div>
                 </div>
@@ -333,7 +333,7 @@ window.getModalContent = function(type, payload, item) {
                     <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('date_trip')}</label><input type="date" id="selData" class="bus-select" value="${todayISO}"></div>
                     <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('time_trip')}</label><input type="time" id="selOra" class="bus-select" value="${nowTime}"></div>
                 </div>
-                <button id="btnSearchBus" onclick="eseguiRicercaBus()" class="btn-yellow" style="width:100%; font-weight:bold; margin-top:5px; opacity: 0.5; pointer-events: none;">${window.t('find_times')}</button>
+                <button id="btnSearchBus" onclick="eseguiRicercaBus()" class="btn-yellow" style="width:100%; font-weight:bold; margin-top:5px;">${window.t('find_times')}</button>
                 <div id="busResultsContainer" style="display:none; margin-top:20px;">
                     <div id="nextBusCard" class="bus-result-main"></div>
                     <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">${window.t('next_runs')}:</div>
@@ -341,6 +341,7 @@ window.getModalContent = function(type, payload, item) {
                 </div>
             </div>`;
             
+            // Carica tutte le fermate per entrambi i box
             setTimeout(() => { if(window.loadAllStops) window.loadAllStops(); }, 100);
         }
 
