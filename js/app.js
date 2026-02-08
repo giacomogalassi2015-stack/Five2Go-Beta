@@ -85,10 +85,17 @@ window.addEventListener('click', () => {
     if(dd) dd.classList.remove('show');
 });
 
-// --- 2. NAVIGAZIONE PRINCIPALE ---
 window.switchView = async function(view, el) {
     if (!content) return;
     window.currentViewName = view; 
+    
+    // --- FIX 1: PULIZIA MASCOTTE ---
+    // Ogni volta che cambi pagina, rimuovi Chicco. 
+    // Se stai andando in Home, la funzione renderHome lo ricreerà.
+    const mascot = document.getElementById('mascot-container');
+    if (mascot) mascot.remove();
+    // --------------------------------
+
     document.body.classList.remove('is-home');
 
     const globalFilterBtn = document.querySelector('body > #filter-toggle-btn');
@@ -151,19 +158,15 @@ function renderHome() {
         </div>
     </div>`;
 
-    // --- PULIZIA: Rimuoviamo vecchi Chicchi residui ---
-    const vecchi = document.querySelectorAll('#mascot-container');
-    vecchi.forEach(el => el.remove());
+const oldMascot = document.getElementById('mascot-container');
+    if (oldMascot) oldMascot.remove();
 
-    // --- INSERISCI QUI IL TUO LINK IMMAGINE ---
     const chiccoImg = "https://res.cloudinary.com/dkg0jfady/image/upload/v1770579869/chicco_wxxwbm.png"; 
-    
-    // HTML DELLA MASCOTTE + FUMETTO
-    // Nota: Ho aggiunto z-index altissimo e display:block al container
+   
     const mascotHTML = `
-    <div id="mascot-container" style="position: fixed; bottom: 70px; right: 20px; z-index: 2147483647; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none;">
+    <div id="mascot-container" style="position: fixed; bottom: 70px; right: 20px; z-index: 5000; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none;">
         
-        <div id="chicco-bubble" style="display: none; background: white; padding: 15px; border-radius: 15px 15px 0 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 10px; max-width: 200px; font-size: 0.9rem; color: #333; border: 2px solid #8E44AD; pointer-events: auto;">
+        <div id="chicco-bubble" class="animate-fade" style="display: none; background: white; padding: 15px; border-radius: 15px 15px 0 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-bottom: 10px; max-width: 200px; font-size: 0.9rem; color: #333; border: 2px solid #8E44AD; pointer-events: auto;">
             <span id="chicco-text">Ciao!</span>
         </div>
 
@@ -176,8 +179,8 @@ function renderHome() {
         </div>
     </div>`;
 
-    // Inietta l'HTML alla fine del content o del body per sicurezza
-    document.body.insertAdjacentHTML('beforeend', mascotHTML);
+    // Aggiungi alla pagina
+    content.insertAdjacentHTML('beforeend', mascotHTML);
 }
 
 
@@ -1067,7 +1070,12 @@ function getViewCategory(subView) {
 
 // 4. ONBOARDING
 setTimeout(async () => {
-    if (!localStorage.getItem('chicco_intro_done') && document.body.classList.contains('is-home')) {
+    // Controllo di sicurezza: siamo in home?
+    const isHome = document.body.classList.contains('is-home') || window.currentViewName === 'home';
+    
+    // Se siamo in Home E l'utente non l'ha mai visto
+    if (!localStorage.getItem('chicco_intro_done') && isHome) {
+        console.log("👋 Primo avvio: Apro Chicco tra 3 secondi...");
         await window.toggleChicco(); 
     }
 }, 3000);
