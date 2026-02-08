@@ -7,14 +7,14 @@
 :root {
     /* Palette */
     --primary-col: #4A6B57; 
-    --primary-dark: #264653; 
+    --primary-dark: #26532c; 
     --accent-col:  #D06F5B; 
     --accent-soft: #F2A68D; 
     
     --bg-body:     #FDFCF8; 
     --surface:     #FFFFFF; 
     
-    --text-main:   #2D3436; 
+    --text-main:   #000000; 
     --text-light:  #636E72;
 
     /* Dimensioni & Spaziature */
@@ -22,7 +22,7 @@
     --card-radius: 20px; 
     
     /* Effetti */
-    --shadow-soft: 0 10px 30px -10px rgba(42, 157, 143, 0.15); 
+    --shadow-soft: 0 10px 30px -10px rgba(42, 157, 100, 0.15); 
     --glass-bg:    rgba(255, 255, 255, 0.85);
     --glass-blur:  blur(12px);
 }

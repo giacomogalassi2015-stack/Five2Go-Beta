@@ -119,8 +119,8 @@ window.getModalContent = function(type, payload, item) {
 
         contentHtml = `
         <div style="padding: 20px 15px;">
-            <h2 style="text-align:center; margin: 0 0 5px 0; color:#00000;">${titolo}</h2>
-            ${nomeSentiero ? `<p style="text-align:center; color:#000000; margin:0 0 15px 0; font-size:0.9rem;">${nomeSentiero}</p>` : ''}
+            <h2 style="text-align:center; margin: 0 0 5px 0; color:#2c3e50;">${titolo}</h2>
+            ${nomeSentiero ? `<p style="text-align:center; color:#7f8c8d; margin:0 0 15px 0; font-size:0.9rem;">${nomeSentiero}</p>` : ''}
             
             <div class="trail-stats-grid">
                 <div class="trail-stat-box">
@@ -168,7 +168,7 @@ window.getModalContent = function(type, payload, item) {
         // 3. Render HTML pulito
         contentHtml = `
             <div style="padding: 25px;">
-                <h2 style="font-family:'Roboto Slab'; color:#2E7D3; margin-bottom: 20px;">${nome}</h2>
+                <h2 style="font-family:'Roboto Slab'; color:#2E7D32; margin-bottom: 20px;">${nome}</h2>
                 
                 <div class="info-content-text" style="line-height:1.6; color:#444; font-size: 1.05rem;">
                     ${desc || 'Nessuna informazione disponibile.'}
@@ -239,7 +239,7 @@ window.getModalContent = function(type, payload, item) {
         
         contentHtml = `
              <div style="padding: 25px;">
-                <h2 style="font-family:'Roboto Slab'; color:#000000;">${nome}</h2>
+                <h2 style="font-family:'Roboto Slab'; color:#00695C;">${nome}</h2>
                 ${tipo ? `<span class="c-pill" style="margin-bottom:15px; display:inline-block;">${tipo}</span>` : ''}
                 <div style="line-height:1.6; color:#444; margin-top:10px; text-align:justify;">
                     ${desc || window.t('desc_missing') || 'Descrizione non disponibile.'}
@@ -262,7 +262,7 @@ window.getModalContent = function(type, payload, item) {
             `<div class="monument-header-icon"><i class="fa-solid fa-landmark" style="font-size:4rem; color:#546e7a;"></i></div>`}
 
             <div style="padding: 0 25px 30px;">
-                <h2 style="font-family:'Roboto Slab'; font-size:2rem; margin: ${img ? '0' : '20px'} 0 10px 0; color:#000000; line-height:1.1;">${titolo}</h2>
+                <h2 style="font-family:'Roboto Slab'; font-size:2rem; margin: ${img ? '0' : '20px'} 0 10px 0; color:#2c3e50; line-height:1.1;">${titolo}</h2>
                 <div style="width:50px; height:4px; background:#e74c3c; margin-bottom:20px; border-radius:2px;"></div>
 
                 ${curiosita ? `
@@ -491,4 +491,94 @@ window.initFerrySearch = function() {
             destOpts.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
         selArr.disabled = false;
     });
+};
+
+// ==========================================================
+// UI-MODAL-CONTENTS.JS: CHAT INTERFACE & MODAL CONTENT
+// ==========================================================
+
+console.log("✅ 4. ui-modal-contents.js caricato");
+
+// 1. INIEZIONE CSS AUTOMATICA (Stile della chat)
+(function injectChiccoCSS() {
+    const css = `
+    .chicco-chat-wrapper { display: flex; flex-direction: column; gap: 15px; padding: 10px; }
+    .chicco-weather-box { background: linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%); border-radius: 12px; padding: 15px; text-align: center; color: #006064; border: 1px solid #80DEEA; }
+    .chicco-bubble { background: #F3E5F5; border: 1px solid #E1BEE7; border-radius: 16px; padding: 15px; color: #4A148C; min-height: 60px; display: flex; align-items: center; }
+    .chicco-input-area { display: flex; gap: 10px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 15px; }
+    .chicco-input { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
+    .btn-chicco-send { background: #8E24AA; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    `;
+    const style = document.createElement('style');
+    style.innerHTML = css;
+    document.head.appendChild(style);
+})();
+
+// 2. GESTIONE CONTENUTI MODALE
+window.getModalContent = function(type, payload, item) {
+    let contentHtml = '';
+    
+    // *** FIX FONDAMENTALE PER LA CHAT ***
+    if (type === 'custom') {
+        return { html: payload, class: 'modal-content' };
+    }
+
+    // GESTIONE STANDARD (Prodotti, Ristoranti, ecc.)
+    // (Mantengo una logica generica sicura per non rompere il resto)
+    try {
+        const p = typeof payload === 'string' && payload.startsWith('{') ? JSON.parse(decodeURIComponent(payload)) : {};
+        const nome = window.dbCol ? (window.dbCol(p, 'Nome') || p.Nome || 'Dettaglio') : (p.Nome || 'Dettaglio');
+        const desc = window.dbCol ? (window.dbCol(p, 'Descrizione') || p.Descrizione || '') : '';
+        
+        contentHtml = `<div style="padding:20px;"><h2>${nome}</h2><p>${desc}</p></div>`;
+    } catch(e) {
+        contentHtml = `<div style="padding:20px;">${payload}</div>`;
+    }
+
+    return { html: contentHtml, class: 'modal-content' };
+};
+
+// 3. FUNZIONE APERTURA CHAT
+window.openChiccoAssistant = async function() {
+    // A. Mostra caricamento
+    if(window.openModal) window.openModal('custom', '<div style="padding:40px; text-align:center;">🍇 Chicco sta arrivando...</div>');
+
+    // B. Prendi dati meteo
+    if (!window.getChiccoRealTimeAdvice) return;
+    const data = await window.getChiccoRealTimeAdvice();
+
+    // C. Costruisci HTML Chat
+    const htmlChat = `
+        <div class="chicco-chat-wrapper">
+            <div class="chicco-weather-box">${data.weather}</div>
+            <div id="chicco-response-text" class="chicco-bubble animate-fade">${data.advice}</div>
+            <div class="chicco-input-area">
+                <input type="text" id="chiccoInput" class="chicco-input" placeholder="Chiedi a Chicco..." onkeypress="if(event.key === 'Enter') window.inviaDomandaAChicco()">
+                <button class="btn-chicco-send" onclick="window.inviaDomandaAChicco()"><span class="material-icons">send</span></button>
+            </div>
+        </div>
+    `;
+
+    // D. Aggiorna modale
+    const modalBody = document.querySelector('.modal-content');
+    if (modalBody) {
+        modalBody.innerHTML = htmlChat;
+        setTimeout(() => document.getElementById('chiccoInput')?.focus(), 300);
+    }
+};
+
+// 4. INVIO DOMANDA
+window.inviaDomandaAChicco = async function() {
+    const input = document.getElementById('chiccoInput');
+    const resp = document.getElementById('chicco-response-text');
+    const txt = input.value;
+    if (!txt) return;
+
+    input.value = "";
+    resp.innerHTML = "<em>🍇 Chicco sta pensando...</em>";
+    
+    if (window.chiediAChicco) {
+        const risposta = await window.chiediAChicco(txt);
+        resp.innerHTML = risposta;
+    }
 };

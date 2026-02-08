@@ -124,13 +124,12 @@ window.switchView = async function(view, el) {
     }
 };
 
-// 1. RENDER HOME (Con Pulizia ID duplicati)
+// --- RENDER HOME ---
 function renderHome() {
     const bgImage = "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
 
     document.body.classList.add('is-home');
 
-    // Costruiamo la Home
     content.innerHTML = `
     <div class="home-hero-fullscreen animate-fade">
         <img src="${bgImage}" alt="Cinque Terre">
@@ -138,8 +137,11 @@ function renderHome() {
 
     <div class="welcome-overlay">
         <div class="welcome-content">
+            
             <h1></h1>
+            
             <div class="welcome-divider"></div>
+            
             <div class="lang-grid">
                 ${window.AVAILABLE_LANGS.map(l => `
                     <button class="lang-tile ${l.code === window.currentLang ? 'active' : ''}" onclick="changeLanguage('${l.code}')">
@@ -151,35 +153,30 @@ function renderHome() {
         </div>
     </div>`;
 
-    // --- PULIZIA: Rimuoviamo vecchi Chicchi residui ---
-    const vecchi = document.querySelectorAll('#mascot-container');
-    vecchi.forEach(el => el.remove());
-
-    // --- INSERISCI QUI IL TUO LINK IMMAGINE ---
-    const chiccoImg = "https://res.cloudinary.com/dkg0jfady/image/upload/v1770579869/chicco_wxxwbm.png"; 
+ const chiccoImg = "https://cdn-icons-png.flaticon.com/256/7835/7835532.png"; 
     
-    // HTML DELLA MASCOTTE + FUMETTO
-    // Nota: Ho aggiunto z-index altissimo e display:block al container
     const mascotHTML = `
-    <div id="mascot-container" style="position: fixed; bottom: 70px; right: 20px; z-index: 2147483647; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none;">
+    <div id="mascot-container" style="position: fixed; bottom: 70px; right: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end;">
         
-        <div id="chicco-bubble" style="display: none; background: white; padding: 15px; border-radius: 15px 15px 0 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 10px; max-width: 200px; font-size: 0.9rem; color: #333; border: 2px solid #8E44AD; pointer-events: auto;">
+        <div id="chicco-bubble" class="animate-fade" style="display: none; background: white; padding: 15px; border-radius: 15px 15px 0 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-bottom: 10px; max-width: 200px; font-size: 0.9rem; color: #333; border: 2px solid #8E44AD;">
             <span id="chicco-text">Ciao!</span>
         </div>
 
-        <div onclick="window.toggleChicco()" style="cursor: pointer; transition: transform 0.2s; pointer-events: auto;">
-            <img src="${chiccoImg}" 
-                 style="width: 100px; height: auto; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.3)); display: block;" 
-                 alt="Chicco"
-                 onmouseover="this.style.transform='scale(1.1)'" 
-                 onmouseout="this.style.transform='scale(1)'">
+        <div onclick="toggleChicco()" style="cursor: pointer; transition: transform 0.2s;">
+            <img src="${chiccoImg}" style="width: 90px; height: 90px; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.3));" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
         </div>
+    </div>
+
+    <div style="position: fixed; bottom: 5px; left: 5px; z-index: 9998; background: rgba(255,255,255,0.7); padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; backdrop-filter: blur(2px);">
+        <a href="https://www.flaticon.com/free-stickers/grapes" title="grapes stickers" target="_blank" style="text-decoration: none; color: #555;">
+            Grapes stickers created by Stickers - Flaticon
+        </a>
     </div>`;
 
-    // Inietta l'HTML alla fine del content o del body per sicurezza
-    document.body.insertAdjacentHTML('beforeend', mascotHTML);
-}
+    // Aggiungiamo tutto alla pagina
+    content.insertAdjacentHTML('beforeend', mascotHTML);
 
+}
 
 // ============================================================
 // 1. RENDER MENU
@@ -923,81 +920,26 @@ window.closeModal = function() {
     if(originalCloseModal) originalCloseModal();
 };
 
-window.toggleChicco = async function() {
-    console.log("🍇 Click rilevato su Chicco!"); // DEBUG
+// ==========================================================
+// PONTE CHICCO (Senza generare icone)
+// ==========================================================
 
-    const bubble = document.getElementById('chicco-bubble');
-    const textSpan = document.getElementById('chicco-text');
+window.toggleChicco = function() {
+    console.log("🍇 Click sull'icona esistente: Apro Chat AI...");
     
-    // Controllo errori
-    if (!bubble) { console.error("❌ ERRORE: Elemento 'chicco-bubble' non trovato."); return; }
-    if (!textSpan) { console.error("❌ ERRORE: Elemento 'chicco-text' non trovato."); return; }
-
-    // SE È CHIUSO -> APRI
-    if (bubble.style.display === 'none' || bubble.style.display === '') {
-        console.log("🔹 Apro il fumetto...");
-        bubble.style.display = 'block';
-        
-        textSpan.innerHTML = `Mmh... <span class="material-icons spin" style="font-size:0.9rem;">sync</span>`;
-        
-        // Chiama data-logic.js
-        if (window.getChiccoRealTimeAdvice) {
-            console.log("🔹 Chiedo consiglio al cervello...");
-            const info = await window.getChiccoRealTimeAdvice();
-            
-            textSpan.innerHTML = `
-                <div style="font-size:0.85rem; color:#555; margin-bottom:5px;">${info.weather}</div>
-                <div style="font-weight:bold; color:#8E44AD; margin-bottom:8px;">${info.advice}</div>
-                ${info.action ? `<button onclick="viaggiaConChicco('${info.action}')" style="background:#8E44AD; color:white; border:none; padding:4px 10px; border-radius:10px; font-size:0.75rem; cursor:pointer; width:100%; margin-top:5px;">${info.btnLabel} ➜</button>` : ''}
-            `;
-        } else {
-            console.warn("⚠️ getChiccoRealTimeAdvice non trovato!");
-            textSpan.innerHTML = "Ciao! (Errore Data Logic)";
-        }
-    } 
-    // SE È APERTO -> CHIUDI
-    else {
-        console.log("🔸 Chiudo il fumetto...");
-        bubble.style.display = 'none';
-    }
-};
-
-// 3. NAVIGAZIONE
-window.viaggiaConChicco = function(viewName, targetId) {
-    const bubble = document.getElementById('chicco-bubble');
-    if(bubble) bubble.style.display = 'none';
-    
-    if (targetId && targetId !== 'undefined') {
-        window.switchView(getViewCategory(viewName)); 
-        setTimeout(() => { window.openModal(viewName, targetId); }, 100);
-        return;
-    }
-
-    if (['home', 'cibo', 'outdoor', 'servizi'].includes(viewName)) {
-        const navBtn = document.querySelector(`.nav-item[onclick*="${viewName}"]`);
-        if (navBtn) navBtn.click();
-        else window.switchView(viewName);
+    // Chiama la funzione definita in ui-modal-contents.js
+    if (window.openChiccoAssistant) {
+        window.openChiccoAssistant();
     } else {
-        let parentView = getViewCategory(viewName);
-        window.switchView(parentView);
-        setTimeout(() => {
-            const subBtn = document.querySelector(`.btn-3d[onclick*="${viewName}"]`);
-            if (subBtn) subBtn.click();
-            else window.loadTableData(viewName);
-        }, 300);
+        console.error("ERRORE: Funzione Chat non trovata.");
+        alert("Chicco sta dormendo (Controlla ui-modal-contents.js).");
     }
 };
 
-function getViewCategory(subView) {
-    if (['Ristoranti', 'Vini', 'Prodotti'].includes(subView)) return 'cibo';
-    if (['Sentieri', 'Spiagge', 'Attrazioni'].includes(subView)) return 'outdoor';
-    if (['Trasporti', 'Farmacie'].includes(subView)) return 'servizi';
-    return 'home';
-}
-
-// 4. ONBOARDING
-setTimeout(async () => {
+// ONBOARDING (Opzionale: apre la chat al primo avvio)
+setTimeout(() => {
     if (!localStorage.getItem('chicco_intro_done') && document.body.classList.contains('is-home')) {
-        await window.toggleChicco(); 
+        window.toggleChicco(); 
+        localStorage.setItem('chicco_intro_done', 'true');
     }
 }, 3000);
