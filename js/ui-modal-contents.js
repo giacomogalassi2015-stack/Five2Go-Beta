@@ -168,16 +168,14 @@ window.getModalContent = function(type, payload, item) {
         // 3. Render HTML pulito
         contentHtml = `
             <div style="padding: 25px;">
-                <h2 style="font-family:'Roboto Slab'; color:#2E7D3; margin-bottom: 20px;">${nome}</h2>
+                <h2 style="font-family:'Roboto Slab'; color:#00000; margin-bottom: 20px;">${nome}</h2>
                 
                 <div class="info-content-text" style="line-height:1.6; color:#444; font-size: 1.05rem;">
                     ${desc || 'Nessuna informazione disponibile.'}
                 </div>
 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
-                    <button class="btn-trail-modern" onclick="this.closest('.modal-overlay').remove()" style="width: auto; padding: 10px 30px;">
-                        Chiudi
-                    </button>
+                    
                 </div>
             </div>
         `;
