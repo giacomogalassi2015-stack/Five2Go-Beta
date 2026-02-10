@@ -403,55 +403,70 @@ const CHICCO_TRIVIA = [
     { text: "Goditi il momento. Metti via il telefono per 5 minuti e ascolta il rumore del mare." }
 ];
 
-// 2. FUNZIONE PRINCIPALE
+// 2. FUNZIONE PRINCIPALE: METEO PRECISO + STILE CHICCO (Corretto)
 window.getChiccoRealTimeAdvice = async function() {
     try {
-        if (!localStorage.getItem('chicco_intro_done')) {
-            localStorage.setItem('chicco_intro_done', 'true');
-            return {
-                type: 'intro',
-                weather: "👋 Piacere, sono Chicco!",
-                advice: "Sono il tuo assistente locale. Cliccami quando vuoi per meteo, orari e consigli segreti!",
-                action: "home", 
-                btnLabel: "Capito!"
-            };
-        }
+      if (!localStorage.getItem('chicco_intro_done')) {
+    localStorage.setItem('chicco_intro_done', 'true');
+    return {
+        type: 'intro',
+        weather: "", 
+        advice: "Piacere, sono Chicco! Sono il tuo assistente locale. Cliccami quando vuoi sapere il meteo e consigli segreti!",
+        btnLabel: null
+    };
+}
 
-        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=44.098&longitude=9.738&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=sunset&timezone=auto");
+        // B. CHIAMATA API DI PRECISIONE
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=44.135&longitude=9.683&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=precipitation_probability_max&timezone=auto&models=best_match");
         const data = await response.json();
         
-        const temp = Math.round(data.current.temperature_2m);
+        // C. ESTRAZIONE DATI (Attuali)
+        const temp = Math.round(data.current.temperature_2m); // TEMPERATURA ATTUALE
         const hum = Math.round(data.current.relative_humidity_2m);
         const wind = data.current.wind_speed_10m;
         const wmo = data.current.weather_code;
+        const rainProb = data.daily.precipitation_probability_max[0]; 
+
+        // D. CALCOLO STATO DEL MARE
+        let seaIcon = "🌊"; let seaStatus = "Calmo";
+        if (wind > 12 && wind <= 25) { seaIcon = "〰️"; seaStatus = "Mosso"; }
+        else if (wind > 25) { seaIcon = "💨"; seaStatus = "Agitato!"; }
         
-        let seaIcon = "🌊"; let seaStatus = "calmo";
-        if (wind > 15) { seaIcon = "〰️"; seaStatus = "mosso"; }
-        if (wind > 25) { seaIcon = "🌊"; seaStatus = "agitato!"; }
-
+        // E. INTERPRETAZIONE METEO
         let icon = "🌤️"; let weatherDesc = "Variabile";
-        if (wmo === 0) { icon = "☀️"; weatherDesc = "Cielo Sereno"; }
+        if (wmo === 0) { icon = "☀️"; weatherDesc = "Sereno"; }
         else if (wmo >= 1 && wmo <= 3) { icon = "☁️"; weatherDesc = "Nuvoloso"; }
-        else if (wmo >= 45 && wmo <= 48) { icon = "🌫️"; weatherDesc = "Nebbia"; }
+        else if (wmo >= 45 && wmo <= 48) { icon = "🌫️"; weatherDesc = "Foschia"; }
         else if (wmo >= 51 && wmo <= 67) { icon = "🌧️"; weatherDesc = "Pioggia"; }
-        else if (wmo >= 95) { icon = "⚡"; weatherDesc = "Temporale"; }
+        else if (wmo >= 80 && wmo <= 99) { icon = "⛈️"; weatherDesc = "Temporale"; }
 
-        const weatherPhrase = `${icon} <b>${weatherDesc}</b>, ${temp}°C.<br>💧 Umidità ${hum}%<br>${seaIcon} Mare ${seaStatus}`;
+        // F. LOGICA AVVISO PIOGGIA
+        let rainWarning = "";
+        if (rainProb > 35 && wmo < 50) {
+            rainWarning = ` <small style="color:#ffcc00">(Prob. pioggia ${rainProb}%)</small>`;
+        }
+
+        // G. COSTRUZIONE FRASE FINALE (Con MARE A CAPO)
+        // Ho aggiunto <br> prima dell'icona del mare e tolto la barra |
+        const weatherPhrase = `${icon} <b>${weatherDesc}</b>, ${temp}°C${rainWarning}<br>💧 Umidità ${hum}%<br>${seaIcon} Mare ${seaStatus}`;
+        
+        // H. CURIOSITÀ CASUALE
         const randomTrivia = CHICCO_TRIVIA[Math.floor(Math.random() * CHICCO_TRIVIA.length)];
 
         return {
             weather: weatherPhrase,
             advice: randomTrivia.text,
-            action: randomTrivia.action,
-            btnLabel: randomTrivia.label
+           
+            btnLabel: randomTrivia.label || null
         };
 
     } catch (error) {
+        console.error("Errore Meteo:", error);
         return { 
             weather: "😴 Sto riposando...", 
-            advice: "Benvenuto alle Cinque Terre! Esplora i borghi con me.", 
+            advice: "Non riesco a sentire il meteo, ma chiedimi pure dei sentieri!", 
             action: "home", 
-            btnLabel: "Esplora" 
+            btnLabel: null 
         };
     }
 };

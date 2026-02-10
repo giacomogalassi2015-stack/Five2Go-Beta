@@ -188,6 +188,7 @@ const oldMascot = document.getElementById('mascot-container');
             </lottie-player>
 
         </div>
+        
     </div>`;
 
     // Aggiungi alla pagina
@@ -198,6 +199,27 @@ const oldMascot = document.getElementById('mascot-container');
         const script = document.createElement('script');
         script.src = "https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js";
         document.head.appendChild(script);
+    }
+
+    if (!localStorage.getItem('chicco_intro_done')) {
+        
+        console.log("⏳ Utente nuovo: avvio timer 5 secondi...");
+        
+        // Impostiamo il timer
+        window.chiccoAutoOpenTimer = setTimeout(() => {
+            // Controlliamo se la chat è già aperta (per non riaprirla se l'utente ha fatto da solo)
+            const isChatOpen = document.querySelector('.chicco-chat-wrapper'); // O la classe della modale attiva
+            
+            if (!isChatOpen) {
+                console.log("⏰ 5 secondi passati! Chicco si presenta.");
+                
+                // Apre Chicco
+                window.toggleChicco(); // O window.openChiccoAssistant() a seconda di come l'hai chiamata
+                
+                // Segniamo che l'intro è stata fatta, così non lo rifà alla prossima pagina
+                localStorage.setItem('chicco_intro_done', 'true');
+            }
+        }, 5000); // 5000 millisecondi = 5 secondi
     }
 }
 
