@@ -131,7 +131,7 @@ window.switchView = async function(view, el) {
 
 // 1. RENDER HOME (Con Pulizia ID duplicati)
 function renderHome() {
-    const bgImage = "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+    const bgImage = "https://res.cloudinary.com/dkg0jfady/image/upload/v1770756918/Manarola.png";
 
     document.body.classList.add('is-home');
 
