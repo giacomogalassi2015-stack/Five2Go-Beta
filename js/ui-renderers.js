@@ -1,379 +1,211 @@
-console.log("✅ 2. ui-renderers.js caricato (Localizzato & Fixato)");
+console.log("✅ 2. ui-renderers.js caricato (Tailwind)");
 
-// === RENDERER RISTORANTE ===
+// === RISTORANTE CARD ===
 window.ristoranteRenderer = (r) => {
     const nome = window.dbCol(r, 'Nome') || 'Ristorante';
     const paesi = window.dbCol(r, 'Paesi') || '';
     const numero = r.Numero || r.Telefono || '';
     const safeObj = encodeURIComponent(JSON.stringify(r)).replace(/'/g, "%27");
-    const mapLink = r.Mappa || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nome + ' ' + paesi)}`;
+    const mapLink = r.Mappa || '#';
 
     return `
-    <div class="restaurant-glass-card"> 
-        <h3 class="rest-card-title">${nome}</h3>
-        <p class="rest-card-subtitle">
-            <span class="material-icons">restaurant</span>
-            ${paesi}
+    <div class="glass-panel rounded-[2rem] p-6 mb-5 shadow-soft relative overflow-hidden flex flex-col items-center text-center animate-fade"> 
+        <h3 class="font-serif text-2xl font-bold text-slate-800 mb-2 leading-tight">${nome}</h3>
+        <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-1">
+            <span class="material-icons text-sm text-yellow-500">restaurant</span> ${paesi}
         </p>
-        <div class="rest-card-actions">
-            <div class="action-btn btn-info rest-btn-size" onclick="openModal('ristorante', '${safeObj}')">
+        
+        <div class="flex gap-4 justify-center w-full">
+            <button class="w-12 h-12 rounded-full border-2 border-white bg-yellow-400 text-white shadow-md flex items-center justify-center active:scale-90 transition-transform" onclick="openModal('ristorante', '${safeObj}')">
                 <span class="material-icons">info_outline</span>
-            </div>
+            </button>
             ${numero ? `
-                <div class="action-btn btn-call rest-btn-size" onclick="window.location.href='tel:${numero}'">
+                <button class="w-12 h-12 rounded-full border-2 border-white bg-green-500 text-white shadow-md flex items-center justify-center active:scale-90 transition-transform" onclick="window.location.href='tel:${numero}'">
                     <span class="material-icons">call</span>
-                </div>` : ''}
-            <div class="action-btn btn-map rest-btn-size" onclick="window.open('${mapLink}', '_blank')">
+                </button>` : ''}
+            <button class="w-12 h-12 rounded-full border-2 border-white bg-sky-500 text-white shadow-md flex items-center justify-center active:scale-90 transition-transform" onclick="window.open('${mapLink}', '_blank')">
                 <span class="material-icons">map</span>
-            </div>
+            </button>
         </div>
     </div>`;
 };
 
-// === RENDERER PRODOTTO ===
+// === PRODOTTO CARD ===
 window.prodottoRenderer = (p) => {
     const titolo = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
-    const ideale = window.dbCol(p, 'Ideale per') || 'Tutti'; 
     const fotoKey = p.Prodotti_foto || titolo;
     const imgUrl = window.getSmartUrl(fotoKey, '', 200);
     const safeObj = encodeURIComponent(JSON.stringify(p)).replace(/'/g, "%27");
 
     return `
-    <div class="culture-card is-product animate-fade" onclick="openModal('product', '${safeObj}')">
-        <div class="culture-info">
-            <div class="culture-title">${titolo}</div>
-
+    <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 flex items-center justify-between gap-3 animate-fade active:scale-[0.98] transition-transform" onclick="openModal('product', '${safeObj}')">
+        <div class="flex-1 pl-2">
+            <div class="font-serif font-bold text-lg text-accent leading-tight">${titolo}</div>
         </div>
-        <div class="culture-product-thumb">
-            <img src="${imgUrl}" loading="lazy" alt="${titolo}">
+        <div class="w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100">
+            <img src="${imgUrl}" loading="lazy" class="w-full h-full object-cover" alt="${titolo}">
         </div>
     </div>`;
 };
 
-// === RENDERER VINO (Usa Phosphor Icons) ===
+// === VINO CARD ===
 window.vinoRenderer = function(item) {
     const safeId = item.id || item.ID; 
     const nome = item.Nome || 'Vino';
     const cantina = item.Produttore || ''; 
     const tipo = (item.Tipo || '').toLowerCase().trim();
 
-    let themeClass = 'is-wine-red'; 
-    if (tipo.includes('bianco')) themeClass = 'is-wine-white';
-    if (tipo.includes('rosato') || tipo.includes('orange')) themeClass = 'is-wine-orange';
+    // Colori dinamici in Tailwind
+    let borderClass = 'border-l-red-800'; 
+    let iconColor = 'text-red-800';
+    if (tipo.includes('bianco')) { borderClass = 'border-l-yellow-400'; iconColor = 'text-yellow-400'; }
+    if (tipo.includes('rosato') || tipo.includes('orange')) { borderClass = 'border-l-orange-500'; iconColor = 'text-orange-500'; }
 
     return `
-    <div class="culture-card ${themeClass} animate-fade" onclick="openModal('Vini', '${safeId}')">
-        <div class="culture-info">
-            ${cantina ? `<div class="culture-location"><span class="material-icons" style="font-size:0.9rem">storefront</span> ${cantina}</div>` : ''}
-            <div class="culture-title">${nome}</div>
-            <div class="culture-tags">
-                 <span class="c-pill" style="text-transform: capitalize;">${item.Tipo || 'Vino'}</span>
-            </div>
+    <div class="bg-white rounded-2xl p-5 mb-3 shadow-sm border-l-[6px] ${borderClass} relative overflow-hidden active:scale-[0.98] transition-transform animate-fade" onclick="openModal('Vini', '${safeId}')">
+        <div class="relative z-10">
+            ${cantina ? `<div class="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1"><span class="material-icons text-sm">storefront</span> ${cantina}</div>` : ''}
+            <div class="font-serif font-bold text-xl text-slate-800 leading-tight mb-2 pr-8">${nome}</div>
+            <span class="inline-block bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-md capitalize">${item.Tipo || 'Vino'}</span>
         </div>
-        
-        <div class="culture-bg-icon">
-            <i class="ph-fill ph-wine"></i>
+        <div class="absolute -bottom-2 -right-2 opacity-10 transform -rotate-12 pointer-events-none">
+            <i class="ph-fill ph-wine text-8xl ${iconColor}"></i>
         </div>
     </div>`;
 };
 
-// === RENDERER SENTIERO (Versione Pulita: Passa l'oggetto intero) ===
+// === SENTIERO CARD ===
 window.sentieroRenderer = (s) => {
     const uniqueId = 'k-map-' + (s.poi_id || Math.floor(Math.random() * 99999));
     const nome = s.nome || s.Titolo || 'Sentiero';
-    
-    // CREAZIONE OGGETTO SICURO
-    // Prendiamo tutto l'oggetto 's' (che contiene Descrizione in JSON), 
-    // lo trasformiamo in stringa e proteggiamo gli apici.
     const safeObj = encodeURIComponent(JSON.stringify(s)).replace(/'/g, "%27");
 
-    // Gestione Mappe (Invariata)
+    // Push map data
     if(s.gpx_url) {
         if(!window.pendingMaps) window.pendingMaps = [];
-        window.pendingMaps.push({ 
-            id: uniqueId, 
-            gpx: s.gpx_url, 
-            startLabel: s.nome_partenza, 
-            endLabel: s.nome_arrivo
-        });
+        window.pendingMaps.push({ id: uniqueId, gpx: s.gpx_url, startLabel: s.nome_partenza, endLabel: s.nome_arrivo });
     }
 
     return `
-    <div class="komoot-card animate-fade">
+    <div class="bg-white rounded-3xl overflow-hidden shadow-soft mb-6 border border-slate-100 animate-fade flex flex-col">
+        <div id="${uniqueId}" class="h-48 w-full bg-slate-200 cursor-pointer" onclick="window.openTechMap('${safeObj}')"></div>
         
-        <div id="${uniqueId}" class="komoot-map-container" onclick="window.openTechMap('${safeObj}')"></div>
-
-        <div class="komoot-info-body" style="padding-bottom:5px;">
-            <div class="komoot-header-row">
-                <h3 class="komoot-title">${nome}</h3>
+        <div class="p-4 bg-white">
+            <h3 class="font-bold text-lg text-slate-800 mb-3">${nome}</h3>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button class="flex items-center justify-center gap-2 py-3 bg-primary text-white font-bold rounded-xl shadow-md shadow-primary/30 active:scale-95 transition-transform" onclick="window.openTechMap('${safeObj}')">
+                    <span class="material-icons text-sm">map</span> Dati Tecnici
+                </button>
+                <button class="flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl active:scale-95 transition-transform" onclick="window.openModal('sentieroInfo', '${safeObj}')">
+                    <span class="material-icons text-sm">info</span> Info
+                </button>
             </div>
         </div>
-
-        <div class="trail-actions-grid">
-            
-            <button class="btn-trail-modern btn-trail-tech" onclick="window.openTechMap('${safeObj}')">
-                <span class="material-icons" style="font-size:1.1rem;">map</span> Scheda Tecnica
-            </button>
-
-            <button class="btn-trail-modern btn-trail-info" onclick="window.openModal('sentieroInfo', '${safeObj}')">
-                <span class="material-icons" style="font-size:1.1rem; color:#777;">info</span> Info
-            </button>
-            
-        </div>
-
     </div>`;
 };
 
-// === 1. FUNZIONE DI SICUREZZA PER LA MAPPA (Da lasciare fuori) ===
-window.openMapBtn = function(e, lat, lon) {
-    if (!e) return;
-    // Blocca la propagazione verso la card (evita che si apra la modale)
-    e.stopPropagation(); 
-    e.preventDefault();  
-    
-    // URL Standard Google Maps
-    const url = `https://www.google.com/maps?q=${lat},${lon}`;
-    window.open(url, '_blank');
-};
-
-// === 2. RENDERER SPIAGGE PERFETTO (Posizione angolo destro + Traduzioni) ===
+// === SPIAGGIA CARD ===
 window.spiaggiaRenderer = function(item) {
-    
-    // RECUPERO ID SICURO
-    const safeId = item.id || item.ID || item.POI_ID || item.Codice;
-
-    // TRADUZIONI (Sincronizzate con la modale)
-    let nome, tipo, paesi;
-
-    if (typeof window.dbCol === 'function') {
-        nome = window.dbCol(item, 'Nome');
-        tipo = window.dbCol(item, 'tipo') || 'Spiaggia';
-        paesi = window.dbCol(item, 'Paesi'); 
-    } else {
-        // Fallback manuale
-        const lang = localStorage.getItem('language') || window.currentLanguage || 'it';
-        const getVal = (val) => (typeof val === 'object' ? (val[lang] || val['it']) : val);
-        
-        nome = getVal(item.Nome);
-        tipo = getVal(item.Tipo) || 'Spiaggia';
-        paesi = item.Paesi;
-    }
-
-    if (!nome) nome = 'Spiaggia';
-    if (!paesi) paesi = 'Paesi';
-    
-    const comune = item.Paese || item.Comune || '';
-    const iconClass = 'fa-water';
-
-    // MAPPA E COORDINATE
-    const lat = item.lat_sp;
-    const lon = item.long_sp;
-
-    let mapBtnHtml = '';
-    
-    if (lat && lon) {
-        // FIX POSIZIONE: position: absolute + bottom/right per metterlo nell'angolo
-        // FIX CLICK: Chiama window.openMapBtn definita sopra
-        mapBtnHtml = `
-        <button class="btn-culture-map" 
-                onclick="window.openMapBtn(event, ${lat}, ${lon})" 
-                style="position: absolute; bottom: 15px; right: 15px; z-index: 20; cursor: pointer;">
-            <span class="material-icons">map</span>
-        </button>`;
-    }
+    const safeId = item.id || item.ID;
+    let nome = window.dbCol(item, 'Nome') || 'Spiaggia';
+    let paesi = window.dbCol(item, 'Paesi') || '';
+    let tipo = window.dbCol(item, 'Tipo') || 'Spiaggia';
+    const lat = item.lat_sp; const lon = item.long_sp;
 
     return `
-    <div class="culture-card is-beach animate-fade" onclick="openModal('Spiagge', '${safeId}')" style="position: relative; overflow: hidden;">
-        <div class="culture-info">
-            
-            <div class="culture-location">
-                <span class="material-icons" style="font-size:0.9rem;">place</span> ${paesi}
+    <div class="bg-white rounded-2xl p-5 mb-4 shadow-sm border-l-[6px] border-l-sky-500 relative overflow-hidden active:scale-[0.98] transition-transform animate-fade" onclick="openModal('Spiagge', '${safeId}')">
+        <div class="relative z-10 pr-12">
+            <div class="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
+                <span class="material-icons text-sm">place</span> ${paesi}
             </div>
-            
-            ${comune ? `<div class="culture-location"><span class="material-icons" style="font-size:0.9rem">place</span> ${comune}</div>` : ''}
-            
-            <h3 class="culture-title" style="padding-right: 40px;">${nome}</h3>
-            
-            <div class="culture-tags">
-                <span class="c-pill" style="text-transform: capitalize;">
-                    ${tipo}
-                </span>
-            </div>
+            <h3 class="font-serif font-bold text-xl text-sky-700 mb-2">${nome}</h3>
+            <span class="inline-block bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-md capitalize">${tipo}</span>
         </div>
         
-        ${mapBtnHtml}
+        ${(lat && lon) ? `
+        <button class="absolute bottom-4 right-4 z-20 w-10 h-10 rounded-full bg-sky-500 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform" onclick="window.openMapBtn(event, ${lat}, ${lon})">
+            <span class="material-icons text-lg">map</span>
+        </button>` : ''}
 
-        <div class="culture-bg-icon">
-            <i class="fa-solid ${iconClass}"></i>
+        <div class="absolute -bottom-4 -right-2 opacity-10 transform -rotate-12 pointer-events-none text-sky-600">
+            <i class="fa-solid fa-water text-8xl"></i>
         </div>
     </div>`;
 };
-// Funzione di utilità per formattare i numeri
-const formatInt = (val) => (val !== null && val !== undefined) ? val : '--';
 
-// === RENDERER ATTRAZIONI (FIX ID STRINGA: Aggiunti apici a safeId) ===
+// === ATTRAZIONI CARD ===
 window.attrazioniRenderer = function(item) {
+    const safeId = item.POI_ID || item.id;
+    const titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
+    const paese = window.dbCol(item, 'Paese');
+    const tempo = window.dbCol(item, 'Tempo_visita') || '--';
     
-    // 1. RECUPERO ID
-    // Se l'ID è una stringa (es. "P02"), deve essere trattato con cura
-    const safeId = item.POI_ID || item.id || item._tempIndex || 0;
+    // Icon logic
+    const label = String(window.dbCol(item, 'Label')).toLowerCase();
+    let themeColor = 'text-accent'; let borderColor = 'border-l-accent'; let icon = 'fa-landmark';
+    if (label.includes('religioso')) { themeColor = 'text-yellow-600'; borderColor = 'border-l-yellow-500'; icon = 'fa-church'; }
+    if (label.includes('vista')) { themeColor = 'text-purple-600'; borderColor = 'border-l-purple-500'; icon = 'fa-mountain-sun'; }
 
-    // 2. RECUPERO DATI E TRADUZIONI (Logica dbCol clonata da Spiagge)
-    let titolo, paese, tempo;
+    const lat = item.lat_at; const lon = item.long_at;
 
-    if (typeof window.dbCol === 'function') {
-        titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
-        paese = window.dbCol(item, 'Paese');
-        tempo = window.dbCol(item, 'Tempo_visita'); 
-    } else {
-        // Fallback
-        const lang = localStorage.getItem('language') || window.currentLanguage || 'it';
-        const getVal = (val) => {
-            if (!val) return '';
-            if (typeof val === 'object') return val[lang] || val['it'];
-            if (typeof val === 'string' && val.includes('{')) {
-                try { return JSON.parse(val)[lang] || JSON.parse(val)['it'] || val; } catch(e) { return val; }
-            }
-            return val;
-        };
-        titolo = getVal(item.Attrazioni || item.Titolo);
-        paese = getVal(item.Paese);
-        tempo = getVal(item.Tempo_visita);
-    }
-
-    if (!tempo || tempo === 'undefined') tempo = '--';
-    if (!paese) paese = '';
-
-    // 3. LOGICA ICONE
-    const rawLabel = window.dbCol ? window.dbCol(item, 'Label') : (item.Label || 'Storico');
-    const label = String(rawLabel).toLowerCase(); 
-    let themeClass = 'is-monument';
-    let iconClass = 'fa-landmark'; 
-
-    if (label.includes('religioso') || label.includes('chiesa')) { themeClass = 'is-church'; iconClass = 'fa-church'; }
-    else if (label.includes('panorama') || label.includes('vista')) { themeClass = 'is-view'; iconClass = 'fa-mountain-sun'; }
-    else if (label.includes('storico') || label.includes('castello')) { themeClass = 'is-monument'; iconClass = 'fa-chess-rook'; }
-
-    // 4. MAPPA
-    const lat = item.lat_at;
-    const lon = item.long_at;
-    let mapBtnHtml = '';
-
-    if (lat && lon) {
-        mapBtnHtml = `
-        <button class="btn-culture-map" 
-                onclick="window.openMapBtn(event, ${lat}, ${lon})" 
-                style="position: absolute; bottom: 15px; right: 15px; z-index: 20; cursor: pointer;">
-            <span class="material-icons">map</span>
-        </button>`;
-    }
-
-    // 5. RENDER HTML (CORREZIONE QUI SOTTO: '${safeId}')
     return `
-    <div class="culture-card ${themeClass} animate-fade" 
-         onclick="openModal('attrazione', '${safeId}')" 
-         style="position: relative; overflow: hidden;">
-        
-        <div class="culture-info">
-            <div class="culture-location">
-                <span class="material-icons" style="font-size:0.9rem;">place</span> ${paese}
+    <div class="bg-white rounded-2xl p-5 mb-4 shadow-sm border-l-[6px] ${borderColor} relative overflow-hidden active:scale-[0.98] transition-transform animate-fade" onclick="openModal('attrazione', '${safeId}')">
+        <div class="relative z-10 pr-12">
+            <div class="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
+                <span class="material-icons text-sm">place</span> ${paese}
             </div>
-            
-            <div class="culture-title" style="padding-right: 40px;">${titolo}</div>
-            
-            <div class="culture-tags">
-                <span class="c-pill">${tempo}</span>
-            </div>
+            <div class="font-serif font-bold text-xl ${themeColor} mb-2 leading-tight">${titolo}</div>
+            <span class="inline-block bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-md">${tempo}</span>
         </div>
         
-        ${mapBtnHtml}
+        ${(lat && lon) ? `
+        <button class="absolute bottom-4 right-4 z-20 w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center shadow-md active:scale-90 transition-transform" onclick="window.openMapBtn(event, ${lat}, ${lon})">
+            <span class="material-icons text-lg">map</span>
+        </button>` : ''}
 
-        <div class="culture-bg-icon">
-             <i class="fa-solid ${iconClass}"></i>
+        <div class="absolute -bottom-4 -right-2 opacity-10 transform -rotate-12 pointer-events-none text-slate-800">
+             <i class="fa-solid ${icon} text-8xl"></i>
         </div>
     </div>`;
 };
-// === RENDERER FARMACIE ===
+
+// === INFO GENERICHE (Farmacie/Numeri) ===
 window.farmacieRenderer = (f) => {
-    const nome = window.dbCol(f, 'Farmacia') || window.dbCol(f, 'Nome') || 'Farmacia';
-    const paese = window.dbCol(f, 'Paese') || window.dbCol(f, 'Paesi') || '';
-    const numero = f.Telefono || f.Numero || '';
-
-    return `
-    <div class="info-card animate-fade">
-        <div class="info-icon-box">
-            <span class="material-icons">local_pharmacy</span>
-        </div>
-        <div class="info-text-col">
-            <h3>${nome}</h3>
-            <p><span class="material-icons" style="font-size: 0.9rem;">place</span> ${paese}</p>
-        </div>
-        <div class="action-btn btn-call" onclick="window.location.href='tel:${numero}'">
-            <span class="material-icons">call</span>
-        </div>
-    </div>`;
+    const nome = window.dbCol(f, 'Farmacia') || 'Farmacia';
+    const paese = window.dbCol(f, 'Paese') || '';
+    const numero = f.Telefono || '';
+    return genericInfoCard('local_pharmacy', nome, paese, numero);
 };
 
-// === RENDERER NUMERI UTILI ===
 window.numeriUtiliRenderer = (n) => {
-    
-    // Helper interno per traduzioni
-    const getTranslatedVal = (val) => {
-        if (!val) return '';
-        if (typeof val === 'object') {
-            const lang = window.currentLang || 'it';
-            return val[lang] || val['it'] || '';
-        }
-        if (typeof val === 'string' && val.trim().startsWith('{')) {
-            try {
-                const parsed = JSON.parse(val);
-                const lang = window.currentLang || 'it';
-                return parsed[lang] || parsed['it'] || val;
-            } catch (e) { return val; }
-        }
-        return val;
-    };
+    const nome = window.dbCol(n, 'Nome');
+    const paesi = window.dbCol(n, 'Paesi') || 'Cinque Terre';
+    const numero = n.Numero || '';
+    let icon = 'help_outline';
+    if(String(nome).toLowerCase().includes('carabinieri')) icon = 'security';
+    return genericInfoCard(icon, nome, paesi, numero);
+};
 
-    // Dati
-    const rawName = n.Nome || 'Numero Utile';
-    const nome = getTranslatedVal(rawName);
-
-    const rawDesc = n.Utile_per || n.Utili_per || ''; 
-    const descrizione = getTranslatedVal(rawDesc);
-    const hasInfo = descrizione && descrizione.length > 2; 
-
-    const paesi = getTranslatedVal(window.dbCol(n, 'Paesi')) || 'Cinque Terre'; 
-    const numero = n.Numero || n.Telefono || '';
-
-    // Icone
-    let icon = 'help_outline'; 
-    const nLower = String(nome).toLowerCase();
-    if (nLower.includes('carabinieri') || nLower.includes('polizia')) icon = 'security';
-    else if (nLower.includes('medica') || nLower.includes('croce')) icon = 'medical_services';
-    else if (nLower.includes('taxi')) icon = 'local_taxi';
-    else if (nLower.includes('farmacia')) icon = 'local_pharmacy';
-    else if (nLower.includes('info')) icon = 'info';
-
-    // Encoding dati
-    const safeName = encodeURIComponent(nome);
-    const safeDesc = encodeURIComponent(descrizione);
-    const safeNum = encodeURIComponent(numero);
-
+function genericInfoCard(icon, title, subtitle, phone) {
     return `
-    <div class="info-card animate-fade">
-        <div class="info-icon-box">
+    <div class="bg-white rounded-2xl p-4 mb-3 shadow-sm border border-slate-100 flex items-center gap-4 animate-fade">
+        <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
             <span class="material-icons">${icon}</span>
         </div>
-        
-        <div class="info-text-col">
-            <h3>${nome}</h3>
-            <p><span class="material-icons" style="font-size: 0.9rem;">place</span> ${paesi}</p>
+        <div class="flex-1">
+            <h3 class="font-bold text-slate-800 leading-tight">${title}</h3>
+            <p class="text-xs text-slate-500 flex items-center gap-1 mt-1"><span class="material-icons text-[10px]">place</span> ${subtitle}</p>
         </div>
-        
-      
-
-        <div class="action-btn btn-call" onclick="window.location.href='tel:${numero}'">
+        <button class="w-11 h-11 rounded-full bg-green-500 text-white flex items-center justify-center shadow-md active:scale-90 transition-transform" onclick="window.location.href='tel:${phone}'">
             <span class="material-icons">call</span>
-        </div>
+        </button>
     </div>`;
+}
+
+// Map Helper
+window.openMapBtn = function(e, lat, lon) {
+    if (!e) return;
+    e.stopPropagation(); e.preventDefault();
+    window.open(`http://googleusercontent.com/maps.google.com/?q=${lat},${lon}`, '_blank');
 };

@@ -1,10 +1,11 @@
-console.log("✅ 4. ui-modal-contents.js caricato (Localizzato & Fixato)");
+console.log("✅ 4. ui-modal-contents.js caricato (Tailwind Complete)");
 
 // 2. FUNZIONE PRINCIPALE (Il Generatore)
 window.getModalContent = function(type, payload, item) {
     
     let contentHtml = '';
-    let modalClass = 'modal-content';
+    // Tailwind default container style (gestito anche in ui-modal.js, ma qui possiamo sovrascrivere se serve)
+    let modalClass = ''; 
     let onRender = null; 
 
     // --- RISTORANTE ---
@@ -15,13 +16,15 @@ window.getModalContent = function(type, payload, item) {
         const desc = window.dbCol(item, 'Descrizioni') || window.t('desc_missing'); 
 
         contentHtml = `
-            <div class="rest-modal-wrapper">
-                <div class="rest-header">
-                    <h2>${nome}</h2>
-                    <div class="rest-location"><span class="material-icons">place</span> ${indirizzo}</div>
-                    <div class="rest-divider"></div>
+            <div class="p-6 text-center">
+                <h2 class="font-serif text-3xl font-bold text-slate-800 mb-2 leading-tight">${nome}</h2>
+                <div class="flex items-center justify-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">
+                    <span class="material-icons text-base text-yellow-500">place</span> ${indirizzo}
                 </div>
-                <div class="rest-body">${desc}</div>
+                <div class="w-16 h-1 bg-yellow-400 mx-auto rounded-full mb-6"></div>
+                <div class="text-slate-600 leading-relaxed text-lg">
+                    ${desc}
+                </div>
             </div>`;
     }
 
@@ -32,23 +35,26 @@ window.getModalContent = function(type, payload, item) {
         const desc = window.dbCol(p, 'Descrizione');   
         const ideale = window.dbCol(p, 'Ideale per'); 
         const fotoKey = p.Prodotti_foto || nome;
-        modalClass = 'modal-content glass-modal';
         const bigImg = window.getSmartUrl(fotoKey, '', 800);
 
+        // Header immagine con gradiente
         contentHtml = `
-            <div style="position: relative;">
-                <img src="${bigImg}" style="width:100%; border-radius: 0 0 24px 24px; height:250px; object-fit:cover; margin-bottom: 15px; mask-image: linear-gradient(to bottom, black 80%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);" onerror="this.style.display='none'">
+            <div class="relative h-72 w-full">
+                <img src="${bigImg}" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 p-6 w-full">
+                    <h2 class="text-3xl font-serif font-bold text-white mb-2 leading-tight shadow-black drop-shadow-md">${nome}</h2>
+                    ${ideale ? `<span class="inline-block bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-3 py-1 rounded-full">✨ ${window.t('ideal_for')}: ${ideale}</span>` : ''}
+                </div>
             </div>
-            <div style="padding: 0 25px 25px 25px;">
-                <h2 style="font-size: 2rem; margin-bottom: 10px; color: #222;">${nome}</h2>
-                ${ideale ? `<div style="margin-bottom: 20px;"><span class="glass-tag">✨ ${window.t('ideal_for')}: ${ideale}</span></div>` : ''}
-                <p style="font-size: 1.05rem; line-height: 1.6; color: #444;">${desc || ''}</p>
+            <div class="p-6">
+                <p class="text-slate-600 leading-relaxed text-lg">${desc || ''}</p>
             </div>`;
     }
 
     // --- VINI ---
     else if (type === 'Vini' || type === 'wine') {
-        if (!item) { modal.remove(); return; }
+        if (!item) { return { html: '', class: '' }; }
 
         const nome = window.dbCol(item, 'Nome');
         const tipo = window.dbCol(item, 'Tipo');
@@ -59,49 +65,70 @@ window.getModalContent = function(type, payload, item) {
         const desc = window.dbCol(item, 'Descrizione');
         const foto = window.dbCol(item, 'Foto');
 
+        // Colori dinamici in base al tipo
         const t = String(tipo).toLowerCase();
-        let color = '#9B2335'; 
-        if (t.includes('bianco')) color = '#F4D03F'; 
-        if (t.includes('rosato') || t.includes('orange')) color = '#E67E22'; 
+        let colorText = 'text-red-800'; 
+        let bgBadge = 'bg-red-50 text-red-800';
+        let iconColor = 'text-red-800';
+        
+        if (t.includes('bianco')) { 
+            colorText = 'text-yellow-600'; 
+            bgBadge = 'bg-yellow-50 text-yellow-700'; 
+            iconColor = 'text-yellow-400';
+        } 
+        if (t.includes('rosato') || t.includes('orange')) { 
+            colorText = 'text-orange-600'; 
+            bgBadge = 'bg-orange-50 text-orange-700'; 
+            iconColor = 'text-orange-500';
+        }
 
         contentHtml = `
-            <div style="padding-bottom: 20px;">
-                ${foto ? `<img src="${foto}" style="width:100%; height:280px; object-fit:cover; border-radius:24px 24px 0 0;">` : 
-                `<div style="text-align:center; padding: 30px 20px 20px; background: #fff; border-bottom: 1px dashed #eee;">
-                    <i class="fa-solid fa-wine-bottle" style="font-size: 4.5rem; color: ${color}; margin-bottom:15px; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.1));"></i>
+            <div class="pb-6">
+                ${foto ? `<div class="h-72 w-full relative"><img src="${foto}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div></div>` : 
+                `<div class="py-10 bg-slate-50 flex justify-center border-b border-dashed border-slate-200">
+                    <i class="ph-fill ph-wine text-7xl ${iconColor} drop-shadow-sm"></i>
                 </div>`}
 
-                <div style="padding: ${foto ? '25px 25px 0' : '0 25px'};">
-                    <h2 style="font-family:'Roboto Slab'; font-size:2rem; margin:0 0 5px 0; line-height:1.1; color:#2c3e50;">${nome}</h2>
-                    <div style="font-weight:700; color:#7f8c8d; text-transform:uppercase; font-size:0.9rem; margin-bottom:20px;">
-                        <span class="material-icons" style="vertical-align:text-bottom; font-size:1.1rem;">storefront</span> ${produttore}
+                <div class="px-6 -mt-8 relative z-10">
+                    <div class="bg-white rounded-2xl p-5 shadow-lg shadow-slate-200/50 border border-slate-100">
+                        <h2 class="font-serif text-2xl font-bold text-slate-800 mb-1 leading-tight">${nome}</h2>
+                        <div class="flex items-center justify-between mt-2">
+                             <div class="text-xs font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
+                                <span class="material-icons text-sm">storefront</span> ${produttore}
+                            </div>
+                            <span class="px-3 py-1 rounded-lg text-xs font-bold uppercase ${bgBadge}">${tipo || '--'}</span>
+                        </div>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px 25px; background: #fafafa;">
-                    <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:10px; text-align:center;">
-                        <div style="font-size:0.7rem; text-transform:uppercase; color:#999; font-weight:700;">${window.t('wine_type')}</div>
-                        <div style="font-size:1rem; font-weight:700; color:${color}">${tipo || '--'}</div>
+                <div class="px-6 mt-6">
+                    <div class="grid grid-cols-2 gap-3 mb-6">
+                        <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+                            <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">${window.t('wine_deg')}</div>
+                            <div class="font-bold text-slate-700 text-lg">${gradi || '--'}</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100 flex flex-col justify-center">
+                            <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">${window.t('wine_grapes')}</div>
+                            <div class="font-bold text-slate-700 text-sm leading-tight">${uve || '--'}</div>
+                        </div>
                     </div>
-                    <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:10px; text-align:center;">
-                        <div style="font-size:0.7rem; text-transform:uppercase; color:#999; font-weight:700;">${window.t('wine_deg')}</div>
-                        <div style="font-size:1rem; font-weight:700;">${gradi || '--'}</div>
-                    </div>
-                    ${uve ? `<div style="grid-column:1/-1; background:#fff; border:1px solid #eee; border-radius:12px; padding:12px; text-align:center; font-size:0.95rem;"><strong>🍇 ${window.t('wine_grapes')}:</strong> ${uve}</div>` : ''}
-                </div>
 
-                <div style="padding: 25px;">
-                    <p style="color:#555; font-size:1.05rem; line-height:1.6; margin:0;">${desc}</p>
+                    <div class="prose prose-slate prose-p:text-slate-600 prose-p:leading-relaxed mb-6">
+                        <p>${desc}</p>
+                    </div>
+
                     ${abbinamenti ? `
-                    <div style="background: #FFF8E1; border-left: 4px solid #FFB74D; padding: 15px; border-radius: 8px; margin-top: 25px; color: #5D4037;">
-                        <div style="font-weight:bold; margin-bottom:5px; text-transform:uppercase; font-size:0.8rem;">🍽️ ${window.t('wine_pairings')}</div>
-                        ${abbinamenti}
+                    <div class="bg-amber-50 border-l-4 border-amber-300 p-4 rounded-r-xl">
+                        <div class="text-xs font-bold text-amber-800 uppercase mb-1 flex items-center gap-1">
+                            <span class="material-icons text-sm">restaurant</span> ${window.t('wine_pairings')}
+                        </div>
+                        <p class="text-amber-900 text-sm italic font-medium">${abbinamenti}</p>
                     </div>` : ''}
                 </div>
             </div>`;
     }
 
-    // --- SENTIERI ---
+    // --- SENTIERI (Technical Data) ---
     else if (type === 'trail') {
         const p = JSON.parse(decodeURIComponent(payload));
         const titolo = window.dbCol(p, 'Paesi') || p.Nome;
@@ -117,117 +144,95 @@ window.getModalContent = function(type, payload, item) {
             if (key) linkGpx = p[key];
         }
 
+        // Colori difficoltà
+        let diffColor = 'text-slate-600';
+        if (String(diff).toLowerCase().includes('diff')) diffColor = 'text-red-500';
+        if (String(diff).toLowerCase().includes('facil')) diffColor = 'text-green-500';
+
         contentHtml = `
-        <div style="padding: 20px 15px;">
-            <h2 style="text-align:center; margin: 0 0 5px 0; color:#00000;">${titolo}</h2>
-            ${nomeSentiero ? `<p style="text-align:center; color:#000000; margin:0 0 15px 0; font-size:0.9rem;">${nomeSentiero}</p>` : ''}
+        <div class="p-6">
+            <h2 class="text-center font-serif text-2xl font-bold text-slate-800 mb-1">${titolo}</h2>
+            ${nomeSentiero ? `<p class="text-center text-sm font-medium text-slate-500 mb-6">${nomeSentiero}</p>` : ''}
             
-            <div class="trail-stats-grid">
-                <div class="trail-stat-box">
-                    <span class="material-icons">straighten</span><span class="stat-value">${dist}</span><span class="stat-label">${window.t('distance')}</span>
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                    <span class="material-icons text-primary mb-1">straighten</span>
+                    <div class="font-extrabold text-slate-700 text-lg leading-none">${dist}</div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">${window.t('distance')}</div>
                 </div>
-                <div class="trail-stat-box">
-                    <span class="material-icons">schedule</span><span class="stat-value">${dura}</span><span class="stat-label">${window.t('duration')}</span>
+                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                    <span class="material-icons text-primary mb-1">schedule</span>
+                    <div class="font-extrabold text-slate-700 text-lg leading-none">${dura}</div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">${window.t('duration')}</div>
                 </div>
-                <div class="trail-stat-box">
-                    <span class="material-icons">terrain</span><span class="stat-value">${diff}</span><span class="stat-label">${window.t('level')}</span>
+                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                    <span class="material-icons text-primary mb-1">terrain</span>
+                    <div class="font-extrabold ${diffColor} text-sm pt-1 leading-none uppercase">${diff}</div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400 mt-2">${window.t('level')}</div>
                 </div>
             </div>
 
-            <div class="trail-actions-group" style="margin: 20px 0; display: flex; flex-direction: column; gap: 12px;">
+            <div class="flex flex-col gap-3 mb-6">
                 ${linkGpx ? `
-                <a href="${linkGpx}" download="${nomeSentiero || 'percorso'}.gpx" class="btn-download-gpx" target="_blank">
+                <a href="${linkGpx}" download="${nomeSentiero || 'percorso'}.gpx" target="_blank" class="flex items-center justify-center gap-2 w-full py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 active:scale-95 transition-transform">
                     <span class="material-icons">file_download</span> ${window.t('btn_download_gpx')}
                 </a>` : `
-                <div style="padding:15px; background:#fff5f5; border:1px solid #feb2b2; border-radius:10px; text-align:center; color:#c53030; font-size:0.85rem;">
-                    <span class="material-icons" style="vertical-align:middle; font-size:1.2rem;">error_outline</span>
-                    ${window.t('gpx_missing')}
+                <div class="flex items-center justify-center gap-2 w-full py-3 bg-red-50 text-red-500 font-bold rounded-xl border border-red-100">
+                    <span class="material-icons">error_outline</span> ${window.t('gpx_missing')}
                 </div>`}
             </div>
 
-            <div style="margin-top:25px; line-height:1.6; color:#444; font-size:0.95rem; text-align:justify;">${desc}</div>
+            <div class="prose prose-slate prose-p:text-slate-600 prose-sm text-justify">
+                ${desc}
+            </div>
         </div>`;
     }
 
-    // --- INFO SENTIERI (Versione Standardizzata - Come Ristoranti/Prodotti) ---
+    // --- INFO SENTIERI (Testo descrittivo) ---
     else if (type === 'sentieroInfo') {
-        
-        // 1. Decodifica standard (uguale a Ristorante)
         let item = {};
-        try {
-            item = JSON.parse(decodeURIComponent(payload));
-        } catch(e) {
-            return { html: '<p>Errore lettura dati.</p>', class: 'modal-content' };
-        }
+        try { item = JSON.parse(decodeURIComponent(payload)); } catch(e) {}
 
-        // 2. Usa window.dbCol come fanno tutti gli altri (Magia!)
-        // Cerca 'Descrizione' (maiuscolo) o 'descrizione' (minuscolo)
         const desc = window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione');
         const nome = item.nome || item.Titolo || 'Info Sentiero';
 
-        // 3. Render HTML pulito
         contentHtml = `
-            <div style="padding: 25px;">
-                <h2 style="font-family:'Roboto Slab'; color:#00000; margin-bottom: 20px;">${nome}</h2>
-                
-                <div class="info-content-text" style="line-height:1.6; color:#444; font-size: 1.05rem;">
+            <div class="p-8">
+                <h2 class="font-serif text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-4">${nome}</h2>
+                <div class="text-slate-600 text-lg leading-relaxed space-y-4">
                     ${desc || 'Nessuna informazione disponibile.'}
-                </div>
-
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
-                    
                 </div>
             </div>
         `;
     }
     
-    // --- MAPPA GPX ---
+    // --- MAPPA GPX GENERIC ---
     else if (type === 'map') {
-        const gpxUrl = payload;
         const uniqueMapId = 'modal-map-' + Math.random().toString(36).substr(2, 9);
-        
         contentHtml = `
-            <h3 style="text-align:center; margin-bottom:10px;">${window.t('map_route_title')}</h3>
-            <div id="${uniqueMapId}" style="height: 450px; width: 100%; border-radius: 12px; border: 1px solid #ddd;"></div>
-            <p style="text-align:center; font-size:0.8rem; color:#888; margin-top:10px;">${window.t('map_zoom_hint')}</p>
+            <div class="p-4 h-full flex flex-col">
+                <h3 class="text-center font-bold text-slate-700 mb-3">${window.t('map_route_title')}</h3>
+                <div id="${uniqueMapId}" class="flex-1 min-h-[450px] w-full rounded-2xl border border-slate-200 shadow-inner z-0 overflow-hidden"></div>
+                <p class="text-center text-xs font-medium text-slate-400 mt-3 flex items-center justify-center gap-1">
+                    <span class="material-icons text-sm">touch_app</span> ${window.t('map_zoom_hint')}
+                </p>
+            </div>
         `;
     }
 
-// --- SPIAGGE ---
+    // --- SPIAGGE ---
     else if (type === 'Spiagge') {
-        
-        if (!item) {
-            return { 
-                html: `<div style="padding:30px; text-align:center;"><h3>${window.t('error_title') || 'Dati non trovati'}</h3></div>`, 
-                class: 'modal-content' 
-            };
-        }
+        if (!item) { return { html: `<div class="p-8 text-center text-slate-500">Dati non trovati</div>`, class: '' }; }
 
-        // Funzione helper interna per forzare la traduzione nella modale
+        // Helper interno per fallback traduzioni
         const getTranslatedField = (data, fieldName) => {
-            const lang = localStorage.getItem('language') || window.currentLanguage || 'it';
-            
-            // 1. Prova prima la funzione nativa del tuo sistema (se esiste)
             if (window.dbCol) {
                 const val = window.dbCol(data, fieldName);
                 if (val && val !== 'undefined') return val;
             }
-
-            // 2. Fallback manuale robusto
             let val = data[fieldName];
             if (!val) return '';
-
-            // Se è una stringa JSON
-            if (typeof val === 'string' && val.trim().startsWith('{')) {
-                try { val = JSON.parse(val); } catch(e){}
-            }
-
-            // Se è un oggetto
-            if (typeof val === 'object') {
-                return val[lang] || val['it'] || '';
-            }
-            
-            // Stringa semplice
+            if (typeof val === 'object') return val[window.currentLang] || val['it'] || '';
             return val;
         };
 
@@ -236,10 +241,13 @@ window.getModalContent = function(type, payload, item) {
         const desc = getTranslatedField(item, 'Descrizione');
         
         contentHtml = `
-             <div style="padding: 25px;">
-                <h2 style="font-family:'Roboto Slab'; color:#000000;">${nome}</h2>
-                ${tipo ? `<span class="c-pill" style="margin-bottom:15px; display:inline-block;">${tipo}</span>` : ''}
-                <div style="line-height:1.6; color:#444; margin-top:10px; text-align:justify;">
+             <div class="p-8">
+                <div class="mb-4">
+                    <h2 class="font-serif text-3xl font-bold text-sky-900 mb-2">${nome}</h2>
+                    ${tipo ? `<span class="inline-block px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-xs font-bold uppercase tracking-wide">${tipo}</span>` : ''}
+                </div>
+                <div class="w-full h-px bg-slate-100 mb-6"></div>
+                <div class="text-slate-600 leading-relaxed text-lg text-justify">
                     ${desc || window.t('desc_missing') || 'Descrizione non disponibile.'}
                 </div>
              </div>
@@ -248,7 +256,7 @@ window.getModalContent = function(type, payload, item) {
 
     // --- ATTRAZIONI ---
     else if (type === 'Attrazioni' || type === 'attrazione') {
-        if (!item) { modal.remove(); return; }
+        if (!item) { return { html: '', class: '' }; }
 
         const titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
         const curiosita = window.dbCol(item, 'Curiosita');
@@ -256,24 +264,29 @@ window.getModalContent = function(type, payload, item) {
         const img = window.dbCol(item, 'Immagine') || window.dbCol(item, 'Foto'); 
 
         contentHtml = `
-            ${img ? `<img src="${img}" class="monument-header-img">` : 
-            `<div class="monument-header-icon"><i class="fa-solid fa-landmark" style="font-size:4rem; color:#546e7a;"></i></div>`}
+            ${img ? 
+            `<div class="h-64 w-full relative"><img src="${img}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/70 to-transparent"></div></div>` : 
+            `<div class="py-8 bg-slate-100 flex justify-center border-b border-slate-200"><i class="fa-solid fa-landmark text-6xl text-slate-400"></i></div>`}
 
-            <div style="padding: 0 25px 30px;">
-                <h2 style="font-family:'Roboto Slab'; font-size:2rem; margin: ${img ? '0' : '20px'} 0 10px 0; color:#000000; line-height:1.1;">${titolo}</h2>
-                <div style="width:50px; height:4px; background:#e74c3c; margin-bottom:20px; border-radius:2px;"></div>
+            <div class="p-8 ${img ? '-mt-12 relative z-10' : ''}">
+                <div class="${img ? 'bg-white p-6 rounded-2xl shadow-lg' : ''}">
+                    <h2 class="font-serif text-2xl font-bold text-slate-800 mb-2 leading-tight">${titolo}</h2>
+                    <div class="w-12 h-1 bg-red-400 rounded-full mb-4"></div>
 
-                ${curiosita ? `
-                <div class="curiosity-box animate-fade">
-                    <div class="curiosity-title"><span class="material-icons" style="font-size:1rem;">lightbulb</span> ${window.t('label_curiosity')}</div>
-                    <div style="font-style:italic; line-height:1.5;">${curiosita}</div>
-                </div>` : ''}
-                
-                <p style="color:#374151; font-size:1.05rem; line-height:1.7; text-align:justify;">${desc || window.t('desc_missing')}</p>
+                    ${curiosita ? `
+                    <div class="bg-amber-50 border-l-4 border-amber-300 p-4 rounded-r-xl mb-6">
+                        <div class="text-xs font-bold text-amber-800 uppercase mb-1 flex items-center gap-1">
+                            <span class="material-icons text-sm">lightbulb</span> ${window.t('label_curiosity')}
+                        </div>
+                        <div class="text-amber-900 italic text-sm leading-relaxed">${curiosita}</div>
+                    </div>` : ''}
+                    
+                    <p class="text-slate-600 text-lg leading-relaxed text-justify">${desc || window.t('desc_missing')}</p>
+                </div>
             </div>`;
     }
     
-    // --- TRASPORTI (LOGICA STATICA) ---
+    // --- TRASPORTI (BUS, TRAGHETTI, TRENI) ---
     else if (type === 'transport') {
         const transportId = payload; 
         let title = '';
@@ -282,119 +295,115 @@ window.getModalContent = function(type, payload, item) {
         // BUS
         if (transportId === 'bus') {
             title = window.t('label_bus');
-            const now = new Date();
-            const todayISO = now.toISOString().split('T')[0];
-            const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            const todayISO = new Date().toISOString().split('T')[0];
+            const nowTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
 
             const ticketSection = `
-                <button onclick="toggleTicketInfo()" style="width:100%; margin-bottom:15px; background:#e0f7fa; color:#006064; border:1px solid #b2ebf2; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    🎟️ ${window.t('how_to_ticket')} ▾
+                <button onclick="toggleTicketInfo()" class="w-full mb-4 bg-cyan-50 text-cyan-800 border border-cyan-100 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <span>🎟️ ${window.t('how_to_ticket')}</span> <span class="material-icons text-sm">expand_more</span>
                 </button>
-                <div id="ticket-info-box" style="display:none; background:#fff; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:15px; font-size:0.9rem; color:#333; line-height:1.5;">
-                    <p style="margin-bottom:10px;"><strong>📱 SMS/APP:</strong> Scarica l'app ATC La Spezia.</p>
-                    <div style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.85rem; border:1px solid #ffeeba; margin-top:10px;">
+                <div id="ticket-info-box" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4 text-sm text-slate-600 leading-relaxed">
+                    <p class="mb-2"><strong>📱 SMS/APP:</strong> Scarica l'app ATC La Spezia.</p>
+                    <div class="bg-yellow-50 text-yellow-800 p-3 rounded-lg border border-yellow-100 text-xs mt-2">
                         <strong>⚠️ ${window.t('label_warning')}:</strong> Biglietti a bordo con sovrapprezzo.
                     </div>
                 </div>`;
 
             const mapToggleSection = `
-                <button id="btn-bus-map-toggle" onclick="toggleBusMap()" style="width:100%; margin-bottom:15px; background:#EDE7F6; color:#4527A0; border:1px solid #D1C4E9; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    🗺️ ${window.t('show_map')} ▾
+                <button id="btn-bus-map-toggle" onclick="toggleBusMap()" class="w-full mb-4 bg-purple-50 text-purple-800 border border-purple-100 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <span>🗺️ ${window.t('show_map')}</span> <span class="material-icons text-sm">expand_more</span>
                 </button>
-                <div id="bus-map-wrapper" style="display:none; margin-bottom: 20px;">
-                    <div id="bus-map" style="height: 280px; width: 100%; border-radius: 12px; z-index: 1; border: 2px solid #EDE7F6;"></div>
-                    <p style="font-size:0.75rem; text-align:center; color:#999; margin-top:5px;">${window.t('map_hint')}</p>
+                <div id="bus-map-wrapper" class="hidden mb-6 animate-fade">
+                    <div id="bus-map" class="h-64 w-full rounded-xl border-2 border-purple-100 z-10 overflow-hidden relative"></div>
+                    <p class="text-center text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-wide">${window.t('map_hint')}</p>
                 </div>`;
 
             customContent = `
-            <div class="bus-search-box animate-fade">
-                <div class="bus-title" style="margin-bottom: 0px; padding-bottom: 15px;">
-                    <span class="material-icons">directions_bus</span> ${window.t('plan_trip')}
-                </div>
+            <div class="p-2 animate-fade">
                 ${ticketSection}
                 ${mapToggleSection}
-                <div class="bus-inputs">
-                    <div style="flex:1;">
-                        <label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('departure')}</label>
-                        <select id="selPartenza" class="bus-select" onchange="window.handleBusSelectionChange('partenza')">
+                
+                <div class="flex gap-3 mb-3">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('departure')}</label>
+                        <select id="selPartenza" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-primary transition-colors appearance-none" onchange="window.handleBusSelectionChange('partenza')">
                             <option value="" disabled selected>${window.t('loading')}...</option>
                         </select>
                     </div>
-                    <div style="flex:1;">
-                        <label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('arrival')}</label>
-                        <select id="selArrivo" class="bus-select" onchange="window.handleBusSelectionChange('arrivo')">
-                            <option value="" disabled selected>${window.t('select_placeholder')}</option>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('arrival')}</label>
+                        <select id="selArrivo" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-primary transition-colors appearance-none" onchange="window.handleBusSelectionChange('arrivo')">
+                            <option value="" disabled selected>--</option>
                         </select>
                     </div>
                 </div>
-                <div class="bus-inputs">
-                    <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('date_trip')}</label><input type="date" id="selData" class="bus-select" value="${todayISO}"></div>
-                    <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('time_trip')}</label><input type="time" id="selOra" class="bus-select" value="${nowTime}"></div>
+
+                <div class="flex gap-3 mb-4">
+                    <div class="flex-1"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('date_trip')}</label><input type="date" id="selData" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none" value="${todayISO}"></div>
+                    <div class="flex-1"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('time_trip')}</label><input type="time" id="selOra" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none" value="${nowTime}"></div>
                 </div>
-                <button id="btnSearchBus" onclick="eseguiRicercaBus()" class="btn-yellow" style="width:100%; font-weight:bold; margin-top:5px;">${window.t('find_times')}</button>
-                <div id="busResultsContainer" style="display:none; margin-top:20px;">
-                    <div id="nextBusCard" class="bus-result-main"></div>
-                    <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">${window.t('next_runs')}:</div>
-                    <div id="otherBusList" class="bus-list-container"></div>
+
+                <button id="btnSearchBus" onclick="eseguiRicercaBus()" class="w-full py-4 rounded-xl bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-bold text-lg shadow-lg shadow-orange-200 active:scale-95 transition-transform">
+                    ${window.t('find_times')}
+                </button>
+
+                <div id="busResultsContainer" class="hidden mt-6 pb-6">
+                    <div id="nextBusCard" class="bg-gradient-to-br from-emerald-600 to-primary text-white p-6 rounded-2xl shadow-lg mb-4 text-center relative overflow-hidden"></div>
+                    <div class="text-xs font-bold uppercase text-slate-400 mb-3 ml-1">${window.t('next_runs')}</div>
+                    <div id="otherBusList" class="space-y-2"></div>
                 </div>
             </div>`;
             
-            // Carica tutte le fermate per entrambi i box
+            // Trigger caricamento fermate
             setTimeout(() => { if(window.loadAllStops) window.loadAllStops(); }, 100);
         }
 
         // BATTELLO
         else if (transportId === 'ferry') {
             title = window.t('label_ferry');
-            const now = new Date();
-            const todayISO = now.toISOString().split('T')[0];
-            const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            const todayISO = new Date().toISOString().split('T')[0];
+            const nowTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
 
             customContent = `
-            <div class="bus-search-box animate-fade">
-                <div class="bus-title" style="margin-bottom: 0px; padding-bottom: 15px;">
-                    <span class="material-icons" style="background: linear-gradient(135deg, #0288D1, #0277BD); box-shadow: 0 4px 6px rgba(2, 119, 189, 0.3);">directions_boat</span> 
-                    ${window.t('plan_trip')} (Battello)
-                </div>
-
-                <button onclick="toggleTicketInfo()" style="width:100%; margin-bottom:15px; background:#e1f5fe; color:#01579b; border:1px solid #b3e5fc; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    🎟️ ${window.t('how_to_ticket')} ▾
+            <div class="p-2 animate-fade">
+                <button onclick="toggleTicketInfo()" class="w-full mb-4 bg-sky-50 text-sky-800 border border-sky-100 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <span>🎟️ ${window.t('how_to_ticket')}</span> <span class="material-icons text-sm">expand_more</span>
                 </button>
-                <div id="ticket-info-box" style="display:none; background:#fff; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:15px; font-size:0.9rem; color:#333; line-height:1.5;">
-                    <p>I biglietti sono acquistabili presso le biglietterie al molo.</p>
-                    <div style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.85rem; border:1px solid #ffeeba; margin-top:10px;">
-                        <strong>⚠️ INFO METEO:</strong> Sospeso con mare mosso.
+                <div id="ticket-info-box" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4 text-sm text-slate-600 leading-relaxed">
+                    <p>Biglietti acquistabili al molo prima dell'imbarco.</p>
+                    <div class="bg-yellow-50 text-yellow-800 p-3 rounded-lg border border-yellow-100 text-xs mt-2">
+                        <strong>⚠️ METEO:</strong> Servizio sospeso con mare mosso.
                     </div>
                 </div>
 
-                <div class="bus-inputs">
-                    <div style="flex:1;">
-                        <label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('departure')}</label>
-                        <select id="selPartenzaFerry" class="bus-select">
+                <div class="flex gap-3 mb-3">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('departure')}</label>
+                        <select id="selPartenzaFerry" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-sky-500 transition-colors appearance-none">
                             <option value="" disabled selected>${window.t('loading')}...</option>
                         </select>
                     </div>
-                    <div style="flex:1;">
-                        <label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('arrival')}</label>
-                        <select id="selArrivoFerry" class="bus-select">
-                            <option value="" disabled selected>${window.t('select_start')}</option>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('arrival')}</label>
+                        <select id="selArrivoFerry" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-sky-500 transition-colors appearance-none">
+                            <option value="" disabled selected>--</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="bus-inputs">
-                    <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('date_trip')}</label><input type="date" id="selDataFerry" class="bus-select" value="${todayISO}"></div>
-                    <div style="flex:1;"><label style="font-size:0.7rem; color:#666; font-weight:bold;">${window.t('time_trip')}</label><input type="time" id="selOraFerry" class="bus-select" value="${nowTime}"></div>
+                <div class="flex gap-3 mb-4">
+                    <div class="flex-1"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('date_trip')}</label><input type="date" id="selDataFerry" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none" value="${todayISO}"></div>
+                    <div class="flex-1"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('time_trip')}</label><input type="time" id="selOraFerry" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none" value="${nowTime}"></div>
                 </div>
                 
-                <button onclick="eseguiRicercaTraghetto()" class="btn-yellow" style="background: linear-gradient(135deg, #0288D1 0%, #01579b 100%); color:white; width:100%; font-weight:bold; margin-top:5px; box-shadow: 0 10px 25px -5px rgba(2, 136, 209, 0.4);">
+                <button onclick="eseguiRicercaTraghetto()" class="w-full py-4 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-lg shadow-lg shadow-sky-200 active:scale-95 transition-transform">
                     ${window.t('find_times')}
                 </button>
                 
-                <div id="ferryResultsContainer" style="display:none; margin-top:20px;">
-                    <div id="nextFerryCard" class="bus-result-main" style="background: linear-gradient(135deg, #0277BD 0%, #01579b 100%); box-shadow: 0 15px 30px -5px rgba(1, 87, 155, 0.3);"></div>
-                    <div style="font-size:0.8rem; font-weight:bold; color:#666; margin-top:15px;">${window.t('next_runs')}:</div>
-                    <div id="otherFerryList" class="bus-list-container"></div>
+                <div id="ferryResultsContainer" class="hidden mt-6 pb-6">
+                    <div id="nextFerryCard" class="bg-gradient-to-br from-sky-600 to-blue-800 text-white p-6 rounded-2xl shadow-lg mb-4 text-center"></div>
+                    <div class="text-xs font-bold uppercase text-slate-400 mb-3 ml-1">${window.t('next_runs')}</div>
+                    <div id="otherFerryList" class="space-y-2"></div>
                 </div>
             </div>`;
 
@@ -404,13 +413,19 @@ window.getModalContent = function(type, payload, item) {
         // TRENO
         else if (transportId === 'train') {
             title = window.t('label_train');
-            const now = new Date();
-            const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            const nowTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
             if (window.trainSearchRenderer) { customContent = window.trainSearchRenderer(null, nowTime); } 
             else { customContent = "<p>Errore interfaccia Treni.</p>"; }
         }
 
-        contentHtml = `<h2>${title}</h2>${customContent}`;
+        contentHtml = `
+            <div class="p-6">
+                <div class="flex items-center gap-3 mb-6">
+                    <h2 class="font-serif text-3xl font-bold text-slate-800">${title}</h2>
+                </div>
+                ${customContent}
+            </div>
+        `;
     }
 
     // --- FARMACIA ---
@@ -418,47 +433,54 @@ window.getModalContent = function(type, payload, item) {
         const item = JSON.parse(decodeURIComponent(payload)); 
         const nome = window.dbCol(item, 'Nome');
         const paesi = window.dbCol(item, 'Paesi');
-        contentHtml = `<h2>${nome}</h2><p>📍 ${item.Indirizzo}, ${paesi}</p><p>📞 <a href="tel:${item.Numero}">${item.Numero}</a></p>`;
+        contentHtml = `
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
+                    <span class="material-icons text-3xl">local_pharmacy</span>
+                </div>
+                <h2 class="font-serif text-2xl font-bold text-slate-800 mb-2">${nome}</h2>
+                <p class="text-slate-500 mb-6 flex items-center justify-center gap-1 font-medium"><span class="material-icons text-sm">place</span> ${item.Indirizzo}, ${paesi}</p>
+                <a href="tel:${item.Numero}" class="inline-flex items-center justify-center gap-2 bg-green-500 text-white py-3 px-8 rounded-full font-bold shadow-lg shadow-green-200 active:scale-95 transition-transform">
+                    <span class="material-icons">call</span> Chiama
+                </a>
+            </div>`;
     }
 
-    return { html: contentHtml, class: modalClass, onRender: onRender };
+    return { html: contentHtml, class: modalClass };
 };
 
 // RENDERER TRENI (Helper)
 window.trainSearchRenderer = (data, nowTime) => {
     return `
-    <div class="bus-search-box train-box animate-fade">
-        <div class="bus-title">
-            <span class="material-icons">train</span> 
-            Cinque Terre Express
+    <div class="animate-fade">
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl mb-6">
+            <p class="text-slate-700 leading-relaxed text-sm">${window.t('train_desc')}</p>
         </div>
         
-        <div class="transport-details">
-            <p class="transport-desc">${window.t('train_desc')}</p>
-            
-            <div class="avg-times-container">
-                <h4 class="avg-times-title">⏱️ ${window.t('avg_times')}</h4>
-                <div class="avg-time-row">
-                    <span>La Spezia ↔ Riomaggiore</span> <b>7 min</b>
+        <div class="bg-white border border-slate-100 rounded-2xl p-5 mb-6 shadow-sm">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">⏱️ ${window.t('avg_times')}</h4>
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">La Spezia ↔ Riomaggiore</span> <b class="text-slate-900 bg-slate-100 px-2 py-1 rounded">7 min</b>
                 </div>
-                <div class="avg-time-row">
-                    <span>${window.t('between_villages')}</span> <b>2-4 min</b>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">${window.t('between_villages')}</span> <b class="text-slate-900 bg-slate-100 px-2 py-1 rounded">2-4 min</b>
                 </div>
-                <div class="avg-time-row">
-                    <span>Monterosso ↔ Levanto</span> <b>5 min</b>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">Monterosso ↔ Levanto</span> <b class="text-slate-900 bg-slate-100 px-2 py-1 rounded">5 min</b>
                 </div>
             </div>
         </div>
 
-        <button onclick="apriTrenitalia()" class="btn-red">
-            <span>${window.t('train_cta')}</span>
+        <button onclick="apriTrenitalia()" class="w-full py-4 rounded-xl bg-gradient-to-r from-red-600 to-red-500 text-white font-bold text-lg shadow-lg shadow-red-200 active:scale-95 transition-transform flex items-center justify-center gap-2">
+            <span>${window.t('train_cta')}</span> <span class="material-icons text-sm">open_in_new</span>
         </button>
         
-        <p class="transport-disclaimer">${window.t('check_site')}</p>
+        <p class="text-center text-[10px] text-slate-400 mt-4">${window.t('check_site')}</p>
     </div>`;
 };
 
-// LISTA FERMATE TRAGHETTI
+// LISTA FERMATE TRAGHETTI (Configurazione)
 const FERRY_STOPS_UI = [
     { id: 'levanto', label: 'Levanto' },
     { id: 'monterosso', label: 'Monterosso' },

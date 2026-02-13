@@ -1,10 +1,17 @@
-console.log("✅ 5. ui-modal.js caricato (Localizzato & Fixato)");
+console.log("✅ 5. ui-modal.js caricato (Tailwind)");
 
 window.openModal = async function(type, payload) {
     const modal = document.createElement('div');
-    modal.className = 'modal-overlay animate-fade';
+    // Overlay Tailwind
+    modal.className = 'fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade';
     document.body.appendChild(modal);
-    modal.onclick = (e) => { if(e.target === modal) modal.remove(); };
+
+    modal.onclick = (e) => { 
+        if(e.target === modal) {
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.remove(), 200);
+        }
+    };
 
     let item = null; 
     if (window.currentTableData && (['Vini', 'Attrazioni', 'Spiagge', 'attrazione', 'wine'].includes(type))) {
@@ -12,18 +19,22 @@ window.openModal = async function(type, payload) {
         if (!item && typeof payload === 'number') item = window.currentTableData[payload];
     }
 
-    if (!window.getModalContent) { console.error("Manca ui-modal-contents.js"); modal.remove(); return; }
+    if (!window.getModalContent) { modal.remove(); return; }
     
     const content = window.getModalContent(type, payload, item);
     
-    if (!content || !content.html) {
-        console.warn("Nessun contenuto generato per:", type);
-        modal.remove();
-        return;
-    }
+    if (!content || !content.html) { modal.remove(); return; }
 
-    const modalClass = content.class || 'modal-content';
-    modal.innerHTML = `<div class="${modalClass}"><span class="close-modal" onclick="this.parentElement.parentElement.remove()">×</span>${content.html}</div>`;
+    // Content Container Tailwind
+    const modalClass = content.class || 'bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden relative max-h-[85vh] overflow-y-auto';
+    
+    modal.innerHTML = `
+    <div class="${modalClass} transform transition-all scale-100">
+        <button class="absolute top-4 right-4 z-20 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center text-slate-800 shadow-sm active:scale-90" onclick="this.closest('.fixed').remove()">
+            <span class="material-icons text-lg">close</span>
+        </button>
+        ${content.html}
+    </div>`;
 
     if (content.onRender && typeof content.onRender === 'function') {
         setTimeout(() => content.onRender(), 50);

@@ -1,48 +1,43 @@
-console.log("✅ 6. app.js caricato");
+console.log("✅ 6. app.js caricato (Tailwind)");
 
 const content = document.getElementById('app-content');
-const viewTitle = document.getElementById('view-title');
 window.pendingMaps = []; 
-
-const getGlobalFooter = () => ``;
 
 // --- 1. SETUP LINGUA & HEADER ---
 function setupHeaderElements() {
+    // Logica invariata, cambiano solo le classi create
     const header = document.querySelector('header');
     
-    // 1. PULIZIA
     const oldActions = header.querySelector('.header-actions');
     if (oldActions) oldActions.remove();
     const oldShare = document.getElementById('header-btn-share');
     if (oldShare) oldShare.remove();
-    header.querySelectorAll('.material-icons').forEach(i => i.remove());
 
-    // 2. LOGICA
     if (window.currentViewName !== 'home') return; 
 
-    // 3. COSTRUZIONE
     const actionsContainer = document.createElement('div');
-    actionsContainer.className = 'header-actions animate-fade'; 
+    // Tailwind classes per posizionamento assoluto
+    actionsContainer.className = 'header-actions animate-fade absolute left-5 top-8 z-50'; 
     actionsContainer.id = 'header-btn-lang'; 
-    Object.assign(actionsContainer.style, { position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', zIndex: '20' });
 
     const currFlag = window.AVAILABLE_LANGS.find(l => l.code === window.currentLang).flag;
     const currCode = window.currentLang.toUpperCase();
 
     const langSelector = document.createElement('div');
-    langSelector.className = 'lang-selector';
+    langSelector.className = 'relative'; // per il dropdown
     langSelector.innerHTML = `
-        <button class="current-lang-btn" onclick="toggleLangDropdown(event)">
-            <span class="lang-flag">${currFlag}</span> ${currCode} ▾
+        <button class="flex items-center gap-2 bg-white/40 backdrop-blur-md border border-white/40 rounded-full px-3 py-1.5 text-sm font-bold text-white shadow-sm transition-transform active:scale-95" onclick="toggleLangDropdown(event)">
+            <span>${currFlag}</span> ${currCode} ▾
         </button>
-        <div class="lang-dropdown" id="lang-dropdown" style="left: 0; right: auto;">
+        <div class="absolute top-10 left-0 bg-white rounded-2xl shadow-xl p-2 min-w-[160px] opacity-0 invisible -translate-y-2 transition-all duration-200 z-[60]" id="lang-dropdown">
             ${window.AVAILABLE_LANGS.map(l => `
-                <button class="lang-opt ${l.code === window.currentLang ? 'active' : ''}" onclick="changeLanguage('${l.code}')">
-                    <span class="lang-flag">${l.flag}</span> ${l.label}
+                <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left text-slate-700 font-semibold ${l.code === window.currentLang ? 'bg-emerald-50 text-primary' : ''}" onclick="changeLanguage('${l.code}')">
+                    <span class="text-lg">${l.flag}</span> ${l.label}
                 </button>
             `).join('')}
         </div>`;
     actionsContainer.appendChild(langSelector);
+    header.appendChild(actionsContainer);
 }
 
 function updateNavBar() {
@@ -59,11 +54,10 @@ function updateNavBar() {
 window.changeLanguage = function(langCode) {
     window.currentLang = langCode;
     localStorage.setItem('app_lang', langCode);
-    
     setupHeaderElements(); 
     updateNavBar(); 
     
-    const activeNav = document.querySelector('.nav-item.active');
+    const activeNav = document.querySelector('.nav-item.active'); // Nota: uso ancora la classe 'active' per logica
     if(activeNav) {
         const onclickAttr = activeNav.getAttribute('onclick');
         const viewMatch = onclickAttr.match(/switchView\('([^']+)'/);
@@ -77,33 +71,41 @@ window.changeLanguage = function(langCode) {
 window.toggleLangDropdown = function(event) {
     event.stopPropagation();
     const dd = document.getElementById('lang-dropdown');
-    if(dd) dd.classList.toggle('show');
+    if(dd) {
+        dd.classList.toggle('opacity-100');
+        dd.classList.toggle('visible');
+        dd.classList.toggle('translate-y-0');
+    }
 };
 
 window.addEventListener('click', () => {
     const dd = document.getElementById('lang-dropdown');
-    if(dd) dd.classList.remove('show');
+    if(dd) {
+        dd.classList.remove('opacity-100', 'visible', 'translate-y-0');
+    }
 });
 
 window.switchView = async function(view, el) {
     if (!content) return;
     window.currentViewName = view; 
     
-
+    // Rimuovi mascotte
     const mascot = document.getElementById('mascot-container');
     if (mascot) mascot.remove();
-    // --------------------------------
 
     document.body.classList.remove('is-home');
 
+    // Rimuovi filtri globali
     const globalFilterBtn = document.querySelector('body > #filter-toggle-btn');
     if (globalFilterBtn) { globalFilterBtn.remove(); }
 
-    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    if (el) el.classList.add('active');
-    else if (view === 'home') {
+    // Gestione stato attivo Navbar
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active', 'text-primary'));
+    if (el) {
+        el.classList.add('active', 'text-primary'); // Tailwind text-primary
+    } else if (view === 'home') {
          const homeBtn = document.querySelector('.nav-item[onclick*="home"]');
-         if(homeBtn) homeBtn.classList.add('active');
+         if(homeBtn) homeBtn.classList.add('active', 'text-primary');
     }
 
     try {
@@ -125,120 +127,88 @@ window.switchView = async function(view, el) {
         else if (view === 'mappe_monumenti') renderSubMenu([{ label: window.t('menu_map'), table: "Mappe" }], 'Mappe');
     } catch (err) {
         console.error(err);
-        content.innerHTML = `<div class="error-msg">${window.t('error')}: ${err.message}</div>`;
+        content.innerHTML = `<div class="p-4 text-center text-red-500 bg-red-50 rounded-xl border border-red-200">${window.t('error')}: ${err.message}</div>`;
     }
 };
 
-// 1. RENDER HOME (Con Pulizia ID duplicati)
+// 1. RENDER HOME (Tailwind Edition)
 function renderHome() {
     const bgImage = "https://res.cloudinary.com/dkg0jfady/image/upload/v1770756918/Manarola.png";
-
     document.body.classList.add('is-home');
 
-    // Costruiamo la Home
     content.innerHTML = `
-    <div class="home-hero-fullscreen animate-fade">
-        <img src="${bgImage}" alt="Cinque Terre">
+    <div class="fixed inset-0 z-[-1] overflow-hidden">
+        <img src="${bgImage}" class="w-full h-full object-cover" alt="Cinque Terre">
+        <div class="absolute inset-0 bg-black/30 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
     </div>
 
-    <div class="welcome-overlay">
-        <div class="welcome-content">
-            <h1></h1>
-            <div class="welcome-divider"></div>
-            <div class="lang-grid">
-                ${window.AVAILABLE_LANGS.map(l => `
-                    <button class="lang-tile ${l.code === window.currentLang ? 'active' : ''}" onclick="changeLanguage('${l.code}')">
-                        <span class="lang-flag-large">${l.flag}</span>
-                        <span class="lang-label">${l.label}</span>
-                    </button>
-                `).join('')}
-            </div>
+    <div class="flex flex-col items-center justify-end h-[85vh] pb-20 px-6 text-center animate-fade">
+        <h1 class="text-4xl font-serif font-bold text-white mb-6 drop-shadow-md tracking-tight leading-tight">
+           </h1>
+        
+        <div class="grid grid-cols-3 gap-3 w-full max-w-sm">
+            ${window.AVAILABLE_LANGS.map(l => `
+                <button class="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl py-3 flex flex-col items-center justify-center transition-all active:scale-95 active:bg-white active:text-slate-900 text-white ${l.code === window.currentLang ? 'bg-white !text-slate-900 shadow-lg scale-105 border-white' : ''}" onclick="changeLanguage('${l.code}')">
+                    <span class="text-3xl mb-1 drop-shadow-sm">${l.flag}</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest">${l.label}</span>
+                </button>
+            `).join('')}
         </div>
     </div>`;
 
-const oldMascot = document.getElementById('mascot-container');
+    // Mascotte (Chicco) - Logica invariata, solo inline styles puliti dove possibile
+    const oldMascot = document.getElementById('mascot-container');
     if (oldMascot) oldMascot.remove();
 
     const chiccoStaticUrl = "https://res.cloudinary.com/dkg0jfady/image/upload/v1770579869/chicco_wxxwbm.png";
-    const chiccoLottieUrl = "https://res.cloudinary.com/dkg0jfady/raw/upload/v1770754341/chicco.json"; // <--- INCOLLA IL JSON QUI
+    const chiccoLottieUrl = "https://res.cloudinary.com/dkg0jfady/raw/upload/v1770754341/chicco.json"; 
 
     const mascotHTML = `
-    <div id="mascot-container" style="position: fixed; bottom: 70px; right: 20px; z-index: 5000; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none;">
-        
-        <div id="chicco-bubble" class="animate-fade" style="display: none; background: white; padding: 15px; border-radius: 15px 15px 0 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-bottom: 10px; max-width: 200px; font-size: 0.9rem; color: #333; border: 2px solid #8E44AD; pointer-events: auto;">
+    <div id="mascot-container" class="fixed bottom-24 right-4 z-50 flex flex-col items-end pointer-events-none">
+        <div id="chicco-bubble" class="hidden animate-fade bg-white p-4 rounded-t-2xl rounded-bl-2xl shadow-xl mb-2 max-w-[220px] text-sm text-slate-700 border-2 border-primary pointer-events-auto">
             <span id="chicco-text">Ciao!</span>
         </div>
-
-        <div onclick="window.toggleChicco()" style="cursor: pointer; transition: transform 0.2s; pointer-events: auto; width: 100px; height: 100px; position: relative;">
-            
-            <img id="chicco-static" 
-                 src="${chiccoStaticUrl}" 
-                 style="width: 100px; height: auto; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.3)); display: block; position: absolute; bottom: 0; right: 0;" 
-                 alt="Chicco Statico"
-                 onmouseover="this.style.transform='scale(1.1)'" 
-                 onmouseout="this.style.transform='scale(1)'">
-
-            <lottie-player 
-                id="chicco-anim"
-                src="${chiccoLottieUrl}" 
-                background="transparent" 
-                speed="1" 
-                style="width: 120px; height: 120px; display: none; position: absolute; bottom: -10px; right: -10px;" 
-                loop>
-            </lottie-player>
-
+        <div onclick="window.toggleChicco()" class="cursor-pointer transition-transform active:scale-90 pointer-events-auto w-[100px] h-[100px] relative">
+            <img id="chicco-static" src="${chiccoStaticUrl}" class="w-full h-auto drop-shadow-lg absolute bottom-0 right-0 hover:scale-110 transition-transform" alt="Chicco">
+            <lottie-player id="chicco-anim" src="${chiccoLottieUrl}" background="transparent" speed="1" class="w-[120px] h-[120px] hidden absolute -bottom-2 -right-2" loop></lottie-player>
         </div>
-        
     </div>`;
 
-    // Aggiungi alla pagina
     content.insertAdjacentHTML('beforeend', mascotHTML);
 
-    // Caricamento script Lottie (se serve)
     if (!document.querySelector('script[src*="lottie-player"]')) {
         const script = document.createElement('script');
         script.src = "https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js";
         document.head.appendChild(script);
     }
-
+    
+    // Auto open logic
     if (!localStorage.getItem('chicco_intro_done')) {
-        
-        console.log("⏳ Utente nuovo: avvio timer 5 secondi...");
-        
-        // Impostiamo il timer
         window.chiccoAutoOpenTimer = setTimeout(() => {
-            // Controlliamo se la chat è già aperta (per non riaprirla se l'utente ha fatto da solo)
-            const isChatOpen = document.querySelector('.chicco-chat-wrapper'); // O la classe della modale attiva
-            
+            const isChatOpen = document.querySelector('.chicco-chat-wrapper');
             if (!isChatOpen) {
-                console.log("⏰ 5 secondi passati! Chicco si presenta.");
-                
-                // Apre Chicco
-                window.toggleChicco(); // O window.openChiccoAssistant() a seconda di come l'hai chiamata
-                
-                // Segniamo che l'intro è stata fatta, così non lo rifà alla prossima pagina
+                window.toggleChicco();
                 localStorage.setItem('chicco_intro_done', 'true');
             }
-        }, 5000); // 5000 millisecondi = 5 secondi
+        }, 5000);
     }
 }
 
 // ============================================================
-// 1. RENDER MENU
+// 1. RENDER MENU (Sticky Header Moderno)
 // ============================================================
 function renderSubMenu(options, defaultTable) {
     let menuHtml = `
-    <div class="nav-sticky-header animate-fade">
-        <div class="nav-scroll-container">
+    <div class="nav-sticky-header sticky top-0 z-30 bg-bg/95 backdrop-blur-md py-4 -mx-4 px-4 border-b border-slate-200/60 shadow-sm mb-4">
+        <div class="nav-scroll-container flex gap-3 overflow-x-auto no-scrollbar items-center px-1">
             ${options.map(opt => `
-                <button class="btn-3d" onclick="loadTableData('${opt.table}', this)">
+                <button class="flex-shrink-0 px-5 py-2.5 rounded-2xl text-sm font-bold text-slate-500 bg-white border border-slate-200 shadow-sm transition-all active:scale-95 btn-3d" onclick="loadTableData('${opt.table}', this)">
                     ${opt.label}
                 </button>
             `).join('')}
         </div>
     </div>
-    
-    <div id="sub-content"></div>`;
+    <div id="sub-content" class="min-h-[300px]"></div>`;
     
     content.innerHTML = menuHtml;
     
@@ -252,49 +222,48 @@ window.loadTableData = async function(tableName, btnEl) {
     const subContent = document.getElementById('sub-content');
     if (!subContent) return;
 
-    document.querySelectorAll('.nav-chip, .btn-3d').forEach(btn => btn.classList.remove('active-chip', 'active-3d'));
+    // Gestione stato attivo bottoni
+    document.querySelectorAll('.btn-3d').forEach(btn => {
+        btn.classList.remove('bg-primary', 'text-white', 'shadow-md', 'border-transparent');
+        btn.classList.add('bg-white', 'text-slate-500', 'border-slate-200');
+    });
     if (btnEl) {
-        if(btnEl.classList.contains('nav-chip')) btnEl.classList.add('active-chip');
-        if(btnEl.classList.contains('btn-3d')) btnEl.classList.add('active-3d');
+        btnEl.classList.remove('bg-white', 'text-slate-500', 'border-slate-200');
+        btnEl.classList.add('bg-primary', 'text-white', 'shadow-md', 'border-transparent');
     }
 
+    // Reset filtri
     const existingFilters = document.getElementById('dynamic-filters');
     if(existingFilters) existingFilters.remove();
     const filterBtn = document.getElementById('filter-toggle-btn');
     if(filterBtn) filterBtn.style.display = 'none';
 
     if (!window.appCache[tableName]) {
-        subContent.innerHTML = `<div class="loader" style="margin-top:20px;">${window.t('loading')}...</div>`;
+        subContent.innerHTML = `<div class="py-12 flex justify-center"><div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div></div>`;
     }
     
     if (tableName === 'Mappe') {
-        subContent.innerHTML = `<div class="map-container animate-fade"><iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="640" height="480"></iframe></div>`;
+        subContent.innerHTML = `<div class="rounded-3xl overflow-hidden shadow-lg border-4 border-white h-[70vh] animate-fade"><iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="100%" height="100%" style="border:0;"></iframe></div>`;
         return; 
     }
 
-    // --- LOGICA CACHE INTELLIGENTE ---
+    // Cache Logic
     let data;
-    
     if (window.appCache[tableName]) {
-        console.log(`⚡ Cache hit: recupero dati per ${tableName} dalla memoria.`);
         data = window.appCache[tableName];
-    } 
-    else {
-        console.log(`🌐 Cache miss: scarico dati per ${tableName} dal server...`);
+    } else {
         const response = await window.supabaseClient.from(tableName).select('*');
-        
         if (response.error) { 
-            subContent.innerHTML = `<p class="error-msg">${response.error.message}</p>`; 
+            subContent.innerHTML = `<p class="text-center text-red-500 p-4 bg-red-50 rounded-xl">${response.error.message}</p>`; 
             return; 
         }
-        
         data = response.data;
         window.appCache[tableName] = data; 
     }
 
     window.currentTableData = data; 
 
-    // 6. Routing Renderers
+    // Routing Renderers
     if (tableName === 'Vini') {
         renderGenericFilterableView(data, 'Tipo', subContent, window.vinoRenderer);
     }
@@ -302,17 +271,22 @@ window.loadTableData = async function(tableName, btnEl) {
         renderGenericFilterableView(data, 'Paesi', subContent, window.spiaggiaRenderer);
     }
     else if (tableName === 'Prodotti') {
-        let html = '<div class="list-container animate-fade" style="padding-bottom:20px;">'; 
+        let html = '<div class="grid grid-cols-1 gap-4 pb-24 animate-fade">'; 
         data.forEach(p => { html += window.prodottoRenderer(p); });
         subContent.innerHTML = html + '</div>';
     }
     else if (tableName === 'Trasporti') {
         window.tempTransportData = data;
-        let html = '<div class="list-container animate-fade">';
+        let html = '<div class="grid grid-cols-1 gap-3 pb-24 animate-fade">';
         data.forEach((t, index) => {
             const nomeDisplay = window.dbCol(t, 'Mezzo');
             const imgUrl = window.getSmartUrl(t.Mezzo, '', 400);
-            html += `<div class="card-product" onclick="openModal('transport', '${index}')"><div class="prod-info"><div class="prod-title">${nomeDisplay}</div></div><img src="${imgUrl}" class="prod-thumb" loading="lazy"></div>`;
+            html += `<div class="relative h-24 rounded-2xl overflow-hidden shadow-sm cursor-pointer active:scale-95 transition-transform" onclick="openModal('transport', '${index}')">
+                        <img src="${imgUrl}" class="absolute inset-0 w-full h-full object-cover" loading="lazy">
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <h3 class="text-white font-serif text-xl font-bold tracking-wide">${nomeDisplay}</h3>
+                        </div>
+                     </div>`;
         });
         subContent.innerHTML = html + '</div>';
     }
@@ -328,7 +302,6 @@ window.loadTableData = async function(tableName, btnEl) {
     else if (tableName === 'Farmacie') { renderGenericFilterableView(data, 'Paesi', subContent, window.farmacieRenderer); } 
     else if (tableName === 'Numeri_utili') { renderGenericFilterableView(data, 'Comune', subContent, window.numeriUtiliRenderer); }
 };
-
 /* ============================================================
    SWIPE TRA LE PAGINE
    ============================================================ */
@@ -405,85 +378,67 @@ function handlePageSwipe() {
    FUNZIONE RENDER SERVIZI (Statica - No Supabase)
    ============================================================ */
 window.renderServicesGrid = async function() {
-    console.log("🔘 Avvio renderServicesGrid (Modalità Statica)...");
+    console.log("🔘 Avvio renderServicesGrid...");
     const targetEl = document.getElementById('app-content');
     const globalFilterBtn = document.querySelector('body > #filter-toggle-btn');
-    if (globalFilterBtn) {
-        globalFilterBtn.remove();
-    }
+    if (globalFilterBtn) globalFilterBtn.remove();
     if (!targetEl) return;
 
-    // 1. Definiamo i mezzi manualmente con le chiavi di traduzione
     const staticTransports = [
         { id: 'train', labelKey: 'label_train', icon: 'train', type: 'transport' },
         { id: 'ferry', labelKey: 'label_ferry', icon: 'directions_boat', type: 'transport' },
         { id: 'bus',   labelKey: 'label_bus',   icon: 'directions_bus', type: 'transport' }
     ];
 
-    let html = '<div class="services-grid-modern animate-fade" style="padding-bottom:100px;">';
+    let html = '<div class="grid grid-cols-2 gap-4 p-2 pb-24 animate-fade max-w-lg mx-auto">';
 
-    // 2. Loop Mezzi di Trasporto
+    const widgetClass = "aspect-square bg-white/80 backdrop-blur border border-white rounded-3xl flex flex-col items-center justify-center shadow-soft active:scale-95 transition-transform p-4 text-center cursor-pointer";
+    const iconClass = "material-icons text-4xl text-accent mb-3";
+    const textClass = "font-bold text-slate-700 text-sm leading-tight";
+
     staticTransports.forEach(t => {
-        const translatedLabel = window.t(t.labelKey); 
         html += `
-        <div class="service-widget" onclick="openModal('${t.type}', '${t.id}')">
-            <span class="material-icons widget-icon">${t.icon}</span>
-            <span class="widget-label">${translatedLabel}</span>
+        <div class="${widgetClass}" onclick="openModal('${t.type}', '${t.id}')">
+            <span class="${iconClass}">${t.icon}</span>
+            <span class="${textClass}">${window.t(t.labelKey)}</span>
         </div>`;
     });
 
-    // 3. Widget Fissi
-    const labelNum = window.t('menu_num');
-    const labelPharm = window.t('menu_pharm');
-    const labelLegal = window.t('menu_legal');
-
     html += `
-    <div class="service-widget" onclick="renderSimpleList('Numeri_utili')">
-        <span class="material-icons widget-icon">phonelink_ring</span>
-        <span class="widget-label">${labelNum}</span>
+    <div class="${widgetClass}" onclick="renderSimpleList('Numeri_utili')">
+        <span class="${iconClass}">phonelink_ring</span>
+        <span class="${textClass}">${window.t('menu_num')}</span>
     </div>
-    
-    <div class="service-widget" onclick="renderSimpleList('Farmacie')">
-        <span class="material-icons widget-icon">medical_services</span>
-        <span class="widget-label">${labelPharm}</span>
+    <div class="${widgetClass}" onclick="renderSimpleList('Farmacie')">
+        <span class="${iconClass}">medical_services</span>
+        <span class="${textClass}">${window.t('menu_pharm')}</span>
     </div>
-
-    <div class="service-widget" onclick="renderLegalPage()">
-        <span class="material-icons widget-icon">policy</span>
-        <span class="widget-label">${labelLegal}</span>
+    <div class="${widgetClass}" onclick="renderLegalPage()">
+        <span class="${iconClass}">policy</span>
+        <span class="${textClass}">${window.t('menu_legal')}</span>
     </div>
-    
     </div>`; 
 
     targetEl.innerHTML = html;
-    console.log("✅ Servizi caricati.");
 };
 
-// Funzione Liste Semplici (Farmacie/Numeri)
+// Funzione Liste Semplici
 window.renderSimpleList = function(tableName) {
     const targetEl = document.getElementById('app-content');
-    if (!targetEl) return;
-    
     const cleanTitle = tableName.replace('_', ' ');
     
     targetEl.innerHTML = `
-    <div class="header-simple-list animate-fade">
-        <button onclick="renderServicesGrid()" class="btn-back-custom">
-            <span class="material-icons">arrow_back</span>
+    <div class="flex items-center gap-4 mb-6 animate-fade pt-2">
+        <button onclick="renderServicesGrid()" class="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-100 active:scale-90 transition-transform">
+            <span class="material-icons text-slate-700">arrow_back</span>
         </button>
-        <h2>${cleanTitle}</h2>
+        <h2 class="text-2xl font-serif font-bold text-slate-800 capitalize">${cleanTitle}</h2>
     </div>
     <div id="sub-content">
-        <div class="loader">Caricamento...</div>
+        <div class="py-10 text-center text-slate-400">Caricamento...</div>
     </div>`;
-
-    if(window.loadTableData) {
-        window.loadTableData(tableName, null);
-    } else {
-        console.error("❌ loadTableData non trovata! Controlla app.js");
-    }
+    window.loadTableData(tableName, null);
 };
-
 window.toggleTicketInfo = function() {
     const box = document.getElementById('ticket-info-box');
     if (box) { box.style.display = (box.style.display === 'none') ? 'block' : 'none'; }
@@ -492,16 +447,13 @@ window.toggleTicketInfo = function() {
 
 // --- LOGICA FILTRI (Bottom Sheet) ---
 function renderGenericFilterableView(allData, filterKey, container, cardRenderer) {
-    container.innerHTML = `<div class="list-container animate-fade" id="dynamic-list" style="padding-bottom: 80px;"></div>`;
+    container.innerHTML = `<div class="flex flex-col gap-4 pb-24 animate-fade" id="dynamic-list"></div>`;
     const listContainer = container.querySelector('#dynamic-list');
 
-    // Pulizia vecchi elementi UI
-    const oldSheet = document.getElementById('filter-sheet');
-    if (oldSheet) oldSheet.remove();
-    const oldOverlay = document.getElementById('filter-overlay');
-    if (oldOverlay) oldOverlay.remove();
-    const oldBtn = document.getElementById('filter-toggle-btn');
-    if (oldBtn) oldBtn.remove();
+    // Pulizia
+    ['filter-sheet', 'filter-overlay', 'filter-toggle-btn'].forEach(id => {
+        const el = document.getElementById(id); if(el) el.remove();
+    });
 
     // === 1. IDENTIFICAZIONE ROBUSTA DEL "NUMERO UNICO" ===
     // Cerchiamo l'elemento 112 indipendentemente da come è scritto nel DB
@@ -562,25 +514,26 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
     // Costruzione UI Filtri (Sheet)
     const overlay = document.createElement('div');
     overlay.id = 'filter-overlay';
-    overlay.className = 'sheet-overlay';
+    // Tailwind Overlay
+    overlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-50 opacity-0 invisible transition-all duration-300';
     
     const sheet = document.createElement('div');
     sheet.id = 'filter-sheet';
-    sheet.className = 'bottom-sheet';
+    // Tailwind Bottom Sheet
+    sheet.className = 'fixed bottom-0 left-0 right-0 bg-white rounded-t-[2rem] p-6 z-[51] transform translate-y-full transition-transform duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]';
     sheet.innerHTML = `
-        <div class="sheet-header">
-            <div class="sheet-title">${window.t('filter_title')}</div> 
-            <div class="material-icons sheet-close" onclick="closeFilterSheet()">close</div>
+        <div class="flex justify-between items-center mb-6">
+            <div class="font-serif text-xl font-bold text-slate-800">${window.t('filter_title')}</div> 
+            <button class="p-2 bg-slate-100 rounded-full text-slate-500" onclick="closeFilterSheet()"><span class="material-icons">close</span></button>
         </div>
-        <div class="filter-grid" id="sheet-options"></div>
+        <div class="flex flex-wrap gap-2 max-h-[60vh] overflow-y-auto" id="sheet-options"></div>
     `;
 
     document.body.appendChild(overlay);
     document.body.appendChild(sheet);
 
     const optionsContainer = sheet.querySelector('#sheet-options');
-    let activeTag = 'Tutti'; 
-
+    let activeTag = 'Tutti';
     uniqueTags.forEach(tag => {
         const chip = document.createElement('button');
         chip.className = 'sheet-chip';
@@ -616,12 +569,12 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
     // Bottone Fluttuante
     const filterBtn = document.createElement('button');
     filterBtn.id = 'filter-toggle-btn';
-    filterBtn.innerHTML = '<span class="material-icons">filter_list</span>';
-    filterBtn.style.display = 'block'; 
+    filterBtn.className = 'fixed bottom-24 right-5 w-14 h-14 bg-slate-800 text-white rounded-full shadow-xl flex items-center justify-center z-40 active:scale-90 transition-transform';
+    filterBtn.innerHTML = '<span class="material-icons text-2xl">filter_list</span>';
     document.body.appendChild(filterBtn);
 
-    window.openFilterSheet = () => { overlay.classList.add('active'); sheet.classList.add('active'); };
-    window.closeFilterSheet = () => { overlay.classList.remove('active'); sheet.classList.remove('active'); };
+    window.openFilterSheet = () => { overlay.classList.remove('opacity-0', 'invisible'); sheet.classList.remove('translate-y-full'); };
+    window.closeFilterSheet = () => { overlay.classList.add('opacity-0', 'invisible'); sheet.classList.add('translate-y-full'); };
 
     filterBtn.onclick = window.openFilterSheet;
     overlay.onclick = window.closeFilterSheet;

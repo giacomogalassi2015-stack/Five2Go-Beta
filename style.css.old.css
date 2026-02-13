@@ -1,0 +1,709 @@
+/* ============================================================
+   1. SETUP, VARIABILI & FONTS (da style-base.css)
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&family=Roboto:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barriecito&display=swap');
+/* Icone Material */
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+:root {
+    /* Palette */
+    --primary-col: #4A6B57; 
+    --primary-dark: #000000; 
+    --accent-col:  #D06F5B; 
+    --accent-soft: #F2A68D; 
+    
+    --bg-body:     #FDFCF8; 
+    --surface:     #FFFFFF; 
+    
+    --text-main:   #000000; 
+    --text-light:  #636E72;
+
+    /* Dimensioni & Spaziature */
+    --nav-height:  75px; 
+    --card-radius: 20px; 
+    
+    /* Effetti */
+    --shadow-soft: 0 10px 30px -10px rgba(42, 157, 100, 0.15); 
+    --glass-bg:    rgba(255, 255, 255, 0.85);
+    --glass-blur:  blur(12px);
+}
+
+/* Reset Base */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+    font-family: 'Roboto', sans-serif; 
+    background-color: var(--bg-body); 
+    color: var(--text-main);
+    line-height: 1.6;
+    touch-action: pan-x pan-y;
+    overflow-x: hidden;
+    height: 100%; width: 100%;
+    padding-bottom: calc(var(--nav-height) + 30px); 
+}
+
+/* Helper Utilities */
+.material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;  
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'liga';
+}
+
+/* ============================================================
+   2. LAYOUT GENERALE & NAVIGATION
+   ============================================================ */
+/* Main Content */
+main { 
+    max-width: 600px; 
+    margin: 0 auto; 
+    padding: 5px 20px; 
+}
+
+/* Home Fullscreen Background */
+.home-hero-fullscreen {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: -1; overflow: hidden;
+}
+.home-hero-fullscreen img { width: 100%; height: 100%; object-fit: cover; }
+.home-hero-fullscreen::after {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%; background: rgba(0, 0, 0, 0.3); 
+}
+
+/* Bottom Navigation */
+#bottom-nav {
+    position: fixed; bottom: 20px; left: 20px; right: 20px; 
+    width: auto; height: 70px;
+    background-color: var(--surface);
+    border-radius: 25px; 
+    display: flex; justify-content: space-evenly; align-items: center;
+    z-index: 1000;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.nav-item {
+    background: none; border: none; flex: 1; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #B2BEC3; cursor: pointer; text-decoration: none;
+    transition: transform 0.2s ease, color 0.2s ease;
+    position: relative;
+}
+.nav-item.active { color: var(--primary-col); transform: translateY(-2px); }
+.nav-item .material-icons { font-size: 26px; margin-bottom: 3px; }
+.nav-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; }
+
+/* Navbar 3D & Scroll (da style-components.css) */
+.nav-sticky-header {
+    position: sticky; top: 0; z-index: 999;
+    background: rgba(255, 255, 255, 0.98); 
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    padding: 8px 0 8px 0; margin: 0 -20px 0 -20px; 
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 5px 15px -5px rgba(0,0,0,0.1); 
+}
+.nav-scroll-container {
+    display: flex; gap: 12px; overflow-x: auto;
+    padding: 0 20px; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch; align-items: center; height: 55px;
+}
+.nav-scroll-container::-webkit-scrollbar { display: none; }
+
+.btn-3d {
+    flex-shrink: 0; padding: 10px 20px; border-radius: 16px; border: none;
+    background: linear-gradient(145deg, #ffffff, #e6e6e6);
+    box-shadow: 3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff;
+    font-family: 'Roboto', sans-serif; font-size: 0.95rem;
+    font-weight: 700; color: #6c7a89; cursor: pointer;
+    transition: all 0.1s ease; -webkit-tap-highlight-color: transparent; outline: none;
+}
+.btn-3d:active {
+    background: #e6e6e6;
+    box-shadow: inset 3px 3px 6px #d1d9e6, inset -3px -3px 6px #ffffff;
+    transform: translateY(1px);
+}
+.btn-3d.active-3d {
+    background: linear-gradient(145deg, #2d7d74, #4A6B57); color: #ffffff;
+    box-shadow: 4px 4px 10px rgba(0,0,0,0.3), -2px -2px 5px rgba(255,255,255,0.1);
+    transform: translateY(-1px);
+}
+#sub-content { padding-top: 15px !important; min-height: 300px; }
+
+/* ============================================================
+   3. HOME & LINGUA (da style-base.css)
+   ============================================================ */
+.lang-grid { 
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 30px; 
+}
+.lang-tile {
+    background: rgba(255, 255, 255, 0.2); 
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 16px;
+    padding: 12px 5px; display: flex; flex-direction: column; 
+    align-items: center; justify-content: center;
+    cursor: pointer; transition: transform 0.2s ease, background 0.2s; color: white;
+}
+.lang-tile.active {
+    background: white; color: var(--primary-dark); border-color: white; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+.lang-flag-large { font-size: 1.8rem; margin-bottom: 4px; }
+.lang-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+
+/* Header Language Dropdown */
+.header-actions { display: flex; align-items: center; gap: 15px; }
+.current-lang-btn {
+    background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px; padding: 5px 10px; display: flex; align-items: center; gap: 6px;
+    font-family: 'Roboto', sans-serif; font-weight: 700; font-size: 0.85rem;
+    color: var(--primary-dark); cursor: pointer; transition: all 0.2s ease;
+}
+.lang-dropdown {
+    position: absolute; top: 45px; right: 0; background-color: var(--surface); 
+    min-width: 160px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border-radius: 16px; padding: 8px; z-index: 2000;
+    opacity: 0; visibility: hidden; transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.lang-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+.lang-opt {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 10px 12px; border: none; background: none; text-align: left; 
+    font-family: 'Roboto Slab', sans-serif; font-weight: 600; color: var(--text-main);
+    border-radius: 10px; cursor: pointer; 
+}
+.lang-opt.active { background-color: #E0F2F1; color: var(--primary-col); font-weight: 800; }
+
+/* ============================================================
+   4. COMPONENTI UI (Modali, Loading, Mappe) - da style-components.css
+   ============================================================ */
+/* Loader */
+.loading-state { text-align: center; padding: 60px 20px; color: var(--text-light); }
+.loader {
+    font-weight: 600; color: var(--primary-col); letter-spacing: 1px;
+    background: rgba(255,255,255,0.8); padding: 20px; border-radius: 50px;
+    display: inline-block; box-shadow: var(--shadow-soft);
+}
+
+/* Modali */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(38, 70, 83, 0.4); backdrop-filter: blur(8px);
+    z-index: 2000; display: flex; justify-content: center; align-items: center; 
+    padding: 20px; opacity: 0; animation: fadeIn 0.3s forwards;
+}
+.modal-content {
+    background: var(--surface); padding: 0; border-radius: 25px; 
+    width: 100%; max-width: 450px; max-height: 85vh; 
+    overflow-y: auto; position: relative; 
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+.modal-content img { border-radius: 0; width: 100%; display: block; }
+.modal-content h2 { padding: 25px 25px 5px 25px; font-family: 'Roboto', sans-serif; color: var(--primary-dark); font-size: 1.5rem; }
+.modal-content p { padding: 0 25px 25px 25px; color: var(--text-light); line-height: 1.7; }
+.close-modal {
+    position: absolute; top: 15px; right: 15px; width: 40px; height: 40px; 
+    background: white; color: var(--text-main); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; 
+    cursor: pointer; border: none; font-size: 1.5rem; font-weight: 300; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 10;
+}
+
+/* Container Mappe */
+.map-container {
+    width: 100%; height: calc(100vh - 200px); 
+    border-radius: var(--card-radius); overflow: hidden; 
+    background-color: #E0F2F1; position: relative; 
+    box-shadow: var(--shadow-soft); border: 4px solid var(--surface);
+}
+.map-note {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); 
+    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px); 
+    padding: 8px 20px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; 
+    color: var(--primary-dark); box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
+    pointer-events: none; letter-spacing: 0.5px;
+}
+
+/* Card Generiche */
+.card-list-item {
+    background-color: var(--surface) !important;
+    border-radius: var(--card-radius); box-shadow: var(--shadow-soft); 
+    margin-bottom: 20px; cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.25s ease;
+    border: none; position: relative; overflow: hidden; 
+}
+.card-list-item:active { transform: scale(0.97); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+
+/* Buttons & Chips Generici */
+.btn-azure, .btn-pharmacy-call, .filter-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Roboto', sans-serif; font-weight: 600; 
+    text-decoration: none; border-radius: 50px; 
+    cursor: pointer; transition: all 0.2s ease;
+    letter-spacing: 0.3px; border: none; 
+}
+
+/* Animazioni */
+@keyframes fadeIn { to { opacity: 1; } }
+@keyframes popIn { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; color: #fff; }
+
+/* ============================================================
+   5. FILTRI (BottomSheet & Chips) - da style-components.css
+   ============================================================ */
+#filter-toggle-btn {
+    position: fixed; bottom: 85px; right: 20px; z-index: 999; 
+    background: none !important; border: none !important; box-shadow: none !important; 
+    padding: 0; color: #ffffff; cursor: pointer; 
+    transition: transform 0.2s ease-out; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+}
+#filter-toggle-btn:active { transform: scale(0.9); opacity: 0.8; }
+#filter-toggle-btn .material-icons { font-size: 3.5rem; }
+
+.filter-chip {
+    background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); 
+    -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.3); 
+    color: #ffffff; padding: 8px 18px; border-radius: 20px; 
+    font-size: 0.9rem; font-weight: 500; cursor: pointer; 
+    transition: all 0.2s ease; flex-shrink: 0; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3); margin-right: 5px;
+}
+.active-filter { 
+    background: linear-gradient(135deg, #4A6B57 0%, #409462 100%); 
+    border: 1px solid transparent; color: #000000; font-weight: 700; 
+    box-shadow: 0 4px 12px rgba(66, 230, 149, 0.4); 
+}
+
+/* Bottom Sheet Structure */
+.sheet-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(3px);
+    z-index: 2000; opacity: 0; visibility: hidden;
+    transition: all 0.3s ease;
+}
+.sheet-overlay.active { opacity: 1; visibility: visible; }
+.bottom-sheet {
+    position: fixed; bottom: 0; left: 0; width: 100%;
+    background: #ffffff; border-radius: 30px 30px 0 0; 
+    padding: 25px 20px 40px 20px; z-index: 2001;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+    transform: translateY(110%); 
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.bottom-sheet.active { transform: translateY(0); }
+.sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.sheet-title { font-family: 'Roboto Slab', serif; font-size: 1.4rem; font-weight: 700; color: #2c3e50; }
+.sheet-close { font-size: 1.8rem; color: #999; cursor: pointer; padding: 5px; }
+
+.filter-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.filter-section-title {
+    font-size: 0.85rem; text-transform: uppercase; color: #90A4AE;
+    font-weight: 700; margin: 20px 0 10px 0; letter-spacing: 1px;
+}
+.filter-section-title:first-of-type { margin-top: 0; }
+
+.btn-apply-filters {
+    width: 100%; background: #4A6B57; color: white;
+    font-size: 1.1rem; font-weight: bold; padding: 16px;
+    border: none; border-radius: 16px; margin-top: 30px;
+    cursor: pointer; box-shadow: 0 5px 15px rgba(42, 157, 143, 0.3);
+    transition: transform 0.2s;
+}
+.btn-apply-filters:active { transform: scale(0.98); }
+
+.sheet-chip {
+    padding: 10px 18px; border-radius: 50px; background: #f0f2f5;
+    color: #546e7a; font-weight: 600; font-size: 0.95rem;
+    border: 1px solid transparent; cursor: pointer; transition: all 0.2s;
+}
+.sheet-chip.active-filter {
+    background: #4A6B57; color: white;
+    box-shadow: 0 4px 10px rgba(42, 157, 143, 0.3);
+}
+
+/* ============================================================
+   6. FOOD & DRINK MODULE (da style-food.css)
+   ============================================================ */
+/* Ristorante Glass Card */
+.restaurant-glass-card {
+    cursor: default; display: flex; flex-direction: column; 
+    align-items: center; justify-content: center; 
+    min-height: 220px; text-align: center; 
+    position: relative; overflow: hidden;
+    padding: 20px 25px; margin-bottom: 25px;
+    background: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border-radius: 32px;
+}
+.rest-card-title {
+    margin: 0 0 8px 0; font-size: 1.6rem; color: #2c3e50; 
+    font-family: 'Roboto Slab', serif; font-weight: 700; letter-spacing: 0.5px;
+}
+.rest-card-subtitle {
+    margin: 0; color: #555; font-size: 1rem; 
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-weight: 500; text-transform: uppercase; letter-spacing: 1px;
+}
+.rest-card-subtitle .material-icons { color: #EAC67A; font-size: 1.1rem; }
+
+/* Pulsanti Ristorante (Rotondi con bordo bianco) */
+.rest-card-actions { display: flex; justify-content: center; gap: 20px; width: 100%; margin-top: 35px; }
+.rest-card-actions .action-btn {
+    width: 55px; height: 55px; border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    color: white; border: 3px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.btn-map { background-color: #0288D1; }
+.btn-info { background-color: #EAC67A; }
+.btn-call { background-color: #2ECC71; } /* Nota: usato anche nei servizi */
+.rest-card-actions .action-btn:active { transform: scale(0.85); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.rest-card-actions .action-btn .material-icons { font-size: 1.5rem; }
+
+/* Modale Ristorante */
+.rest-modal-wrapper { padding: 10px 5px; color: #333; text-align: center; }
+.rest-header h2 { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: #1a1a1a; margin: 0 0 10px 0; }
+.rest-location { display: flex; justify-content: center; align-items: center; gap: 5px; font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
+.rest-location .material-icons { font-size: 1rem; color: #d4af37; }
+.rest-divider { width: 40px; height: 3px; background-color: #d4af37; margin: 20px auto; border-radius: 2px; }
+.rest-body { font-family: 'Roboto', sans-serif; font-size: 1.1rem; line-height: 1.6; color: #555; text-align: center; padding: 0 15px; margin-bottom: 20px; }
+
+/* Prodotti */
+.culture-card.is-product {
+    border-left-color: #D06F5B; align-items: center; padding-right: 15px; min-height: 115px !important; display: flex; 
+}
+.culture-card.is-product .culture-title { color: #D06F5B; margin-bottom: 6px; font-size: 1.15rem; }
+.product-subtitle { font-size: 0.85rem; color: #90A4AE; font-weight: 500; display: flex; align-items: center; gap: 6px; line-height: 1.3; }
+.product-subtitle .material-icons { font-size: 1rem; color: #CFD8DC; }
+.culture-product-thumb { width: 93px; height: 93px; flex-shrink: 0; border-radius: 12px; overflow: hidden; margin-left: 15px; background-color: #f5f5f5; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); }
+.culture-product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Vini (Color Coding) */
+.culture-card.is-wine { border-left-color: #D06F5B; }
+.culture-card.is-wine .culture-title { color: #D06F5B; }
+.culture-card.is-wine .culture-bg-icon i { color: #D06F5B; }
+
+.culture-card.is-wine-white { border-left-color: #EAC67A; }
+.culture-card.is-wine-white .culture-title { color: #EAC67A; }
+.culture-card.is-wine-white .culture-bg-icon i { color: #EAC67A; }
+
+.culture-card.is-wine-orange { border-left-color: #E67E22; }
+.culture-card.is-wine-orange .culture-title { color: #D35400; }
+.culture-card.is-wine-orange .culture-bg-icon i { color: #E67E22; }
+
+.culture-card.is-wine-red { border-left-color: #9B2335; }
+.culture-card.is-wine-red .culture-title { color: #801C2C; }
+.culture-card.is-wine-red .culture-bg-icon i { color: #9B2335; }
+
+.is-wine-red .culture-bg-icon { color: #D06F5B; }
+.is-wine-white .culture-bg-icon { color: #EAC67A; }
+.is-wine-orange .culture-bg-icon { color: #E67E22; }
+
+/* ============================================================
+   7. OUTDOOR & CULTURE MODULE (da style-outdoor.css)
+   ============================================================ */
+/* Culture Card Base */
+.culture-card {
+    position: relative; background: #fff; border-radius: 16px;
+    padding: 16px 20px; margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; 
+    display: flex; align-items: center; justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left: 5px solid #bdc3c7; 
+}
+.culture-card:active { transform: scale(0.98); }
+.culture-info { flex: 1; z-index: 5; padding-right: 10px; }
+.culture-title { font-family: 'Roboto Slab', serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; line-height: 1.2; }
+.culture-tags { display: flex; gap: 8px; margin-top: 8px; }
+.c-pill { font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; font-weight: 600; background: #f4f6f7; color: #555; display: flex; align-items: center; gap: 4px; }
+
+/* Background Icon */
+.culture-bg-icon {
+    position: absolute; right: -10px; bottom: -5px; z-index: 0; opacity: 0.12;
+    transform: rotate(-10deg) scale(1); transform-origin: center center; 
+    pointer-events: none; 
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease;
+}
+.culture-bg-icon i { font-size: 7.5rem; line-height: 1; display: block; }
+@media (hover: hover) {
+    .culture-card:hover .culture-bg-icon { opacity: 0.25; transform: rotate(0deg) scale(1.1); }
+}
+
+/* Button Map (Tondo e Azzurro) */
+.btn-culture-map {
+    position: absolute; right: 15px; bottom: 15px; z-index: 10;
+    width: 45px; height: 45px; border-radius: 50%;
+    background-color: #03A9F4; color: white; border: 2px solid white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform 0.2s ease, background-color 0.2s; padding: 0;
+}
+.btn-culture-map .material-icons { font-size: 24px; }
+.btn-culture-map:active { transform: scale(0.9); background-color: #0288D1; }
+
+/* Varianti Outdoor (Spiagge, Chiese, etc) */
+.culture-card.is-beach { border-left-color: #0288D1; }
+.culture-card.is-beach .culture-title { color: #0288D1; }
+.culture-card.is-beach .culture-bg-icon i { color: #0288D1; }
+
+.culture-card.is-church { border-left-color: #EAC67A; }
+.culture-card.is-church .culture-title { color: #EAC67A; }
+.culture-card.is-church .culture-bg-icon i { color: #EAC67A; }
+
+.culture-card.is-monument { border-left-color: #F2A68D; }
+.culture-card.is-monument .culture-title { color: #F2A68D; }
+.culture-card.is-monument .culture-bg-icon i { color: #F2A68D; }
+
+.culture-card.is-view { border-left-color: #D06F5B; }
+.culture-card.is-view .culture-title { color: #D06F5B; }
+.culture-card.is-view .culture-bg-icon i { color: #D06F5B; }
+
+/* Komoot Card (Sentieri) */
+.komoot-card {
+    background-color: #ffffff; border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08); margin-bottom: 25px;
+    overflow: hidden; position: relative; border: 1px solid rgba(0,0,0,0.05);
+    display: flex; flex-direction: column; width: 100%;
+}
+.komoot-map-container {
+    height: 220px !important; width: 100%; background-color: #e0e0e0; 
+    display: block; position: relative; pointer-events: none;
+}
+.komoot-info-body { padding: 15px 15px 5px 15px; background: white; }
+.komoot-header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; width: 100%; }
+.komoot-title {
+    margin: 0; font-family: 'Roboto', sans-serif; font-size: 1.15rem; 
+    font-weight: 700; color: #2D3436; flex: 1; word-wrap: break-word; text-align: left;
+}
+
+/* Modale Tecnica Sentieri (da style-modals.css) */
+.trail-actions-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    padding: 15px; background: #ffffff; border-top: 1px solid #f9f9f9;
+}
+.btn-trail-modern {
+    width: 100%; padding: 12px 0; border-radius: 12px; border: none;
+    font-family: 'Roboto', sans-serif; font-size: 0.9rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    cursor: pointer; transition: all 0.2s;
+}
+.btn-trail-modern:active { transform: scale(0.96); }
+.btn-trail-tech { background-color: #D06F5B; color: white; box-shadow: 0 4px 10px rgba(157, 71, 42, 0.3); }
+.btn-trail-info { background-color: #F0F2F5; color: #555; border: 1px solid #eee; }
+.btn-trail-gps  { background-color: #29B6F6; color: white; border: none; box-shadow: 0 4px 10px rgba(41, 182, 246, 0.3); }
+
+.tech-container {
+    width: 100%; max-width: 500px; height: 85vh; max-height: 800px;
+    background: white; border-radius: 20px; overflow: hidden; 
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4); position: relative;
+}
+.tech-scroll-wrapper { flex-grow: 1; overflow-y: auto; overflow-x: hidden; position: relative; padding-bottom: 20px; }
+#tech-map-canvas { width: 100%; min-height: 350px; background: #e0e0e0; display: block; }
+#elevation-div { background: #fff; border-bottom: 1px solid #eee; width: 100%; height: 160px !important; display: none; flex-shrink: 0; margin: 0 !important; }
+
+.tech-data-row {
+    padding: 20px 15px 15px 15px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    text-align: center; background: #fff; border-bottom: 1px solid #eee; flex-shrink: 0;
+}
+.tech-data-group {
+    background: #ffffff; border-radius: 12px; border: 1px solid #e0e0e0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 8px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+.tech-data-item { width: 100%; padding: 2px 0; display:flex; flex-direction:column; align-items:center; }
+.tech-divider { width: 50%; height: 1px; background: #eee; margin: 4px 0; }
+.t-val { font-size: 1.1rem; font-weight: 800; color: #2D3436; line-height: 1; display: inline-flex; align-items: baseline; gap: 2px; }
+.t-unit { font-size: 0.75rem; font-weight: 600; color: #7f8c8d; }
+.t-lbl { font-size: 0.65rem; text-transform: uppercase; color: #999; font-weight: 700; margin-top: 2px; }
+
+.modal-actions-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+    padding: 15px; background: white; border-top: 1px solid #eee;
+    flex-shrink: 0; z-index: 10; padding-bottom: 25px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+}
+.modal-actions-grid .btn-trail-modern { padding: 12px 2px; font-size: 0.8rem; }
+
+/* Map Tooltips Fix */
+.trail-label-tooltip {
+    background: rgba(255, 255, 255, 0.95); border: 1px solid #333; border-radius: 4px;
+    padding: 2px 6px; font-size: 11px; font-weight: 800; color: #222;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3); white-space: nowrap;
+}
+.leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before, .leaflet-tooltip-left:before, .leaflet-tooltip-right:before { display: none; }
+.elevation-control.leaflet-control { background: transparent !important; margin: 0 !important; padding: 0 !important; width: 100% !important; box-shadow: none !important; }
+.leaflet-control-download, .elevation-control-download, .elevation-control .download, .elevation-control a { display: none !important; }
+
+/* ============================================================
+   8. SERVICES MODULE (Bus, Farmacie) - da style-services.css
+   ============================================================ */
+/* Bus Search Box */
+.bus-search-box {
+    background: #ffffff; border-radius: 24px; padding: 24px;
+    box-shadow: 0 20px 40px -5px rgba(0,0,0,0.1), 0 10px 15px -3px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255,255,255,0.5); margin-top: 5px; position: relative; overflow: hidden;
+}
+.bus-title {
+    font-size: 1.25rem; font-weight: 900; color: #1a202c; margin-bottom: 0px; 
+    display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px; padding-bottom: 15px;
+}
+.bus-title .material-icons {
+    color: #fff; background: linear-gradient(135deg, #EAC67A, #F2A68D); 
+    padding: 8px; border-radius: 12px; font-size: 1.3rem; 
+    box-shadow: 0 4px 6px rgba(255, 152, 0, 0.25);
+}
+
+/* Bus Form Inputs */
+.bus-inputs { display: flex; gap: 15px; margin-bottom: 15px; }
+.bus-inputs label { display: block; margin-bottom: 6px; font-size: 0.75rem; font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; }
+.bus-select {
+    width: 100%; background: #F7FAFC; border: 2px solid transparent; border-radius: 16px; padding: 14px;
+    font-size: 1rem; font-weight: 600; color: #2D3748; outline: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A0AEC0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
+}
+.bus-select:focus { background: #ffffff; border-color: #EAC67A; box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.15); transform: translateY(-1px); }
+input[type="date"].bus-select, input[type="time"].bus-select { background-image: none; min-height: 52px; }
+
+/* Bottoni Servizi (Giallo/Rosso) */
+.btn-yellow {
+    width: 100%; background: linear-gradient(135deg, #EAC67A 0%, #F2A68D 100%);
+    color: #422006; border: none; padding: 16px; border-radius: 18px; font-size: 1.1rem; 
+    font-weight: 900; letter-spacing: 0.5px; cursor: pointer;
+    box-shadow: 0 10px 25px -5px rgba(255, 160, 0, 0.4); transition: all 0.2s ease; 
+    display: flex; justify-content: center; align-items: center; margin-top: 10px; 
+    position: relative; overflow: hidden;
+}
+.btn-yellow:active { transform: scale(0.96); box-shadow: 0 5px 10px -5px rgba(255, 160, 0, 0.4); }
+
+.btn-red {
+    width: 100%; background: linear-gradient(135deg, #F2A68D 0%, #D06F5B 100%); 
+    color: white; border: none; padding: 16px; border-radius: 18px; 
+    font-size: 1.1rem; font-weight: 900; letter-spacing: 0.5px; cursor: pointer; 
+    box-shadow: 0 10px 25px -5px rgba(211, 47, 47, 0.4); transition: all 0.2s ease; 
+    display: flex; justify-content: center; align-items: center; margin-top: 10px;
+}
+.btn-red:active { transform: scale(0.96); box-shadow: 0 5px 10px -5px rgba(211, 47, 47, 0.4); }
+
+/* Risultati Bus */
+.bus-result-main {
+    background: linear-gradient(135deg, #006064 0%, #4A6B57 100%); border: none; border-radius: 20px; 
+    padding: 25px; text-align: center; margin-bottom: 25px; color: white; 
+    box-shadow: 0 15px 30px -5px rgba(0, 96, 100, 0.3); position: relative; 
+    animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.bus-time-big { font-size: 3.5rem; font-weight: 900; color: #ffffff; line-height: 1; margin: 10px 0; text-shadow: 0 2px 10px rgba(0,0,0,0.1); letter-spacing: -2px; }
+.bus-list-container { background: transparent; border-radius: 0; border: none; }
+.bus-list-item {
+    padding: 15px 20px; margin-bottom: 8px; background: #f8f9fa; border-radius: 12px; 
+    border: 1px solid transparent; display: flex; justify-content: space-between; 
+    align-items: center; font-size: 1rem; font-weight: 600; color: #4a5568; transition: all 0.2s;
+}
+.bus-list-item:hover { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transform: translateX(5px); }
+
+/* Treni & Info Box */
+.transport-details { padding: 0 5px; }
+.transport-desc { font-size: 0.9rem; color: var(--text-light); line-height: 1.5; margin-bottom: 15px; }
+.transport-disclaimer { font-size: 0.75rem; text-align: center; color: var(--text-light); margin-top: 12px; }
+.avg-times-container {
+    background: #f8f9fa; border-radius: 16px; padding: 15px; 
+    margin-bottom: 20px; border: 1px solid #eee;
+}
+.avg-times-title {
+    margin: 0 0 10px 0; font-size: 0.75rem; color: var(--text-light); 
+    text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;
+}
+.avg-time-row {
+    display: flex; justify-content: space-between; padding: 8px 0; 
+    font-size: 0.9rem; border-bottom: 1px solid #eee; color: var(--text-main);
+}
+.avg-time-row:last-child { border-bottom: none; }
+.avg-time-row b { color: var(--primary-dark); }
+.train-box .bus-title .material-icons {
+    background: linear-gradient(135deg, #F2A68D, #D06F5B);
+    box-shadow: 0 4px 6px rgba(211, 47, 47, 0.25);
+}
+
+/* Griglia Servizi */
+.services-grid-modern { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 25px; max-width: 600px; margin: 0 auto; }
+.service-widget {
+    aspect-ratio: 1 / 1; border-radius: 24px; padding: 20px; 
+    display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+    position: relative; overflow: hidden; cursor: pointer; transition: transform 0.2s ease-out;
+    background-color: #ffffff; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+.service-widget:active { transform: scale(0.96); background-color: #ffffff; }
+.service-widget .widget-icon { font-size: 3rem; color: #D06F5B; opacity: 0.95; margin-bottom: 10px; }
+.service-widget .widget-label { font-size: 1.1rem; font-weight: 600; color: #D06F5B; line-height: 1.2; letter-spacing: 0.5px; }
+
+/* Badges */
+.badge-holiday { background-color: #D06F5B; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.badge-weekday { background-color: #4A6B57; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+/* Farmacie e Numeri Utili Cards */
+.info-card {
+    background-color: #ffffff !important; border-radius: 16px; padding: 15px 20px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05);
+}
+.info-icon-box {
+    width: 45px; height: 45px; border-radius: 12px; background: #f0f2f5; 
+    color: #546e7a; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.info-text-col { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.info-text-col h3 {
+    margin: 0 0 4px 0; font-size: 1.1rem; color: #2c3e50 !important; 
+    font-weight: 700; font-family: 'Roboto', sans-serif; line-height: 1.2;
+}
+.info-text-col p {
+    margin: 0; font-size: 0.85rem; color: #7f8c8d !important; 
+    display: flex; align-items: center; gap: 4px;
+}
+/* Per bottone chiamata vedi .btn-call nella sezione Food */
+.action-btn .material-icons { color: #fff; font-size: 1.5rem; }
+
+/* Header Liste Semplici (Farmacie ecc) */
+.header-simple-list { display: flex; align-items: center; gap: 15px; padding: 10px 5px 20px 5px; }
+.header-simple-list h2 {
+    margin: 0; font-size: 1.5rem; font-weight: 700; color: #2c3e50; 
+    font-family: 'Roboto Slab', serif; text-transform: capitalize;
+}
+.btn-back-custom {
+    width: 45px; height: 45px; border-radius: 50%; background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform 0.2s, background 0.2s; padding: 0;
+    appearance: none; -webkit-appearance: none;
+}
+.btn-back-custom .material-icons { color: #333; font-size: 1.4rem; transform: translateX(-1px); }
+.btn-back-custom:active { transform: scale(0.92); background: #f5f5f5; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+/* Stili Legacy (per compatibilità) */
+.item-title, .prod-title, .transport-title, .pharmacy-name {
+    font-family: 'Roboto Slab', sans-serif; font-weight: 700;
+    color: var(--primary-dark); font-size: 1.15rem;
+    line-height: 1.3; margin-bottom: 4px;
+}
+.item-subtitle, .transport-desc, .pharmacy-address {
+    font-family: 'Roboto Slab', sans-serif; font-size: 0.9rem;
+    color: var(--text-light); font-weight: 600; 
+    display: flex; align-items: center; gap: 4px; 
+}

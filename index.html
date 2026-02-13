@@ -8,25 +8,64 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/@raruto/leaflet-elevation/dist/leaflet-elevation.min.css" />
     
-    <link rel="stylesheet" href="style-base.css">
-    <link rel="stylesheet" href="style-components.css">
-    <link rel="stylesheet" href="style-food.css">
-    <link rel="stylesheet" href="style-outdoor.css">
-    <link rel="stylesheet" href="style-services.css">
-    <link rel="stylesheet" href="style-modals.css">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
 
-    <a href="#" id="ghost-cookie-btn" class="lb-cs-settings-link" style="display:none;"></a>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        serif: ['"Roboto Slab"', 'serif'],
+                    },
+                    colors: {
+                        primary: '#4A6B57',
+                        'primary-dark': '#2F4837',
+                        accent: '#D06F5B',
+                        'accent-soft': '#F2A68D',
+                        surface: '#FFFFFF',
+                        bg: '#F8FAFC',
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 40px -10px rgba(0,0,0,0.08)',
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Reset specifici e utility non gestibili da Tailwind */
+        body { -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animazioni */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        /* Leaflet Fixes */
+        .leaflet-container { font-family: inherit; z-index: 0; }
+        .elevation-control.leaflet-control { margin: 0 !important; }
+        
+        /* Glassmorphism Helper */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+    </style>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
     <script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script> 
     <script src="https://unpkg.com/@raruto/leaflet-elevation/dist/leaflet-elevation.js"></script>
-
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0L8KBD0G5W"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -36,45 +75,45 @@
     </script>
 </head>
 
-<body>
+<body class="bg-bg text-slate-800 antialiased h-full w-full overflow-x-hidden pb-28">
 
-<header></header>
+    <header class="fixed top-0 left-0 right-0 z-50 pointer-events-none"></header>
 
-<main id="app-content">
-    <div id="data-container">
-        <div class="loading-state">
-            <span class="material-icons spin">sync</span>
-            <p>Caricamento...</p>
-        </div>
-    </div>    
+    <main id="app-content" class="max-w-2xl mx-auto px-4 py-2 min-h-screen">
+        <div id="data-container" class="flex flex-col items-center justify-center h-[80vh] text-slate-400">
+            <span class="material-icons animate-spin text-4xl mb-3 text-primary">sync</span>
+            <p class="font-medium">Caricamento...</p>
+        </div>    
+    </main>
 
+    <nav id="bottom-nav" class="fixed bottom-6 left-4 right-4 h-[75px] bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-2xl flex justify-around items-center z-40 border border-white/50 max-w-2xl mx-auto">
+        <button class="nav-item group flex flex-col items-center justify-center w-full h-full text-slate-400 transition-colors" onclick="switchView('home', this)">
+            <span class="material-icons text-2xl mb-0.5 group-[.active]:text-primary transition-transform group-[.active]:-translate-y-1">home</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide group-[.active]:text-primary">Home</span>
+        </button>
+        <button class="nav-item group flex flex-col items-center justify-center w-full h-full text-slate-400 transition-colors" onclick="switchView('cibo', this)">
+            <span class="material-icons text-2xl mb-0.5 group-[.active]:text-primary transition-transform group-[.active]:-translate-y-1">restaurant</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide group-[.active]:text-primary">Cibo</span>
+        </button>
+        <button class="nav-item group flex flex-col items-center justify-center w-full h-full text-slate-400 transition-colors" onclick="switchView('outdoor', this)">
+            <span class="material-icons text-2xl mb-0.5 group-[.active]:text-primary transition-transform group-[.active]:-translate-y-1">terrain</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide group-[.active]:text-primary">Outdoor</span>
+        </button>
+        <button class="nav-item group flex flex-col items-center justify-center w-full h-full text-slate-400 transition-colors" onclick="switchView('servizi', this)">
+            <span class="material-icons text-2xl mb-0.5 group-[.active]:text-primary transition-transform group-[.active]:-translate-y-1">info</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide group-[.active]:text-primary">Servizi</span>  
+        </button>
+    </nav>
 
-</main>
+    <script src="js/data-logic.js"></script>
+    <script src="js/ui-renderers.js"></script>
+    <script src="js/legal-render.js"></script>
+    <script src="js/ui-modal-contents.js"></script> 
+    <script src="js/ui-modal.js"></script> 
+    <script src="js/app.js"></script>
 
-<nav id="bottom-nav">
-    <button class="nav-item active" onclick="switchView('home', this)">
-        <span class="material-icons">home</span><span class="nav-label">Home</span>
-    </button>
-    <button class="nav-item" onclick="switchView('cibo', this)">
-        <span class="material-icons">restaurant</span><span class="nav-label">Cibo</span>
-    </button>
-    <button class="nav-item" onclick="switchView('outdoor', this)">
-        <span class="material-icons">terrain</span><span class="nav-label">Outdoor</span>
-    </button>
-    <button class="nav-item" onclick="switchView('servizi', this)">
-        <span class="material-icons">info</span><span class="nav-label">Servizi</span>  
-    </button>
-</nav>
-
-<script src="js/data-logic.js"></script>
-<script src="js/ui-renderers.js?v=2"></script>
-<script src="js/legal-render.js"></script>
-<script src="js/ui-modal-contents.js"></script> 
-<script src="js/ui-modal.js"></script> 
-<script src="js/app.js"></script>
-
-<script type="text/javascript" src="https://app.legalblink.it/api/scripts/lb_cs.js"></script>
-<script id="lb_cs" type="text/javascript">lb_cs("6973df3d9398e90022bdb48d");</script>
-
+    <a href="#" id="ghost-cookie-btn" class="lb-cs-settings-link hidden"></a>
+    <script type="text/javascript" src="https://app.legalblink.it/api/scripts/lb_cs.js"></script>
+    <script id="lb_cs" type="text/javascript">lb_cs("6973df3d9398e90022bdb48d");</script>
 </body> 
 </html>
