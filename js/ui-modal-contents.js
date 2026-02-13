@@ -1,10 +1,9 @@
-console.log("✅ 4. ui-modal-contents.js caricato (Tailwind Complete)");
+console.log("✅ 4. ui-modal-contents.js caricato (Tailwind Complete & Fixed)");
 
 // 2. FUNZIONE PRINCIPALE (Il Generatore)
 window.getModalContent = function(type, payload, item) {
     
     let contentHtml = '';
-    // Tailwind default container style (gestito anche in ui-modal.js, ma qui possiamo sovrascrivere se serve)
     let modalClass = ''; 
     let onRender = null; 
 
@@ -37,7 +36,6 @@ window.getModalContent = function(type, payload, item) {
         const fotoKey = p.Prodotti_foto || nome;
         const bigImg = window.getSmartUrl(fotoKey, '', 800);
 
-        // Header immagine con gradiente
         contentHtml = `
             <div class="relative h-72 w-full">
                 <img src="${bigImg}" class="w-full h-full object-cover" onerror="this.style.display='none'">
@@ -65,7 +63,6 @@ window.getModalContent = function(type, payload, item) {
         const desc = window.dbCol(item, 'Descrizione');
         const foto = window.dbCol(item, 'Foto');
 
-        // Colori dinamici in base al tipo
         const t = String(tipo).toLowerCase();
         let colorText = 'text-red-800'; 
         let bgBadge = 'bg-red-50 text-red-800';
@@ -144,7 +141,6 @@ window.getModalContent = function(type, payload, item) {
             if (key) linkGpx = p[key];
         }
 
-        // Colori difficoltà
         let diffColor = 'text-slate-600';
         if (String(diff).toLowerCase().includes('diff')) diffColor = 'text-red-500';
         if (String(diff).toLowerCase().includes('facil')) diffColor = 'text-green-500';
@@ -188,7 +184,7 @@ window.getModalContent = function(type, payload, item) {
         </div>`;
     }
 
-    // --- INFO SENTIERI (Testo descrittivo) ---
+    // --- INFO SENTIERI ---
     else if (type === 'sentieroInfo') {
         let item = {};
         try { item = JSON.parse(decodeURIComponent(payload)); } catch(e) {}
@@ -220,25 +216,24 @@ window.getModalContent = function(type, payload, item) {
         `;
     }
 
-    // --- SPIAGGE ---
+    // --- SPIAGGE (FIXED: Decodifica JSON) ---
     else if (type === 'Spiagge') {
-        if (!item) { return { html: `<div class="p-8 text-center text-slate-500">Dati non trovati</div>`, class: '' }; }
+        // Ora payload è una stringa JSON, non più solo un ID
+        let beachItem = {};
+        try {
+            beachItem = JSON.parse(decodeURIComponent(payload));
+        } catch(e) {
+            console.error("Errore parsing spiaggia", e);
+            if(item) beachItem = item; // Fallback se passato via 'item'
+        }
 
-        // Helper interno per fallback traduzioni
-        const getTranslatedField = (data, fieldName) => {
-            if (window.dbCol) {
-                const val = window.dbCol(data, fieldName);
-                if (val && val !== 'undefined') return val;
-            }
-            let val = data[fieldName];
-            if (!val) return '';
-            if (typeof val === 'object') return val[window.currentLang] || val['it'] || '';
-            return val;
-        };
+        if (!beachItem || Object.keys(beachItem).length === 0) { 
+            return { html: `<div class="p-8 text-center text-slate-500">Dati non trovati</div>`, class: '' }; 
+        }
 
-        const nome = getTranslatedField(item, 'Nome') || 'Spiaggia';
-        const tipo = getTranslatedField(item, 'Tipo');
-        const desc = getTranslatedField(item, 'Descrizione');
+        const nome = window.dbCol(beachItem, 'Nome') || 'Spiaggia';
+        const tipo = window.dbCol(beachItem, 'Tipo');
+        const desc = window.dbCol(beachItem, 'Descrizione');
         
         contentHtml = `
              <div class="p-8">
@@ -286,13 +281,12 @@ window.getModalContent = function(type, payload, item) {
             </div>`;
     }
     
-    // --- TRASPORTI (BUS, TRAGHETTI, TRENI) ---
+    // --- TRASPORTI ---
     else if (type === 'transport') {
         const transportId = payload; 
         let title = '';
         let customContent = '';
 
-        // BUS
         if (transportId === 'bus') {
             title = window.t('label_bus');
             const todayISO = new Date().toISOString().split('T')[0];
@@ -354,11 +348,9 @@ window.getModalContent = function(type, payload, item) {
                 </div>
             </div>`;
             
-            // Trigger caricamento fermate
             setTimeout(() => { if(window.loadAllStops) window.loadAllStops(); }, 100);
         }
 
-        // BATTELLO
         else if (transportId === 'ferry') {
             title = window.t('label_ferry');
             const todayISO = new Date().toISOString().split('T')[0];
@@ -410,7 +402,6 @@ window.getModalContent = function(type, payload, item) {
             setTimeout(() => window.initFerrySearch(), 50);
         }
 
-        // TRENO
         else if (transportId === 'train') {
             title = window.t('label_train');
             const nowTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
@@ -439,8 +430,8 @@ window.getModalContent = function(type, payload, item) {
                     <span class="material-icons text-3xl">local_pharmacy</span>
                 </div>
                 <h2 class="font-serif text-2xl font-bold text-slate-800 mb-2">${nome}</h2>
-                <p class="text-slate-500 mb-6 flex items-center justify-center gap-1 font-medium"><span class="material-icons text-sm">place</span> ${item.Indirizzo}, ${paesi}</p>
-                <a href="tel:${item.Numero}" class="inline-flex items-center justify-center gap-2 bg-green-500 text-white py-3 px-8 rounded-full font-bold shadow-lg shadow-green-200 active:scale-95 transition-transform">
+                <p class="text-slate-500 mb-6 flex items-center justify-center gap-1 font-medium"><span class="material-icons text-sm">place</span> ${item.Indirizzo || item.Paesi || ''}</p>
+                <a href="tel:${item.Numero || item.Telefono}" class="inline-flex items-center justify-center gap-2 bg-green-500 text-white py-3 px-8 rounded-full font-bold shadow-lg shadow-green-200 active:scale-95 transition-transform">
                     <span class="material-icons">call</span> Chiama
                 </a>
             </div>`;
@@ -449,7 +440,7 @@ window.getModalContent = function(type, payload, item) {
     return { html: contentHtml, class: modalClass };
 };
 
-// RENDERER TRENI (Helper)
+// Helpers... (invariati)
 window.trainSearchRenderer = (data, nowTime) => {
     return `
     <div class="animate-fade">
@@ -480,7 +471,7 @@ window.trainSearchRenderer = (data, nowTime) => {
     </div>`;
 };
 
-// LISTA FERMATE TRAGHETTI (Configurazione)
+// LISTA FERMATE TRAGHETTI (Invariato)
 const FERRY_STOPS_UI = [
     { id: 'levanto', label: 'Levanto' },
     { id: 'monterosso', label: 'Monterosso' },
@@ -493,21 +484,17 @@ const FERRY_STOPS_UI = [
     { id: 'lerici', label: 'Lerici' }
 ];
 
-// INIT TRAGHETTI
 window.initFerrySearch = function() {
     const selPart = document.getElementById('selPartenzaFerry');
     const selArr = document.getElementById('selArrivoFerry');
     if (!selPart || !selArr) return;
 
-    // Popola Partenza
     selPart.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` + 
         FERRY_STOPS_UI.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
 
-    // Listener
     selPart.addEventListener('change', function() {
         const startVal = this.value;
         const destOpts = FERRY_STOPS_UI.filter(s => s.id !== startVal);
-        
         selArr.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` + 
             destOpts.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
         selArr.disabled = false;

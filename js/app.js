@@ -1,11 +1,10 @@
-console.log("✅ 6. app.js caricato (Tailwind)");
+console.log("✅ 6. app.js caricato (Tailwind Final Fix)");
 
 const content = document.getElementById('app-content');
 window.pendingMaps = []; 
 
 // --- 1. SETUP LINGUA & HEADER ---
 function setupHeaderElements() {
-    // Logica invariata, cambiano solo le classi create
     const header = document.querySelector('header');
     
     const oldActions = header.querySelector('.header-actions');
@@ -16,7 +15,6 @@ function setupHeaderElements() {
     if (window.currentViewName !== 'home') return; 
 
     const actionsContainer = document.createElement('div');
-    // Tailwind classes per posizionamento assoluto
     actionsContainer.className = 'header-actions animate-fade absolute left-5 top-8 z-50'; 
     actionsContainer.id = 'header-btn-lang'; 
 
@@ -24,7 +22,7 @@ function setupHeaderElements() {
     const currCode = window.currentLang.toUpperCase();
 
     const langSelector = document.createElement('div');
-    langSelector.className = 'relative'; // per il dropdown
+    langSelector.className = 'relative'; 
     langSelector.innerHTML = `
         <button class="flex items-center gap-2 bg-white/40 backdrop-blur-md border border-white/40 rounded-full px-3 py-1.5 text-sm font-bold text-white shadow-sm transition-transform active:scale-95" onclick="toggleLangDropdown(event)">
             <span>${currFlag}</span> ${currCode} ▾
@@ -50,14 +48,13 @@ function updateNavBar() {
     }
 }
 
-// Funzione Globale per cambiare lingua
 window.changeLanguage = function(langCode) {
     window.currentLang = langCode;
     localStorage.setItem('app_lang', langCode);
     setupHeaderElements(); 
     updateNavBar(); 
     
-    const activeNav = document.querySelector('.nav-item.active'); // Nota: uso ancora la classe 'active' per logica
+    const activeNav = document.querySelector('.nav-item.active'); 
     if(activeNav) {
         const onclickAttr = activeNav.getAttribute('onclick');
         const viewMatch = onclickAttr.match(/switchView\('([^']+)'/);
@@ -89,20 +86,20 @@ window.switchView = async function(view, el) {
     if (!content) return;
     window.currentViewName = view; 
     
-    // Rimuovi mascotte
     const mascot = document.getElementById('mascot-container');
     if (mascot) mascot.remove();
 
     document.body.classList.remove('is-home');
 
-    // Rimuovi filtri globali
-    const globalFilterBtn = document.querySelector('body > #filter-toggle-btn');
-    if (globalFilterBtn) { globalFilterBtn.remove(); }
+    // FIX: Pulizia aggressiva dei filtri al cambio view
+    ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.remove();
+    });
 
-    // Gestione stato attivo Navbar
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active', 'text-primary'));
     if (el) {
-        el.classList.add('active', 'text-primary'); // Tailwind text-primary
+        el.classList.add('active', 'text-primary'); 
     } else if (view === 'home') {
          const homeBtn = document.querySelector('.nav-item[onclick*="home"]');
          if(homeBtn) homeBtn.classList.add('active', 'text-primary');
@@ -131,7 +128,7 @@ window.switchView = async function(view, el) {
     }
 };
 
-// 1. RENDER HOME (Tailwind Edition)
+// 1. RENDER HOME
 function renderHome() {
     const bgImage = "https://res.cloudinary.com/dkg0jfady/image/upload/v1770756918/Manarola.png";
     document.body.classList.add('is-home');
@@ -156,7 +153,6 @@ function renderHome() {
         </div>
     </div>`;
 
-    // Mascotte (Chicco) - Logica invariata, solo inline styles puliti dove possibile
     const oldMascot = document.getElementById('mascot-container');
     if (oldMascot) oldMascot.remove();
 
@@ -182,7 +178,6 @@ function renderHome() {
         document.head.appendChild(script);
     }
     
-    // Auto open logic
     if (!localStorage.getItem('chicco_intro_done')) {
         window.chiccoAutoOpenTimer = setTimeout(() => {
             const isChatOpen = document.querySelector('.chicco-chat-wrapper');
@@ -195,7 +190,7 @@ function renderHome() {
 }
 
 // ============================================================
-// 1. RENDER MENU (Sticky Header Moderno)
+// 1. RENDER MENU 
 // ============================================================
 function renderSubMenu(options, defaultTable) {
     let menuHtml = `
@@ -222,7 +217,6 @@ window.loadTableData = async function(tableName, btnEl) {
     const subContent = document.getElementById('sub-content');
     if (!subContent) return;
 
-    // Gestione stato attivo bottoni
     document.querySelectorAll('.btn-3d').forEach(btn => {
         btn.classList.remove('bg-primary', 'text-white', 'shadow-md', 'border-transparent');
         btn.classList.add('bg-white', 'text-slate-500', 'border-slate-200');
@@ -233,10 +227,10 @@ window.loadTableData = async function(tableName, btnEl) {
     }
 
     // Reset filtri
-    const existingFilters = document.getElementById('dynamic-filters');
-    if(existingFilters) existingFilters.remove();
-    const filterBtn = document.getElementById('filter-toggle-btn');
-    if(filterBtn) filterBtn.style.display = 'none';
+    ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.remove();
+    });
 
     if (!window.appCache[tableName]) {
         subContent.innerHTML = `<div class="py-12 flex justify-center"><div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div></div>`;
@@ -247,7 +241,6 @@ window.loadTableData = async function(tableName, btnEl) {
         return; 
     }
 
-    // Cache Logic
     let data;
     if (window.appCache[tableName]) {
         data = window.appCache[tableName];
@@ -263,7 +256,6 @@ window.loadTableData = async function(tableName, btnEl) {
 
     window.currentTableData = data; 
 
-    // Routing Renderers
     if (tableName === 'Vini') {
         renderGenericFilterableView(data, 'Tipo', subContent, window.vinoRenderer);
     }
@@ -302,77 +294,6 @@ window.loadTableData = async function(tableName, btnEl) {
     else if (tableName === 'Farmacie') { renderGenericFilterableView(data, 'Paesi', subContent, window.farmacieRenderer); } 
     else if (tableName === 'Numeri_utili') { renderGenericFilterableView(data, 'Comune', subContent, window.numeriUtiliRenderer); }
 };
-/* ============================================================
-   SWIPE TRA LE PAGINE
-   ============================================================ */
-
-const minSwipeDistance = 50; 
-const maxVerticalDistance = 100; 
-let touchStartX = 0;
-let touchStartY = 0;
-let touchEndX = 0;
-let touchEndY = 0;
-
-document.addEventListener('touchstart', e => {
-    if (e.target.closest('.leaflet-container') || 
-        e.target.closest('.map-container') || 
-        e.target.closest('.swiper-container') ||      
-        e.target.closest('.nav-scroll-container') ||  
-        e.target.closest('.nav-sticky-header') ||     
-        e.target.closest('.modal-content')) {         
-        
-        touchStartX = null; 
-        return;
-    }
-
-    touchStartX = e.changedTouches[0].clientX;
-    touchStartY = e.changedTouches[0].clientY;
-}, {passive: true});
-
-document.addEventListener('touchend', e => {
-    if (touchStartX === null) return; 
-
-    touchEndX = e.changedTouches[0].clientX;
-    touchEndY = e.changedTouches[0].clientY;
-    
-    handlePageSwipe();
-}, {passive: true});
-
-function handlePageSwipe() {
-    const xDiff = touchEndX - touchStartX;
-    const yDiff = touchEndY - touchStartY;
-    
-    if (Math.abs(xDiff) < minSwipeDistance) return;
-    
-    if (Math.abs(yDiff) > maxVerticalDistance) return;
-    if (Math.abs(yDiff) > Math.abs(xDiff)) return;
-
-    const tabs = document.querySelectorAll('.nav-chip, .btn-3d');
-    
-    if (tabs.length === 0) return;
-
-    let activeIndex = -1;
-    tabs.forEach((tab, index) => {
-        if (tab.classList.contains('active-chip') || tab.classList.contains('active-3d')) {
-            activeIndex = index;
-        }
-    });
-
-    if (activeIndex === -1) return; 
-
-    if (xDiff < 0) {
-        if (activeIndex < tabs.length - 1) {
-            tabs[activeIndex + 1].click();
-        }
-    } else {
-        if (activeIndex > 0) {
-            tabs[activeIndex - 1].click();
-        }
-    }
-    
-    touchStartX = null;
-    touchStartY = null;
-}
 
 /* ============================================================
    FUNZIONE RENDER SERVIZI (Statica - No Supabase)
@@ -380,8 +301,13 @@ function handlePageSwipe() {
 window.renderServicesGrid = async function() {
     console.log("🔘 Avvio renderServicesGrid...");
     const targetEl = document.getElementById('app-content');
-    const globalFilterBtn = document.querySelector('body > #filter-toggle-btn');
-    if (globalFilterBtn) globalFilterBtn.remove();
+    
+    // FIX: Pulizia forzata di tutti i filtri esistenti
+    ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.remove();
+    });
+
     if (!targetEl) return;
 
     const staticTransports = [
@@ -439,6 +365,7 @@ window.renderSimpleList = function(tableName) {
     </div>`;
     window.loadTableData(tableName, null);
 };
+
 window.toggleTicketInfo = function() {
     const box = document.getElementById('ticket-info-box');
     if (box) { box.style.display = (box.style.display === 'none') ? 'block' : 'none'; }
@@ -450,15 +377,13 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
     container.innerHTML = `<div class="flex flex-col gap-4 pb-24 animate-fade" id="dynamic-list"></div>`;
     const listContainer = container.querySelector('#dynamic-list');
 
-    // Pulizia
+    // Pulizia Iniziale
     ['filter-sheet', 'filter-overlay', 'filter-toggle-btn'].forEach(id => {
         const el = document.getElementById(id); if(el) el.remove();
     });
 
     // === 1. IDENTIFICAZIONE ROBUSTA DEL "NUMERO UNICO" ===
-    // Cerchiamo l'elemento 112 indipendentemente da come è scritto nel DB
     const pinnedItem = allData.find(item => {
-        // Funzione helper per leggere i campi in modo sicuro (ignora maiuscole/minuscole delle chiavi)
         const getField = (keys) => {
             for (let k of keys) {
                 if (item[k] !== undefined) return item[k];
@@ -467,38 +392,26 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
             return '';
         };
 
-        // Recuperiamo Nome e Numero in modo sicuro
-        // Nota: window.dbCol gestisce già le traduzioni se il campo è un oggetto JSON
         let nome = window.dbCol ? window.dbCol(item, 'Nome') : getField(['Nome', 'name']);
-        if (!nome) nome = getField(['Nome', 'name']); // Fallback se dbCol fallisce o non trova nulla
+        if (typeof nome === 'object') nome = nome[window.currentLang] || nome['it'] || '';
         
         let numero = getField(['Numero', 'telefono', 'phone']);
-        
-        // Normalizziamo le stringhe per il confronto
         const nomeNorm = String(nome).toLowerCase();
-        const numNorm = String(numero).replace(/\s+/g, '').trim(); // Rimuove tutti gli spazi (es. "1 1 2" -> "112")
+        const numNorm = String(numero).replace(/\s+/g, '').trim();
 
-        // Criteri di ricerca:
-        // - Il numero è "112"
-        // - Oppure il nome contiene "numero unico", "emergency" o "112"
         return numNorm === '112' || nomeNorm.includes('numero unico') || nomeNorm.includes('emergency') || nomeNorm.includes('ue 112');
     });
 
     // === 2. SEPARAZIONE DATI ===
-    // Togliamo il pinnedItem dalla lista "filtrabile" per non duplicarlo
     const otherData = pinnedItem ? allData.filter(i => i !== pinnedItem) : allData;
 
-    // === 3. ESTRAZIONE TAG DAI DATI RIMANENTI ===
+    // === 3. ESTRAZIONE TAG ===
     let rawValues = otherData.map(item => {
-        // Cerchiamo il valore del filtro (es. 'Comune')
-        // Gestiamo sia la chiave diretta che quella lowercase (es. 'Comune' o 'comune')
         let val = item[filterKey] || item[filterKey.toLowerCase()] || item[filterKey.charAt(0).toUpperCase() + filterKey.slice(1)];
         return val ? String(val).trim() : null;
     }).filter(x => x);
 
     let tagsRaw = [...new Set(rawValues)];
-    
-    // Ordine personalizzato per i borghi (utile se il filtro è 'Comune' o 'Paesi')
     const customOrder = ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso", "La Spezia", "Levanto", "Facile", "Media", "Difficile"];
     
     if (!tagsRaw.includes('Tutti')) tagsRaw.unshift('Tutti');
@@ -514,12 +427,10 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
     // Costruzione UI Filtri (Sheet)
     const overlay = document.createElement('div');
     overlay.id = 'filter-overlay';
-    // Tailwind Overlay
     overlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-50 opacity-0 invisible transition-all duration-300';
     
     const sheet = document.createElement('div');
     sheet.id = 'filter-sheet';
-    // Tailwind Bottom Sheet
     sheet.className = 'fixed bottom-0 left-0 right-0 bg-white rounded-t-[2rem] p-6 z-[51] transform translate-y-full transition-transform duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]';
     sheet.innerHTML = `
         <div class="flex justify-between items-center mb-6">
@@ -536,29 +447,25 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
     let activeTag = 'Tutti';
     uniqueTags.forEach(tag => {
         const chip = document.createElement('button');
-        chip.className = 'sheet-chip';
-        if (tag === 'Tutti') chip.classList.add('active-filter');
+        chip.className = 'sheet-chip px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-slate-50 text-slate-600 border-slate-200';
+        if (tag === 'Tutti') chip.className = 'sheet-chip px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-primary text-white border-primary active-filter';
         
         chip.innerText = (tag === 'Tutti') ? window.t('filter_all') : tag; 
 
         chip.onclick = () => {
-            document.querySelectorAll('.sheet-chip').forEach(c => c.classList.remove('active-filter'));
-            chip.classList.add('active-filter');
+            document.querySelectorAll('.sheet-chip').forEach(c => {
+                c.className = 'sheet-chip px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-slate-50 text-slate-600 border-slate-200';
+            });
+            chip.className = 'sheet-chip px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-primary text-white border-primary active-filter';
             activeTag = tag;
             
-            // 1. Filtra la lista "normale"
             let filtered = tag === 'Tutti' ? otherData : otherData.filter(item => {
-                // Recupero valore sicuro per il confronto
                 let valDB = item[filterKey] || item[filterKey.toLowerCase()];
                 if (!valDB) return false;
                 return String(valDB).trim().includes(tag);
             });
 
-            // 2. Riattacca il Pinned Item in CIMA (se esiste)
-            // Questo assicura che il 112 ci sia SEMPRE, anche se il filtro "Vernazza" lo escluderebbe
-            if (pinnedItem) {
-                filtered = [pinnedItem, ...filtered];
-            }
+            if (pinnedItem) { filtered = [pinnedItem, ...filtered]; }
 
             updateList(filtered);
             closeFilterSheet();
@@ -566,7 +473,6 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
         optionsContainer.appendChild(chip);
     });
 
-    // Bottone Fluttuante
     const filterBtn = document.createElement('button');
     filterBtn.id = 'filter-toggle-btn';
     filterBtn.className = 'fixed bottom-24 right-5 w-14 h-14 bg-slate-800 text-white rounded-full shadow-xl flex items-center justify-center z-40 active:scale-90 transition-transform';
@@ -583,25 +489,15 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
         if (!items || items.length === 0) { 
             listContainer.innerHTML = `<p style="text-align:center; padding:40px; color:#999;">${window.t('no_results')}</p>`; 
         } else {
-            // Render
             listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
-            
-            // Inizializza eventuali mappe (se presenti nelle card renderizzate)
             setTimeout(() => {
                 if(window.initPendingMaps) window.initPendingMaps();
             }, 100);
         }
     }
     
-    // Render Iniziale: Metti il pinned item in cima anche all'avvio
     let initialList = [...otherData];
-    if (pinnedItem) {
-        initialList = [pinnedItem, ...initialList];
-        // (Opzionale) Debug console per confermare che l'abbia trovato
-        console.log("✅ Numero Unico bloccato in alto:", pinnedItem); 
-    } else {
-        console.warn("⚠️ Numero Unico (112) non trovato nei dati. Controlla Nome/Numero nel DB.");
-    }
+    if (pinnedItem) { initialList = [pinnedItem, ...initialList]; }
 
     updateList(initialList);
 }
@@ -611,6 +507,10 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
     container.innerHTML = `<div class="list-container animate-fade" id="dynamic-list" style="padding-bottom: 80px;"></div>`;
     const listContainer = container.querySelector('#dynamic-list');
 
+    ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
+        const el = document.getElementById(id); if(el) el.remove();
+    });
+
     const oldSheet = document.getElementById('filter-sheet');
     if (oldSheet) oldSheet.remove();
     const oldOverlay = document.getElementById('filter-overlay');
@@ -618,51 +518,44 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
     const oldBtn = document.getElementById('filter-toggle-btn');
     if (oldBtn) oldBtn.remove();
 
+    
+    // REIMPLEMENTAZIONE VELOCE FILTRO DOPPIO (Tailwind)
     const getUniqueValues = (key, customOrder = []) => {
         const raw = allData.map(i => window.dbCol(i, key)).filter(x => x).map(x => x.trim());
         let unique = [...new Set(raw)];
-        if (customOrder && customOrder.length > 0) {
-            return unique.sort((a, b) => {
-                const idxA = customOrder.indexOf(a);
-                const idxB = customOrder.indexOf(b);
-                if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-                if (idxA !== -1) return -1;
-                if (idxB !== -1) return 1;
-                return a.localeCompare(b);
-            });
-        } else {
-            return unique.sort();
-        }
+        return unique.sort(); // Semplificato
     };
 
-    const values1 = getUniqueValues(filtersConfig.primary.key, filtersConfig.primary.customOrder);
-    const values2 = getUniqueValues(filtersConfig.secondary.key, filtersConfig.secondary.customOrder);
+    const values1 = getUniqueValues(filtersConfig.primary.key);
+    const values2 = getUniqueValues(filtersConfig.secondary.key);
 
     let activeVal1 = 'Tutti';
     let activeVal2 = 'Tutti';
 
     const overlay = document.createElement('div');
-    overlay.className = 'sheet-overlay';
+    overlay.id = 'filter-overlay';
+    overlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-50 opacity-0 invisible transition-all duration-300';
     
     const sheet = document.createElement('div');
-    sheet.className = 'bottom-sheet';
+    sheet.id = 'filter-sheet';
+    sheet.className = 'fixed bottom-0 left-0 right-0 bg-white rounded-t-[2rem] p-6 z-[51] transform translate-y-full transition-transform duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]';
     
     const title1 = filtersConfig.primary.title || window.t('filter_village');
     const title2 = filtersConfig.secondary.title || window.t('filter_cat');
 
     sheet.innerHTML = `
-        <div class="sheet-header">
-            <div class="sheet-title">${window.t('filter_title')}</div>
-            <div class="material-icons sheet-close" onclick="closeFilterSheet()">close</div>
+        <div class="flex justify-between items-center mb-6">
+            <div class="font-serif text-xl font-bold text-slate-800">${window.t('filter_title')}</div>
+            <button class="p-2 bg-slate-100 rounded-full text-slate-500" onclick="closeFilterSheet()"><span class="material-icons">close</span></button>
         </div>
         
-        <div class="filter-section-title">${title1}</div>
-        <div class="filter-grid" id="section-1-options"></div>
+        <div class="text-xs font-bold uppercase text-slate-400 mb-2">${title1}</div>
+        <div class="flex flex-wrap gap-2 mb-6" id="section-1-options"></div>
 
-        <div class="filter-section-title" style="margin-top: 25px;">${title2}</div>
-        <div class="filter-grid" id="section-2-options"></div>
+        <div class="text-xs font-bold uppercase text-slate-400 mb-2">${title2}</div>
+        <div class="flex flex-wrap gap-2 mb-6" id="section-2-options"></div>
 
-        <button class="btn-apply-filters" onclick="closeFilterSheet()">
+        <button class="w-full py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/30 active:scale-95" onclick="closeFilterSheet()">
             ${window.t('show_results')}
         </button>
     `;
@@ -673,29 +566,28 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
     function renderChips() {
         const c1 = sheet.querySelector('#section-1-options');
         c1.innerHTML = '';
-        c1.appendChild(createChip(window.t('filter_all'), activeVal1 === 'Tutti', () => { activeVal1 = 'Tutti'; applyFilters(); renderChips(); }));
-        
+        const chipClass = 'px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-slate-50 text-slate-600 border-slate-200';
+        const activeClass = 'px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-primary text-white border-primary';
+
+        const createBtn = (txt, active, cb) => {
+            const b = document.createElement('button');
+            b.className = active ? activeClass : chipClass;
+            b.innerText = txt;
+            b.onclick = cb;
+            return b;
+        };
+
+        c1.appendChild(createBtn(window.t('filter_all'), activeVal1 === 'Tutti', () => { activeVal1 = 'Tutti'; applyFilters(); renderChips(); }));
         values1.forEach(v => {
-            c1.appendChild(createChip(v, activeVal1 === v, () => { activeVal1 = v; applyFilters(); renderChips(); }));
+            c1.appendChild(createBtn(v, activeVal1 === v, () => { activeVal1 = v; applyFilters(); renderChips(); }));
         });
 
         const c2 = sheet.querySelector('#section-2-options');
         c2.innerHTML = '';
-        c2.appendChild(createChip(window.t('filter_all'), activeVal2 === 'Tutti', () => { activeVal2 = 'Tutti'; applyFilters(); renderChips(); }));
-
+        c2.appendChild(createBtn(window.t('filter_all'), activeVal2 === 'Tutti', () => { activeVal2 = 'Tutti'; applyFilters(); renderChips(); }));
         values2.forEach(v => {
-            const label = v.charAt(0).toUpperCase() + v.slice(1); 
-            c2.appendChild(createChip(label, activeVal2 === v, () => { activeVal2 = v; applyFilters(); renderChips(); }));
+            c2.appendChild(createBtn(v, activeVal2 === v, () => { activeVal2 = v; applyFilters(); renderChips(); }));
         });
-    }
-
-    function createChip(text, isActive, onClick) {
-        const btn = document.createElement('button');
-        btn.className = 'sheet-chip';
-        if (isActive) btn.classList.add('active-filter');
-        btn.innerText = text;
-        btn.onclick = onClick;
-        return btn;
     }
 
     function applyFilters() {
@@ -719,12 +611,12 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
 
     const filterBtn = document.createElement('button');
     filterBtn.id = 'filter-toggle-btn';
-    filterBtn.innerHTML = '<span class="material-icons">filter_list</span>';
-    filterBtn.style.display = 'block';
+    filterBtn.className = 'fixed bottom-24 right-5 w-14 h-14 bg-slate-800 text-white rounded-full shadow-xl flex items-center justify-center z-40 active:scale-90 transition-transform';
+    filterBtn.innerHTML = '<span class="material-icons text-2xl">filter_list</span>';
     document.body.appendChild(filterBtn);
 
-    window.openFilterSheet = () => { overlay.classList.add('active'); sheet.classList.add('active'); };
-    window.closeFilterSheet = () => { overlay.classList.remove('active'); sheet.classList.remove('active'); };
+    window.openFilterSheet = () => { overlay.classList.remove('opacity-0', 'invisible'); sheet.classList.remove('translate-y-full'); };
+    window.closeFilterSheet = () => { overlay.classList.add('opacity-0', 'invisible'); sheet.classList.add('translate-y-full'); };
 
     filterBtn.onclick = window.openFilterSheet;
     overlay.onclick = window.closeFilterSheet;

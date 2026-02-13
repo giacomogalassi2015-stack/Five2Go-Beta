@@ -1,10 +1,10 @@
-console.log("✅ 2. ui-renderers.js caricato (Tailwind)");
+console.log("✅ 2. ui-renderers.js caricato (Tailwind JSON FIX)");
 
 // === RISTORANTE CARD ===
 window.ristoranteRenderer = (r) => {
     const nome = window.dbCol(r, 'Nome') || 'Ristorante';
     const paesi = window.dbCol(r, 'Paesi') || '';
-    const numero = r.Numero || r.Telefono || '';
+    const numero = r.Numero || r.Telefono || r.telefono || r.numero || '';
     const safeObj = encodeURIComponent(JSON.stringify(r)).replace(/'/g, "%27");
     const mapLink = r.Mappa || '#';
 
@@ -55,7 +55,6 @@ window.vinoRenderer = function(item) {
     const cantina = item.Produttore || ''; 
     const tipo = (item.Tipo || '').toLowerCase().trim();
 
-    // Colori dinamici in Tailwind
     let borderClass = 'border-l-red-800'; 
     let iconColor = 'text-red-800';
     if (tipo.includes('bianco')) { borderClass = 'border-l-yellow-400'; iconColor = 'text-yellow-400'; }
@@ -80,7 +79,6 @@ window.sentieroRenderer = (s) => {
     const nome = s.nome || s.Titolo || 'Sentiero';
     const safeObj = encodeURIComponent(JSON.stringify(s)).replace(/'/g, "%27");
 
-    // Push map data
     if(s.gpx_url) {
         if(!window.pendingMaps) window.pendingMaps = [];
         window.pendingMaps.push({ id: uniqueId, gpx: s.gpx_url, startLabel: s.nome_partenza, endLabel: s.nome_arrivo });
@@ -107,14 +105,16 @@ window.sentieroRenderer = (s) => {
 
 // === SPIAGGIA CARD ===
 window.spiaggiaRenderer = function(item) {
-    const safeId = item.id || item.ID;
     let nome = window.dbCol(item, 'Nome') || 'Spiaggia';
     let paesi = window.dbCol(item, 'Paesi') || '';
     let tipo = window.dbCol(item, 'Tipo') || 'Spiaggia';
-    const lat = item.lat_sp; const lon = item.long_sp;
+    const lat = item.lat_sp; 
+    const lon = item.long_sp;
+    
+    const safeObj = encodeURIComponent(JSON.stringify(item)).replace(/'/g, "%27");
 
     return `
-    <div class="bg-white rounded-2xl p-5 mb-4 shadow-sm border-l-[6px] border-l-sky-500 relative overflow-hidden active:scale-[0.98] transition-transform animate-fade" onclick="openModal('Spiagge', '${safeId}')">
+    <div class="bg-white rounded-2xl p-5 mb-4 shadow-sm border-l-[6px] border-l-sky-500 relative overflow-hidden active:scale-[0.98] transition-transform animate-fade" onclick="openModal('Spiagge', '${safeObj}')">
         <div class="relative z-10 pr-12">
             <div class="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
                 <span class="material-icons text-sm">place</span> ${paesi}
@@ -141,7 +141,6 @@ window.attrazioniRenderer = function(item) {
     const paese = window.dbCol(item, 'Paese');
     const tempo = window.dbCol(item, 'Tempo_visita') || '--';
     
-    // Icon logic
     const label = String(window.dbCol(item, 'Label')).toLowerCase();
     let themeColor = 'text-accent'; let borderColor = 'border-l-accent'; let icon = 'fa-landmark';
     if (label.includes('religioso')) { themeColor = 'text-yellow-600'; borderColor = 'border-l-yellow-500'; icon = 'fa-church'; }
@@ -170,20 +169,41 @@ window.attrazioniRenderer = function(item) {
     </div>`;
 };
 
-// === INFO GENERICHE (Farmacie/Numeri) ===
+// === FARMACIE ===
 window.farmacieRenderer = (f) => {
-    const nome = window.dbCol(f, 'Farmacia') || 'Farmacia';
-    const paese = window.dbCol(f, 'Paese') || '';
-    const numero = f.Telefono || '';
+    const nome = window.dbCol(f, 'Farmacia') || window.dbCol(f, 'Nome') || 'Farmacia';
+    const paese = window.dbCol(f, 'Paese') || window.dbCol(f, 'Comune') || window.dbCol(f, 'Indirizzo') || '5 Terre';
+    const numero = f.Telefono || f.Numero || f.telefono || f.numero || '';
+    
     return genericInfoCard('local_pharmacy', nome, paese, numero);
 };
 
+// === NUMERI UTILI (FIX JSON PARSING) ===
 window.numeriUtiliRenderer = (n) => {
-    const nome = window.dbCol(n, 'Nome');
-    const paesi = window.dbCol(n, 'Paesi') || 'Cinque Terre';
-    const numero = n.Numero || '';
+    let rawNome = n.Nome;
+    
+    // 1. Se è una stringa che sembra un JSON, prova a parsarlo
+    if (typeof rawNome === 'string' && rawNome.trim().startsWith('{')) {
+        try {
+            rawNome = JSON.parse(rawNome);
+        } catch(e) {
+            console.warn("Fallito parsing JSON nome:", rawNome);
+        }
+    }
+
+    // 2. Ora gestisci l'oggetto o la stringa semplice
+    let nome = rawNome;
+    if (typeof rawNome === 'object' && rawNome !== null) {
+        nome = rawNome[window.currentLang] || rawNome['it'] || rawNome['en'] || 'Info';
+    }
+    
+    const paesi = window.dbCol(n, 'Paesi') || window.dbCol(n, 'Comune') || 'Cinque Terre';
+    const numero = n.Numero || n.Telefono || '';
+    
     let icon = 'help_outline';
     if(String(nome).toLowerCase().includes('carabinieri')) icon = 'security';
+    if(String(nome).toLowerCase().includes('emergenza') || String(numero).includes('112')) icon = 'emergency';
+
     return genericInfoCard(icon, nome, paesi, numero);
 };
 
@@ -195,11 +215,12 @@ function genericInfoCard(icon, title, subtitle, phone) {
         </div>
         <div class="flex-1">
             <h3 class="font-bold text-slate-800 leading-tight">${title}</h3>
-            <p class="text-xs text-slate-500 flex items-center gap-1 mt-1"><span class="material-icons text-[10px]">place</span> ${subtitle}</p>
+            ${subtitle ? `<p class="text-xs text-slate-500 flex items-center gap-1 mt-1"><span class="material-icons text-[10px]">place</span> ${subtitle}</p>` : ''}
         </div>
+        ${phone ? `
         <button class="w-11 h-11 rounded-full bg-green-500 text-white flex items-center justify-center shadow-md active:scale-90 transition-transform" onclick="window.location.href='tel:${phone}'">
             <span class="material-icons">call</span>
-        </button>
+        </button>` : ''}
     </div>`;
 }
 

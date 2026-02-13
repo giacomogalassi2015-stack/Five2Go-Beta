@@ -1,4 +1,4 @@
-console.log("✅ 5. ui-modal.js caricato (Tailwind)");
+console.log("✅ 5. ui-modal.js caricato (Tailwind Fixed)");
 
 window.openModal = async function(type, payload) {
     const modal = document.createElement('div');
@@ -14,7 +14,7 @@ window.openModal = async function(type, payload) {
     };
 
     let item = null; 
-    if (window.currentTableData && (['Vini', 'Attrazioni', 'Spiagge', 'attrazione', 'wine'].includes(type))) {
+    if (window.currentTableData && (['Vini', 'Attrazioni', 'attrazione', 'wine'].includes(type))) {
         item = window.currentTableData.find(i => i.id == payload || i.ID == payload || i.POI_ID == payload);
         if (!item && typeof payload === 'number') item = window.currentTableData[payload];
     }
@@ -41,6 +41,7 @@ window.openModal = async function(type, payload) {
     }
 };
 
+// FIXED: Funzione TechMap con classi Tailwind (Z-Index alto)
 window.openTechMap = function(safeObj) {
     try {
         const s = JSON.parse(decodeURIComponent(safeObj));
@@ -52,70 +53,72 @@ window.openTechMap = function(safeObj) {
         const d_minus = s.dislivello_negativo || '--';
         const alt_max = s.altitudine_max || '--';
         const alt_min = s.altitudine_minima || '--';
+        
+        // Genera un ID univoco per evitare conflitti con altre mappe
+        const mapContainerId = 'tech-map-canvas-' + Math.floor(Math.random() * 10000);
 
         const modalHtml = `
-            <div class="tech-container">
+            <div class="tech-container bg-white w-full h-full md:max-w-xl md:h-[90vh] md:rounded-[2rem] flex flex-col relative overflow-hidden shadow-2xl">
                 
-                <button onclick="closeModal()" style="
-                    position: absolute; top: 15px; right: 15px; z-index: 2000;
-                    width: 35px; height: 35px; border-radius: 50%; background: white; border: none;
-                    box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 1.5rem; 
-                    display: flex; align-items: center; justify-content: center; cursor:pointer;">
-                    &times;
+                <button onclick="closeModal()" class="absolute top-4 right-4 z-[201] w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-800 shadow-md active:scale-90 transition-transform">
+                    <span class="material-icons text-xl">close</span>
                 </button>
 
-                <div class="tech-scroll-wrapper">
+                <div class="tech-scroll-wrapper flex-1 overflow-y-auto bg-slate-50">
                     
-                    <div class="tech-data-row">
-                        <div class="tech-data-group">
-                            <div class="tech-data-item"><span class="t-val">${dist}<span class="t-unit">km</span></span><span class="t-lbl">Distanza</span></div>
-                            <div class="tech-divider"></div>
-                            <div class="tech-data-item"><span class="t-val">${dur}<span class="t-unit">min</span></span><span class="t-lbl">Durata</span></div>
+                    <div class="grid grid-cols-3 gap-0 border-b border-slate-200 bg-white sticky top-0 z-[100] shadow-sm">
+                        <div class="p-4 text-center border-r border-slate-100">
+                            <div class="text-2xl font-bold text-slate-700 leading-none">${dist}<small class="text-xs text-slate-400 font-normal">km</small></div>
+                            <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Distanza</div>
                         </div>
-                        <div class="tech-data-group">
-                            <div class="tech-data-item"><span class="t-val" style="color:#d32f2f;">+${d_plus}<span class="t-unit">m</span></span><span class="t-lbl">D+</span></div>
-                            <div class="tech-divider"></div>
-                            <div class="tech-data-item"><span class="t-val" style="color:#27ae60;">-${d_minus}<span class="t-unit">m</span></span><span class="t-lbl">D-</span></div>
+                        <div class="p-4 text-center border-r border-slate-100">
+                             <div class="text-2xl font-bold text-slate-700 leading-none">${dur}<small class="text-xs text-slate-400 font-normal">min</small></div>
+                            <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Durata</div>
                         </div>
-                        <div class="tech-data-group">
-                            <div class="tech-data-item"><span class="t-val">${alt_max}<span class="t-unit">m</span></span><span class="t-lbl">Alt. Max</span></div>
-                            <div class="tech-divider"></div>
-                            <div class="tech-data-item"><span class="t-val">${alt_min}<span class="t-unit">m</span></span><span class="t-lbl">Alt. Min</span></div>
+                        <div class="p-4 text-center">
+                            <div class="flex flex-col items-center justify-center h-full gap-1">
+                                <div class="text-xs font-bold text-red-500">D+ ${d_plus}m</div>
+                                <div class="text-xs font-bold text-green-500">D- ${d_minus}m</div>
+                            </div>
                         </div>
                     </div>
 
-                    <div id="tech-map-canvas"></div>
+                    <div id="${mapContainerId}" class="w-full h-[450px] bg-slate-200 z-0"></div>
                     
-                    <div id="elevation-div"></div>
+                    <div id="elevation-div" class="hidden bg-white p-2 border-t border-slate-200 h-[180px]"></div>
                     
-                </div> <div class="modal-actions-grid">
-                    <button class="btn-trail-modern btn-trail-info" onclick="window.downloadGPX('${gpxUrl}')">
-                        <span class="material-icons">download</span> GPX
+                    <div class="p-4 grid grid-cols-2 gap-4 text-center text-sm text-slate-500">
+                        <div>Alt. Max: <b>${alt_max}m</b></div>
+                        <div>Alt. Min: <b>${alt_min}m</b></div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-white border-t border-slate-100 flex gap-2 z-[200]">
+                    <button class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95" onclick="window.downloadGPX('${gpxUrl}')">
+                        <span class="material-icons text-sm">download</span> GPX
                     </button>
-                    <button id="btn-gps" class="btn-trail-modern btn-trail-gps" onclick="window.toggleGPS()">
-                        <span class="material-icons">my_location</span> GPS
+                    <button id="btn-gps" class="flex-1 py-3 bg-sky-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-sky-200 active:scale-95" onclick="window.toggleGPS()">
+                        <span class="material-icons text-sm">my_location</span> GPS
                     </button>
-                    <button id="btn-toggle-ele" class="btn-trail-modern btn-trail-tech" onclick="toggleElevationChart()">
-                        <span class="material-icons">show_chart</span> Grafico
+                    <button id="btn-toggle-ele" class="flex-1 py-3 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/30 active:scale-95" onclick="toggleElevationChart()">
+                        <span class="material-icons text-sm">show_chart</span> Grafico
                     </button>
                 </div>
 
             </div>
         `;
 
-        let modalContainer = document.getElementById('modal-container');
-        if (!modalContainer) {
-            modalContainer = document.createElement('div');
-            modalContainer.id = 'modal-container';
-            modalContainer.className = 'modal-overlay';
-            document.body.appendChild(modalContainer);
-        }
-        modalContainer.innerHTML = modalHtml;
-        modalContainer.style.display = 'flex';
+        // Crea il container FULL SCREEN
+        let modalOverlay = document.createElement('div');
+        modalOverlay.id = 'tech-modal-overlay';
+        modalOverlay.className = 'fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-0 md:p-6 animate-fade';
+        
+        modalOverlay.innerHTML = modalHtml;
+        document.body.appendChild(modalOverlay);
 
-        setTimeout(() => { initLeafletMap('tech-map-canvas', gpxUrl); }, 300);
+        setTimeout(() => { initLeafletMap(mapContainerId, gpxUrl); }, 300);
 
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Errore TechMap:", e); }
 };
 
 window.toggleElevationChart = function() {
@@ -124,30 +127,28 @@ window.toggleElevationChart = function() {
     
     if (!elDiv || !btn) return;
 
-    const isHidden = elDiv.style.display === 'none' || elDiv.style.display === '';
+    const isHidden = elDiv.classList.contains('hidden');
 
     if (isHidden) {
-        elDiv.style.display = 'block';
+        elDiv.classList.remove('hidden');
         
-        btn.innerHTML = '<span class="material-icons">close</span> Chiudi';
-        btn.style.backgroundColor = '#FFEBEE'; 
-        btn.style.color = '#c62828';
+        btn.innerHTML = '<span class="material-icons text-sm">close</span> Chiudi';
+        btn.className = "flex-1 py-3 bg-red-50 text-red-600 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 border border-red-100";
         
         if (window.currentMap) {
             setTimeout(() => { window.currentMap.invalidateSize(); }, 100);
         }
 
-        const container = document.querySelector('.tech-container');
-        if (container) {
-            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        const wrapper = document.querySelector('.tech-scroll-wrapper');
+        if (wrapper) {
+            setTimeout(() => wrapper.scrollTo({ top: wrapper.scrollHeight, behavior: 'smooth' }), 100);
         }
 
     } else {
-        elDiv.style.display = 'none';
+        elDiv.classList.add('hidden');
         
-        btn.innerHTML = '<span class="material-icons">show_chart</span> Grafico';
-        btn.style.backgroundColor = '#2A9D8F'; 
-        btn.style.color = 'white';
+        btn.innerHTML = '<span class="material-icons text-sm">show_chart</span> Grafico';
+        btn.className = "flex-1 py-3 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/30 active:scale-95";
         
         if (window.currentMap) {
             setTimeout(() => { window.currentMap.invalidateSize(); }, 50);
@@ -173,7 +174,10 @@ window.toggleGPS = function() {
 
     const btn = document.getElementById('btn-gps');
     
-    if(btn) btn.innerHTML = '<span class="material-icons check-icon">hourglass_empty</span> Cerco...';
+    if(btn) {
+        btn.innerHTML = '<span class="material-icons spin text-sm">sync</span>';
+        btn.className = "flex-1 py-3 bg-amber-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95";
+    }
 
     window.currentMap.locate({
         setView: true,       
@@ -194,22 +198,36 @@ window.toggleGPS = function() {
 
         window.userCircle = L.circle(e.latlng, radius).addTo(window.currentMap);
 
-        if(btn) btn.innerHTML = '<span class="material-icons">my_location</span> Trovato';
+        if(btn) {
+            btn.innerHTML = '<span class="material-icons text-sm">my_location</span> Trovato';
+            btn.className = "flex-1 py-3 bg-green-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95";
+        }
         
         setTimeout(() => {
-             if(btn) btn.innerHTML = '<span class="material-icons">my_location</span> GPS';
-        }, 2000);
+             if(btn) {
+                 btn.innerHTML = '<span class="material-icons text-sm">my_location</span> GPS';
+                 btn.className = "flex-1 py-3 bg-sky-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-sky-200 active:scale-95";
+             }
+        }, 3000);
     });
 
     window.currentMap.once('locationerror', function(e) {
         alert("Impossibile trovare la tua posizione: " + e.message);
-        if(btn) btn.innerHTML = '<span class="material-icons">error_outline</span> Errore';
+        if(btn) {
+            btn.innerHTML = '<span class="material-icons text-sm">error</span> Err';
+            btn.className = "flex-1 py-3 bg-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-2";
+        }
     });
 };
 
 window.closeModal = function() {
-    const m = document.getElementById('modal-container');
-    if(m) m.style.display = 'none';
+    const m = document.getElementById('tech-modal-overlay');
+    if(m) m.remove();
+    
+    // Fallback per altri tipi di modale
+    const oldM = document.getElementById('modal-container');
+    if(oldM) oldM.remove();
+
     if(window.currentMap) { 
         window.currentMap.off();
         window.currentMap.remove(); 
@@ -217,8 +235,14 @@ window.closeModal = function() {
     }
 };
 
+// Funzione Inizializzazione Mappa (Invariata)
 function initLeafletMap(divId, gpxUrl) {
-    if (!document.getElementById(divId)) return;
+    const el = document.getElementById(divId);
+    if (!el) return;
+    
+    // Assicura che il container abbia dimensione
+    if(el.clientHeight === 0) el.style.height = '450px';
+
     if (window.currentMap) { 
         window.currentMap.off();
         window.currentMap.remove(); 
@@ -253,9 +277,6 @@ function initLeafletMap(divId, gpxUrl) {
     }
     setTimeout(() => { map.invalidateSize(); }, 300);
 }
-
-
-
 
 window.eseguiRicercaBus = async function() {
     const selPartenza = document.getElementById('selPartenza');
