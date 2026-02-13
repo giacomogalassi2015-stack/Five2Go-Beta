@@ -1,13 +1,11 @@
-console.log("✅ 4. ui-modal-contents.js caricato (Tailwind Complete & Fixed)");
+console.log("✅ 4. ui-modal-contents.js caricato (Cinque Terre Palette)");
 
-// 2. FUNZIONE PRINCIPALE (Il Generatore)
 window.getModalContent = function(type, payload, item) {
     
     let contentHtml = '';
     let modalClass = ''; 
-    let onRender = null; 
 
-    // --- RISTORANTE ---
+    // --- RISTORANTE (Usa Giallo) ---
     if (type === 'ristorante' || type === 'restaurant') {
         const item = JSON.parse(decodeURIComponent(payload));
         const nome = window.dbCol(item, 'Nome');
@@ -18,16 +16,16 @@ window.getModalContent = function(type, payload, item) {
             <div class="p-6 text-center">
                 <h2 class="font-serif text-3xl font-bold text-slate-800 mb-2 leading-tight">${nome}</h2>
                 <div class="flex items-center justify-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">
-                    <span class="material-icons text-base text-yellow-500">place</span> ${indirizzo}
+                    <span class="material-icons text-base text-ct-yellow">place</span> ${indirizzo}
                 </div>
-                <div class="w-16 h-1 bg-yellow-400 mx-auto rounded-full mb-6"></div>
+                <div class="w-16 h-1 bg-ct-yellow mx-auto rounded-full mb-6"></div>
                 <div class="text-slate-600 leading-relaxed text-lg">
                     ${desc}
                 </div>
             </div>`;
     }
 
-    // --- PRODOTTI ---
+    // --- PRODOTTI (Usa Terracotta) ---
     else if (type === 'product') {
         const p = JSON.parse(decodeURIComponent(payload));
         const nome = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome') || 'Prodotto';
@@ -53,7 +51,6 @@ window.getModalContent = function(type, payload, item) {
     // --- VINI ---
     else if (type === 'Vini' || type === 'wine') {
         if (!item) { return { html: '', class: '' }; }
-
         const nome = window.dbCol(item, 'Nome');
         const tipo = window.dbCol(item, 'Tipo');
         const produttore = window.dbCol(item, 'Produttore');
@@ -64,25 +61,20 @@ window.getModalContent = function(type, payload, item) {
         const foto = window.dbCol(item, 'Foto');
 
         const t = String(tipo).toLowerCase();
-        let colorText = 'text-red-800'; 
-        let bgBadge = 'bg-red-50 text-red-800';
-        let iconColor = 'text-red-800';
+        let colorText = 'text-ct-terracotta'; 
+        let bgBadge = 'bg-ct-terracotta-light text-ct-terracotta';
+        let iconColor = 'text-ct-terracotta';
         
         if (t.includes('bianco')) { 
-            colorText = 'text-yellow-600'; 
-            bgBadge = 'bg-yellow-50 text-yellow-700'; 
-            iconColor = 'text-yellow-400';
+            colorText = 'text-ct-yellow'; 
+            bgBadge = 'bg-ct-yellow-light text-ct-yellow'; // Nota: bg-ct-yellow-light deve essere definito nel config o usiamo giallo chiaro standard
+            iconColor = 'text-ct-yellow';
         } 
-        if (t.includes('rosato') || t.includes('orange')) { 
-            colorText = 'text-orange-600'; 
-            bgBadge = 'bg-orange-50 text-orange-700'; 
-            iconColor = 'text-orange-500';
-        }
 
         contentHtml = `
             <div class="pb-6">
                 ${foto ? `<div class="h-72 w-full relative"><img src="${foto}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div></div>` : 
-                `<div class="py-10 bg-slate-50 flex justify-center border-b border-dashed border-slate-200">
+                `<div class="py-10 bg-ct-sand flex justify-center border-b border-dashed border-slate-200">
                     <i class="ph-fill ph-wine text-7xl ${iconColor} drop-shadow-sm"></i>
                 </div>`}
 
@@ -100,11 +92,11 @@ window.getModalContent = function(type, payload, item) {
 
                 <div class="px-6 mt-6">
                     <div class="grid grid-cols-2 gap-3 mb-6">
-                        <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+                        <div class="bg-ct-sand p-3 rounded-xl text-center border border-slate-100">
                             <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">${window.t('wine_deg')}</div>
                             <div class="font-bold text-slate-700 text-lg">${gradi || '--'}</div>
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100 flex flex-col justify-center">
+                        <div class="bg-ct-sand p-3 rounded-xl text-center border border-slate-100 flex flex-col justify-center">
                             <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">${window.t('wine_grapes')}</div>
                             <div class="font-bold text-slate-700 text-sm leading-tight">${uve || '--'}</div>
                         </div>
@@ -113,19 +105,11 @@ window.getModalContent = function(type, payload, item) {
                     <div class="prose prose-slate prose-p:text-slate-600 prose-p:leading-relaxed mb-6">
                         <p>${desc}</p>
                     </div>
-
-                    ${abbinamenti ? `
-                    <div class="bg-amber-50 border-l-4 border-amber-300 p-4 rounded-r-xl">
-                        <div class="text-xs font-bold text-amber-800 uppercase mb-1 flex items-center gap-1">
-                            <span class="material-icons text-sm">restaurant</span> ${window.t('wine_pairings')}
-                        </div>
-                        <p class="text-amber-900 text-sm italic font-medium">${abbinamenti}</p>
-                    </div>` : ''}
                 </div>
             </div>`;
     }
 
-    // --- SENTIERI (Technical Data) ---
+    // --- SENTIERI ---
     else if (type === 'trail') {
         const p = JSON.parse(decodeURIComponent(payload));
         const titolo = window.dbCol(p, 'Paesi') || p.Nome;
@@ -134,16 +118,11 @@ window.getModalContent = function(type, payload, item) {
         const dura = p.Durata || '--';
         const diff = p.Tag || p.Difficolta || 'Media'; 
         const desc = window.dbCol(p, 'Descrizione') || '';
-        
         let linkGpx = p.Link_Gpx || p.Link_gpx || p.gpxlink || p.Mappa || p.Gpx;
         if (!linkGpx) {
             const key = Object.keys(p).find(k => k.toLowerCase().includes('gpx') || k.toLowerCase().includes('mappa'));
             if (key) linkGpx = p[key];
         }
-
-        let diffColor = 'text-slate-600';
-        if (String(diff).toLowerCase().includes('diff')) diffColor = 'text-red-500';
-        if (String(diff).toLowerCase().includes('facil')) diffColor = 'text-green-500';
 
         contentHtml = `
         <div class="p-6">
@@ -151,19 +130,19 @@ window.getModalContent = function(type, payload, item) {
             ${nomeSentiero ? `<p class="text-center text-sm font-medium text-slate-500 mb-6">${nomeSentiero}</p>` : ''}
             
             <div class="grid grid-cols-3 gap-3 mb-6">
-                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                <div class="bg-ct-sand p-3 rounded-2xl text-center border border-slate-100">
                     <span class="material-icons text-primary mb-1">straighten</span>
                     <div class="font-extrabold text-slate-700 text-lg leading-none">${dist}</div>
                     <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">${window.t('distance')}</div>
                 </div>
-                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                <div class="bg-ct-sand p-3 rounded-2xl text-center border border-slate-100">
                     <span class="material-icons text-primary mb-1">schedule</span>
                     <div class="font-extrabold text-slate-700 text-lg leading-none">${dura}</div>
                     <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">${window.t('duration')}</div>
                 </div>
-                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                <div class="bg-ct-sand p-3 rounded-2xl text-center border border-slate-100">
                     <span class="material-icons text-primary mb-1">terrain</span>
-                    <div class="font-extrabold ${diffColor} text-sm pt-1 leading-none uppercase">${diff}</div>
+                    <div class="font-extrabold text-slate-600 text-sm pt-1 leading-none uppercase">${diff}</div>
                     <div class="text-[10px] uppercase font-bold text-slate-400 mt-2">${window.t('level')}</div>
                 </div>
             </div>
@@ -188,7 +167,6 @@ window.getModalContent = function(type, payload, item) {
     else if (type === 'sentieroInfo') {
         let item = {};
         try { item = JSON.parse(decodeURIComponent(payload)); } catch(e) {}
-
         const desc = window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione');
         const nome = item.nome || item.Titolo || 'Info Sentiero';
 
@@ -202,7 +180,7 @@ window.getModalContent = function(type, payload, item) {
         `;
     }
     
-    // --- MAPPA GPX GENERIC ---
+    // --- MAPPA ---
     else if (type === 'map') {
         const uniqueMapId = 'modal-map-' + Math.random().toString(36).substr(2, 9);
         contentHtml = `
@@ -216,20 +194,11 @@ window.getModalContent = function(type, payload, item) {
         `;
     }
 
-    // --- SPIAGGE (FIXED: Decodifica JSON) ---
+    // --- SPIAGGE ---
     else if (type === 'Spiagge') {
-        // Ora payload è una stringa JSON, non più solo un ID
         let beachItem = {};
-        try {
-            beachItem = JSON.parse(decodeURIComponent(payload));
-        } catch(e) {
-            console.error("Errore parsing spiaggia", e);
-            if(item) beachItem = item; // Fallback se passato via 'item'
-        }
-
-        if (!beachItem || Object.keys(beachItem).length === 0) { 
-            return { html: `<div class="p-8 text-center text-slate-500">Dati non trovati</div>`, class: '' }; 
-        }
+        try { beachItem = JSON.parse(decodeURIComponent(payload)); } catch(e) { if(item) beachItem = item; }
+        if (!beachItem || Object.keys(beachItem).length === 0) { return { html: `<div class="p-8 text-center text-slate-500">Dati non trovati</div>`, class: '' }; }
 
         const nome = window.dbCol(beachItem, 'Nome') || 'Spiaggia';
         const tipo = window.dbCol(beachItem, 'Tipo');
@@ -238,8 +207,8 @@ window.getModalContent = function(type, payload, item) {
         contentHtml = `
              <div class="p-8">
                 <div class="mb-4">
-                    <h2 class="font-serif text-3xl font-bold text-sky-900 mb-2">${nome}</h2>
-                    ${tipo ? `<span class="inline-block px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-xs font-bold uppercase tracking-wide">${tipo}</span>` : ''}
+                    <h2 class="font-serif text-3xl font-bold text-ct-blue mb-2">${nome}</h2>
+                    ${tipo ? `<span class="inline-block px-3 py-1 bg-ct-blue-light text-ct-blue rounded-full text-xs font-bold uppercase tracking-wide">${tipo}</span>` : ''}
                 </div>
                 <div class="w-full h-px bg-slate-100 mb-6"></div>
                 <div class="text-slate-600 leading-relaxed text-lg text-justify">
@@ -252,7 +221,6 @@ window.getModalContent = function(type, payload, item) {
     // --- ATTRAZIONI ---
     else if (type === 'Attrazioni' || type === 'attrazione') {
         if (!item) { return { html: '', class: '' }; }
-
         const titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
         const curiosita = window.dbCol(item, 'Curiosita');
         const desc = window.dbCol(item, 'Descrizione');
@@ -266,7 +234,7 @@ window.getModalContent = function(type, payload, item) {
             <div class="p-8 ${img ? '-mt-12 relative z-10' : ''}">
                 <div class="${img ? 'bg-white p-6 rounded-2xl shadow-lg' : ''}">
                     <h2 class="font-serif text-2xl font-bold text-slate-800 mb-2 leading-tight">${titolo}</h2>
-                    <div class="w-12 h-1 bg-red-400 rounded-full mb-4"></div>
+                    <div class="w-12 h-1 bg-ct-terracotta rounded-full mb-4"></div>
 
                     ${curiosita ? `
                     <div class="bg-amber-50 border-l-4 border-amber-300 p-4 rounded-r-xl mb-6">
@@ -293,7 +261,7 @@ window.getModalContent = function(type, payload, item) {
             const nowTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
 
             const ticketSection = `
-                <button onclick="toggleTicketInfo()" class="w-full mb-4 bg-cyan-50 text-cyan-800 border border-cyan-100 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                <button onclick="toggleTicketInfo()" class="w-full mb-4 bg-ct-yellow-light text-yellow-800 border border-yellow-200 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                     <span>🎟️ ${window.t('how_to_ticket')}</span> <span class="material-icons text-sm">expand_more</span>
                 </button>
                 <div id="ticket-info-box" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4 text-sm text-slate-600 leading-relaxed">
@@ -320,13 +288,13 @@ window.getModalContent = function(type, payload, item) {
                 <div class="flex gap-3 mb-3">
                     <div class="flex-1">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('departure')}</label>
-                        <select id="selPartenza" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-primary transition-colors appearance-none" onchange="window.handleBusSelectionChange('partenza')">
+                        <select id="selPartenza" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-ct-yellow transition-colors appearance-none" onchange="window.handleBusSelectionChange('partenza')">
                             <option value="" disabled selected>${window.t('loading')}...</option>
                         </select>
                     </div>
                     <div class="flex-1">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('arrival')}</label>
-                        <select id="selArrivo" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-primary transition-colors appearance-none" onchange="window.handleBusSelectionChange('arrivo')">
+                        <select id="selArrivo" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-ct-yellow transition-colors appearance-none" onchange="window.handleBusSelectionChange('arrivo')">
                             <option value="" disabled selected>--</option>
                         </select>
                     </div>
@@ -337,12 +305,12 @@ window.getModalContent = function(type, payload, item) {
                     <div class="flex-1"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('time_trip')}</label><input type="time" id="selOra" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none" value="${nowTime}"></div>
                 </div>
 
-                <button id="btnSearchBus" onclick="eseguiRicercaBus()" class="w-full py-4 rounded-xl bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-bold text-lg shadow-lg shadow-orange-200 active:scale-95 transition-transform">
+                <button id="btnSearchBus" onclick="eseguiRicercaBus()" class="w-full py-4 rounded-xl bg-ct-yellow text-white font-bold text-lg shadow-lg shadow-ct-yellow/30 active:scale-95 transition-transform">
                     ${window.t('find_times')}
                 </button>
 
                 <div id="busResultsContainer" class="hidden mt-6 pb-6">
-                    <div id="nextBusCard" class="bg-gradient-to-br from-emerald-600 to-primary text-white p-6 rounded-2xl shadow-lg mb-4 text-center relative overflow-hidden"></div>
+                    <div id="nextBusCard" class="bg-gradient-to-br from-ct-yellow to-yellow-600 text-white p-6 rounded-2xl shadow-lg mb-4 text-center relative overflow-hidden"></div>
                     <div class="text-xs font-bold uppercase text-slate-400 mb-3 ml-1">${window.t('next_runs')}</div>
                     <div id="otherBusList" class="space-y-2"></div>
                 </div>
@@ -358,7 +326,7 @@ window.getModalContent = function(type, payload, item) {
 
             customContent = `
             <div class="p-2 animate-fade">
-                <button onclick="toggleTicketInfo()" class="w-full mb-4 bg-sky-50 text-sky-800 border border-sky-100 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                <button onclick="toggleTicketInfo()" class="w-full mb-4 bg-ct-blue-light text-ct-blue border border-cyan-100 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                     <span>🎟️ ${window.t('how_to_ticket')}</span> <span class="material-icons text-sm">expand_more</span>
                 </button>
                 <div id="ticket-info-box" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4 text-sm text-slate-600 leading-relaxed">
@@ -371,13 +339,13 @@ window.getModalContent = function(type, payload, item) {
                 <div class="flex gap-3 mb-3">
                     <div class="flex-1">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('departure')}</label>
-                        <select id="selPartenzaFerry" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-sky-500 transition-colors appearance-none">
+                        <select id="selPartenzaFerry" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-ct-blue transition-colors appearance-none">
                             <option value="" disabled selected>${window.t('loading')}...</option>
                         </select>
                     </div>
                     <div class="flex-1">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('arrival')}</label>
-                        <select id="selArrivoFerry" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-sky-500 transition-colors appearance-none">
+                        <select id="selArrivoFerry" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none focus:border-ct-blue transition-colors appearance-none">
                             <option value="" disabled selected>--</option>
                         </select>
                     </div>
@@ -388,12 +356,12 @@ window.getModalContent = function(type, payload, item) {
                     <div class="flex-1"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">${window.t('time_trip')}</label><input type="time" id="selOraFerry" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl p-3 focus:outline-none" value="${nowTime}"></div>
                 </div>
                 
-                <button onclick="eseguiRicercaTraghetto()" class="w-full py-4 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-lg shadow-lg shadow-sky-200 active:scale-95 transition-transform">
+                <button onclick="eseguiRicercaTraghetto()" class="w-full py-4 rounded-xl bg-ct-blue text-white font-bold text-lg shadow-lg shadow-ct-blue/30 active:scale-95 transition-transform">
                     ${window.t('find_times')}
                 </button>
                 
                 <div id="ferryResultsContainer" class="hidden mt-6 pb-6">
-                    <div id="nextFerryCard" class="bg-gradient-to-br from-sky-600 to-blue-800 text-white p-6 rounded-2xl shadow-lg mb-4 text-center"></div>
+                    <div id="nextFerryCard" class="bg-gradient-to-br from-ct-blue to-blue-700 text-white p-6 rounded-2xl shadow-lg mb-4 text-center"></div>
                     <div class="text-xs font-bold uppercase text-slate-400 mb-3 ml-1">${window.t('next_runs')}</div>
                     <div id="otherFerryList" class="space-y-2"></div>
                 </div>
@@ -426,12 +394,12 @@ window.getModalContent = function(type, payload, item) {
         const paesi = window.dbCol(item, 'Paesi');
         contentHtml = `
             <div class="p-6 text-center">
-                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
+                <div class="w-16 h-16 bg-ct-green-light rounded-full flex items-center justify-center mx-auto mb-4 text-ct-green">
                     <span class="material-icons text-3xl">local_pharmacy</span>
                 </div>
                 <h2 class="font-serif text-2xl font-bold text-slate-800 mb-2">${nome}</h2>
                 <p class="text-slate-500 mb-6 flex items-center justify-center gap-1 font-medium"><span class="material-icons text-sm">place</span> ${item.Indirizzo || item.Paesi || ''}</p>
-                <a href="tel:${item.Numero || item.Telefono}" class="inline-flex items-center justify-center gap-2 bg-green-500 text-white py-3 px-8 rounded-full font-bold shadow-lg shadow-green-200 active:scale-95 transition-transform">
+                <a href="tel:${item.Numero || item.Telefono}" class="inline-flex items-center justify-center gap-2 bg-ct-green text-white py-3 px-8 rounded-full font-bold shadow-lg shadow-ct-green/20 active:scale-95 transition-transform">
                     <span class="material-icons">call</span> Chiama
                 </a>
             </div>`;
@@ -440,12 +408,12 @@ window.getModalContent = function(type, payload, item) {
     return { html: contentHtml, class: modalClass };
 };
 
-// Helpers... (invariati)
+// Helper Treni (Usa Terracotta)
 window.trainSearchRenderer = (data, nowTime) => {
     return `
     <div class="animate-fade">
-        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl mb-6">
-            <p class="text-slate-700 leading-relaxed text-sm">${window.t('train_desc')}</p>
+        <div class="bg-ct-terracotta-light border-l-4 border-ct-terracotta p-4 rounded-r-xl mb-6">
+            <p class="text-ct-terracotta-dark font-medium leading-relaxed text-sm">${window.t('train_desc')}</p>
         </div>
         
         <div class="bg-white border border-slate-100 rounded-2xl p-5 mb-6 shadow-sm">
@@ -463,7 +431,7 @@ window.trainSearchRenderer = (data, nowTime) => {
             </div>
         </div>
 
-        <button onclick="apriTrenitalia()" class="w-full py-4 rounded-xl bg-gradient-to-r from-red-600 to-red-500 text-white font-bold text-lg shadow-lg shadow-red-200 active:scale-95 transition-transform flex items-center justify-center gap-2">
+        <button onclick="apriTrenitalia()" class="w-full py-4 rounded-xl bg-ct-terracotta text-white font-bold text-lg shadow-lg shadow-ct-terracotta/30 active:scale-95 transition-transform flex items-center justify-center gap-2">
             <span>${window.t('train_cta')}</span> <span class="material-icons text-sm">open_in_new</span>
         </button>
         

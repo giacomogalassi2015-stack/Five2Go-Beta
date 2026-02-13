@@ -1,4 +1,4 @@
-console.log("✅ 6. app.js caricato (Tailwind Final Fix)");
+console.log("✅ 6. app.js caricato (Fix Filtri & Scroll)");
 
 const content = document.getElementById('app-content');
 window.pendingMaps = []; 
@@ -86,23 +86,25 @@ window.switchView = async function(view, el) {
     if (!content) return;
     window.currentViewName = view; 
     
+    // Rimuovi mascotte e filtri vecchi
     const mascot = document.getElementById('mascot-container');
     if (mascot) mascot.remove();
-
     document.body.classList.remove('is-home');
-
-    // FIX: Pulizia aggressiva dei filtri al cambio view
+    
+    // Pulizia totale elementi filtri
     ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.remove();
     });
 
-    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active', 'text-primary'));
+    // GESTIONE STATO ATTIVO NAVBAR
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    
     if (el) {
-        el.classList.add('active', 'text-primary'); 
+        el.classList.add('active'); 
     } else if (view === 'home') {
          const homeBtn = document.querySelector('.nav-item[onclick*="home"]');
-         if(homeBtn) homeBtn.classList.add('active', 'text-primary');
+         if(homeBtn) homeBtn.classList.add('active');
     }
 
     try {
@@ -140,8 +142,7 @@ function renderHome() {
     </div>
 
     <div class="flex flex-col items-center justify-end h-[85vh] pb-20 px-6 text-center animate-fade">
-        <h1 class="text-4xl font-serif font-bold text-white mb-6 drop-shadow-md tracking-tight leading-tight">
-           </h1>
+        <h1 class="text-4xl font-serif font-bold text-white mb-6 drop-shadow-md tracking-tight leading-tight"></h1>
         
         <div class="grid grid-cols-3 gap-3 w-full max-w-sm">
             ${window.AVAILABLE_LANGS.map(l => `
@@ -153,6 +154,7 @@ function renderHome() {
         </div>
     </div>`;
 
+    // Mascotte (Chicco)
     const oldMascot = document.getElementById('mascot-container');
     if (oldMascot) oldMascot.remove();
 
@@ -190,18 +192,26 @@ function renderHome() {
 }
 
 // ============================================================
-// 1. RENDER MENU 
+// 1. RENDER MENU (Con Filtro Header)
 // ============================================================
 function renderSubMenu(options, defaultTable) {
     let menuHtml = `
-    <div class="nav-sticky-header sticky top-0 z-30 bg-bg/95 backdrop-blur-md py-4 -mx-4 px-4 border-b border-slate-200/60 shadow-sm mb-4">
-        <div class="nav-scroll-container flex gap-3 overflow-x-auto no-scrollbar items-center px-1">
+    <div class="nav-sticky-header sticky top-0 z-30 bg-bg/95 backdrop-blur-md py-3 -mx-5 px-5 border-b border-slate-200/60 shadow-sm mb-6 flex items-center justify-between gap-3">
+        
+        <div class="nav-scroll-container flex gap-2 overflow-x-auto no-scrollbar items-center flex-1 pr-2">
             ${options.map(opt => `
-                <button class="flex-shrink-0 px-5 py-2.5 rounded-2xl text-sm font-bold text-slate-500 bg-white border border-slate-200 shadow-sm transition-all active:scale-95 btn-3d" onclick="loadTableData('${opt.table}', this)">
+                <button class="flex-shrink-0 px-4 py-2 rounded-xl text-[13px] font-bold text-slate-500 bg-white border border-slate-200 transition-all active:scale-95 btn-3d whitespace-nowrap" onclick="loadTableData('${opt.table}', this)">
                     ${opt.label}
                 </button>
             `).join('')}
         </div>
+
+        <div class="w-px h-6 bg-slate-300 flex-shrink-0"></div>
+
+        <button id="header-filter-btn" class="flex-shrink-0 w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center border border-slate-200 active:scale-90 transition-transform" style="display:none;">
+            <span class="material-icons text-xl">tune</span>
+        </button>
+
     </div>
     <div id="sub-content" class="min-h-[300px]"></div>`;
     
@@ -217,6 +227,7 @@ window.loadTableData = async function(tableName, btnEl) {
     const subContent = document.getElementById('sub-content');
     if (!subContent) return;
 
+    // Reset bottoni categorie
     document.querySelectorAll('.btn-3d').forEach(btn => {
         btn.classList.remove('bg-primary', 'text-white', 'shadow-md', 'border-transparent');
         btn.classList.add('bg-white', 'text-slate-500', 'border-slate-200');
@@ -226,11 +237,20 @@ window.loadTableData = async function(tableName, btnEl) {
         btnEl.classList.add('bg-primary', 'text-white', 'shadow-md', 'border-transparent');
     }
 
-    // Reset filtri
+    // Reset UI Filtro
     ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.remove();
     });
+    
+    const headerFilterBtn = document.getElementById('header-filter-btn');
+    if(headerFilterBtn) {
+        headerFilterBtn.style.display = 'none'; // Nascondi di default
+        headerFilterBtn.onclick = null; // Rimuovi listener vecchi
+        // Reset stile bottone filtro
+        headerFilterBtn.classList.remove('bg-primary', 'text-white', 'border-primary');
+        headerFilterBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-200');
+    }
 
     if (!window.appCache[tableName]) {
         subContent.innerHTML = `<div class="py-12 flex justify-center"><div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div></div>`;
@@ -256,6 +276,7 @@ window.loadTableData = async function(tableName, btnEl) {
 
     window.currentTableData = data; 
 
+    // Routing Renderers
     if (tableName === 'Vini') {
         renderGenericFilterableView(data, 'Tipo', subContent, window.vinoRenderer);
     }
@@ -296,93 +317,35 @@ window.loadTableData = async function(tableName, btnEl) {
 };
 
 /* ============================================================
-   FUNZIONE RENDER SERVIZI (Statica - No Supabase)
+   FUNZIONI FILTRI (FIXATE)
    ============================================================ */
-window.renderServicesGrid = async function() {
-    console.log("🔘 Avvio renderServicesGrid...");
-    const targetEl = document.getElementById('app-content');
-    
-    // FIX: Pulizia forzata di tutti i filtri esistenti
-    ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.remove();
-    });
 
-    if (!targetEl) return;
-
-    const staticTransports = [
-        { id: 'train', labelKey: 'label_train', icon: 'train', type: 'transport' },
-        { id: 'ferry', labelKey: 'label_ferry', icon: 'directions_boat', type: 'transport' },
-        { id: 'bus',   labelKey: 'label_bus',   icon: 'directions_bus', type: 'transport' }
-    ];
-
-    let html = '<div class="grid grid-cols-2 gap-4 p-2 pb-24 animate-fade max-w-lg mx-auto">';
-
-    const widgetClass = "aspect-square bg-white/80 backdrop-blur border border-white rounded-3xl flex flex-col items-center justify-center shadow-soft active:scale-95 transition-transform p-4 text-center cursor-pointer";
-    const iconClass = "material-icons text-4xl text-accent mb-3";
-    const textClass = "font-bold text-slate-700 text-sm leading-tight";
-
-    staticTransports.forEach(t => {
-        html += `
-        <div class="${widgetClass}" onclick="openModal('${t.type}', '${t.id}')">
-            <span class="${iconClass}">${t.icon}</span>
-            <span class="${textClass}">${window.t(t.labelKey)}</span>
-        </div>`;
-    });
-
-    html += `
-    <div class="${widgetClass}" onclick="renderSimpleList('Numeri_utili')">
-        <span class="${iconClass}">phonelink_ring</span>
-        <span class="${textClass}">${window.t('menu_num')}</span>
-    </div>
-    <div class="${widgetClass}" onclick="renderSimpleList('Farmacie')">
-        <span class="${iconClass}">medical_services</span>
-        <span class="${textClass}">${window.t('menu_pharm')}</span>
-    </div>
-    <div class="${widgetClass}" onclick="renderLegalPage()">
-        <span class="${iconClass}">policy</span>
-        <span class="${textClass}">${window.t('menu_legal')}</span>
-    </div>
-    </div>`; 
-
-    targetEl.innerHTML = html;
-};
-
-// Funzione Liste Semplici
-window.renderSimpleList = function(tableName) {
-    const targetEl = document.getElementById('app-content');
-    const cleanTitle = tableName.replace('_', ' ');
-    
-    targetEl.innerHTML = `
-    <div class="flex items-center gap-4 mb-6 animate-fade pt-2">
-        <button onclick="renderServicesGrid()" class="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-100 active:scale-90 transition-transform">
-            <span class="material-icons text-slate-700">arrow_back</span>
-        </button>
-        <h2 class="text-2xl font-serif font-bold text-slate-800 capitalize">${cleanTitle}</h2>
-    </div>
-    <div id="sub-content">
-        <div class="py-10 text-center text-slate-400">Caricamento...</div>
-    </div>`;
-    window.loadTableData(tableName, null);
-};
-
-window.toggleTicketInfo = function() {
-    const box = document.getElementById('ticket-info-box');
-    if (box) { box.style.display = (box.style.display === 'none') ? 'block' : 'none'; }
-};
-
-
-// --- LOGICA FILTRI (Bottom Sheet) ---
 function renderGenericFilterableView(allData, filterKey, container, cardRenderer) {
     container.innerHTML = `<div class="flex flex-col gap-4 pb-24 animate-fade" id="dynamic-list"></div>`;
     const listContainer = container.querySelector('#dynamic-list');
 
-    // Pulizia Iniziale
-    ['filter-sheet', 'filter-overlay', 'filter-toggle-btn'].forEach(id => {
-        const el = document.getElementById(id); if(el) el.remove();
-    });
+    // 1. DEFINIZIONE FUNZIONI APERTURA/CHIUSURA (PRIMA DI ASSEGNARLE)
+    window.openFilterSheet = () => { 
+        const o = document.getElementById('filter-overlay');
+        const s = document.getElementById('filter-sheet');
+        if(o) { o.classList.remove('opacity-0', 'invisible'); }
+        if(s) { s.classList.remove('translate-y-full'); }
+    };
+    window.closeFilterSheet = () => { 
+        const o = document.getElementById('filter-overlay');
+        const s = document.getElementById('filter-sheet');
+        if(o) { o.classList.add('opacity-0', 'invisible'); }
+        if(s) { s.classList.add('translate-y-full'); }
+    };
 
-    // === 1. IDENTIFICAZIONE ROBUSTA DEL "NUMERO UNICO" ===
+    // 2. SETUP BOTTONE HEADER (Ora le funzioni esistono)
+    const headerFilterBtn = document.getElementById('header-filter-btn');
+    if (headerFilterBtn) {
+        headerFilterBtn.style.display = 'flex';
+        headerFilterBtn.onclick = window.openFilterSheet;
+    }
+
+    // 3. LOGICA DATI
     const pinnedItem = allData.find(item => {
         const getField = (keys) => {
             for (let k of keys) {
@@ -391,32 +354,27 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
             }
             return '';
         };
-
         let nome = window.dbCol ? window.dbCol(item, 'Nome') : getField(['Nome', 'name']);
         if (typeof nome === 'object') nome = nome[window.currentLang] || nome['it'] || '';
-        
         let numero = getField(['Numero', 'telefono', 'phone']);
         const nomeNorm = String(nome).toLowerCase();
         const numNorm = String(numero).replace(/\s+/g, '').trim();
-
-        return numNorm === '112' || nomeNorm.includes('numero unico') || nomeNorm.includes('emergency') || nomeNorm.includes('ue 112');
+        return numNorm === '112' || nomeNorm.includes('numero unico') || nomeNorm.includes('emergenza') || nomeNorm.includes('ue 112');
     });
 
-    // === 2. SEPARAZIONE DATI ===
     const otherData = pinnedItem ? allData.filter(i => i !== pinnedItem) : allData;
 
-    // === 3. ESTRAZIONE TAG ===
     let rawValues = otherData.map(item => {
         let val = item[filterKey] || item[filterKey.toLowerCase()] || item[filterKey.charAt(0).toUpperCase() + filterKey.slice(1)];
         return val ? String(val).trim() : null;
     }).filter(x => x);
 
     let tagsRaw = [...new Set(rawValues)];
-    const customOrder = ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso", "La Spezia", "Levanto", "Facile", "Media", "Difficile"];
-    
     if (!tagsRaw.includes('Tutti')) tagsRaw.unshift('Tutti');
-
-    const uniqueTags = tagsRaw.sort((a, b) => {
+    
+    // Sort custom per borghi
+    const customOrder = ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso", "La Spezia", "Levanto"];
+    tagsRaw.sort((a, b) => {
         const indexA = customOrder.indexOf(a), indexB = customOrder.indexOf(b);
         if (indexA !== -1 && indexB !== -1) return indexA - indexB;
         if (indexA !== -1) return -1;
@@ -424,106 +382,114 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
         return a.localeCompare(b);
     });
 
-    // Costruzione UI Filtri (Sheet)
+    // 4. CREAZIONE SHEET
     const overlay = document.createElement('div');
     overlay.id = 'filter-overlay';
-    overlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-50 opacity-0 invisible transition-all duration-300';
+    overlay.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] opacity-0 invisible transition-all duration-300';
     
     const sheet = document.createElement('div');
     sheet.id = 'filter-sheet';
-    sheet.className = 'fixed bottom-0 left-0 right-0 bg-white rounded-t-[2rem] p-6 z-[51] transform translate-y-full transition-transform duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]';
+    sheet.className = 'fixed bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-6 z-[61] transform translate-y-full transition-transform duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]';
     sheet.innerHTML = `
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
         <div class="flex justify-between items-center mb-6">
-            <div class="font-serif text-xl font-bold text-slate-800">${window.t('filter_title')}</div> 
-            <button class="p-2 bg-slate-100 rounded-full text-slate-500" onclick="closeFilterSheet()"><span class="material-icons">close</span></button>
+            <h3 class="font-serif text-xl font-bold text-slate-800">${window.t('filter_title')}</h3> 
+            <button class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center" onclick="closeFilterSheet()">
+                <span class="material-icons text-lg">close</span>
+            </button>
         </div>
-        <div class="flex flex-wrap gap-2 max-h-[60vh] overflow-y-auto" id="sheet-options"></div>
+        <div class="flex flex-wrap gap-2 max-h-[50vh] overflow-y-auto pb-4" id="sheet-options"></div>
     `;
 
     document.body.appendChild(overlay);
     document.body.appendChild(sheet);
+    overlay.onclick = window.closeFilterSheet;
 
     const optionsContainer = sheet.querySelector('#sheet-options');
     let activeTag = 'Tutti';
-    uniqueTags.forEach(tag => {
+
+    tagsRaw.forEach(tag => {
         const chip = document.createElement('button');
-        chip.className = 'sheet-chip px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-slate-50 text-slate-600 border-slate-200';
-        if (tag === 'Tutti') chip.className = 'sheet-chip px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-primary text-white border-primary active-filter';
-        
+        const baseClass = 'px-5 py-2.5 rounded-2xl text-sm font-bold border transition-all active:scale-95';
+        const inactiveClass = 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100';
+        const activeClass = 'bg-primary text-white border-primary shadow-lg shadow-primary/20 ring-2 ring-primary/20';
+
+        chip.className = (tag === 'Tutti') ? `${baseClass} ${activeClass}` : `${baseClass} ${inactiveClass}`;
         chip.innerText = (tag === 'Tutti') ? window.t('filter_all') : tag; 
 
         chip.onclick = () => {
-            document.querySelectorAll('.sheet-chip').forEach(c => {
-                c.className = 'sheet-chip px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-slate-50 text-slate-600 border-slate-200';
-            });
-            chip.className = 'sheet-chip px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-primary text-white border-primary active-filter';
+            // UI Update
+            Array.from(optionsContainer.children).forEach(c => c.className = `${baseClass} ${inactiveClass}`);
+            chip.className = `${baseClass} ${activeClass}`;
             activeTag = tag;
             
+            // Logic Update
             let filtered = tag === 'Tutti' ? otherData : otherData.filter(item => {
                 let valDB = item[filterKey] || item[filterKey.toLowerCase()];
                 if (!valDB) return false;
                 return String(valDB).trim().includes(tag);
             });
-
             if (pinnedItem) { filtered = [pinnedItem, ...filtered]; }
-
             updateList(filtered);
-            closeFilterSheet();
+            window.closeFilterSheet();
+            
+            // Header Button Feedback
+            if (headerFilterBtn) {
+                if (tag !== 'Tutti') {
+                    headerFilterBtn.classList.add('bg-primary', 'text-white', 'border-primary');
+                    headerFilterBtn.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-200');
+                } else {
+                    headerFilterBtn.classList.remove('bg-primary', 'text-white', 'border-primary');
+                    headerFilterBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-200');
+                }
+            }
         };
         optionsContainer.appendChild(chip);
     });
 
-    const filterBtn = document.createElement('button');
-    filterBtn.id = 'filter-toggle-btn';
-    filterBtn.className = 'fixed bottom-24 right-5 w-14 h-14 bg-slate-800 text-white rounded-full shadow-xl flex items-center justify-center z-40 active:scale-90 transition-transform';
-    filterBtn.innerHTML = '<span class="material-icons text-2xl">filter_list</span>';
-    document.body.appendChild(filterBtn);
-
-    window.openFilterSheet = () => { overlay.classList.remove('opacity-0', 'invisible'); sheet.classList.remove('translate-y-full'); };
-    window.closeFilterSheet = () => { overlay.classList.add('opacity-0', 'invisible'); sheet.classList.add('translate-y-full'); };
-
-    filterBtn.onclick = window.openFilterSheet;
-    overlay.onclick = window.closeFilterSheet;
-
     function updateList(items) {
         if (!items || items.length === 0) { 
-            listContainer.innerHTML = `<p style="text-align:center; padding:40px; color:#999;">${window.t('no_results')}</p>`; 
+            listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium">${window.t('no_results')}</div>`; 
         } else {
             listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
-            setTimeout(() => {
-                if(window.initPendingMaps) window.initPendingMaps();
-            }, 100);
+            setTimeout(() => { if(window.initPendingMaps) window.initPendingMaps(); }, 100);
         }
     }
     
     let initialList = [...otherData];
     if (pinnedItem) { initialList = [pinnedItem, ...initialList]; }
-
     updateList(initialList);
 }
 
-// --- LOGICA FILTRO DOPPIO ---
 function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer) {
     container.innerHTML = `<div class="list-container animate-fade" id="dynamic-list" style="padding-bottom: 80px;"></div>`;
     const listContainer = container.querySelector('#dynamic-list');
 
-    ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
-        const el = document.getElementById(id); if(el) el.remove();
-    });
+    // 1. DEFINIZIONE FUNZIONI
+    window.openFilterSheet = () => { 
+        const o = document.getElementById('filter-overlay');
+        const s = document.getElementById('filter-sheet');
+        if(o) { o.classList.remove('opacity-0', 'invisible'); }
+        if(s) { s.classList.remove('translate-y-full'); }
+    };
+    window.closeFilterSheet = () => { 
+        const o = document.getElementById('filter-overlay');
+        const s = document.getElementById('filter-sheet');
+        if(o) { o.classList.add('opacity-0', 'invisible'); }
+        if(s) { s.classList.add('translate-y-full'); }
+    };
 
-    const oldSheet = document.getElementById('filter-sheet');
-    if (oldSheet) oldSheet.remove();
-    const oldOverlay = document.getElementById('filter-overlay');
-    if (oldOverlay) oldOverlay.remove();
-    const oldBtn = document.getElementById('filter-toggle-btn');
-    if (oldBtn) oldBtn.remove();
+    // 2. SETUP HEADER BTN
+    const headerFilterBtn = document.getElementById('header-filter-btn');
+    if (headerFilterBtn) {
+        headerFilterBtn.style.display = 'flex';
+        headerFilterBtn.onclick = window.openFilterSheet;
+    }
 
-    
-    // REIMPLEMENTAZIONE VELOCE FILTRO DOPPIO (Tailwind)
-    const getUniqueValues = (key, customOrder = []) => {
+    // 3. LOGICA FILTRI
+    const getUniqueValues = (key) => {
         const raw = allData.map(i => window.dbCol(i, key)).filter(x => x).map(x => x.trim());
-        let unique = [...new Set(raw)];
-        return unique.sort(); // Semplificato
+        return [...new Set(raw)].sort();
     };
 
     const values1 = getUniqueValues(filtersConfig.primary.key);
@@ -534,44 +500,49 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
 
     const overlay = document.createElement('div');
     overlay.id = 'filter-overlay';
-    overlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-50 opacity-0 invisible transition-all duration-300';
+    overlay.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] opacity-0 invisible transition-all duration-300';
     
     const sheet = document.createElement('div');
     sheet.id = 'filter-sheet';
-    sheet.className = 'fixed bottom-0 left-0 right-0 bg-white rounded-t-[2rem] p-6 z-[51] transform translate-y-full transition-transform duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]';
+    sheet.className = 'fixed bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-6 z-[61] transform translate-y-full transition-transform duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]';
     
     const title1 = filtersConfig.primary.title || window.t('filter_village');
     const title2 = filtersConfig.secondary.title || window.t('filter_cat');
 
     sheet.innerHTML = `
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
         <div class="flex justify-between items-center mb-6">
-            <div class="font-serif text-xl font-bold text-slate-800">${window.t('filter_title')}</div>
-            <button class="p-2 bg-slate-100 rounded-full text-slate-500" onclick="closeFilterSheet()"><span class="material-icons">close</span></button>
+            <h3 class="font-serif text-xl font-bold text-slate-800">${window.t('filter_title')}</h3> 
+            <button class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center" onclick="closeFilterSheet()">
+                <span class="material-icons text-lg">close</span>
+            </button>
         </div>
         
-        <div class="text-xs font-bold uppercase text-slate-400 mb-2">${title1}</div>
+        <div class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">${title1}</div>
         <div class="flex flex-wrap gap-2 mb-6" id="section-1-options"></div>
 
-        <div class="text-xs font-bold uppercase text-slate-400 mb-2">${title2}</div>
+        <div class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">${title2}</div>
         <div class="flex flex-wrap gap-2 mb-6" id="section-2-options"></div>
 
-        <button class="w-full py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/30 active:scale-95" onclick="closeFilterSheet()">
+        <button class="w-full py-4 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/30 active:scale-95 transition-transform" onclick="closeFilterSheet()">
             ${window.t('show_results')}
         </button>
     `;
 
     document.body.appendChild(overlay);
     document.body.appendChild(sheet);
+    overlay.onclick = window.closeFilterSheet;
 
     function renderChips() {
         const c1 = sheet.querySelector('#section-1-options');
         c1.innerHTML = '';
-        const chipClass = 'px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-slate-50 text-slate-600 border-slate-200';
-        const activeClass = 'px-4 py-2 rounded-full text-sm font-semibold border transition-colors bg-primary text-white border-primary';
+        const baseClass = 'px-4 py-2 rounded-xl text-sm font-bold border transition-all active:scale-95';
+        const inactiveClass = 'bg-slate-50 text-slate-600 border-slate-200';
+        const activeClass = 'bg-primary text-white border-primary shadow-md ring-2 ring-primary/20';
 
         const createBtn = (txt, active, cb) => {
             const b = document.createElement('button');
-            b.className = active ? activeClass : chipClass;
+            b.className = active ? `${baseClass} ${activeClass}` : `${baseClass} ${inactiveClass}`;
             b.innerText = txt;
             b.onclick = cb;
             return b;
@@ -588,6 +559,17 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
         values2.forEach(v => {
             c2.appendChild(createBtn(v, activeVal2 === v, () => { activeVal2 = v; applyFilters(); renderChips(); }));
         });
+        
+        // Header feedback
+        if(headerFilterBtn) {
+            if(activeVal1 !== 'Tutti' || activeVal2 !== 'Tutti') {
+                headerFilterBtn.classList.add('bg-primary', 'text-white', 'border-primary');
+                headerFilterBtn.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-200');
+            } else {
+                headerFilterBtn.classList.remove('bg-primary', 'text-white', 'border-primary');
+                headerFilterBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-200');
+            }
+        }
     }
 
     function applyFilters() {
@@ -603,27 +585,110 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
 
     function updateList(items) {
         if (!items || items.length === 0) { 
-            listContainer.innerHTML = `<p style="text-align:center; padding:40px; color:#999;">${window.t('no_results')}</p>`; 
+            listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium">${window.t('no_results')}</div>`; 
         } else {
             listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
         }
     }
 
-    const filterBtn = document.createElement('button');
-    filterBtn.id = 'filter-toggle-btn';
-    filterBtn.className = 'fixed bottom-24 right-5 w-14 h-14 bg-slate-800 text-white rounded-full shadow-xl flex items-center justify-center z-40 active:scale-90 transition-transform';
-    filterBtn.innerHTML = '<span class="material-icons text-2xl">filter_list</span>';
-    document.body.appendChild(filterBtn);
-
-    window.openFilterSheet = () => { overlay.classList.remove('opacity-0', 'invisible'); sheet.classList.remove('translate-y-full'); };
-    window.closeFilterSheet = () => { overlay.classList.add('opacity-0', 'invisible'); sheet.classList.add('translate-y-full'); };
-
-    filterBtn.onclick = window.openFilterSheet;
-    overlay.onclick = window.closeFilterSheet;
-
     renderChips();
     updateList(allData);
 }
+
+// BENTO GRID E ALTRE FUNZIONI
+window.renderServicesGrid = async function() {
+    console.log("🔘 Avvio renderServicesGrid (Cinque Terre Palette)...");
+    const targetEl = document.getElementById('app-content');
+    
+    // Reset Filtri
+    ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.remove();
+    });
+    const headerFilterBtn = document.getElementById('header-filter-btn');
+    if(headerFilterBtn) headerFilterBtn.style.display = 'none';
+
+    if (!targetEl) return;
+
+    let headerHtml = `
+        <div class="px-1 mb-6 animate-fade">
+            <h1 class="text-3xl font-serif font-bold text-primary mb-1">${window.t('nav_services')}</h1>
+            <p class="text-slate-500 text-sm font-medium">Spostarsi e vivere le Cinque Terre.</p>
+        </div>
+    `;
+
+    let gridHtml = `
+    <div class="grid grid-cols-2 gap-4 pb-32 animate-fade">
+        <div class="col-span-2 relative bg-ct-yellow rounded-3xl p-6 text-white shadow-lg shadow-ct-yellow/30 active:scale-[0.98] transition-transform cursor-pointer overflow-hidden group min-h-[180px] flex flex-col justify-between" onclick="openModal('transport', 'bus')">
+            <div class="absolute -right-6 -bottom-6 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[140px]">directions_bus</span></div>
+            <div class="relative z-10">
+                <div class="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md mb-4 border border-white/20"><span class="material-icons text-2xl">directions_bus</span></div>
+                <h3 class="text-2xl font-bold leading-tight mb-1 text-white drop-shadow-sm">${window.t('label_bus')}</h3>
+                <p class="text-white/80 text-xs font-bold uppercase tracking-wide">Orari & Fermate ATC</p>
+            </div>
+            <div class="relative z-10 mt-4 flex items-center gap-2 text-sm font-bold text-white/90"><span>Trova la corsa</span> <span class="material-icons text-sm">arrow_forward</span></div>
+        </div>
+
+        <div class="bg-white border border-slate-100 rounded-3xl p-5 shadow-card active:scale-[0.98] transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[160px]" onclick="openModal('transport', 'train')">
+            <div class="w-12 h-12 rounded-2xl bg-ct-terracotta-light text-ct-terracotta flex items-center justify-center mb-3 group-hover:bg-ct-terracotta group-hover:text-white transition-colors duration-300"><span class="material-icons text-2xl">train</span></div>
+            <div><h3 class="font-bold text-slate-800 text-lg leading-tight mb-1">${window.t('label_train')}</h3><p class="text-[11px] text-slate-400 font-bold uppercase">Orari Trenitalia</p></div>
+        </div>
+
+        <div class="bg-white border border-slate-100 rounded-3xl p-5 shadow-card active:scale-[0.98] transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[160px]" onclick="openModal('transport', 'ferry')">
+            <div class="w-12 h-12 rounded-2xl bg-ct-blue-light text-ct-blue flex items-center justify-center mb-3 group-hover:bg-ct-blue group-hover:text-white transition-colors duration-300"><span class="material-icons text-2xl">directions_boat</span></div>
+            <div><h3 class="font-bold text-slate-800 text-lg leading-tight mb-1">${window.t('label_ferry')}</h3><p class="text-[11px] text-slate-400 font-bold uppercase">Navigazione</p></div>
+        </div>
+
+        <div class="col-span-2 bg-primary rounded-3xl p-5 flex items-center justify-between shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform cursor-pointer mt-2" onclick="renderSimpleList('Numeri_utili')">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white border border-white/10"><span class="material-icons">phonelink_ring</span></div>
+                <div><h3 class="text-white font-bold text-lg">${window.t('menu_num')}</h3><p class="text-white/70 text-xs font-medium">Emergenze, Taxi, Info</p></div>
+            </div>
+            <span class="material-icons text-white/50">chevron_right</span>
+        </div>
+
+        <div class="col-span-2 bg-white border border-slate-200/60 rounded-3xl p-5 flex items-center justify-between shadow-sm active:scale-[0.98] transition-transform cursor-pointer" onclick="renderSimpleList('Farmacie')">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-ct-green-light flex items-center justify-center text-ct-green"><span class="material-icons">medical_services</span></div>
+                <div><h3 class="text-slate-800 font-bold text-lg">${window.t('menu_pharm')}</h3><p class="text-slate-400 text-xs font-medium">Turni e Indirizzi</p></div>
+            </div>
+            <span class="material-icons text-slate-300">chevron_right</span>
+        </div>
+
+        <div class="col-span-2 text-center mt-4 mb-4">
+            <button onclick="renderLegalPage()" class="text-slate-400/80 text-[10px] font-bold uppercase tracking-widest hover:text-ct-terracotta transition-colors flex items-center justify-center gap-1 mx-auto py-3">
+                <span class="material-icons text-xs">policy</span> ${window.t('menu_legal')}
+            </button>
+        </div>
+    </div>`; 
+
+    targetEl.innerHTML = headerHtml + gridHtml;
+};
+
+window.renderSimpleList = function(tableName) {
+    const targetEl = document.getElementById('app-content');
+    const cleanTitle = tableName.replace('_', ' ');
+    
+    // Header specifico per liste semplici
+    targetEl.innerHTML = `
+    <div class="flex items-center gap-4 mb-6 animate-fade pt-2">
+        <button onclick="renderServicesGrid()" class="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-100 active:scale-90 transition-transform">
+            <span class="material-icons text-slate-700">arrow_back</span>
+        </button>
+        <h2 class="text-2xl font-serif font-bold text-slate-800 capitalize">${cleanTitle}</h2>
+    </div>
+    
+    <div id="sub-content" class="min-h-[300px]">
+        <div class="py-10 text-center text-slate-400">Caricamento...</div>
+    </div>`;
+    
+    window.loadTableData(tableName, null);
+};
+
+window.toggleTicketInfo = function() {
+    const box = document.getElementById('ticket-info-box');
+    if (box) { box.style.display = (box.style.display === 'none') ? 'block' : 'none'; }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     window.currentViewName = 'home'; 
@@ -632,11 +697,9 @@ document.addEventListener('DOMContentLoaded', () => {
     switchView('home');
 });
 
-// --- FUNZIONE SITO TRENITALIA ---
 window.apriTrenitalia = function() {
     window.open('https://www.trenitalia.com', '_blank');
 };
-
 // ============================================================
 // FUNZIONE PER ACCENDERE LE MAPPE NELLA LISTA
 // ============================================================
