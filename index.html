@@ -10,7 +10,7 @@
     
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -22,22 +22,27 @@
                         serif: ['"Roboto Slab"', 'serif'],
                     },
                     colors: {
+                        // Palette Brand "Pop"
                         primary: '#2A5B52',       
-                        'primary-dark': '#1F423C',
-                        'ct-yellow': '#E3B23C',   
-                        'ct-yellow-light': '#FDF3D8',
-                        'ct-terracotta': '#D66D50', 
-                        'ct-terracotta-light': '#FCECE8',
-                        'ct-blue': '#4A8FA3',     
-                        'ct-blue-light': '#E6F4F7',
-                        'ct-green': '#6B8E23',    
-                        'ct-green-light': '#EFF5E6',
-                        'ct-sand': '#F9F7F2',     
+                        'primary-light': '#4A857A',
+                        
+                        // Palette Gamification (Saturi e Vivaci)
+                        'pop-yellow': '#FFD93D',   // Giallo "Tuorlo"
+                        'pop-orange': '#FF8D29',   // Arancione Vitaminico
+                        'pop-red':    '#FF6B6B',   // Rosso Anguria
+                        'pop-blue':   '#4D96FF',   // Azzurro Cielo
+                        'pop-green':  '#6BCB77',   // Verde Prato
+                        'pop-purple': '#9D4EDD',   // Viola Uva
+                        'pop-sand':   '#FFF8E7',   // Crema caldo
+                        
                         surface: '#FFFFFF',
                     },
                     boxShadow: {
-                        'soft': '0 10px 40px -10px rgba(42, 91, 82, 0.08)',
-                        'card': '0 8px 24px -4px rgba(0,0,0,0.06)',
+                        'pop': '0 8px 0px 0px rgba(0,0,0,0.1)', // Ombra solida per effetto 3D
+                        'glow': '0 0 20px -5px rgba(0,0,0,0.15)',
+                    },
+                    borderRadius: {
+                        '4xl': '2.5rem', // Curve esagerate
                     }
                 }
             }
@@ -45,73 +50,77 @@
     </script>
 
     <style>
-        /* FIX SCROLL TOTALE: Blocca il rimbalzo su tutto il documento */
+        /* FIX SCROLL & BASE */
         html, body {
-            height: 100%;
-            width: 100%;
-            overflow-x: hidden;
-            overscroll-behavior-y: none; /* Blocca rimbalzo elastico verticale */
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background-color: #F9F7F2; /* ct-sand fallback */
+            height: 100%; width: 100%; overflow-x: hidden;
+            overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent;
+            background-color: #FFF8E7; /* pop-sand */
         }
         
-        /* Utilità Scrollbar */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Animazioni */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        /* Animazione Pop-In (Elastica) */
+        @keyframes popIn { 
+            0% { opacity: 0; transform: scale(0.8) translateY(10px); } 
+            70% { transform: scale(1.02); }
+            100% { opacity: 1; transform: scale(1) translateY(0); } 
+        }
+        .animate-pop { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
         
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
+        /* Bottone 3D Gamified Generico */
+        .btn-game {
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; top: 0;
+        }
+        .btn-game:active {
+            transform: translateY(4px) scale(0.98);
+            box-shadow: none !important; /* Rimuove l'ombra "spessore" quando premuto */
         }
     </style>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
-    <script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script> 
     <script src="https://unpkg.com/@raruto/leaflet-elevation/dist/leaflet-elevation.js"></script>
 </head>
 
-<body class="text-slate-700 antialiased pb-28">
+<body class="text-slate-700 antialiased pb-32">
 
     <header class="fixed top-0 left-0 right-0 z-50 pointer-events-none"></header>
 
-    <main id="app-content" class="max-w-2xl mx-auto px-5 pt-6 min-h-screen">
-        <div id="data-container" class="flex flex-col items-center justify-center h-[80vh] text-slate-400">
-            <span class="material-icons animate-spin text-4xl mb-3 text-ct-yellow">sync</span>
-            <p class="font-medium text-primary">Caricamento...</p>
+    <main id="app-content" class="max-w-2xl mx-auto px-4 pt-4 min-h-screen">
+        <div id="data-container" class="flex flex-col items-center justify-center h-[80vh]">
+            <div class="relative w-20 h-20">
+                <div class="absolute inset-0 bg-pop-yellow rounded-full animate-ping opacity-20"></div>
+                <div class="relative bg-white p-4 rounded-full shadow-pop border-4 border-pop-orange animate-bounce">
+                    <span class="material-icons text-3xl text-pop-orange">explore</span>
+                </div>
+            </div>
+            <p class="font-black text-primary mt-4 uppercase tracking-widest text-sm">Caricamento...</p>
         </div>    
     </main>
 
-    <nav id="bottom-nav" class="fixed bottom-6 left-5 right-5 h-[72px] bg-white/95 backdrop-blur-xl border border-white/60 rounded-[2.5rem] shadow-xl shadow-slate-300/40 flex justify-around items-center z-50 max-w-md mx-auto transition-all duration-300">
+    <nav id="bottom-nav" class="fixed bottom-6 left-4 right-4 h-[75px] bg-white/95 backdrop-blur-xl border-2 border-white rounded-[2.5rem] shadow-xl shadow-slate-400/20 flex justify-around items-center z-50 max-w-md mx-auto transition-all duration-300 ring-4 ring-black/5">
         
         <button class="nav-item group flex-1 h-full flex flex-col items-center justify-center transition-all" onclick="switchView('home', this)">
-            <span class="material-icons text-[28px] text-slate-300 transition-all duration-300 group-[.active]:text-primary group-[.active]:scale-110 group-[.active]:-translate-y-1">home</span>
-            <span class="text-[10px] font-bold text-slate-300 mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-primary nav-label absolute bottom-3">Home</span>
+            <span class="material-icons text-[30px] text-slate-300 transition-all duration-300 group-[.active]:text-pop-green group-[.active]:scale-125 group-[.active]:-translate-y-2 drop-shadow-sm">home</span>
+            <span class="text-[9px] font-black text-slate-300 mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-pop-green nav-label absolute bottom-2 uppercase tracking-wide">Home</span>
         </button>
 
         <button class="nav-item group flex-1 h-full flex flex-col items-center justify-center transition-all" onclick="switchView('cibo', this)">
-            <span class="material-icons text-[28px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-terracotta group-[.active]:scale-110 group-[.active]:-translate-y-1">restaurant</span>
-            <span class="text-[10px] font-bold text-slate-300 mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-terracotta nav-label absolute bottom-3">Cibo</span>
+            <span class="material-icons text-[28px] text-slate-300 transition-all duration-300 group-[.active]:text-pop-orange group-[.active]:scale-125 group-[.active]:-translate-y-2 drop-shadow-sm">restaurant</span>
+            <span class="text-[9px] font-black text-slate-300 mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-pop-orange nav-label absolute bottom-2 uppercase tracking-wide">Cibo</span>
         </button>
 
         <button class="nav-item group flex-1 h-full flex flex-col items-center justify-center transition-all" onclick="switchView('outdoor', this)">
-            <span class="material-icons text-[28px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-green group-[.active]:scale-110 group-[.active]:-translate-y-1">terrain</span>
-            <span class="text-[10px] font-bold text-slate-300 mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-green nav-label absolute bottom-3">Outdoor</span>
+            <span class="material-icons text-[28px] text-slate-300 transition-all duration-300 group-[.active]:text-pop-red group-[.active]:scale-125 group-[.active]:-translate-y-2 drop-shadow-sm">terrain</span>
+            <span class="text-[9px] font-black text-slate-300 mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-pop-red nav-label absolute bottom-2 uppercase tracking-wide">Outdoor</span>
         </button>
 
         <button class="nav-item group flex-1 h-full flex flex-col items-center justify-center transition-all" onclick="switchView('servizi', this)">
-            <span class="material-icons text-[28px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-blue group-[.active]:scale-110 group-[.active]:-translate-y-1">grid_view</span>
-            <span class="text-[10px] font-bold text-slate-300 mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-blue nav-label absolute bottom-3">Servizi</span>
+            <span class="material-icons text-[28px] text-slate-300 transition-all duration-300 group-[.active]:text-pop-blue group-[.active]:scale-125 group-[.active]:-translate-y-2 drop-shadow-sm">grid_view</span>
+            <span class="text-[9px] font-black text-slate-300 mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-pop-blue nav-label absolute bottom-2 uppercase tracking-wide">Servizi</span>
         </button>
 
     </nav>

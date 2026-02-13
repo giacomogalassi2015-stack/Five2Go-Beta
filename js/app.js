@@ -462,34 +462,40 @@ function renderGenericFilterableView(allData, filterKey, container, cardRenderer
 }
 
 function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer) {
-    container.innerHTML = `<div class="list-container animate-fade" id="dynamic-list" style="padding-bottom: 80px;"></div>`;
+    // FIX SPACING: gap-3 invece di gap-4 per compattezza
+    container.innerHTML = `<div class="list-container flex flex-col gap-3 pb-24 animate-fade" id="dynamic-list"></div>`;
     const listContainer = container.querySelector('#dynamic-list');
 
-    // 1. DEFINIZIONE FUNZIONI
+    // 1. SETUP FUNZIONI & HEADER BTN
     window.openFilterSheet = () => { 
         const o = document.getElementById('filter-overlay');
         const s = document.getElementById('filter-sheet');
-        if(o) { o.classList.remove('opacity-0', 'invisible'); }
-        if(s) { s.classList.remove('translate-y-full'); }
+        if(o) o.classList.remove('opacity-0', 'invisible');
+        if(s) s.classList.remove('translate-y-full');
     };
     window.closeFilterSheet = () => { 
         const o = document.getElementById('filter-overlay');
         const s = document.getElementById('filter-sheet');
-        if(o) { o.classList.add('opacity-0', 'invisible'); }
-        if(s) { s.classList.add('translate-y-full'); }
+        if(o) o.classList.add('opacity-0', 'invisible');
+        if(s) s.classList.add('translate-y-full');
     };
 
-    // 2. SETUP HEADER BTN
     const headerFilterBtn = document.getElementById('header-filter-btn');
     if (headerFilterBtn) {
         headerFilterBtn.style.display = 'flex';
         headerFilterBtn.onclick = window.openFilterSheet;
+        // Reset stile
+        headerFilterBtn.classList.remove('bg-primary', 'text-white', 'border-primary');
+        headerFilterBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-200');
     }
 
-    // 3. LOGICA FILTRI
+    // 2. ESTRAZIONE DATI PER FILTRI
+    // Helper sicuro per estrarre valori unici anche se nulli
     const getUniqueValues = (key) => {
-        const raw = allData.map(i => window.dbCol(i, key)).filter(x => x).map(x => x.trim());
-        return [...new Set(raw)].sort();
+        const raw = allData.map(i => window.dbCol(i, key)).filter(x => x).map(x => String(x).trim());
+        const unique = [...new Set(raw)].sort();
+        if (!unique.includes('Tutti')) unique.unshift('Tutti');
+        return unique;
     };
 
     const values1 = getUniqueValues(filtersConfig.primary.key);
@@ -498,6 +504,7 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
     let activeVal1 = 'Tutti';
     let activeVal2 = 'Tutti';
 
+    // 3. COSTRUZIONE SHEET
     const overlay = document.createElement('div');
     overlay.id = 'filter-overlay';
     overlay.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] opacity-0 invisible transition-all duration-300';
@@ -533,36 +540,36 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
     document.body.appendChild(sheet);
     overlay.onclick = window.closeFilterSheet;
 
+    // 4. RENDER CHIPS & LOGICA
     function renderChips() {
         const c1 = sheet.querySelector('#section-1-options');
-        c1.innerHTML = '';
-        const baseClass = 'px-4 py-2 rounded-xl text-sm font-bold border transition-all active:scale-95';
+        const c2 = sheet.querySelector('#section-2-options');
+        c1.innerHTML = ''; c2.innerHTML = '';
+
+        const baseClass = 'px-4 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95';
         const inactiveClass = 'bg-slate-50 text-slate-600 border-slate-200';
         const activeClass = 'bg-primary text-white border-primary shadow-md ring-2 ring-primary/20';
 
-        const createBtn = (txt, active, cb) => {
+        const createBtn = (txt, isActive, onClick) => {
             const b = document.createElement('button');
-            b.className = active ? `${baseClass} ${activeClass}` : `${baseClass} ${inactiveClass}`;
+            b.className = isActive ? `${baseClass} ${activeClass}` : `${baseClass} ${inactiveClass}`;
             b.innerText = txt;
-            b.onclick = cb;
+            b.onclick = onClick;
             return b;
         };
 
-        c1.appendChild(createBtn(window.t('filter_all'), activeVal1 === 'Tutti', () => { activeVal1 = 'Tutti'; applyFilters(); renderChips(); }));
         values1.forEach(v => {
             c1.appendChild(createBtn(v, activeVal1 === v, () => { activeVal1 = v; applyFilters(); renderChips(); }));
         });
 
-        const c2 = sheet.querySelector('#section-2-options');
-        c2.innerHTML = '';
-        c2.appendChild(createBtn(window.t('filter_all'), activeVal2 === 'Tutti', () => { activeVal2 = 'Tutti'; applyFilters(); renderChips(); }));
         values2.forEach(v => {
             c2.appendChild(createBtn(v, activeVal2 === v, () => { activeVal2 = v; applyFilters(); renderChips(); }));
         });
         
-        // Header feedback
+        // Feedback Header Button
         if(headerFilterBtn) {
-            if(activeVal1 !== 'Tutti' || activeVal2 !== 'Tutti') {
+            const isActive = (activeVal1 !== 'Tutti' || activeVal2 !== 'Tutti');
+            if(isActive) {
                 headerFilterBtn.classList.add('bg-primary', 'text-white', 'border-primary');
                 headerFilterBtn.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-200');
             } else {
@@ -576,8 +583,11 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
         const filtered = allData.filter(item => {
             const val1 = window.dbCol(item, filtersConfig.primary.key) || '';
             const val2 = window.dbCol(item, filtersConfig.secondary.key) || '';
+            
             const match1 = (activeVal1 === 'Tutti') || val1.includes(activeVal1);
+            // Match parziale case-insensitive per le categorie (es. "Cultura" matcha "Storia e Cultura")
             const match2 = (activeVal2 === 'Tutti') || val2.toLowerCase().includes(activeVal2.toLowerCase());
+            
             return match1 && match2;
         });
         updateList(filtered);
@@ -591,10 +601,10 @@ function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer)
         }
     }
 
+    // INIT: Render iniziale
     renderChips();
     updateList(allData);
 }
-
 // BENTO GRID E ALTRE FUNZIONI
 window.renderServicesGrid = async function() {
     console.log("🔘 Avvio renderServicesGrid (Cinque Terre Palette)...");
