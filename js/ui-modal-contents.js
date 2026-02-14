@@ -50,9 +50,9 @@ window.getModalContent = function(type, payload, item) {
 else if (type === 'Vini' || type === 'wine') {
         if (!item) { modal.remove(); return; }
 
-        // Recupero dati (window.dbCol gestisce automaticamente il JSON e la lingua corrente)
+        // Recupero dati (window.dbCol gestisce automaticamente il JSON e la lingua)
         const nome = window.dbCol(item, 'Nome');
-        const tipo = window.dbCol(item, 'Tipo');
+        const tipo = window.dbCol(item, 'Tipo'); // Testo tradotto per la visualizzazione
         const produttore = window.dbCol(item, 'Produttore');
         const uve = window.dbCol(item, 'Uve');
         const gradi = window.dbCol(item, 'Gradi');
@@ -60,11 +60,13 @@ else if (type === 'Vini' || type === 'wine') {
         const desc = window.dbCol(item, 'Descrizione');
         const foto = window.dbCol(item, 'Foto');
 
-        // Logica Colore
-        const t = String(tipo).toLowerCase();
-        let color = '#9B2335'; 
-        if (t.includes('bianco')) color = '#F4D03F'; 
-        if (t.includes('rosato') || t.includes('orange')) color = '#E67E22'; 
+        // LOGICA COLORE (Robustezza per JSON):
+        // Controlliamo la stringa raw del JSON per essere sicuri del tipo
+        const typeCheck = JSON.stringify(item.Tipo || '').toLowerCase();
+        
+        let color = '#9B2335'; // Default Rosso
+        if (typeCheck.includes('bianco') || typeCheck.includes('white')) color = '#F4D03F'; 
+        if (typeCheck.includes('rosato') || typeCheck.includes('orange')) color = '#E67E22'; 
 
         contentHtml = `
             <div style="padding-bottom: 20px;">
@@ -281,7 +283,7 @@ else if (type === 'Vini' || type === 'wine') {
         let title = '';
         let customContent = '';
 
-        // BUS
+// BUS
         if (transportId === 'bus') {
             title = window.t('label_bus');
             const now = new Date();
@@ -290,18 +292,21 @@ else if (type === 'Vini' || type === 'wine') {
 
             const ticketSection = `
                 <button onclick="toggleTicketInfo()" style="width:100%; margin-bottom:15px; background:#e0f7fa; color:#006064; border:1px solid #b2ebf2; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    🎟️ ${window.t('how_to_ticket')} ▾
+                     ${window.t('how_to_ticket')} ▾
                 </button>
                 <div id="ticket-info-box" style="display:none; background:#fff; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:15px; font-size:0.9rem; color:#333; line-height:1.5;">
-                    <p style="margin-bottom:10px;"><strong>📱 SMS/APP:</strong> Scarica l'app ATC La Spezia.</p>
-                    <div style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.85rem; border:1px solid #ffeeba; margin-top:10px;">
-                        <strong>⚠️ ${window.t('label_warning')}:</strong> Biglietti a bordo con sovrapprezzo.
+                    <div id="bus-ticket-desc" style="margin-bottom:10px;">
+                        <i class="fas fa-spinner fa-spin"></i> Loading info...
+                    </div>
+                    
+                    <div id="bus-info-box" style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.85rem; border:1px solid #ffeeba; margin-top:10px; display:none;">
+                        <strong> ${window.t('label_warning')}:</strong> <span id="bus-info-text"></span>
                     </div>
                 </div>`;
 
             const mapToggleSection = `
                 <button id="btn-bus-map-toggle" onclick="toggleBusMap()" style="width:100%; margin-bottom:15px; background:#EDE7F6; color:#4527A0; border:1px solid #D1C4E9; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    🗺️ ${window.t('show_map')} ▾
+                     ${window.t('show_map')} ▾
                 </button>
                 <div id="bus-map-wrapper" style="display:none; margin-bottom: 20px;">
                     <div id="bus-map" style="height: 280px; width: 100%; border-radius: 12px; z-index: 1; border: 2px solid #EDE7F6;"></div>
@@ -341,11 +346,45 @@ else if (type === 'Vini' || type === 'wine') {
                 </div>
             </div>`;
             
-            // Carica tutte le fermate per entrambi i box
-            setTimeout(() => { if(window.loadAllStops) window.loadAllStops(); }, 100);
+            // LOGICA CARICAMENTO (Corretta con nomi colonne esatti)
+            setTimeout(async () => { 
+                if(window.loadAllStops) window.loadAllStops(); 
+
+                // Usa il client Supabase disponibile
+                const db = window.supabaseClient || window.supabase; 
+
+                if (db && db.from) {
+                    // QUI HO CORRETTO: 'biglietti' minuscolo, 'Info' maiuscolo (come nel tuo screenshot)
+                    const { data, error } = await db
+                        .from('Trasporti')
+                        .select('biglietti, Info') 
+                        .eq('ID', 1) 
+                        .single();
+
+                    if (data && !error) {
+                        // Recupera il testo nella lingua giusta
+                        const desc = window.dbCol(data, 'biglietti'); 
+                        const info = window.dbCol(data, 'Info');
+                        
+                        // Inserisce nel HTML
+                        const descEl = document.getElementById('bus-ticket-desc');
+                        if(descEl) descEl.innerHTML = desc || "Info non disponibili.";
+
+                        const infoBox = document.getElementById('bus-info-box');
+                        const infoText = document.getElementById('bus-info-text');
+                        
+                        if (info && infoBox && infoText) {
+                            infoText.innerHTML = info;
+                            infoBox.style.display = 'block'; 
+                        }
+                    } else if (error) {
+                        console.error("Errore Database Bus:", error);
+                    }
+                }
+            }, 100);
         }
 
-        // BATTELLO
+      // BATTELLO
         else if (transportId === 'ferry') {
             title = window.t('label_ferry');
             const now = new Date();
@@ -360,12 +399,16 @@ else if (type === 'Vini' || type === 'wine') {
                 </div>
 
                 <button onclick="toggleTicketInfo()" style="width:100%; margin-bottom:15px; background:#e1f5fe; color:#01579b; border:1px solid #b3e5fc; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    🎟️ ${window.t('how_to_ticket')} ▾
+                     ${window.t('how_to_ticket')} ▾
                 </button>
                 <div id="ticket-info-box" style="display:none; background:#fff; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:15px; font-size:0.9rem; color:#333; line-height:1.5;">
-                    <p>I biglietti sono acquistabili presso le biglietterie al molo.</p>
-                    <div style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.85rem; border:1px solid #ffeeba; margin-top:10px;">
-                        <strong>⚠️ INFO METEO:</strong> Sospeso con mare mosso.
+                    
+                    <div id="ferry-ticket-desc" style="margin-bottom:10px;">
+                         <i class="fas fa-spinner fa-spin"></i> Loading info...
+                    </div>
+                    
+                    <div id="ferry-info-box" style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.85rem; border:1px solid #ffeeba; margin-top:10px; display:none;">
+                        <strong> INFO:</strong> <span id="ferry-info-text"></span>
                     </div>
                 </div>
 
@@ -400,7 +443,43 @@ else if (type === 'Vini' || type === 'wine') {
                 </div>
             </div>`;
 
-            setTimeout(() => window.initFerrySearch(), 50);
+            // LOGICA CARICAMENTO (ID = 2 per Battelli)
+            setTimeout(async () => {
+                window.initFerrySearch();
+
+                // Usa il client Supabase disponibile
+                const db = window.supabaseClient || window.supabase; 
+
+                if (db && db.from) {
+                    // SELEZIONE COLONNE ESATTE (biglietti minuscolo, Info maiuscolo)
+                    const { data, error } = await db
+                        .from('Trasporti')
+                        .select('biglietti, Info')
+                        .eq('ID', 2) 
+                        .single();
+
+                    if (data && !error) {
+                        // Traduzione automatica con window.dbCol
+                        const desc = window.dbCol(data, 'biglietti');
+                        const info = window.dbCol(data, 'Info');
+
+                        // Inserimento nel DOM
+                        const descEl = document.getElementById('ferry-ticket-desc');
+                        if(descEl) descEl.innerHTML = desc || "Info non disponibili.";
+
+                        const infoBox = document.getElementById('ferry-info-box');
+                        const infoText = document.getElementById('ferry-info-text');
+                        
+                        // Mostra box giallo solo se c'è testo in Info
+                        if (info && infoBox && infoText) {
+                            infoText.innerHTML = info;
+                            infoBox.style.display = 'block';
+                        }
+                    } else if (error) {
+                        console.error("Errore Database Battelli:", error);
+                    }
+                }
+            }, 50);
         }
 
         // TRENO

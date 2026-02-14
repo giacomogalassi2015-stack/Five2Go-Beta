@@ -49,17 +49,19 @@ window.prodottoRenderer = (p) => {
         </div>
     </div>`;
 };
-
-// === RENDERER VINO (Usa Phosphor Icons) ===
+// === RENDERER VINO  ===
 window.vinoRenderer = function(item) {
     const safeId = item.id || item.ID; 
-    const nome = item.Nome || 'Vino';
-    const cantina = item.Produttore || ''; 
-    const tipo = (item.Tipo || '').toLowerCase().trim();
+    // Usa dbCol per gestire il multilingua
+    const nome = window.dbCol(item, 'Nome') || 'Vino';
+    const cantina = window.dbCol(item, 'Produttore') || ''; 
+    const tipoDisplay = window.dbCol(item, 'Tipo') || 'Vino'; // Testo da mostrare
+
+    const typeCheck = JSON.stringify(item.Tipo || '').toLowerCase();
 
     let themeClass = 'is-wine-red'; 
-    if (tipo.includes('bianco')) themeClass = 'is-wine-white';
-    if (tipo.includes('rosato') || tipo.includes('orange')) themeClass = 'is-wine-orange';
+    if (typeCheck.includes('bianco') || typeCheck.includes('white')) themeClass = 'is-wine-white';
+    if (typeCheck.includes('rosato') || typeCheck.includes('orange')) themeClass = 'is-wine-orange';
 
     return `
     <div class="culture-card ${themeClass} animate-fade" onclick="openModal('Vini', '${safeId}')">
@@ -67,7 +69,7 @@ window.vinoRenderer = function(item) {
             ${cantina ? `<div class="culture-location"><span class="material-icons" style="font-size:0.9rem">storefront</span> ${cantina}</div>` : ''}
             <div class="culture-title">${nome}</div>
             <div class="culture-tags">
-                 <span class="c-pill" style="text-transform: capitalize;">${item.Tipo || 'Vino'}</span>
+                 <span class="c-pill" style="text-transform: capitalize;">${tipoDisplay}</span>
             </div>
         </div>
         
