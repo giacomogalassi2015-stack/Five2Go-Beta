@@ -47,9 +47,10 @@ window.getModalContent = function(type, payload, item) {
     }
 
     // --- VINI ---
-    else if (type === 'Vini' || type === 'wine') {
+else if (type === 'Vini' || type === 'wine') {
         if (!item) { modal.remove(); return; }
 
+        // Recupero dati (window.dbCol gestisce automaticamente il JSON e la lingua corrente)
         const nome = window.dbCol(item, 'Nome');
         const tipo = window.dbCol(item, 'Tipo');
         const produttore = window.dbCol(item, 'Produttore');
@@ -59,6 +60,7 @@ window.getModalContent = function(type, payload, item) {
         const desc = window.dbCol(item, 'Descrizione');
         const foto = window.dbCol(item, 'Foto');
 
+        // Logica Colore
         const t = String(tipo).toLowerCase();
         let color = '#9B2335'; 
         if (t.includes('bianco')) color = '#F4D03F'; 
@@ -87,14 +89,14 @@ window.getModalContent = function(type, payload, item) {
                         <div style="font-size:0.7rem; text-transform:uppercase; color:#999; font-weight:700;">${window.t('wine_deg')}</div>
                         <div style="font-size:1rem; font-weight:700;">${gradi || '--'}</div>
                     </div>
-                    ${uve ? `<div style="grid-column:1/-1; background:#fff; border:1px solid #eee; border-radius:12px; padding:12px; text-align:center; font-size:0.95rem;"><strong>🍇 ${window.t('wine_grapes')}:</strong> ${uve}</div>` : ''}
+                    ${uve ? `<div style="grid-column:1/-1; background:#fff; border:1px solid #eee; border-radius:12px; padding:12px; text-align:center; font-size:0.95rem;"><strong>${window.t('wine_grapes')}:</strong> ${uve}</div>` : ''}
                 </div>
 
                 <div style="padding: 25px;">
                     <p style="color:#555; font-size:1.05rem; line-height:1.6; margin:0;">${desc}</p>
                     ${abbinamenti ? `
                     <div style="background: #FFF8E1; border-left: 4px solid #FFB74D; padding: 15px; border-radius: 8px; margin-top: 25px; color: #5D4037;">
-                        <div style="font-weight:bold; margin-bottom:5px; text-transform:uppercase; font-size:0.8rem;">🍽️ ${window.t('wine_pairings')}</div>
+                        <div style="font-weight:bold; margin-bottom:5px; text-transform:uppercase; font-size:0.8rem;">${window.t('wine_pairings')}</div>
                         ${abbinamenti}
                     </div>` : ''}
                 </div>
