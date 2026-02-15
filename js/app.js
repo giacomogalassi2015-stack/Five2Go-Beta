@@ -1,4 +1,4 @@
-console.log("✅ 6. app.js caricato (Fix Filtri & Scroll)");
+console.log("✅ 6. app.js caricato (Smart Filter: Closed Init & Scroll Fix)");
 
 const content = document.getElementById('app-content');
 window.pendingMaps = []; 
@@ -24,12 +24,12 @@ function setupHeaderElements() {
     const langSelector = document.createElement('div');
     langSelector.className = 'relative'; 
     langSelector.innerHTML = `
-        <button class="flex items-center gap-2 bg-white/40 backdrop-blur-md border border-white/40 rounded-full px-3 py-1.5 text-sm font-bold text-white shadow-sm transition-transform active:scale-95" onclick="toggleLangDropdown(event)">
+        <button class="flex items-center gap-2 bg-black/20 backdrop-blur-md border border-white/20 rounded-full px-3 py-1.5 text-sm font-bold text-white shadow-sm transition-transform active:scale-95 hover:bg-black/30" onclick="toggleLangDropdown(event)">
             <span>${currFlag}</span> ${currCode} ▾
         </button>
         <div class="absolute top-10 left-0 bg-white rounded-2xl shadow-xl p-2 min-w-[160px] opacity-0 invisible -translate-y-2 transition-all duration-200 z-[60]" id="lang-dropdown">
             ${window.AVAILABLE_LANGS.map(l => `
-                <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left text-slate-700 font-semibold ${l.code === window.currentLang ? 'bg-emerald-50 text-primary' : ''}" onclick="changeLanguage('${l.code}')">
+                <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left text-slate-700 font-bold ${l.code === window.currentLang ? 'bg-ct-blue-light text-ct-blue' : ''}" onclick="changeLanguage('${l.code}')">
                     <span class="text-lg">${l.flag}</span> ${l.label}
                 </button>
             `).join('')}
@@ -82,24 +82,25 @@ window.addEventListener('click', () => {
     }
 });
 
+// --- SWITCH VIEW ---
 window.switchView = async function(view, el) {
     if (!content) return;
     window.currentViewName = view; 
     
-    // Rimuovi mascotte e filtri vecchi
+    if (view === 'home') {
+        document.body.style.backgroundColor = '#1a1a1a'; 
+    } else {
+        document.body.style.backgroundColor = '#F4F1DE'; 
+    }
+
     const mascot = document.getElementById('mascot-container');
     if (mascot) mascot.remove();
     document.body.classList.remove('is-home');
     
-    // Pulizia totale elementi filtri
-    ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.remove();
-    });
+    const stickyFilters = document.querySelectorAll('.smart-filter-bar-container');
+    stickyFilters.forEach(el => el.remove());
 
-    // GESTIONE STATO ATTIVO NAVBAR
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    
     if (el) {
         el.classList.add('active'); 
     } else if (view === 'home') {
@@ -111,22 +112,22 @@ window.switchView = async function(view, el) {
         if (view === 'home') renderHome();
         else if (view === 'cibo') {
             renderSubMenu([
-                { label: window.t('menu_prod'), table: "Prodotti" },
-                { label: window.t('menu_wine'), table: "Vini" },
-                { label: window.t('menu_rest'), table: "Ristoranti" } 
+                { label: window.t('menu_prod'), table: "Prodotti", icon: "lunch_dining", color: "orange" },
+                { label: window.t('menu_wine'), table: "Vini", icon: "wine_bar", color: "red" },
+                { label: window.t('menu_rest'), table: "Ristoranti", icon: "restaurant", color: "yellow" } 
             ], 'Prodotti');
         } else if (view === 'outdoor') {
             renderSubMenu([
-                { label: window.t('menu_monu'), table: "Attrazioni" },
-                { label: window.t('menu_beach'), table: "Spiagge" },
-                { label: window.t('menu_trail'), table: "Sentieri" }
+                { label: window.t('menu_monu'), table: "Attrazioni", icon: "attractions", color: "blue" },
+                { label: window.t('menu_beach'), table: "Spiagge", icon: "beach_access", color: "blue" },
+                { label: window.t('menu_trail'), table: "Sentieri", icon: "hiking", color: "green" }
             ], 'Attrazioni');
         }
         else if (view === 'servizi') await renderServicesGrid();
         else if (view === 'mappe_monumenti') renderSubMenu([{ label: window.t('menu_map'), table: "Mappe" }], 'Mappe');
     } catch (err) {
         console.error(err);
-        content.innerHTML = `<div class="p-4 text-center text-red-500 bg-red-50 rounded-xl border border-red-200">${window.t('error')}: ${err.message}</div>`;
+        content.innerHTML = `<div class="p-6 text-center text-red-500 bg-red-50 rounded-3xl border border-red-200 shadow-sm mx-4 mt-10">${window.t('error')}: ${err.message}</div>`;
     }
 };
 
@@ -136,25 +137,25 @@ function renderHome() {
     document.body.classList.add('is-home');
 
     content.innerHTML = `
-    <div class="fixed inset-0 z-[-1] overflow-hidden">
-        <img src="${bgImage}" class="w-full h-full object-cover" alt="Cinque Terre">
-        <div class="absolute inset-0 bg-black/30 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
+    <div class="fixed inset-0 z-0 overflow-hidden">
+        <img src="${bgImage}" class="w-full h-full object-cover animate-fade" alt="Cinque Terre" style="animation-duration: 2s;">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/80"></div>
     </div>
 
-    <div class="flex flex-col items-center justify-end h-[85vh] pb-20 px-6 text-center animate-fade">
-        <h1 class="text-4xl font-serif font-bold text-white mb-6 drop-shadow-md tracking-tight leading-tight"></h1>
+    <div class="relative z-10 flex flex-col items-center justify-end h-[85vh] pb-24 px-6 text-center animate-pop">
+        <h1 class="text-5xl font-serif font-bold text-white mb-2 drop-shadow-xl tracking-tight">Five2Go</h1>
+        <p class="text-white/90 text-sm font-medium mb-8 max-w-xs mx-auto leading-relaxed shadow-black drop-shadow-md">La tua guida essenziale per vivere la magia delle Cinque Terre.</p>
         
         <div class="grid grid-cols-3 gap-3 w-full max-w-sm">
             ${window.AVAILABLE_LANGS.map(l => `
-                <button class="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl py-3 flex flex-col items-center justify-center transition-all active:scale-95 active:bg-white active:text-slate-900 text-white ${l.code === window.currentLang ? 'bg-white !text-slate-900 shadow-lg scale-105 border-white' : ''}" onclick="changeLanguage('${l.code}')">
-                    <span class="text-3xl mb-1 drop-shadow-sm">${l.flag}</span>
-                    <span class="text-[10px] font-bold uppercase tracking-widest">${l.label}</span>
+                <button class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl py-3 flex flex-col items-center justify-center transition-all active:scale-95 active:bg-white/20 text-white hover:border-white/50" onclick="changeLanguage('${l.code}')">
+                    <span class="text-3xl mb-1 drop-shadow-md">${l.flag}</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest opacity-80">${l.label}</span>
                 </button>
             `).join('')}
         </div>
     </div>`;
 
-    // Mascotte (Chicco)
     const oldMascot = document.getElementById('mascot-container');
     if (oldMascot) oldMascot.remove();
 
@@ -163,7 +164,7 @@ function renderHome() {
 
     const mascotHTML = `
     <div id="mascot-container" class="fixed bottom-24 right-4 z-50 flex flex-col items-end pointer-events-none">
-        <div id="chicco-bubble" class="hidden animate-fade bg-white p-4 rounded-t-2xl rounded-bl-2xl shadow-xl mb-2 max-w-[220px] text-sm text-slate-700 border-2 border-primary pointer-events-auto">
+        <div id="chicco-bubble" class="hidden animate-fade bg-white p-4 rounded-t-2xl rounded-bl-2xl shadow-xl mb-2 max-w-[220px] text-sm text-slate-700 border-2 border-ct-terracotta pointer-events-auto">
             <span id="chicco-text">Ciao!</span>
         </div>
         <div onclick="window.toggleChicco()" class="cursor-pointer transition-transform active:scale-90 pointer-events-auto w-[100px] h-[100px] relative">
@@ -191,33 +192,39 @@ function renderHome() {
     }
 }
 
-// ============================================================
-// 1. RENDER MENU (Con Filtro Header)
-// ============================================================
+// 1. RENDER MENU 
 function renderSubMenu(options, defaultTable) {
     let menuHtml = `
-    <div class="nav-sticky-header sticky top-0 z-30 bg-bg/95 backdrop-blur-md py-3 -mx-5 px-5 border-b border-slate-200/60 shadow-sm mb-6 flex items-center justify-between gap-3">
+    <div class="nav-sticky-header sticky top-0 z-30 bg-ct-sand/95 backdrop-blur-md py-4 -mx-5 px-5 shadow-sm mb-4 flex items-center justify-between gap-3 border-b border-stone-200/50">
         
-        <div class="nav-scroll-container flex gap-2 overflow-x-auto no-scrollbar items-center flex-1 pr-2">
-            ${options.map(opt => `
-                <button class="flex-shrink-0 px-4 py-2 rounded-xl text-[13px] font-bold text-slate-500 bg-white border border-slate-200 transition-all active:scale-95 btn-3d whitespace-nowrap" onclick="loadTableData('${opt.table}', this)">
-                    ${opt.label}
+        <div class="nav-scroll-container flex gap-3 overflow-x-auto no-scrollbar items-center flex-1 pr-2 pb-1">
+            ${options.map(opt => {
+                const colorMap = {
+                    'orange': 'bg-white text-ct-terracotta border-orange-100 active:border-ct-terracotta shadow-sm',
+                    'yellow': 'bg-white text-yellow-700 border-yellow-100 active:border-ct-yellow shadow-sm',
+                    'red':    'bg-white text-red-800 border-red-100 active:border-red-400 shadow-sm',
+                    'blue':   'bg-white text-ct-blue border-teal-100 active:border-ct-blue shadow-sm',
+                    'green':  'bg-white text-ct-green border-green-100 active:border-ct-green shadow-sm'
+                };
+                const theme = colorMap[opt.color] || colorMap['blue'];
+                const icon = opt.icon || 'star';
+
+                return `
+                <button class="btn-pop-menu flex-shrink-0 px-4 py-2.5 rounded-2xl flex items-center gap-2 border transition-all duration-200 ${theme}" onclick="loadTableData('${opt.table}', this)">
+                    <span class="material-icons text-lg opacity-80">${icon}</span>
+                    <span class="text-xs font-bold uppercase tracking-wide">${opt.label}</span>
                 </button>
-            `).join('')}
+            `}).join('')}
         </div>
-
-        <div class="w-px h-6 bg-slate-300 flex-shrink-0"></div>
-
-        <button id="header-filter-btn" class="flex-shrink-0 w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center border border-slate-200 active:scale-90 transition-transform" style="display:none;">
-            <span class="material-icons text-xl">tune</span>
-        </button>
+        
+        <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-ct-sand to-transparent pointer-events-none"></div>
 
     </div>
     <div id="sub-content" class="min-h-[300px]"></div>`;
     
     content.innerHTML = menuHtml;
     
-    const firstBtn = content.querySelector('.btn-3d');
+    const firstBtn = content.querySelector('.btn-pop-menu');
     if (firstBtn) {
         loadTableData(defaultTable, firstBtn);
     }
@@ -227,37 +234,22 @@ window.loadTableData = async function(tableName, btnEl) {
     const subContent = document.getElementById('sub-content');
     if (!subContent) return;
 
-    // Reset bottoni categorie
-    document.querySelectorAll('.btn-3d').forEach(btn => {
-        btn.classList.remove('bg-primary', 'text-white', 'shadow-md', 'border-transparent');
-        btn.classList.add('bg-white', 'text-slate-500', 'border-slate-200');
-    });
     if (btnEl) {
-        btnEl.classList.remove('bg-white', 'text-slate-500', 'border-slate-200');
-        btnEl.classList.add('bg-primary', 'text-white', 'shadow-md', 'border-transparent');
-    }
-
-    // Reset UI Filtro
-    ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.remove();
-    });
-    
-    const headerFilterBtn = document.getElementById('header-filter-btn');
-    if(headerFilterBtn) {
-        headerFilterBtn.style.display = 'none'; // Nascondi di default
-        headerFilterBtn.onclick = null; // Rimuovi listener vecchi
-        // Reset stile bottone filtro
-        headerFilterBtn.classList.remove('bg-primary', 'text-white', 'border-primary');
-        headerFilterBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-200');
+        document.querySelectorAll('.btn-pop-menu').forEach(b => {
+            b.classList.remove('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105');
+        });
+        btnEl.classList.add('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105'); 
     }
 
     if (!window.appCache[tableName]) {
-        subContent.innerHTML = `<div class="py-12 flex justify-center"><div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div></div>`;
+        subContent.innerHTML = `<div class="py-20 flex flex-col items-center justify-center gap-4">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-ct-terracotta"></div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Caricamento...</p>
+        </div>`;
     }
     
     if (tableName === 'Mappe') {
-        subContent.innerHTML = `<div class="rounded-3xl overflow-hidden shadow-lg border-4 border-white h-[70vh] animate-fade"><iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="100%" height="100%" style="border:0;"></iframe></div>`;
+        subContent.innerHTML = `<div class="rounded-[2rem] overflow-hidden shadow-soft border-2 border-white h-[70vh] animate-fade"><iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="100%" height="100%" style="border:0;"></iframe></div>`;
         return; 
     }
 
@@ -267,7 +259,7 @@ window.loadTableData = async function(tableName, btnEl) {
     } else {
         const response = await window.supabaseClient.from(tableName).select('*');
         if (response.error) { 
-            subContent.innerHTML = `<p class="text-center text-red-500 p-4 bg-red-50 rounded-xl">${response.error.message}</p>`; 
+            subContent.innerHTML = `<div class="p-6 text-center text-red-500 bg-red-50 rounded-3xl border border-red-100 font-bold">${response.error.message}</div>`; 
             return; 
         }
         data = response.data;
@@ -276,398 +268,327 @@ window.loadTableData = async function(tableName, btnEl) {
 
     window.currentTableData = data; 
 
-    // Routing Renderers
+    // --- RENDERER ROUTING ---
     if (tableName === 'Vini') {
-        renderGenericFilterableView(data, 'Tipo', subContent, window.vinoRenderer);
+        renderHorizontalFilterView(data, 'Tipo', subContent, window.vinoRenderer);
     }
     else if (tableName === 'Spiagge') {
-        renderGenericFilterableView(data, 'Paesi', subContent, window.spiaggiaRenderer);
+        renderHorizontalFilterView(data, 'Paesi', subContent, window.spiaggiaRenderer);
     }
     else if (tableName === 'Prodotti') {
-        let html = '<div class="grid grid-cols-1 gap-4 pb-24 animate-fade">'; 
+        let html = '<div class="grid grid-cols-2 gap-3 pb-24 animate-fade pt-2">'; 
         data.forEach(p => { html += window.prodottoRenderer(p); });
-        subContent.innerHTML = html + '</div>';
-    }
-    else if (tableName === 'Trasporti') {
-        window.tempTransportData = data;
-        let html = '<div class="grid grid-cols-1 gap-3 pb-24 animate-fade">';
-        data.forEach((t, index) => {
-            const nomeDisplay = window.dbCol(t, 'Mezzo');
-            const imgUrl = window.getSmartUrl(t.Mezzo, '', 400);
-            html += `<div class="relative h-24 rounded-2xl overflow-hidden shadow-sm cursor-pointer active:scale-95 transition-transform" onclick="openModal('transport', '${index}')">
-                        <img src="${imgUrl}" class="absolute inset-0 w-full h-full object-cover" loading="lazy">
-                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <h3 class="text-white font-serif text-xl font-bold tracking-wide">${nomeDisplay}</h3>
-                        </div>
-                     </div>`;
-        });
         subContent.innerHTML = html + '</div>';
     }
     else if (tableName === 'Attrazioni') { 
         const culturaConfig = {
-            primary: { key: 'Paese', title: '📍 ' + (window.t('nav_villages') || 'Borgo'), customOrder: ["Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso"] },
-            secondary: { key: 'Label', title: '🏷️ Categoria' }
+            primary: { key: 'Paese', title: 'Borgo', customOrder: ["Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso"] },
+            secondary: { key: 'Label', title: 'Categoria' }
         };
-        renderDoubleFilterView(data, culturaConfig, subContent, window.attrazioniRenderer); 
+        renderDoubleHorizontalFilterView(data, culturaConfig, subContent, window.attrazioniRenderer); 
     }
-    else if (tableName === 'Ristoranti') { renderGenericFilterableView(data, 'Paesi', subContent, window.ristoranteRenderer); }
-    else if (tableName === 'Sentieri') { renderGenericFilterableView(data, 'difficolta_cai', subContent, window.sentieroRenderer); }
-    else if (tableName === 'Farmacie') { renderGenericFilterableView(data, 'Paesi', subContent, window.farmacieRenderer); } 
-    else if (tableName === 'Numeri_utili') { renderGenericFilterableView(data, 'Comune', subContent, window.numeriUtiliRenderer); }
+    else if (tableName === 'Ristoranti') { 
+        renderHorizontalFilterView(data, 'Paesi', subContent, window.ristoranteRenderer); 
+    }
+    else if (tableName === 'Sentieri') { 
+        renderHorizontalFilterView(data, 'difficolta_cai', subContent, window.sentieroRenderer); 
+    }
+    else if (tableName === 'Farmacie') { 
+        subContent.innerHTML = `<div class="flex flex-col gap-3 pb-24 animate-fade pt-2">` + 
+            data.map(i => window.farmacieRenderer(i)).join('') + `</div>`;
+    } 
+    else if (tableName === 'Numeri_utili') { 
+        renderHorizontalFilterView(data, 'Comune', subContent, window.numeriUtiliRenderer); 
+    }
 };
 
 /* ============================================================
-   FUNZIONI FILTRI (FIXATE)
+   SMART FILTER BAR (FIXED INIT & SCROLL)
    ============================================================ */
 
-function renderGenericFilterableView(allData, filterKey, container, cardRenderer) {
-    container.innerHTML = `<div class="flex flex-col gap-4 pb-24 animate-fade" id="dynamic-list"></div>`;
-    const listContainer = container.querySelector('#dynamic-list');
-
-    // 1. DEFINIZIONE FUNZIONI APERTURA/CHIUSURA (PRIMA DI ASSEGNARLE)
-    window.openFilterSheet = () => { 
-        const o = document.getElementById('filter-overlay');
-        const s = document.getElementById('filter-sheet');
-        if(o) { o.classList.remove('opacity-0', 'invisible'); }
-        if(s) { s.classList.remove('translate-y-full'); }
-    };
-    window.closeFilterSheet = () => { 
-        const o = document.getElementById('filter-overlay');
-        const s = document.getElementById('filter-sheet');
-        if(o) { o.classList.add('opacity-0', 'invisible'); }
-        if(s) { s.classList.add('translate-y-full'); }
-    };
-
-    // 2. SETUP BOTTONE HEADER (Ora le funzioni esistono)
-    const headerFilterBtn = document.getElementById('header-filter-btn');
-    if (headerFilterBtn) {
-        headerFilterBtn.style.display = 'flex';
-        headerFilterBtn.onclick = window.openFilterSheet;
+function getUniqueValues(allData, key, customOrder = []) {
+    let raw = allData.map(item => window.dbCol(item, key)).filter(x => x).map(x => String(x).trim());
+    let unique = [...new Set(raw)];
+    if (customOrder && customOrder.length > 0) {
+        unique.sort((a, b) => {
+            const idxA = customOrder.indexOf(a);
+            const idxB = customOrder.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b);
+        });
+    } else {
+        unique.sort();
     }
+    if (!unique.includes('Tutti')) unique.unshift('Tutti');
+    return unique;
+}
 
-    // 3. LOGICA DATI
-    const pinnedItem = allData.find(item => {
-        const getField = (keys) => {
-            for (let k of keys) {
-                if (item[k] !== undefined) return item[k];
-                if (item[k.toLowerCase()] !== undefined) return item[k.toLowerCase()];
-            }
-            return '';
-        };
-        let nome = window.dbCol ? window.dbCol(item, 'Nome') : getField(['Nome', 'name']);
-        if (typeof nome === 'object') nome = nome[window.currentLang] || nome['it'] || '';
-        let numero = getField(['Numero', 'telefono', 'phone']);
-        const nomeNorm = String(nome).toLowerCase();
-        const numNorm = String(numero).replace(/\s+/g, '').trim();
-        return numNorm === '112' || nomeNorm.includes('numero unico') || nomeNorm.includes('emergenza') || nomeNorm.includes('ue 112');
-    });
+// 1. SMART FILTER SINGOLO
+function renderHorizontalFilterView(allData, filterKey, container, cardRenderer) {
+    const tags = getUniqueValues(allData, filterKey, ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso"]);
+    const filterId = `filter-${Math.random().toString(36).substr(2, 9)}`;
+    const triggerId = `trigger-${filterId}`;
+    const panelId = `panel-${filterId}`;
 
-    const otherData = pinnedItem ? allData.filter(i => i !== pinnedItem) : allData;
-
-    let rawValues = otherData.map(item => {
-        let val = item[filterKey] || item[filterKey.toLowerCase()] || item[filterKey.charAt(0).toUpperCase() + filterKey.slice(1)];
-        return val ? String(val).trim() : null;
-    }).filter(x => x);
-
-    let tagsRaw = [...new Set(rawValues)];
-    if (!tagsRaw.includes('Tutti')) tagsRaw.unshift('Tutti');
-    
-    // Sort custom per borghi
-    const customOrder = ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso", "La Spezia", "Levanto"];
-    tagsRaw.sort((a, b) => {
-        const indexA = customOrder.indexOf(a), indexB = customOrder.indexOf(b);
-        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-        if (indexA !== -1) return -1;
-        if (indexB !== -1) return 1;
-        return a.localeCompare(b);
-    });
-
-    // 4. CREAZIONE SHEET
-    const overlay = document.createElement('div');
-    overlay.id = 'filter-overlay';
-    overlay.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] opacity-0 invisible transition-all duration-300';
-    
-    const sheet = document.createElement('div');
-    sheet.id = 'filter-sheet';
-    sheet.className = 'fixed bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-6 z-[61] transform translate-y-full transition-transform duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]';
-    sheet.innerHTML = `
-        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="font-serif text-xl font-bold text-slate-800">${window.t('filter_title')}</h3> 
-            <button class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center" onclick="closeFilterSheet()">
-                <span class="material-icons text-lg">close</span>
+    // FIX SCROLL: top-[85px] invece di 76px per spaziare meglio dal menu
+    // FIX CONTAINER: padding-bottom nel container dei chip
+    container.innerHTML = `
+        <div class="smart-filter-bar-container sticky top-[85px] z-20 -mx-4 px-4 mb-4">
+            <button id="${triggerId}" class="w-full bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl py-3 px-4 flex items-center justify-between transition-all active:scale-95" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">
+                <div class="flex items-center gap-2">
+                    <span class="material-icons text-ct-terracotta text-sm">tune</span>
+                    <span id="filter-label-${filterId}" class="text-sm font-bold text-slate-700">Tutti</span>
+                </div>
+                <span class="material-icons text-slate-400 text-sm transition-transform duration-300" id="icon-${filterId}">expand_more</span>
             </button>
+            
+            <div id="${panelId}" class="hidden overflow-hidden transition-all duration-300 bg-ct-sand/95 backdrop-blur-md rounded-b-xl border-x border-b border-stone-200/50 shadow-md">
+                <div class="p-3 overflow-x-auto no-scrollbar flex gap-2" id="chips-${filterId}"></div>
+            </div>
         </div>
-        <div class="flex flex-wrap gap-2 max-h-[50vh] overflow-y-auto pb-4" id="sheet-options"></div>
+
+        <div id="dynamic-list" class="flex flex-col gap-3 pb-24 animate-fade min-h-[50vh]"></div>
     `;
 
-    document.body.appendChild(overlay);
-    document.body.appendChild(sheet);
-    overlay.onclick = window.closeFilterSheet;
+    const chipContainer = container.querySelector(`#chips-${filterId}`);
+    const listContainer = container.querySelector('#dynamic-list');
+    const labelSpan = container.querySelector(`#filter-label-${filterId}`);
 
-    const optionsContainer = sheet.querySelector('#sheet-options');
     let activeTag = 'Tutti';
 
-    tagsRaw.forEach(tag => {
-        const chip = document.createElement('button');
-        const baseClass = 'px-5 py-2.5 rounded-2xl text-sm font-bold border transition-all active:scale-95';
-        const inactiveClass = 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100';
-        const activeClass = 'bg-primary text-white border-primary shadow-lg shadow-primary/20 ring-2 ring-primary/20';
+    function renderChips() {
+        chipContainer.innerHTML = tags.map(tag => {
+            const isActive = tag === activeTag;
+            const style = isActive 
+                ? "bg-ct-terracotta text-white border-transparent shadow-md" 
+                : "bg-white text-slate-600 border-stone-200";
+            return `<button class="flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold border transition-all ${style}" onclick="window.applySingleSmartFilter('${tag}', '${filterId}')">${tag === 'Tutti' ? 'Tutto' : tag}</button>`;
+        }).join('');
+    }
 
-        chip.className = (tag === 'Tutti') ? `${baseClass} ${activeClass}` : `${baseClass} ${inactiveClass}`;
-        chip.innerText = (tag === 'Tutti') ? window.t('filter_all') : tag; 
+    // Parametro extra 'fromClick' per gestire chiusura pannello
+    window.applySingleSmartFilter = (tag, fId, fromClick = false) => {
+        activeTag = tag;
+        renderChips();
+        labelSpan.innerText = (tag === 'Tutti') ? 'Tutti' : tag;
+        
+        // FIX: Chiude il pannello SOLO se l'azione viene da un click (non all'init)
+        if (fromClick) {
+            toggleSmartFilter(panelId, triggerId);
+        }
 
-        chip.onclick = () => {
-            // UI Update
-            Array.from(optionsContainer.children).forEach(c => c.className = `${baseClass} ${inactiveClass}`);
-            chip.className = `${baseClass} ${activeClass}`;
-            activeTag = tag;
-            
-            // Logic Update
-            let filtered = tag === 'Tutti' ? otherData : otherData.filter(item => {
-                let valDB = item[filterKey] || item[filterKey.toLowerCase()];
-                if (!valDB) return false;
-                return String(valDB).trim().includes(tag);
-            });
-            if (pinnedItem) { filtered = [pinnedItem, ...filtered]; }
-            updateList(filtered);
-            window.closeFilterSheet();
-            
-            // Header Button Feedback
-            if (headerFilterBtn) {
-                if (tag !== 'Tutti') {
-                    headerFilterBtn.classList.add('bg-primary', 'text-white', 'border-primary');
-                    headerFilterBtn.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-200');
-                } else {
-                    headerFilterBtn.classList.remove('bg-primary', 'text-white', 'border-primary');
-                    headerFilterBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-200');
-                }
-            }
-        };
-        optionsContainer.appendChild(chip);
-    });
+        // Filtra Dati
+        const pinnedItem = allData.find(item => {
+             const nome = String(window.dbCol(item, 'Nome') || '').toLowerCase();
+             return nome.includes('numero unico') || nome.includes('emergenza');
+        });
+        const otherData = pinnedItem ? allData.filter(i => i !== pinnedItem) : allData;
+        let filtered = tag === 'Tutti' ? otherData : otherData.filter(item => {
+            let valDB = window.dbCol(item, filterKey);
+            return valDB && String(valDB).trim().includes(tag);
+        });
+        if (pinnedItem && tag === 'Tutti') filtered = [pinnedItem, ...filtered];
+
+        updateList(filtered);
+    };
 
     function updateList(items) {
         if (!items || items.length === 0) { 
-            listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium">${window.t('no_results')}</div>`; 
+            listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`; 
         } else {
+            if (filterKey === 'Prodotti') listContainer.className = "grid grid-cols-2 gap-3 pb-24 animate-fade";
             listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
             setTimeout(() => { if(window.initPendingMaps) window.initPendingMaps(); }, 100);
         }
     }
-    
-    let initialList = [...otherData];
-    if (pinnedItem) { initialList = [pinnedItem, ...initialList]; }
-    updateList(initialList);
+
+    renderChips();
+    // INIT: Chiamata senza 3° parametro, quindi fromClick è false -> NON CHIUDE (perché parte già chiuso)
+    window.applySingleSmartFilter('Tutti', filterId); 
 }
 
-function renderDoubleFilterView(allData, filtersConfig, container, cardRenderer) {
-    // FIX SPACING: gap-3 invece di gap-4 per compattezza
-    container.innerHTML = `<div class="list-container flex flex-col gap-3 pb-24 animate-fade" id="dynamic-list"></div>`;
+// 2. SMART FILTER DOPPIO (Attrazioni)
+function renderDoubleHorizontalFilterView(allData, filtersConfig, container, cardRenderer) {
+    const values1 = getUniqueValues(allData, filtersConfig.primary.key, filtersConfig.primary.customOrder);
+    const values2 = getUniqueValues(allData, filtersConfig.secondary.key);
+    
+    const filterId = `filter-dbl-${Math.random().toString(36).substr(2, 9)}`;
+    const triggerId = `trigger-${filterId}`;
+    const panelId = `panel-${filterId}`;
+
+    // FIX SCROLL: top-[85px]
+    container.innerHTML = `
+        <div class="smart-filter-bar-container sticky top-[85px] z-20 -mx-4 px-4 mb-4">
+            <button id="${triggerId}" class="w-full bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl py-3 px-4 flex items-center justify-between transition-all active:scale-95" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <span class="material-icons text-ct-blue text-sm">tune</span>
+                    <span id="filter-label-${filterId}" class="text-sm font-bold text-slate-700 truncate">Tutti • Tutte</span>
+                </div>
+                <span class="material-icons text-slate-400 text-sm transition-transform duration-300" id="icon-${filterId}">expand_more</span>
+            </button>
+            
+            <div id="${panelId}" class="hidden overflow-hidden transition-all duration-300 bg-ct-sand/95 backdrop-blur-md rounded-b-xl border-x border-b border-stone-200/50 shadow-md">
+                <div class="p-3 space-y-3">
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Borgo</div>
+                        <div class="overflow-x-auto no-scrollbar flex gap-2" id="row1-${filterId}"></div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Categoria</div>
+                        <div class="overflow-x-auto no-scrollbar flex gap-2" id="row2-${filterId}"></div>
+                    </div>
+                    <button class="w-full py-2 bg-ct-blue text-white rounded-lg text-xs font-bold uppercase mt-2 shadow-md active:scale-95 transition-transform" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">Chiudi & Mostra</button>
+                </div>
+            </div>
+        </div>
+        <div id="dynamic-list" class="flex flex-col gap-3 pb-24 animate-fade min-h-[50vh]"></div>
+    `;
+
+    const c1 = container.querySelector(`#row1-${filterId}`);
+    const c2 = container.querySelector(`#row2-${filterId}`);
     const listContainer = container.querySelector('#dynamic-list');
-
-    // 1. SETUP FUNZIONI & HEADER BTN
-    window.openFilterSheet = () => { 
-        const o = document.getElementById('filter-overlay');
-        const s = document.getElementById('filter-sheet');
-        if(o) o.classList.remove('opacity-0', 'invisible');
-        if(s) s.classList.remove('translate-y-full');
-    };
-    window.closeFilterSheet = () => { 
-        const o = document.getElementById('filter-overlay');
-        const s = document.getElementById('filter-sheet');
-        if(o) o.classList.add('opacity-0', 'invisible');
-        if(s) s.classList.add('translate-y-full');
-    };
-
-    const headerFilterBtn = document.getElementById('header-filter-btn');
-    if (headerFilterBtn) {
-        headerFilterBtn.style.display = 'flex';
-        headerFilterBtn.onclick = window.openFilterSheet;
-        // Reset stile
-        headerFilterBtn.classList.remove('bg-primary', 'text-white', 'border-primary');
-        headerFilterBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-200');
-    }
-
-    // 2. ESTRAZIONE DATI PER FILTRI
-    // Helper sicuro per estrarre valori unici anche se nulli
-    const getUniqueValues = (key) => {
-        const raw = allData.map(i => window.dbCol(i, key)).filter(x => x).map(x => String(x).trim());
-        const unique = [...new Set(raw)].sort();
-        if (!unique.includes('Tutti')) unique.unshift('Tutti');
-        return unique;
-    };
-
-    const values1 = getUniqueValues(filtersConfig.primary.key);
-    const values2 = getUniqueValues(filtersConfig.secondary.key);
+    const labelSpan = container.querySelector(`#filter-label-${filterId}`);
 
     let activeVal1 = 'Tutti';
     let activeVal2 = 'Tutti';
 
-    // 3. COSTRUZIONE SHEET
-    const overlay = document.createElement('div');
-    overlay.id = 'filter-overlay';
-    overlay.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] opacity-0 invisible transition-all duration-300';
-    
-    const sheet = document.createElement('div');
-    sheet.id = 'filter-sheet';
-    sheet.className = 'fixed bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-6 z-[61] transform translate-y-full transition-transform duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]';
-    
-    const title1 = filtersConfig.primary.title || window.t('filter_village');
-    const title2 = filtersConfig.secondary.title || window.t('filter_cat');
-
-    sheet.innerHTML = `
-        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="font-serif text-xl font-bold text-slate-800">${window.t('filter_title')}</h3> 
-            <button class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center" onclick="closeFilterSheet()">
-                <span class="material-icons text-lg">close</span>
-            </button>
-        </div>
+    window.applyDoubleSmartFilter = (level, val, fId) => {
+        if (level === 1) activeVal1 = val;
+        if (level === 2) activeVal2 = val;
         
-        <div class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">${title1}</div>
-        <div class="flex flex-wrap gap-2 mb-6" id="section-1-options"></div>
-
-        <div class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">${title2}</div>
-        <div class="flex flex-wrap gap-2 mb-6" id="section-2-options"></div>
-
-        <button class="w-full py-4 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/30 active:scale-95 transition-transform" onclick="closeFilterSheet()">
-            ${window.t('show_results')}
-        </button>
-    `;
-
-    document.body.appendChild(overlay);
-    document.body.appendChild(sheet);
-    overlay.onclick = window.closeFilterSheet;
-
-    // 4. RENDER CHIPS & LOGICA
-    function renderChips() {
-        const c1 = sheet.querySelector('#section-1-options');
-        const c2 = sheet.querySelector('#section-2-options');
-        c1.innerHTML = ''; c2.innerHTML = '';
-
-        const baseClass = 'px-4 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95';
-        const inactiveClass = 'bg-slate-50 text-slate-600 border-slate-200';
-        const activeClass = 'bg-primary text-white border-primary shadow-md ring-2 ring-primary/20';
-
-        const createBtn = (txt, isActive, onClick) => {
-            const b = document.createElement('button');
-            b.className = isActive ? `${baseClass} ${activeClass}` : `${baseClass} ${inactiveClass}`;
-            b.innerText = txt;
-            b.onclick = onClick;
-            return b;
-        };
-
-        values1.forEach(v => {
-            c1.appendChild(createBtn(v, activeVal1 === v, () => { activeVal1 = v; applyFilters(); renderChips(); }));
-        });
-
-        values2.forEach(v => {
-            c2.appendChild(createBtn(v, activeVal2 === v, () => { activeVal2 = v; applyFilters(); renderChips(); }));
-        });
+        renderControls();
         
-        // Feedback Header Button
-        if(headerFilterBtn) {
-            const isActive = (activeVal1 !== 'Tutti' || activeVal2 !== 'Tutti');
-            if(isActive) {
-                headerFilterBtn.classList.add('bg-primary', 'text-white', 'border-primary');
-                headerFilterBtn.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-200');
-            } else {
-                headerFilterBtn.classList.remove('bg-primary', 'text-white', 'border-primary');
-                headerFilterBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-200');
-            }
-        }
+        const txt1 = activeVal1 === 'Tutti' ? 'Tutti' : activeVal1;
+        const txt2 = activeVal2 === 'Tutti' ? 'Tutte' : activeVal2;
+        labelSpan.innerText = `${txt1} • ${txt2}`;
+
+        executeFilter();
+    };
+
+    function renderControls() {
+        c1.innerHTML = values1.map(v => {
+            const isActive = v === activeVal1;
+            const style = isActive ? "bg-ct-terracotta text-white shadow-md border-transparent" : "bg-white text-slate-600 border-stone-200";
+            return `<button class="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${style}" onclick="window.applyDoubleSmartFilter(1, '${v}', '${filterId}')">${v}</button>`;
+        }).join('');
+
+        c2.innerHTML = values2.map(v => {
+            const isActive = v === activeVal2;
+            const style = isActive ? "bg-ct-blue text-white shadow-md border-transparent" : "bg-white text-slate-600 border-stone-200";
+            return `<button class="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${style}" onclick="window.applyDoubleSmartFilter(2, '${v}', '${filterId}')">${v}</button>`;
+        }).join('');
     }
 
-    function applyFilters() {
+    function executeFilter() {
         const filtered = allData.filter(item => {
             const val1 = window.dbCol(item, filtersConfig.primary.key) || '';
             const val2 = window.dbCol(item, filtersConfig.secondary.key) || '';
-            
             const match1 = (activeVal1 === 'Tutti') || val1.includes(activeVal1);
-            // Match parziale case-insensitive per le categorie (es. "Cultura" matcha "Storia e Cultura")
             const match2 = (activeVal2 === 'Tutti') || val2.toLowerCase().includes(activeVal2.toLowerCase());
-            
             return match1 && match2;
         });
-        updateList(filtered);
-    }
-
-    function updateList(items) {
-        if (!items || items.length === 0) { 
-            listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium">${window.t('no_results')}</div>`; 
+        
+        if (filtered.length === 0) {
+            listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`;
         } else {
-            listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
+            listContainer.innerHTML = filtered.map(item => cardRenderer(item)).join('');
         }
     }
 
-    // INIT: Render iniziale
-    renderChips();
-    updateList(allData);
+    renderControls();
+    executeFilter(); // Inizia con "Tutti/Tutti", pannello hidden di default
 }
-// BENTO GRID E ALTRE FUNZIONI
+
+// Helper Toggle Globale
+window.toggleSmartFilter = function(panelId, triggerId) {
+    const panel = document.getElementById(panelId);
+    const icon = document.querySelector(`#${triggerId} .material-icons:last-child`);
+    
+    if (!panel) return;
+    
+    const isHidden = panel.classList.contains('hidden');
+    
+    if (isHidden) {
+        panel.classList.remove('hidden');
+        if(icon) icon.style.transform = 'rotate(180deg)';
+    } else {
+        panel.classList.add('hidden');
+        if(icon) icon.style.transform = 'rotate(0deg)';
+    }
+};
+
 window.renderServicesGrid = async function() {
-    console.log("🔘 Avvio renderServicesGrid (Cinque Terre Palette)...");
+    console.log("🔘 Avvio renderServicesGrid (Authentic 5 Terre)...");
     const targetEl = document.getElementById('app-content');
     
-    // Reset Filtri
-    ['filter-toggle-btn', 'filter-sheet', 'filter-overlay'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.remove();
-    });
-    const headerFilterBtn = document.getElementById('header-filter-btn');
-    if(headerFilterBtn) headerFilterBtn.style.display = 'none';
+    // Rimuovi eventuali filtri residui
+    const stickyFilters = document.querySelectorAll('.smart-filter-bar-container');
+    stickyFilters.forEach(el => el.remove());
 
     if (!targetEl) return;
 
     let headerHtml = `
-        <div class="px-1 mb-6 animate-fade">
-            <h1 class="text-3xl font-serif font-bold text-primary mb-1">${window.t('nav_services')}</h1>
-            <p class="text-slate-500 text-sm font-medium">Spostarsi e vivere le Cinque Terre.</p>
+        <div class="px-2 mb-6 animate-pop text-center">
+            <h1 class="text-3xl font-serif font-bold text-slate-800 mb-1 uppercase tracking-tight">${window.t('nav_services')}</h1>
+            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">Esplora & Viaggia</p>
         </div>
     `;
 
     let gridHtml = `
-    <div class="grid grid-cols-2 gap-4 pb-32 animate-fade">
-        <div class="col-span-2 relative bg-ct-yellow rounded-3xl p-6 text-white shadow-lg shadow-ct-yellow/30 active:scale-[0.98] transition-transform cursor-pointer overflow-hidden group min-h-[180px] flex flex-col justify-between" onclick="openModal('transport', 'bus')">
-            <div class="absolute -right-6 -bottom-6 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[140px]">directions_bus</span></div>
+    <div class="grid grid-cols-2 gap-4 pb-32 animate-pop">
+        
+        <div class="col-span-2 relative bg-ct-yellow rounded-[2rem] p-6 shadow-soft active:scale-95 transition-transform cursor-pointer overflow-hidden group min-h-[140px] flex flex-col justify-between border border-yellow-200" onclick="openModal('transport', 'bus')">
+            <div class="absolute -right-2 -bottom-4 opacity-10 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[130px] text-yellow-900">directions_bus</span></div>
             <div class="relative z-10">
-                <div class="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md mb-4 border border-white/20"><span class="material-icons text-2xl">directions_bus</span></div>
-                <h3 class="text-2xl font-bold leading-tight mb-1 text-white drop-shadow-sm">${window.t('label_bus')}</h3>
-                <p class="text-white/80 text-xs font-bold uppercase tracking-wide">Orari & Fermate ATC</p>
+                <div class="bg-white/80 backdrop-blur w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm border border-white"><span class="material-icons text-2xl text-yellow-700">directions_bus</span></div>
+                <h3 class="text-3xl font-serif font-bold leading-none text-slate-800 mb-1">${window.t('label_bus')}</h3>
+                <p class="text-yellow-800 text-[10px] font-bold uppercase tracking-widest">Orari ATC & Navette</p>
             </div>
-            <div class="relative z-10 mt-4 flex items-center gap-2 text-sm font-bold text-white/90"><span>Trova la corsa</span> <span class="material-icons text-sm">arrow_forward</span></div>
         </div>
 
-        <div class="bg-white border border-slate-100 rounded-3xl p-5 shadow-card active:scale-[0.98] transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[160px]" onclick="openModal('transport', 'train')">
-            <div class="w-12 h-12 rounded-2xl bg-ct-terracotta-light text-ct-terracotta flex items-center justify-center mb-3 group-hover:bg-ct-terracotta group-hover:text-white transition-colors duration-300"><span class="material-icons text-2xl">train</span></div>
-            <div><h3 class="font-bold text-slate-800 text-lg leading-tight mb-1">${window.t('label_train')}</h3><p class="text-[11px] text-slate-400 font-bold uppercase">Orari Trenitalia</p></div>
-        </div>
-
-        <div class="bg-white border border-slate-100 rounded-3xl p-5 shadow-card active:scale-[0.98] transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[160px]" onclick="openModal('transport', 'ferry')">
-            <div class="w-12 h-12 rounded-2xl bg-ct-blue-light text-ct-blue flex items-center justify-center mb-3 group-hover:bg-ct-blue group-hover:text-white transition-colors duration-300"><span class="material-icons text-2xl">directions_boat</span></div>
-            <div><h3 class="font-bold text-slate-800 text-lg leading-tight mb-1">${window.t('label_ferry')}</h3><p class="text-[11px] text-slate-400 font-bold uppercase">Navigazione</p></div>
-        </div>
-
-        <div class="col-span-2 bg-primary rounded-3xl p-5 flex items-center justify-between shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform cursor-pointer mt-2" onclick="renderSimpleList('Numeri_utili')">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white border border-white/10"><span class="material-icons">phonelink_ring</span></div>
-                <div><h3 class="text-white font-bold text-lg">${window.t('menu_num')}</h3><p class="text-white/70 text-xs font-medium">Emergenze, Taxi, Info</p></div>
+        <div class="bg-ct-terracotta rounded-[2rem] p-5 shadow-soft active:scale-95 transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[150px] relative overflow-hidden" onclick="openModal('transport', 'train')">
+            <div class="absolute -right-4 -bottom-4 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[110px] text-white">train</span></div>
+            <div class="relative z-10">
+                <div class="bg-white/20 backdrop-blur w-11 h-11 rounded-xl flex items-center justify-center mb-3 border border-white/30"><span class="material-icons text-2xl text-white">train</span></div>
+                <div>
+                    <h3 class="font-serif font-bold text-white text-xl leading-tight mb-1">${window.t('label_train')}</h3>
+                    <p class="text-red-100 text-[9px] font-bold uppercase tracking-widest">Orari Trenitalia</p>
+                </div>
             </div>
-            <span class="material-icons text-white/50">chevron_right</span>
         </div>
 
-        <div class="col-span-2 bg-white border border-slate-200/60 rounded-3xl p-5 flex items-center justify-between shadow-sm active:scale-[0.98] transition-transform cursor-pointer" onclick="renderSimpleList('Farmacie')">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full bg-ct-green-light flex items-center justify-center text-ct-green"><span class="material-icons">medical_services</span></div>
-                <div><h3 class="text-slate-800 font-bold text-lg">${window.t('menu_pharm')}</h3><p class="text-slate-400 text-xs font-medium">Turni e Indirizzi</p></div>
+        <div class="bg-ct-blue rounded-[2rem] p-5 shadow-soft active:scale-95 transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[150px] relative overflow-hidden" onclick="openModal('transport', 'ferry')">
+            <div class="absolute -right-4 -bottom-4 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[110px] text-white">directions_boat</span></div>
+            <div class="relative z-10">
+                <div class="bg-white/20 backdrop-blur w-11 h-11 rounded-xl flex items-center justify-center mb-3 border border-white/30"><span class="material-icons text-2xl text-white">directions_boat</span></div>
+                <div>
+                    <h3 class="font-serif font-bold text-white text-xl leading-tight mb-1">${window.t('label_ferry')}</h3>
+                    <p class="text-teal-100 text-[9px] font-bold uppercase tracking-widest">Navigazione</p>
+                </div>
             </div>
-            <span class="material-icons text-slate-300">chevron_right</span>
         </div>
 
-        <div class="col-span-2 text-center mt-4 mb-4">
-            <button onclick="renderLegalPage()" class="text-slate-400/80 text-[10px] font-bold uppercase tracking-widest hover:text-ct-terracotta transition-colors flex items-center justify-center gap-1 mx-auto py-3">
-                <span class="material-icons text-xs">policy</span> ${window.t('menu_legal')}
+        <div class="col-span-2 bg-slate-700 rounded-[2rem] p-5 flex items-center justify-between shadow-soft active:scale-95 transition-transform cursor-pointer mt-2" onclick="renderSimpleList('Numeri_utili')">
+            <div class="flex items-center gap-4 relative z-10">
+                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white border border-white/20"><span class="material-icons text-2xl">phonelink_ring</span></div>
+                <div><h3 class="font-serif text-white font-bold text-xl leading-tight">${window.t('menu_num')}</h3><p class="text-slate-300 text-[10px] font-bold uppercase tracking-widest mt-0.5">Emergenze & Taxi</p></div>
+            </div>
+            <span class="material-icons text-white/50 bg-white/5 rounded-full p-1 relative z-10">chevron_right</span>
+        </div>
+
+        <div class="col-span-2 bg-ct-green rounded-[2rem] p-5 flex items-center justify-between shadow-soft active:scale-95 transition-transform cursor-pointer" onclick="renderSimpleList('Farmacie')">
+            <div class="flex items-center gap-4 relative z-10">
+                <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white border border-white/30"><span class="material-icons text-2xl">medical_services</span></div>
+                <div><h3 class="font-serif text-white font-bold text-xl leading-tight">${window.t('menu_pharm')}</h3><p class="text-green-100 text-[10px] font-bold uppercase tracking-widest mt-0.5">Turni e Orari</p></div>
+            </div>
+            <span class="material-icons text-white/50 bg-white/10 rounded-full p-1 relative z-10">chevron_right</span>
+        </div>
+
+        <div class="col-span-2 text-center mt-6 mb-4">
+            <button onclick="renderLegalPage()" class="text-slate-400 text-[10px] font-bold uppercase tracking-widest hover:text-ct-terracotta transition-colors flex items-center justify-center gap-2 mx-auto py-3 bg-white px-6 rounded-full shadow-sm border border-slate-200">
+                <span class="material-icons text-sm">policy</span> ${window.t('menu_legal')}
             </button>
         </div>
     </div>`; 
@@ -682,10 +603,10 @@ window.renderSimpleList = function(tableName) {
     // Header specifico per liste semplici
     targetEl.innerHTML = `
     <div class="flex items-center gap-4 mb-6 animate-fade pt-2">
-        <button onclick="renderServicesGrid()" class="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-100 active:scale-90 transition-transform">
+        <button onclick="renderServicesGrid()" class="w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-[0_4px_0_rgb(203,213,225)] border-2 border-slate-200 active:scale-95 active:shadow-none active:translate-y-1 transition-all">
             <span class="material-icons text-slate-700">arrow_back</span>
         </button>
-        <h2 class="text-2xl font-serif font-bold text-slate-800 capitalize">${cleanTitle}</h2>
+        <h2 class="text-3xl font-serif font-bold text-slate-800 capitalize">${cleanTitle}</h2>
     </div>
     
     <div id="sub-content" class="min-h-[300px]">
