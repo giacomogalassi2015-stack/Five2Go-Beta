@@ -168,20 +168,92 @@ window.getModalContent = function(type, payload, item) {
     }
 
     // --- INFO SENTIERI ---
+    // --- INFO SENTIERI (RESTYLING) ---
     else if (type === 'sentieroInfo') {
         let item = {};
         try { item = JSON.parse(decodeURIComponent(payload)); } catch(e) {}
-        const desc = window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione');
-        const nome = item.nome || item.Titolo || 'Info Sentiero';
+        
+        const nome = item.Nome || item.Titolo || 'Dettagli Sentiero';
+        const desc = window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione') || 'Descrizione non disponibile.';
+        
+        // Dati tecnici con fallback
+        const dist = item.Distanza || '--';
+        const dur = item.Durata || '--';
+        const diff = item.Tag || item.Difficolta || 'Medio';
+        
+        // Colore badge difficoltà
+        let diffColor = 'text-yellow-600 bg-yellow-50 border-yellow-100';
+        if(diff.toLowerCase().includes('facile') || diff.toLowerCase().includes('turistic')) diffColor = 'text-green-600 bg-green-50 border-green-100';
+        if(diff.toLowerCase().includes('esperto') || diff.toLowerCase().includes('difficile')) diffColor = 'text-red-600 bg-red-50 border-red-100';
 
         contentHtml = `
-            <div class="p-8">
-                <h2 class="font-serif text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-4">${nome}</h2>
-                <div class="text-slate-600 text-lg leading-relaxed space-y-4">
-                    ${desc || 'Nessuna informazione disponibile.'}
+            <div class="relative w-full bg-white min-h-[400px]">
+                
+                <div class="bg-gradient-to-br from-ct-green to-[#4a5d2b] p-8 pb-12 relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 opacity-20 transform rotate-12">
+                        <span class="material-icons text-[150px] text-white">hiking</span>
+                    </div>
+                    
+                    <div class="relative z-10">
+                        <span class="inline-block py-1 px-3 rounded-lg bg-white/20 backdrop-blur border border-white/30 text-white text-[10px] font-bold uppercase tracking-widest mb-3">
+                            Outdoor & Trekking
+                        </span>
+                        <h2 class="font-serif text-3xl font-bold text-white leading-tight shadow-black drop-shadow-md pr-4">
+                            ${nome}
+                        </h2>
+                    </div>
+                </div>
+
+                <div class="px-6 relative z-20 -mt-8">
+                    <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/60 p-4 border border-slate-100 grid grid-cols-3 divide-x divide-slate-100">
+                        
+                        <div class="flex flex-col items-center justify-center text-center px-1">
+                            <span class="material-icons text-ct-green text-xl mb-1">schedule</span>
+                            <span class="text-sm font-extrabold text-slate-700 leading-none">${dur}</span>
+                            <span class="text-[9px] font-bold text-slate-400 uppercase mt-1">Durata</span>
+                        </div>
+
+                        <div class="flex flex-col items-center justify-center text-center px-1">
+                            <span class="material-icons text-ct-green text-xl mb-1">straighten</span>
+                            <span class="text-sm font-extrabold text-slate-700 leading-none">${dist}</span>
+                            <span class="text-[9px] font-bold text-slate-400 uppercase mt-1">Lunghezza</span>
+                        </div>
+
+                        <div class="flex flex-col items-center justify-center text-center px-1">
+                            <span class="material-icons text-ct-green text-xl mb-1">signal_cellular_alt</span>
+                            <span class="text-sm font-extrabold text-slate-700 leading-none truncate w-full">${diff.slice(0,8)}</span>
+                            <span class="text-[9px] font-bold text-slate-400 uppercase mt-1">Livello</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="p-6 pt-8">
+                    
+                    <div class="mb-6 flex justify-center">
+                        <span class="px-4 py-1.5 rounded-full border ${diffColor} text-xs font-bold uppercase tracking-wide flex items-center gap-2">
+                            <span class="material-icons text-sm">info</span> Difficoltà: ${diff}
+                        </span>
+                    </div>
+
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">
+                        Descrizione del percorso
+                    </h3>
+                    
+                    <div class="prose prose-slate prose-p:text-slate-600 prose-p:text-lg prose-p:leading-relaxed text-justify">
+                        ${desc}
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-dashed border-slate-200 text-center">
+                        <p class="text-[10px] text-slate-400 italic">
+                            Ricorda: indossa sempre scarpe adatte e porta acqua con te.
+                        </p>
+                    </div>
                 </div>
             </div>
         `;
+        // Nota: rimuoviamo padding/rounded standard dalla modale container per far aderire l'header
+        return { html: contentHtml, class: 'bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative max-h-[85vh] overflow-y-auto' };
     }
 
     // --- SPIAGGE ---

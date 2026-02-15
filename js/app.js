@@ -1,7 +1,12 @@
-console.log("✅ 6. app.js caricato (Compact Floating Nav)");
+console.log("✅ 6. app.js caricato (Chicco Fixed in Body)");
 
 const content = document.getElementById('app-content');
 window.pendingMaps = []; 
+// --- VARIABILI GLOBALI PER LO SWIPE ---
+window.currentMenuOptions = []; // Salva le tab attuali (es. Vini, Ristoranti...)
+window.currentActiveTable = null; // Salva quale tab è aperta
+window.touchStartX = 0;
+window.touchStartY = 0;
 
 // --- 1. SETUP HEADER ---
 function setupHeaderElements() {
@@ -35,7 +40,6 @@ window.changeLanguage = function(langCode) {
     updateNavBar(); 
     updateLangIconInNavBar();
     
-    // Refresh vista corrente
     const activeNav = document.querySelector('.nav-item.active'); 
     if(activeNav) {
         const onclickAttr = activeNav.getAttribute('onclick');
@@ -52,9 +56,13 @@ window.switchView = async function(view, el) {
     if (!content) return;
     window.currentViewName = view; 
     
-    // Gestione sfondo e visibilità bottone centrale
     const centerBtnWrapper = document.getElementById('center-lang-btn-wrapper');
     const body = document.body;
+
+    // Rimuoviamo SEMPRE la mascotte quando cambiamo vista (per sicurezza)
+    // La re-inseriremo solo se siamo in 'home'
+    const mascot = document.getElementById('mascot-container');
+    if (mascot) mascot.remove();
 
     if (view === 'home') {
         body.style.backgroundColor = '#1a1a1a'; 
@@ -65,9 +73,6 @@ window.switchView = async function(view, el) {
         body.classList.remove('is-home');
         if (centerBtnWrapper) centerBtnWrapper.classList.add('hidden-bump');
     }
-
-    const mascot = document.getElementById('mascot-container');
-    if (mascot) mascot.remove();
     
     const stickyFilters = document.querySelectorAll('.smart-filter-bar-container');
     stickyFilters.forEach(el => el.remove());
@@ -108,6 +113,7 @@ function renderHome() {
     const bgImage = "https://res.cloudinary.com/dkg0jfady/image/upload/v1770756918/Manarola.png";
     document.body.classList.add('is-home');
 
+    // Renderizza il contenuto principale della Home
     content.innerHTML = `
     <div class="fixed inset-0 z-0 overflow-hidden">
         <img src="${bgImage}" class="w-full h-full object-cover animate-fade" alt="Cinque Terre" style="animation-duration: 2s;">
@@ -126,34 +132,46 @@ function renderHome() {
         </div>
 
         <div class="grid grid-cols-3 gap-3 w-full max-w-sm">
-            ${window.AVAILABLE_LANGS.map(l => `
-                <button class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl py-3 flex flex-col items-center justify-center transition-all active:scale-95 active:bg-white/20 text-white hover:border-white/50" onclick="changeLanguage('${l.code}')">
+            ${window.AVAILABLE_LANGS.map(l => {
+                const isActive = l.code === window.currentLang;
+                const activeClass = isActive 
+                    ? "bg-white text-slate-800 border-white shadow-xl scale-105 z-10 ring-2 ring-white/50" 
+                    : "bg-white/10 text-white border-white/20 hover:border-white/50 active:bg-white/20";
+                
+                return `
+                <button class="${activeClass} backdrop-blur-md border rounded-2xl py-3 flex flex-col items-center justify-center transition-all active:scale-95" onclick="changeLanguage('${l.code}')">
                     <span class="text-2xl mb-1 drop-shadow-md">${l.flag}</span>
                     <span class="text-[10px] font-bold uppercase tracking-widest opacity-80">${l.label}</span>
                 </button>
-            `).join('')}
+                `;
+            }).join('')}
         </div>
     </div>`;
 
+    // --- LOGICA MASCOTTE FIXATA ---
+    // Rimuoviamo eventuali duplicati
     const oldMascot = document.getElementById('mascot-container');
     if (oldMascot) oldMascot.remove();
 
     const chiccoStaticUrl = "https://res.cloudinary.com/dkg0jfady/image/upload/v1770579869/chicco_wxxwbm.png";
     const chiccoLottieUrl = "https://res.cloudinary.com/dkg0jfady/raw/upload/v1770754341/chicco.json"; 
 
-    // CHICCO SEDUTO SULLA BARRA (bottom-[80px] - appena sopra la barra h-16 + bottom-4)
     const mascotHTML = `
-    <div id="mascot-container" class="fixed bottom-[80px] right-4 z-[40] flex flex-col items-end pointer-events-none">
-        <div id="chicco-bubble" class="hidden animate-fade bg-white p-4 rounded-t-2xl rounded-bl-2xl shadow-xl mb-2 max-w-[220px] text-sm text-slate-700 border-2 border-ct-terracotta pointer-events-auto">
+    <div id="mascot-container" class="fixed bottom-[90px] right-4 z-[60] flex flex-col items-end pointer-events-none transition-all duration-300">
+        
+        <div id="chicco-bubble" class="hidden animate-fade bg-white p-4 rounded-t-2xl rounded-bl-2xl shadow-xl mb-2 max-w-[200px] text-sm text-slate-700 border-2 border-ct-terracotta pointer-events-auto">
             <span id="chicco-text">Ciao!</span>
         </div>
-        <div onclick="window.toggleChicco()" class="cursor-pointer transition-transform active:scale-90 pointer-events-auto w-[100px] h-[100px] relative">
-            <img id="chicco-static" src="${chiccoStaticUrl}" class="w-full h-auto drop-shadow-lg absolute bottom-0 right-0 hover:scale-110 transition-transform" alt="Chicco">
-            <lottie-player id="chicco-anim" src="${chiccoLottieUrl}" background="transparent" speed="1" class="w-[120px] h-[120px] hidden absolute -bottom-2 -right-2" loop></lottie-player>
+        
+        <div onclick="window.toggleChicco()" class="cursor-pointer transition-transform active:scale-90 pointer-events-auto relative w-[22vw] max-w-[110px] min-w-[75px] aspect-square">
+            <img id="chicco-static" src="${chiccoStaticUrl}" class="w-full h-full object-contain drop-shadow-lg absolute bottom-0 right-0 hover:scale-105 transition-transform" alt="Chicco">
+            <lottie-player id="chicco-anim" src="${chiccoLottieUrl}" background="transparent" speed="1" class="w-[120%] h-[120%] hidden absolute -bottom-2 -right-2" loop></lottie-player>
         </div>
     </div>`;
 
-    content.insertAdjacentHTML('beforeend', mascotHTML);
+    // FIX IMPORTANTE: Inseriamo Chicco nel BODY, non nel content.
+    // Questo lo rende indipendente dallo scroll di #app-content.
+    document.body.insertAdjacentHTML('beforeend', mascotHTML);
 
     if (!document.querySelector('script[src*="lottie-player"]')) {
         const script = document.createElement('script');
@@ -163,8 +181,8 @@ function renderHome() {
     
     if (!localStorage.getItem('chicco_intro_done')) {
         window.chiccoAutoOpenTimer = setTimeout(() => {
-            const isChatOpen = document.querySelector('.chicco-chat-wrapper');
-            if (!isChatOpen) {
+            const isChatOpen = document.getElementById('chicco-bubble');
+            if (isChatOpen && isChatOpen.style.display !== 'block') {
                 window.toggleChicco();
                 localStorage.setItem('chicco_intro_done', 'true');
             }
@@ -172,12 +190,14 @@ function renderHome() {
     }
 }
 
-// 1. RENDER MENU 
+// 1. Modifica renderSubMenu per salvare le opzioni
 function renderSubMenu(options, defaultTable) {
+    // FIX 3: Salva le opzioni per la navigazione Swipe
+    window.currentMenuOptions = options;
+    
     let menuHtml = `
     <div class="nav-sticky-header sticky top-0 z-30 bg-ct-sand/95 backdrop-blur-md py-4 -mx-5 px-5 shadow-sm mb-4 flex items-center justify-between gap-3 border-b border-stone-200/50">
-        
-        <div class="nav-scroll-container flex gap-3 overflow-x-auto no-scrollbar items-center flex-1 pr-2 pb-1">
+        <div class="nav-scroll-container flex gap-3 overflow-x-auto no-scrollbar items-center flex-1 pr-2 pb-1" id="nav-tabs-container">
             ${options.map(opt => {
                 const colorMap = {
                     'orange': 'bg-white text-ct-terracotta border-orange-100 active:border-ct-terracotta shadow-sm',
@@ -189,36 +209,59 @@ function renderSubMenu(options, defaultTable) {
                 const theme = colorMap[opt.color] || colorMap['blue'];
                 const icon = opt.icon || 'star';
 
+                // Aggiunto attributo data-table per trovarlo facilmente
                 return `
-                <button class="btn-pop-menu flex-shrink-0 px-4 py-2.5 rounded-2xl flex items-center gap-2 border transition-all duration-200 ${theme}" onclick="loadTableData('${opt.table}', this)">
+                <button class="btn-pop-menu flex-shrink-0 px-4 py-2.5 rounded-2xl flex items-center gap-2 border transition-all duration-200 ${theme}" 
+                    data-table="${opt.table}"
+                    onclick="loadTableData('${opt.table}', this)">
                     <span class="material-icons text-lg opacity-80">${icon}</span>
                     <span class="text-xs font-bold uppercase tracking-wide">${opt.label}</span>
                 </button>
             `}).join('')}
         </div>
-        
         <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-ct-sand to-transparent pointer-events-none"></div>
-
     </div>
-    <div id="sub-content" class="min-h-[300px]"></div>`;
+    <div id="sub-content" class="min-h-[300px] touch-pan-y"></div>`; // touch-pan-y aiuta lo scroll verticale
     
+    const content = document.getElementById('app-content');
     content.innerHTML = menuHtml;
     
-    const firstBtn = content.querySelector('.btn-pop-menu');
-    if (firstBtn) {
-        loadTableData(defaultTable, firstBtn);
+    // Trova il bottone di default o il primo
+    const defaultBtn = content.querySelector(`button[data-table="${defaultTable}"]`) || content.querySelector('.btn-pop-menu');
+    if (defaultBtn) {
+        // Estrai il nome tabella corretto dall'attributo se non passato
+        const tableToLoad = defaultBtn.getAttribute('data-table');
+        loadTableData(tableToLoad, defaultBtn);
     }
 }
 
+// 2. Modifica loadTableData per aggiornare lo stato attivo e scrollare il menu
 window.loadTableData = async function(tableName, btnEl) {
+    // FIX 3: Aggiorna stato attivo
+    window.currentActiveTable = tableName;
+
     const subContent = document.getElementById('sub-content');
     if (!subContent) return;
 
+    // Gestione visuale bottoni e Auto-Scroll
     if (btnEl) {
         document.querySelectorAll('.btn-pop-menu').forEach(b => {
             b.classList.remove('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105');
         });
         btnEl.classList.add('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105'); 
+        
+        // Auto-scroll del menu orizzontale per rendere visibile il bottone attivo
+        btnEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    } else {
+        // Se la funzione è chiamata senza btnEl (es. dallo swipe), trovalo e attivalo
+        const targetBtn = document.querySelector(`button[data-table="${tableName}"]`);
+        if(targetBtn) {
+             document.querySelectorAll('.btn-pop-menu').forEach(b => {
+                b.classList.remove('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105');
+            });
+            targetBtn.classList.add('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105');
+            targetBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
     }
 
     if (!window.appCache[tableName]) {
@@ -248,44 +291,24 @@ window.loadTableData = async function(tableName, btnEl) {
 
     window.currentTableData = data; 
 
-    // --- RENDERER ROUTING ---
-    if (tableName === 'Vini') {
-        renderHorizontalFilterView(data, 'Tipo', subContent, window.vinoRenderer);
-    }
-    else if (tableName === 'Spiagge') {
-        renderHorizontalFilterView(data, 'Paesi', subContent, window.spiaggiaRenderer);
-    }
+    if (tableName === 'Vini') { renderHorizontalFilterView(data, 'Tipo', subContent, window.vinoRenderer); }
+    else if (tableName === 'Spiagge') { renderHorizontalFilterView(data, 'Paesi', subContent, window.spiaggiaRenderer); }
     else if (tableName === 'Prodotti') {
         let html = '<div class="grid grid-cols-2 gap-3 pb-24 animate-fade pt-2">'; 
         data.forEach(p => { html += window.prodottoRenderer(p); });
         subContent.innerHTML = html + '</div>';
     }
     else if (tableName === 'Attrazioni') { 
-        const culturaConfig = {
-            primary: { key: 'Paese', title: window.t('filter_village'), customOrder: ["Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso"] },
-            secondary: { key: 'Label', title: window.t('filter_cat') }
-        };
+        const culturaConfig = { primary: { key: 'Paese', title: window.t('filter_village'), customOrder: ["Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso"] }, secondary: { key: 'Label', title: window.t('filter_cat') } };
         renderDoubleHorizontalFilterView(data, culturaConfig, subContent, window.attrazioniRenderer); 
     }
-    else if (tableName === 'Ristoranti') { 
-        renderHorizontalFilterView(data, 'Paesi', subContent, window.ristoranteRenderer); 
-    }
-    else if (tableName === 'Sentieri') { 
-        renderHorizontalFilterView(data, 'difficolta_cai', subContent, window.sentieroRenderer); 
-    }
-    else if (tableName === 'Farmacie') { 
-        subContent.innerHTML = `<div class="flex flex-col gap-3 pb-24 animate-fade pt-2">` + 
-            data.map(i => window.farmacieRenderer(i)).join('') + `</div>`;
-    } 
-    else if (tableName === 'Numeri_utili') { 
-        renderHorizontalFilterView(data, 'Comune', subContent, window.numeriUtiliRenderer); 
-    }
+    else if (tableName === 'Ristoranti') { renderHorizontalFilterView(data, 'Paesi', subContent, window.ristoranteRenderer); }
+    else if (tableName === 'Sentieri') { renderHorizontalFilterView(data, 'difficolta_cai', subContent, window.sentieroRenderer); }
+    else if (tableName === 'Farmacie') { subContent.innerHTML = `<div class="flex flex-col gap-3 pb-24 animate-fade pt-2">` + data.map(i => window.farmacieRenderer(i)).join('') + `</div>`; } 
+    else if (tableName === 'Numeri_utili') { renderHorizontalFilterView(data, 'Comune', subContent, window.numeriUtiliRenderer); }
 };
 
-/* ============================================================
-   SMART FILTER BAR (FIXED INIT & SCROLL)
-   ============================================================ */
-
+// ... (Smart Filter Bars Logic - Invariato) ...
 function getUniqueValues(allData, key, customOrder = []) {
     let raw = allData.map(item => window.dbCol(item, key)).filter(x => x).map(x => String(x).trim());
     let unique = [...new Set(raw)];
@@ -460,7 +483,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     renderControls();
     executeFilter(); 
 }
-// Helper Toggle Globale
+
 window.toggleSmartFilter = function(panelId, triggerId) {
     const panel = document.getElementById(panelId);
     const icon = document.querySelector(`#${triggerId} .material-icons:last-child`);
@@ -479,74 +502,74 @@ window.toggleSmartFilter = function(panelId, triggerId) {
 };
 
 window.renderServicesGrid = async function() {
-    console.log("🔘 Avvio renderServicesGrid (Authentic 5 Terre)...");
+    console.log("🔘 Avvio renderServicesGrid (Compact)...");
     const targetEl = document.getElementById('app-content');
     
-    // Rimuovi eventuali filtri residui
     const stickyFilters = document.querySelectorAll('.smart-filter-bar-container');
     stickyFilters.forEach(el => el.remove());
 
     if (!targetEl) return;
 
     let headerHtml = `
-        <div class="px-2 mb-6 animate-pop text-center">
+        <div class="px-2 mb-4 animate-pop text-center">
             <h1 class="text-3xl font-serif font-bold text-slate-800 mb-1 uppercase tracking-tight">${window.t('nav_services')}</h1>
             <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">Esplora & Viaggia</p>
         </div>
     `;
 
+    // FIX 1: Cambiato gap-4 in gap-2 e ridotto padding (p-4 invece di p-6)
     let gridHtml = `
-    <div class="grid grid-cols-2 gap-4 pb-32 animate-pop">
+    <div class="grid grid-cols-2 gap-2 pb-32 animate-pop">
         
-        <div class="col-span-2 relative bg-ct-yellow rounded-[2rem] p-6 shadow-soft active:scale-95 transition-transform cursor-pointer overflow-hidden group min-h-[140px] flex flex-col justify-between border border-yellow-200" onclick="openModal('transport', 'bus')">
+        <div class="col-span-2 relative bg-ct-yellow rounded-[2rem] p-4 shadow-soft active:scale-95 transition-transform cursor-pointer overflow-hidden group min-h-[120px] flex flex-col justify-between border border-yellow-200" onclick="openModal('transport', 'bus')">
             <div class="absolute -right-2 -bottom-4 opacity-10 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[130px] text-yellow-900">directions_bus</span></div>
             <div class="relative z-10">
-                <div class="bg-white/80 backdrop-blur w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm border border-white"><span class="material-icons text-2xl text-yellow-700">directions_bus</span></div>
-                <h3 class="text-3xl font-serif font-bold leading-none text-slate-800 mb-1">${window.t('label_bus')}</h3>
+                <div class="bg-white/80 backdrop-blur w-10 h-10 rounded-xl flex items-center justify-center mb-2 shadow-sm border border-white"><span class="material-icons text-xl text-yellow-700">directions_bus</span></div>
+                <h3 class="text-2xl font-serif font-bold leading-none text-slate-800 mb-1">${window.t('label_bus')}</h3>
                 <p class="text-yellow-800 text-[10px] font-bold uppercase tracking-widest">Orari ATC & Navette</p>
             </div>
         </div>
 
-        <div class="bg-ct-terracotta rounded-[2rem] p-5 shadow-soft active:scale-95 transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[150px] relative overflow-hidden" onclick="openModal('transport', 'train')">
-            <div class="absolute -right-4 -bottom-4 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[110px] text-white">train</span></div>
+        <div class="bg-ct-terracotta rounded-[2rem] p-4 shadow-soft active:scale-95 transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[130px] relative overflow-hidden" onclick="openModal('transport', 'train')">
+            <div class="absolute -right-4 -bottom-4 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[90px] text-white">train</span></div>
             <div class="relative z-10">
-                <div class="bg-white/20 backdrop-blur w-11 h-11 rounded-xl flex items-center justify-center mb-3 border border-white/30"><span class="material-icons text-2xl text-white">train</span></div>
+                <div class="bg-white/20 backdrop-blur w-10 h-10 rounded-xl flex items-center justify-center mb-2 border border-white/30"><span class="material-icons text-xl text-white">train</span></div>
                 <div>
-                    <h3 class="font-serif font-bold text-white text-xl leading-tight mb-1">${window.t('label_train')}</h3>
-                    <p class="text-red-100 text-[9px] font-bold uppercase tracking-widest">Orari Trenitalia</p>
+                    <h3 class="font-serif font-bold text-white text-lg leading-tight mb-1">${window.t('label_train')}</h3>
+                    <p class="text-red-100 text-[9px] font-bold uppercase tracking-widest">Trenitalia</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-ct-blue rounded-[2rem] p-5 shadow-soft active:scale-95 transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[150px] relative overflow-hidden" onclick="openModal('transport', 'ferry')">
-            <div class="absolute -right-4 -bottom-4 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[110px] text-white">directions_boat</span></div>
+        <div class="bg-ct-blue rounded-[2rem] p-4 shadow-soft active:scale-95 transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[130px] relative overflow-hidden" onclick="openModal('transport', 'ferry')">
+            <div class="absolute -right-4 -bottom-4 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[90px] text-white">directions_boat</span></div>
             <div class="relative z-10">
-                <div class="bg-white/20 backdrop-blur w-11 h-11 rounded-xl flex items-center justify-center mb-3 border border-white/30"><span class="material-icons text-2xl text-white">directions_boat</span></div>
+                <div class="bg-white/20 backdrop-blur w-10 h-10 rounded-xl flex items-center justify-center mb-2 border border-white/30"><span class="material-icons text-xl text-white">directions_boat</span></div>
                 <div>
-                    <h3 class="font-serif font-bold text-white text-xl leading-tight mb-1">${window.t('label_ferry')}</h3>
+                    <h3 class="font-serif font-bold text-white text-lg leading-tight mb-1">${window.t('label_ferry')}</h3>
                     <p class="text-teal-100 text-[9px] font-bold uppercase tracking-widest">Navigazione</p>
                 </div>
             </div>
         </div>
 
-        <div class="col-span-2 bg-slate-700 rounded-[2rem] p-5 flex items-center justify-between shadow-soft active:scale-95 transition-transform cursor-pointer mt-2" onclick="renderSimpleList('Numeri_utili')">
-            <div class="flex items-center gap-4 relative z-10">
-                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white border border-white/20"><span class="material-icons text-2xl">phonelink_ring</span></div>
-                <div><h3 class="font-serif text-white font-bold text-xl leading-tight">${window.t('menu_num')}</h3><p class="text-slate-300 text-[10px] font-bold uppercase tracking-widest mt-0.5">Emergenze & Taxi</p></div>
+        <div class="col-span-2 bg-slate-700 rounded-[2rem] p-4 flex items-center justify-between shadow-soft active:scale-95 transition-transform cursor-pointer mt-1" onclick="renderSimpleList('Numeri_utili')">
+            <div class="flex items-center gap-3 relative z-10">
+                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white border border-white/20"><span class="material-icons text-lg">phonelink_ring</span></div>
+                <div><h3 class="font-serif text-white font-bold text-lg leading-tight">${window.t('menu_num')}</h3><p class="text-slate-300 text-[9px] font-bold uppercase tracking-widest mt-0.5">Emergenze</p></div>
             </div>
             <span class="material-icons text-white/50 bg-white/5 rounded-full p-1 relative z-10">chevron_right</span>
         </div>
 
-        <div class="col-span-2 bg-ct-green rounded-[2rem] p-5 flex items-center justify-between shadow-soft active:scale-95 transition-transform cursor-pointer" onclick="renderSimpleList('Farmacie')">
-            <div class="flex items-center gap-4 relative z-10">
-                <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white border border-white/30"><span class="material-icons text-2xl">medical_services</span></div>
-                <div><h3 class="font-serif text-white font-bold text-xl leading-tight">${window.t('menu_pharm')}</h3><p class="text-green-100 text-[10px] font-bold uppercase tracking-widest mt-0.5">Turni e Orari</p></div>
+        <div class="col-span-2 bg-ct-green rounded-[2rem] p-4 flex items-center justify-between shadow-soft active:scale-95 transition-transform cursor-pointer" onclick="renderSimpleList('Farmacie')">
+            <div class="flex items-center gap-3 relative z-10">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white border border-white/30"><span class="material-icons text-lg">medical_services</span></div>
+                <div><h3 class="font-serif text-white font-bold text-lg leading-tight">${window.t('menu_pharm')}</h3><p class="text-green-100 text-[9px] font-bold uppercase tracking-widest mt-0.5">Turni</p></div>
             </div>
             <span class="material-icons text-white/50 bg-white/10 rounded-full p-1 relative z-10">chevron_right</span>
         </div>
 
-        <div class="col-span-2 text-center mt-6 mb-4">
-            <button onclick="renderLegalPage()" class="text-slate-400 text-[10px] font-bold uppercase tracking-widest hover:text-ct-terracotta transition-colors flex items-center justify-center gap-2 mx-auto py-3 bg-white px-6 rounded-full shadow-sm border border-slate-200">
+        <div class="col-span-2 text-center mt-4 mb-4">
+            <button onclick="renderLegalPage()" class="text-slate-400 text-[10px] font-bold uppercase tracking-widest hover:text-ct-terracotta transition-colors flex items-center justify-center gap-2 mx-auto py-2 bg-white px-4 rounded-full shadow-sm border border-slate-200">
                 <span class="material-icons text-sm">policy</span> ${window.t('menu_legal')}
             </button>
         </div>
@@ -554,12 +577,10 @@ window.renderServicesGrid = async function() {
 
     targetEl.innerHTML = headerHtml + gridHtml;
 };
-
 window.renderSimpleList = function(tableName) {
     const targetEl = document.getElementById('app-content');
     const cleanTitle = tableName.replace('_', ' ');
     
-    // Header specifico per liste semplici
     targetEl.innerHTML = `
     <div class="flex items-center gap-4 mb-6 animate-fade pt-2">
         <button onclick="renderServicesGrid()" class="w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-[0_4px_0_rgb(203,213,225)] border-2 border-slate-200 active:scale-95 active:shadow-none active:translate-y-1 transition-all">
@@ -586,39 +607,55 @@ document.addEventListener('DOMContentLoaded', () => {
     updateNavBar(); 
     switchView('home');
 });
+// 3. LISTENERS PER LO SWIPE (Incollali alla fine di app.js)
+document.addEventListener('touchstart', (e) => {
+    window.touchStartX = e.changedTouches[0].screenX;
+    window.touchStartY = e.changedTouches[0].screenY;
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+    // Se non siamo in una vista con sottomenu, esci
+    if (!document.getElementById('sub-content')) return;
+    if (!window.currentMenuOptions || window.currentMenuOptions.length === 0) return;
+
+    const touchEndX = e.changedTouches[0].screenX;
+    const touchEndY = e.changedTouches[0].screenY;
+
+    // Calcola distanze
+    const xDiff = touchEndX - window.touchStartX;
+    const yDiff = touchEndY - window.touchStartY;
+
+    // Se lo scroll è prevalentemente verticale, ignora (l'utente sta scrollando la pagina)
+    if (Math.abs(yDiff) > Math.abs(xDiff)) return;
+
+    // Soglia minima per considerare lo swipe (es. 50px)
+    if (Math.abs(xDiff) < 50) return;
+
+    // Trova indice corrente
+    const currentIndex = window.currentMenuOptions.findIndex(o => o.table === window.currentActiveTable);
+    if (currentIndex === -1) return;
+
+    if (xDiff > 0) {
+        // Swipe DESTRA -> Torna Indietro (Precedente)
+        if (currentIndex > 0) {
+            const prevTab = window.currentMenuOptions[currentIndex - 1];
+            loadTableData(prevTab.table, null);
+        }
+    } else {
+        // Swipe SINISTRA -> Vai Avanti (Successivo)
+        if (currentIndex < window.currentMenuOptions.length - 1) {
+            const nextTab = window.currentMenuOptions[currentIndex + 1];
+            loadTableData(nextTab.table, null);
+        }
+    }
+}, { passive: true });
 
 window.apriTrenitalia = function() {
     window.open('https://www.trenitalia.com', '_blank');
 };
 
-// ... (Rest of Map Functions and GPS logic unchanged from original app.js) ...
+// MAPPE E GPS
 
-// ============================================================
-// FUNZIONE PER ACCENDERE LE MAPPE NELLA LISTA
-// ============================================================
-
-// --- MAPPA SCHEDA TECNICA (Grande) ---
-function initLeafletMap(divId, gpxUrl) {
-    if (!document.getElementById(divId)) return;
-    if (window.currentMap) { window.currentMap.off(); window.currentMap.remove(); window.currentMap = null; }
-    document.getElementById('elevation-div').innerHTML = '';
-    const map = L.map(divId, { zoomControl: false, scrollWheelZoom: true, dragging: true, touchZoom: true, doubleClickZoom: true, boxZoom: true, tap: true });
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    window.currentMap = map;
-    map.setView([44.118, 9.711], 13); 
-    L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 16, attribution: 'OpenTopoMap' }).addTo(map);
-    if (gpxUrl) {
-        try {
-            const elevationOptions = { theme: "steelblue-theme", detached: true, elevationDiv: "#elevation-div", xAttr: 'dist', yAttr: 'altitude', time: false, summary: false, followMarker: true, margins: { top: 20, right: 20, bottom: 20, left: 50 }, polyline: { color: '#D32F2F', opacity: 0.9, weight: 5 } };
-            L.control.elevation(elevationOptions).addTo(map).load(gpxUrl);
-        } catch (e) {
-            new L.GPX(gpxUrl, { async: true, polyline_options: { color: 'red' } }).on('loaded', e => map.fitBounds(e.target.getBounds())).addTo(map);
-        }
-    }
-    setTimeout(() => { map.invalidateSize(); }, 300);
-}
-
-// --- MAPPE LISTA (Piccole) ---
 window.initPendingMaps = function() {
     window.pendingMaps.forEach(item => {
         const container = document.getElementById(item.id);
@@ -670,6 +707,113 @@ window.toggleChicco = async function() {
     }
 };
 
+window.initBusMap = function(fermate) {
+    const mapContainer = document.getElementById('bus-map');
+    if (!mapContainer) return;
+    if (window.currentBusMap) { window.currentBusMap.remove(); window.currentBusMap = null; }
+    const map = L.map('bus-map').setView([44.1000, 9.7385], 13);
+    window.currentBusMap = map; 
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap, © CARTO', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+    const markersGroup = new L.FeatureGroup();
+    const labelPartenza = window.t('departure') || 'Partenza';
+    const labelArrivo = window.t('arrival') || 'Arrivo';
+    fermate.forEach(f => {
+        if (!f.LAT || !f.LONG) return;
+        const marker = L.marker([f.LAT, f.LONG]).addTo(map);
+        marker.bindPopup(`<div style="text-align:center; min-width:150px;"><h3 style="margin:0 0 10px 0; font-size:1rem; color:#333;">${f.NOME_FERMATA}</h3><div style="display:flex; gap:5px; justify-content:center;"><button onclick="setBusStop('partenza', '${f.ID}')" class="btn-popup-start" style="background:#27ae60; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:0.75rem; font-weight:bold; text-transform:uppercase;">${labelPartenza}</button><button onclick="setBusStop('arrivo', '${f.ID}')" class="btn-popup-end" style="background:#c0392b; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:0.75rem; font-weight:bold; text-transform:uppercase;">${labelArrivo}</button></div></div>`);
+        markersGroup.addLayer(marker);
+    });
+    map.addLayer(markersGroup);
+    setTimeout(() => { map.invalidateSize(); }, 200);
+};
+
+window.setBusStop = function(type, value) {
+    const selectId = (type === 'partenza') ? 'selPartenza' : 'selArrivo';
+    const select = document.getElementById(selectId);
+    if (select) {
+        select.value = value;
+        window.flashInputFeedback(selectId);
+        window.handleBusSelectionChange(type);
+        if(window.currentBusMap) window.currentBusMap.closePopup();
+    }
+};
+
+window.toggleBusMap = function() {
+    const container = document.getElementById('bus-map-wrapper'); const btn = document.getElementById('btn-bus-map-toggle');
+    if (!container) return;
+    const isHidden = container.classList.contains('hidden');
+    if (isHidden) {
+        container.classList.remove('hidden');
+        if (btn) { btn.classList.add('bg-indigo-500', 'text-white', 'border-transparent'); btn.classList.remove('bg-indigo-50', 'text-indigo-500', 'border-indigo-100'); btn.innerHTML = '<span class="material-icons text-lg">expand_less</span>'; }
+        setTimeout(() => { if (window.currentBusMap) { window.currentBusMap.invalidateSize(); } }, 100);
+    } else {
+        container.classList.add('hidden');
+        if (btn) { btn.classList.remove('bg-indigo-500', 'text-white', 'border-transparent'); btn.classList.add('bg-indigo-50', 'text-indigo-500', 'border-indigo-100'); btn.innerHTML = '<span class="material-icons text-lg">map</span>'; }
+    }
+};
+
+window.loadAllStops = async function() {
+    const selPart = document.getElementById('selPartenza'); const selArr = document.getElementById('selArrivo');
+    if(!selPart || !selArr) return;
+    if (!window.cachedStops) { const { data, error } = await window.supabaseClient.from('Fermate_bus').select('ID, NOME_FERMATA, LAT, LONG').order('NOME_FERMATA', { ascending: true }); if (error) { console.error("Errore fermate:", error); return; } window.cachedStops = data; }
+    const options = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+    const placeholderStart = `<option value="" selected>${window.t('select_start')}</option>`;
+    const placeholderEnd = `<option value="" selected>Scegli Arrivo</option>`; 
+    selPart.innerHTML = placeholderStart + options; selArr.innerHTML = placeholderEnd + options; selPart.disabled = false; selArr.disabled = false;
+    if (window.initBusMap) window.initBusMap(window.cachedStops);
+};
+
+window.handleBusSelectionChange = async function(source) {
+    const selPart = document.getElementById('selPartenza'); const selArr = document.getElementById('selArrivo');
+    if (!selPart || !selArr || !window.cachedStops) return;
+    const changedSelect = (source === 'partenza') ? selPart : selArr; const targetSelect = (source === 'partenza') ? selArr : selPart;
+    const selectedId = changedSelect.value; const currentTargetValue = targetSelect.value; 
+    if (!selectedId) {
+        const options = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+        const placeholder = `<option value="" selected>${window.t('select_placeholder')}</option>`;
+        targetSelect.innerHTML = placeholder + options; targetSelect.value = currentTargetValue; return;
+    }
+    if(window.flashInputFeedback) window.flashInputFeedback((source === 'partenza') ? 'selPartenza' : 'selArrivo');
+    try {
+        const { data: corsePassanti } = await window.supabaseClient.from('Orari_bus').select('ID_CORSA').eq('ID_FERMATA', selectedId);
+        const runIds = corsePassanti.map(c => c.ID_CORSA); if (runIds.length === 0) return; 
+        const { data: fermateCollegate } = await window.supabaseClient.from('Orari_bus').select('ID_FERMATA').in('ID_CORSA', runIds);
+        const validIds = [...new Set(fermateCollegate.map(x => x.ID_FERMATA))].filter(id => id != selectedId);
+        let validStops = window.cachedStops.filter(s => validIds.includes(s.ID)); validStops.sort((a, b) => a.NOME_FERMATA.localeCompare(b.NOME_FERMATA));
+        const newOptions = validStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+        const placeholder = `<option value="" disabled selected>${window.t('valid_destinations')}</option>`;
+        targetSelect.innerHTML = placeholder + newOptions;
+        if (currentTargetValue && validIds.includes(parseInt(currentTargetValue))) { targetSelect.value = currentTargetValue; } else { targetSelect.value = ""; }
+    } catch (err) { console.error("Errore filtro bus:", err); }
+};
+
+window.handleFerrySelectionChange = function(source) {
+    const selPart = document.getElementById('selPartenzaFerry'); const selArr = document.getElementById('selArrivoFerry');
+    const stops = window.FERRY_STOPS || [];
+    const changedSelect = (source === 'partenza') ? selPart : selArr; const targetSelect = (source === 'partenza') ? selArr : selPart;
+    const selectedVal = changedSelect.value; const currentTargetVal = targetSelect.value;
+    if(window.flashInputFeedback) window.flashInputFeedback((source === 'partenza') ? 'selPartenzaFerry' : 'selArrivoFerry');
+    if (!selectedVal) {
+        const options = stops.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+        targetSelect.innerHTML = `<option value="" selected>${window.t('select_placeholder')}</option>` + options;
+        targetSelect.value = currentTargetVal; targetSelect.disabled = false; return;
+    }
+    const validStops = stops.filter(s => s.id !== selectedVal);
+    const newOptions = validStops.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+    targetSelect.innerHTML = `<option value="" selected>${window.t('valid_destinations')}</option>` + newOptions;
+    if (currentTargetVal && validStops.some(s => s.id === currentTargetVal)) { targetSelect.value = currentTargetVal; } else { targetSelect.value = ""; }
+    targetSelect.disabled = false;
+};
+
+window.flashInputFeedback = function(elementId) {
+    const el = document.getElementById(elementId);
+    if (el && el.parentElement && el.parentElement.parentElement) {
+        const wrapper = el.parentElement.parentElement; wrapper.classList.add('bg-slate-100', 'rounded-lg');
+        setTimeout(() => wrapper.classList.remove('bg-slate-100', 'rounded-lg'), 300);
+    }
+};
+
+// ... Ricerca Bus e Traghetti (stesse funzioni precedenti, solo per completezza se mancanti)
 window.eseguiRicercaBus = async function() {
     const selPartenza = document.getElementById('selPartenza'); const selArrivo = document.getElementById('selArrivo'); const selData = document.getElementById('selData'); const selOra = document.getElementById('selOra');
     const nextCard = document.getElementById('nextBusCard'); const list = document.getElementById('otherBusList'); const resultsContainer = document.getElementById('busResultsContainer');

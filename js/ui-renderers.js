@@ -1,11 +1,11 @@
-console.log("✅ 2. ui-renderers.js caricato (Fixed Cloudinary & Wines)");
+console.log("✅ 2. ui-renderers.js caricato (Buttons 50% & Compact Cards)");
 
-/** HELPER: CANDY BTN */
+/** HELPER: CANDY BTN (Per le altre card standard) */
 function getCandyBtn(icon, label, color, onclick) {
     const colors = {
-        'orange': 'bg-ct-terracotta text-white shadow-orange-200 active:bg-orange-600',
-        'blue':   'bg-ct-blue text-white shadow-teal-200 active:bg-teal-700',
-        'green':  'bg-ct-green text-white shadow-green-200 active:bg-green-800',
+        'orange': 'bg-ct-terracotta text-white shadow-orange-200 active:bg-orange-600', 
+        'blue':   'bg-ct-blue text-white shadow-teal-200 active:bg-teal-700',       
+        'green':  'bg-ct-green text-white shadow-green-200 active:bg-green-800',    
         'red':    'bg-red-500 text-white shadow-red-200 active:bg-red-600',
         'purple': 'bg-slate-600 text-white shadow-slate-300 active:bg-slate-800',
         'yellow': 'bg-ct-yellow text-slate-800 shadow-yellow-200 active:bg-yellow-500', 
@@ -21,6 +21,7 @@ function getCandyBtn(icon, label, color, onclick) {
     </button>`;
 }
 
+// MODIFICA 4: Ridotto mb-6 a mb-4 per avvicinare le schede (Prossimità)
 function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml }) {
     let headerHtml = '';
     if (image) {
@@ -47,13 +48,14 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
     }
 
     return `
-    <div class="bg-white rounded-[2rem] shadow-soft overflow-hidden flex flex-col h-full relative mb-6 group cursor-pointer border border-slate-100/50 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" onclick="${onClick}">
+    <div class="bg-white rounded-[2rem] shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group cursor-pointer border border-slate-100/50 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" onclick="${onClick}">
         ${headerHtml}
         <div class="p-5 flex-1 flex flex-col justify-start">
+            ${label ? `
             <div class="flex items-center gap-2 mb-2">
                 <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 font-sans">${label}</span>
                 <div class="h-px bg-slate-100 flex-1"></div>
-            </div>
+            </div>` : ''}
             <h3 class="font-serif text-2xl font-bold text-slate-800 leading-tight mb-2 group-hover:text-primary transition-colors">${title}</h3>
             ${subText ? `<p class="text-sm text-slate-500 font-medium leading-relaxed line-clamp-2">${subText}</p>` : ''}
         </div>
@@ -72,10 +74,10 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
     const themeClass = colors[themeColor] || colors['red'];
     const iconColor = themeColor === 'yellow' ? 'text-yellow-800' : 'text-white';
 
+    // MODIFICA 4: Ridotto mb-5 a mb-3
     return `
-    <div class="flex bg-white rounded-[1.5rem] shadow-sm border border-slate-100 overflow-hidden min-h-[140px] cursor-pointer transform active:scale-95 transition-all duration-200 mb-5 group hover:shadow-md" onclick="${onClick}">
+    <div class="flex bg-white rounded-[1.5rem] shadow-sm border border-slate-100 overflow-hidden min-h-[140px] cursor-pointer transform active:scale-95 transition-all duration-200 mb-3 group hover:shadow-md" onclick="${onClick}">
         <div class="w-24 ${themeClass} flex items-center justify-center relative overflow-hidden shrink-0">
-            <span class="material-icons text-8xl absolute -right-6 -bottom-6 opacity-20 transform rotate-12">wine_bar</span>
             <span class="material-icons text-4xl ${iconColor} drop-shadow-sm opacity-90 relative z-10">wine_bar</span>
         </div>
         <div class="flex-1 p-4 flex flex-col relative bg-white">
@@ -108,8 +110,9 @@ function renderUtilityCard({ icon, title, subtitle, phone, color }) {
         'purple': 'bg-purple-100 text-purple-700', 'red': 'bg-red-100 text-red-700'
     };
     const iconTheme = iconColors[color] || iconColors['blue'];
+    // MODIFICA 4: Ridotto mb-3 a mb-2
     return `
-    <div class="flex items-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm mb-3 animate-pop active:scale-95 transition-transform">
+    <div class="flex items-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm mb-2 animate-pop active:scale-95 transition-transform">
         <div class="w-12 h-12 rounded-xl ${iconTheme} flex items-center justify-center shrink-0 mr-4">
             <span class="material-icons text-2xl">${icon}</span>
         </div>
@@ -125,7 +128,7 @@ function renderUtilityCard({ icon, title, subtitle, phone, color }) {
 
 window.ristoranteRenderer = (r) => {
     const nome = window.dbCol(r, 'Nome') || 'Ristorante';
-    const nomeIT = window.valIT(r, 'Nome'); // Per Cloudinary
+    const nomeIT = window.valIT(r, 'Nome'); 
     const paesi = window.dbCol(r, 'Paesi') || '5 Terre';
     const desc = window.dbCol(r, 'Descrizioni') || '';
     const safeObj = encodeURIComponent(JSON.stringify(r)).replace(/'/g, "%27");
@@ -143,8 +146,8 @@ window.ristoranteRenderer = (r) => {
         iconFallback: 'restaurant',
         themeColor: 'yellow',
         buttonsHtml: `
-            ${getCandyBtn('visibility', window.t('btn_info'), 'yellow', `event.stopPropagation(); openModal('ristorante', '${safeObj}')`)}
-            ${getCandyBtn('map', window.t('btn_map'), 'blue', `event.stopPropagation(); window.open('${mapLink}', '_blank')`)}
+            ${getCandyBtn('visibility', window.t('btn_info'), 'blue', `event.stopPropagation(); openModal('ristorante', '${safeObj}')`)}
+            ${getCandyBtn('map', window.t('btn_map'), 'green', `event.stopPropagation(); window.open('${mapLink}', '_blank')`)}
             ${numero ? getCandyBtn('call', 'Tel', 'green', `event.stopPropagation(); window.location.href='tel:${numero}'`) : ''}
         `
     });
@@ -153,13 +156,12 @@ window.ristoranteRenderer = (r) => {
 window.attrazioniRenderer = function(item) {
     const safeId = item.POI_ID || item.id;
     const titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
-    const titoloIT = window.valIT(item, 'Attrazioni') || window.valIT(item, 'Titolo'); // Per Immagine
+    const titoloIT = window.valIT(item, 'Attrazioni') || window.valIT(item, 'Titolo'); 
     const paese = window.dbCol(item, 'Paese');
     
-    // Genera URL con nome italiano
     const imgUrl = titoloIT ? window.getSmartUrl(titoloIT, '', 600) : null;
     
-    const labelRaw = String(window.valIT(item, 'Label')).toLowerCase(); // Uso raw per logica categorie
+    const labelRaw = String(window.valIT(item, 'Label')).toLowerCase();
     const lat = item.lat_at; const lon = item.long_at;
 
     let catLabel = window.t('cat_culture'); let themeColor = 'blue'; let iconFallback = 'landmark';
@@ -177,8 +179,8 @@ window.attrazioniRenderer = function(item) {
         iconFallback: iconFallback,
         themeColor: themeColor,
         buttonsHtml: `
-            ${getCandyBtn('visibility', window.t('btn_details'), themeColor, `event.stopPropagation(); openModal('attrazione', '${safeId}')`)}
-            ${(lat && lon) ? getCandyBtn('near_me', window.t('btn_go'), 'purple', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
+            ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('attrazione', '${safeId}')`)}
+            ${(lat && lon) ? getCandyBtn('near_me', window.t('btn_go'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
         `
     });
 };
@@ -186,7 +188,7 @@ window.attrazioniRenderer = function(item) {
 window.spiaggiaRenderer = function(item) {
     const safeObj = encodeURIComponent(JSON.stringify(item)).replace(/'/g, "%27");
     const nome = window.dbCol(item, 'Nome');
-    const nomeIT = window.valIT(item, 'Nome'); // Per Cloudinary
+    const nomeIT = window.valIT(item, 'Nome'); 
     const paesi = window.dbCol(item, 'Paesi');
     const tipo = window.dbCol(item, 'Tipo') || 'Mare';
     const lat = item.lat_sp; const lon = item.long_sp;
@@ -210,7 +212,6 @@ window.spiaggiaRenderer = function(item) {
 
 window.prodottoRenderer = (p) => {
     const titolo = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
-    // Prodotti ha spesso Prodotti_foto, se manca usa titolo italiano
     const titoloIT = window.valIT(p, 'Prodotti') || window.valIT(p, 'Nome');
     const fotoKey = p.Prodotti_foto || titoloIT; 
     const imgUrl = window.getSmartUrl(fotoKey, '', 600);
@@ -219,7 +220,7 @@ window.prodottoRenderer = (p) => {
     return renderMasterCard({
         id: p.id,
         onClick: `openModal('product', '${safeObj}')`,
-        label: window.t('cat_gastronomy'),
+        label: null, 
         title: titolo,
         subText: 'Sapori autentici della tradizione ligure.',
         image: imgUrl,
@@ -227,23 +228,21 @@ window.prodottoRenderer = (p) => {
         themeColor: 'orange',
         buttonsHtml: `
             <div class="text-xs font-bold text-slate-300 uppercase tracking-widest mr-auto mt-2">${window.t('btn_discover')}</div>
-            ${getCandyBtn('chevron_right', '', 'orange', `event.stopPropagation(); openModal('product', '${safeObj}')`)}
+            ${getCandyBtn('chevron_right', '', 'blue', `event.stopPropagation(); openModal('product', '${safeObj}')`)}
         `
     });
 };
 
-// FIX VINI: Logica colore basata su ITALIANO
 window.vinoRenderer = function(item) {
     const safeId = item.id || item.ID; 
     const nome = item.Nome || 'Vino';
     const cantina = item.Produttore || 'Cantina Locale'; 
     const uve = window.dbCol(item, 'Uve');
     
-    // 1. Logica Colore: Usa sempre il valore raw/Italiano
     let tipoIT = String(window.valIT(item, 'Tipo')).toLowerCase();
     
     let themeColor = 'red';
-    let tipoLabel = window.t('wine_red'); // Default label tradotta
+    let tipoLabel = window.t('wine_red'); 
     
     if (tipoIT.includes('bianco')) { 
         themeColor = 'yellow'; 
@@ -253,10 +252,6 @@ window.vinoRenderer = function(item) {
         themeColor = 'orange'; 
         tipoLabel = window.t('wine_passito'); 
     }
-
-    // Nota: window.dbCol(item, 'Tipo') mostrerebbe "White Wine" (per es.) se presente nel DB come traduzione,
-    // ma qui sopra forziamo le label standard tradotte (ROSSO, BIANCO) per pulizia,
-    // oppure si può usare `window.dbCol(item, 'Tipo')` se si preferisce la stringa DB.
     
     return renderWineCard({
         id: safeId,
@@ -281,13 +276,14 @@ window.sentieroRenderer = (s) => {
         window.pendingMaps.push({ id: uniqueId, gpx: s.gpx_url, startLabel: s.nome_partenza, endLabel: s.nome_arrivo }); 
     }
 
+    // FIX 2: Rimosso onclick duplicato nel div interno "absolute inset-0"
     return `
-    <div class="bg-white rounded-[2rem] shadow-soft overflow-hidden flex flex-col h-full relative mb-6 group border border-slate-100/50 hover:shadow-lg transition-all">
+    <div class="bg-white rounded-[2rem] shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group border border-slate-100/50 hover:shadow-lg transition-all">
         <div id="${uniqueId}" class="h-48 w-full bg-slate-100 relative border-b border-slate-100 cursor-pointer" onclick="window.openTechMap('${safeObj}')">
             <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[10px] font-bold text-ct-green shadow-sm z-[400] font-sans tracking-widest uppercase">
                 🥾 Outdoor
             </div>
-            <div class="absolute inset-0 z-[300]" onclick="window.openTechMap('${safeObj}')"></div>
+            <div class="absolute inset-0 z-[300]"></div>
         </div>
         <div class="p-5 flex-1 flex flex-col">
             <div class="flex items-center gap-2 mb-2">
@@ -297,9 +293,14 @@ window.sentieroRenderer = (s) => {
             </div>
             <h3 class="font-serif text-2xl font-bold text-slate-800 leading-tight mb-2">${nome}</h3>
         </div>
-        <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-3">
-             ${getCandyBtn('map', window.t('btn_map'), 'green', `window.openTechMap('${safeObj}')`)}
-             ${getCandyBtn('info', window.t('btn_info'), 'blue', `window.openModal('sentieroInfo', '${safeObj}')`)}
+        
+        <div class="px-4 py-4 border-t border-slate-100 bg-slate-50/30 flex items-center gap-3">
+             <button onclick="window.openTechMap('${safeObj}')" class="flex-1 py-3 bg-ct-green text-white rounded-xl font-bold text-xs uppercase tracking-wide shadow-md shadow-green-100 active:scale-95 transition-transform flex items-center justify-center gap-2 border-b-2 border-green-700">
+                <span class="material-icons text-sm">map</span> ${window.t('btn_map')}
+             </button>
+             <button onclick="window.openModal('sentieroInfo', '${safeObj}')" class="flex-1 py-3 bg-ct-blue text-white rounded-xl font-bold text-xs uppercase tracking-wide shadow-md shadow-cyan-100 active:scale-95 transition-transform flex items-center justify-center gap-2 border-b-2 border-teal-700">
+                <span class="material-icons text-sm">visibility</span> ${window.t('btn_info')}
+             </button>
         </div>
     </div>`;
 };
@@ -315,7 +316,6 @@ window.farmacieRenderer = (f) => {
 };
 
 window.numeriUtiliRenderer = (n) => {
-    // Gestione nome se JSON
     let nome = n.Nome; 
     try { 
         if(typeof nome === 'string' && nome.startsWith('{')) {
