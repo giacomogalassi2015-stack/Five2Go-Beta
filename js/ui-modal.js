@@ -296,18 +296,24 @@ window.eseguiRicercaBus = async function() {
 
     if (!partenzaId || !arrivoId) return;
 
+    // Show Loader
     resultsContainer.style.display = 'block';
-    nextCard.innerHTML = `<div style="text-align:center; padding:20px;">${window.t('loading')} <span class="material-icons spin">sync</span></div>`;
+    nextCard.innerHTML = `<div class="flex flex-col items-center justify-center py-8"><span class="material-icons spin text-3xl mb-2 opacity-80">sync</span><span class="text-sm font-bold uppercase tracking-widest opacity-80">${window.t('loading')}</span></div>`;
     list.innerHTML = '';
+    
+    // Scroll immediato verso i risultati
+    setTimeout(() => { resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
 
+    // Calcolo Festività
     const parts = dataScelta.split('-');
     const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
     const isFestivo = (typeof isItalianHoliday === 'function') ? isItalianHoliday(dateObj) : (dateObj.getDay() === 0);
 
-    const dayTypeLabel = isFestivo 
-        ? `<span class="badge-holiday">${window.t('badge_holiday')}</span>` 
-        : `<span class="badge-weekday">${window.t('badge_weekday')}</span>`;
+    const dayBadge = isFestivo 
+        ? `<span class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-white border border-white/20">📅 ${window.t('badge_holiday')}</span>` 
+        : `<span class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-white border border-white/20">🏢 ${window.t('badge_weekday')}</span>`;
 
+    // Chiamata DB
     const { data, error } = await window.supabaseClient.rpc('trova_bus', { 
         p_partenza_id: partenzaId, 
         p_arrivo_id: arrivoId, 
@@ -315,146 +321,202 @@ window.eseguiRicercaBus = async function() {
         p_is_festivo: isFestivo 
     });
 
+    // Caso: Nessun risultato
     if (error || !data || data.length === 0) { 
         nextCard.innerHTML = `
-            <div style="text-align:center; padding:15px; color:#c62828;">
-                <span class="material-icons">event_busy</span><br>
-                <strong>${window.t('bus_not_found')}</strong><br>
-                <div style="margin-top:5px;">${dayTypeLabel}</div>
-                <small style="display:block; margin-top:5px;">${window.t('bus_try_change')}</small>
+            <div class="text-center py-6 text-white">
+                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm border border-white/30">
+                    <span class="material-icons text-3xl">event_busy</span>
+                </div>
+                <strong class="block text-xl mb-1">${window.t('bus_not_found')}</strong>
+                <div class="opacity-80 text-sm mb-4">${window.t('bus_try_change')}</div>
+                ${dayBadge}
             </div>`; 
         return; 
     }
 
     const primo = data[0];
+    const successivi = data.slice(1);
+
+    // --- CARD PRINCIPALE (HERO) ---
     nextCard.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-            <span style="font-size:0.75rem; color:#e0f7fa; text-transform:uppercase; font-weight:bold;">${window.t('next_departure')}</span>
-            ${dayTypeLabel}
+        <div class="flex justify-between items-start mb-6">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-lg bg-black/5">${window.t('next_departure')}</span>
+            ${dayBadge}
         </div>
-        <div class="bus-time-big">${primo.ora_partenza.slice(0,5)}</div>
-        <div style="font-size:1rem; color:#e0f7fa;">${window.t('arrival')}: <strong>${primo.ora_arrivo.slice(0,5)}</strong></div>
-        <div style="font-size:0.8rem; color:#b2ebf2; margin-top:5px;">${primo.nome_linea || 'Linea ATC'}</div>
+        
+        <div class="flex items-end justify-between relative z-10">
+            <div>
+                <div class="text-6xl font-serif font-bold text-white leading-none tracking-tight shadow-black drop-shadow-md mb-1">
+                    ${primo.ora_partenza.slice(0,5)}
+                </div>
+                <div class="text-sm font-bold text-amber-100 uppercase tracking-widest pl-1">Partenza</div>
+            </div>
+            <div class="text-right pb-1">
+                <div class="text-2xl font-bold text-white/90 leading-none">${primo.ora_arrivo.slice(0,5)}</div>
+                <div class="text-[10px] font-bold text-amber-100 uppercase tracking-widest opacity-80">Arrivo</div>
+            </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-white/20 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="material-icons text-white/80 text-sm">directions_bus</span>
+                <span class="text-xs font-bold text-white uppercase tracking-wide">${primo.nome_linea || 'Bus ATC'}</span>
+            </div>
+            <span class="material-icons text-white/40 rotate-180">arrow_back</span>
+        </div>
+        
+        <span class="material-icons absolute -right-4 -bottom-8 text-[140px] text-white opacity-10 rotate-12 pointer-events-none">directions_bus</span>
     `;
 
-    const successivi = data.slice(1);
-    list.innerHTML = successivi.map(b => `
-        <div class="bus-list-item">
-            <span style="font-weight:bold; color:#333;">${b.ora_partenza.slice(0,5)}</span>
-            <span style="color:#666;">➜ ${b.ora_arrivo.slice(0,5)}</span>
+    // --- LISTA SUCCESSIVA (COMPACT CARDS) ---
+    if (successivi.length === 0) {
+        list.innerHTML = `<div class="text-center text-slate-400 text-xs py-4 font-bold uppercase tracking-widest">Nessun'altra corsa oggi</div>`;
+    } else {
+        list.innerHTML = successivi.map(b => `
+            <div class="group flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-md hover:border-amber-100 cursor-default">
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex flex-col">
+                        <span class="text-xl font-bold text-slate-700 leading-none group-hover:text-amber-600 transition-colors">${b.ora_partenza.slice(0,5)}</span>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Partenza</span>
+                    </div>
+                    
+                    <div class="flex flex-col items-center px-1 opacity-40">
+                         <span class="material-icons text-slate-400 text-sm">arrow_forward</span>
+                    </div>
+
+                    <div class="flex flex-col">
+                        <span class="text-lg font-bold text-slate-500 leading-none">${b.ora_arrivo.slice(0,5)}</span>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Arrivo</span>
+                    </div>
+                </div>
+
+                <div class="bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm group-hover:bg-amber-50 group-hover:border-amber-100 transition-colors">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-amber-600">Bus</span>
+                </div>
+            </div>
+        `).join('');
+    }
+};
+window.eseguiRicercaTraghetto = async function() {
+    const selPart = document.getElementById('selPartenzaFerry');
+    const selArr = document.getElementById('selArrivoFerry');
+    const selOra = document.getElementById('selOraFerry');
+
+    const resultsContainer = document.getElementById('ferryResultsContainer');
+    const nextCard = document.getElementById('nextFerryCard');
+    const list = document.getElementById('otherFerryList');
+
+    if (!selPart.value || !selArr.value || !selOra.value) return;
+
+    // Show Loader
+    resultsContainer.style.display = 'block';
+    nextCard.innerHTML = `<div class="flex flex-col items-center justify-center py-8"><span class="material-icons spin text-3xl mb-2 opacity-80">sync</span><span class="text-sm font-bold uppercase tracking-widest opacity-80">${window.t('loading')}</span></div>`;
+    list.innerHTML = '';
+    
+    setTimeout(() => { resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+
+    const startCol = selPart.value; 
+    const endCol = selArr.value;    
+    const timeFilter = selOra.value; 
+
+    // Chiamata DB
+    const { data, error } = await window.supabaseClient
+        .from('Orari_traghetti')
+        .select(`id, direzione, validita, "${startCol}", "${endCol}"`); 
+
+    // Validazione e Ordinamento
+    let validRuns = [];
+    if (data) {
+        validRuns = data.filter(row => {
+            const tStart = row[startCol]; 
+            const tEnd = row[endCol];     
+            if (!tStart || !tEnd) return false;
+            if (tStart >= tEnd) return false; // Filtra direzioni errate
+            if (tStart < timeFilter) return false; // Filtra orari passati
+            return true;
+        });
+        validRuns.sort((a, b) => a[startCol].localeCompare(b[startCol]));
+    }
+
+    // Caso: Nessun risultato
+    if (error || validRuns.length === 0) {
+        nextCard.innerHTML = `
+            <div class="text-center py-6 text-white">
+                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm border border-white/30">
+                    <span class="material-icons text-3xl">directions_boat</span>
+                </div>
+                <strong class="block text-xl mb-1">${window.t('bus_not_found')}</strong>
+                <div class="opacity-80 text-sm">Controlla se la tratta è diretta.</div>
+            </div>`;
+        return;
+    }
+
+    const primo = validRuns[0];
+    const successivi = validRuns.slice(1);
+
+    // --- CARD PRINCIPALE (HERO - BLU) ---
+    nextCard.innerHTML = `
+        <div class="flex justify-between items-start mb-6">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-lg bg-black/5">${window.t('next_departure')}</span>
+            <span class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-white border border-white/20">🌊 Mare</span>
         </div>
-    `).join('');
-    
-    setTimeout(() => { resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
-};
-
-// --- Sostituisci in ui-modal.js ---
-
-// 1. CARICAMENTO INIZIALE: Popola entrambi i box
-window.loadAllStops = async function() {
-    const selPart = document.getElementById('selPartenza');
-    const selArr = document.getElementById('selArrivo');
-    if(!selPart || !selArr) return;
-
-    if (!window.cachedStops) {
-        const { data, error } = await window.supabaseClient
-            .from('Fermate_bus')
-            .select('ID, NOME_FERMATA, LAT, LONG') 
-            .order('NOME_FERMATA', { ascending: true });
         
-        if (error) { console.error("Errore fermate:", error); return; }
-        window.cachedStops = data;
-    }
+        <div class="flex items-end justify-between relative z-10">
+            <div>
+                <div class="text-6xl font-serif font-bold text-white leading-none tracking-tight shadow-black drop-shadow-md mb-1">
+                    ${primo[startCol].slice(0,5)}
+                </div>
+                <div class="text-sm font-bold text-cyan-100 uppercase tracking-widest pl-1">Partenza</div>
+            </div>
+            <div class="text-right pb-1">
+                <div class="text-2xl font-bold text-white/90 leading-none">${primo[endCol].slice(0,5)}</div>
+                <div class="text-[10px] font-bold text-cyan-100 uppercase tracking-widest opacity-80">Arrivo</div>
+            </div>
+        </div>
 
-    const options = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
-    
-    // Popoliamo entrambi i menu inizialmente
-    const placeholder = `<option value="" disabled selected>${window.t('select_placeholder')}</option>`;
-    if (selPart.innerHTML.includes(window.t('loading'))) selPart.innerHTML = placeholder + options;
-    if (selArr.innerHTML.includes(window.t('loading')) || selArr.value === "") selArr.innerHTML = placeholder + options;
-
-    if (window.cachedStops && window.initBusMap) {
-        window.initBusMap(window.cachedStops);
-    }
-};
-
-// 2. NUOVA FUNZIONE BIDIREZIONALE: Gestisce il cambio di selezione
-window.handleBusSelectionChange = async function(source) {
-    const selPart = document.getElementById('selPartenza');
-    const selArr = document.getElementById('selArrivo');
-    
-    if (!selPart || !selArr) return;
-
-    // Determiniamo chi sta filtrando chi
-    const isPartenzaChanged = (source === 'partenza');
-    const changedSelect = isPartenzaChanged ? selPart : selArr;
-    const targetSelect = isPartenzaChanged ? selArr : selPart;
-    
-    const selectedId = changedSelect.value;
-    if (!selectedId) return;
-
-    // Salviamo il valore corrente dell'altro box (se esiste) per tentare di mantenerlo
-    const currentTargetValue = targetSelect.value;
-
-    // Feedback visivo di caricamento sul target
-    const originalTargetOptions = targetSelect.innerHTML;
-    // Non cancelliamo tutto, mostriamo opzione di ricerca mantenendo la larghezza
-    // targetSelect.disabled = true; // Opzionale: disabilitare durante la ricerca
-
-    try {
-        // Logica: Troviamo le corse che passano per la fermata selezionata
-        const { data: corsePassanti } = await window.supabaseClient
-            .from('Orari_bus')
-            .select('ID_CORSA')
-            .eq('ID_FERMATA', selectedId);
+        <div class="mt-6 pt-4 border-t border-white/20 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="material-icons text-white/80 text-sm">explore</span>
+                <span class="text-xs font-bold text-white uppercase tracking-wide">Dir. ${primo.direzione || 'Costa'}</span>
+            </div>
+        </div>
         
-        const runIds = corsePassanti.map(c => c.ID_CORSA);
-        
-        if (runIds.length === 0) {
-            alert(window.t('bus_not_found'));
-            return;
-        }
+        <span class="material-icons absolute -right-6 -bottom-6 text-[140px] text-white opacity-10 rotate-[-10deg] pointer-events-none">sailing</span>
+    `;
 
-        // Troviamo tutte le ALTRE fermate collegate a queste corse
-        const { data: fermateCollegate } = await window.supabaseClient
-            .from('Orari_bus')
-            .select('ID_FERMATA')
-            .in('ID_CORSA', runIds);
+    // --- LISTA SUCCESSIVA (COMPACT CARDS - BLU) ---
+    if (successivi.length === 0) {
+        list.innerHTML = `<div class="text-center text-slate-400 text-xs py-4 font-bold uppercase tracking-widest">Ultima corsa della giornata</div>`;
+    } else {
+        list.innerHTML = successivi.map(run => `
+            <div class="group flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-md hover:border-cyan-100 cursor-default">
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex flex-col">
+                        <span class="text-xl font-bold text-slate-700 leading-none group-hover:text-cyan-600 transition-colors">${run[startCol].slice(0,5)}</span>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Partenza</span>
+                    </div>
+                    
+                    <div class="flex flex-col items-center px-1 opacity-40">
+                         <span class="material-icons text-slate-400 text-sm">arrow_forward</span>
+                    </div>
 
-        // Creiamo lista unica di ID escludendo quello appena selezionato
-        const validIds = [...new Set(fermateCollegate.map(x => x.ID_FERMATA))]
-                         .filter(id => id != selectedId);
+                    <div class="flex flex-col">
+                        <span class="text-lg font-bold text-slate-500 leading-none">${run[endCol].slice(0,5)}</span>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Arrivo</span>
+                    </div>
+                </div>
 
-        // Filtriamo l'array cachedStops
-        let validStops = [];
-        if (window.cachedStops) {
-            validStops = window.cachedStops.filter(s => validIds.includes(s.ID));
-        }
-        
-        validStops.sort((a, b) => a.NOME_FERMATA.localeCompare(b.NOME_FERMATA));
-
-        // Ricostruiamo le opzioni del target
-        const placeholder = `<option value="" disabled selected>${window.t('select_placeholder')}</option>`;
-        const newOptions = validStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
-        
-        targetSelect.innerHTML = placeholder + newOptions;
-        
-        // Se il valore che c'era prima è ancora valido, lo riselezioniamo
-        if (currentTargetValue && validIds.includes(parseInt(currentTargetValue))) {
-            targetSelect.value = currentTargetValue;
-        } else {
-            // Se non è più valido o era vuoto, resetta
-            targetSelect.value = "";
-        }
-        
-        targetSelect.disabled = false;
-
-    } catch (err) {
-        console.error("Errore filtro bus:", err);
-        targetSelect.innerHTML = originalTargetOptions; // Ripristina in caso di errore
-        targetSelect.disabled = false;
+                <div class="bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm group-hover:bg-cyan-50 group-hover:border-cyan-100 transition-colors">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-cyan-600">Ferry</span>
+                </div>
+            </div>
+        `).join('');
     }
 };
+
 
 // 3. INIT MAPPA BUS (Invariato, ma essenziale per il contesto)
 window.initBusMap = function(fermate) {
@@ -509,24 +571,13 @@ window.initBusMap = function(fermate) {
 
 // 4. SET BUS STOP (AGGIORNATA): Gestisce la selezione da Mappa
 window.setBusStop = function(type, value) {
-    // type è 'partenza' o 'arrivo'
     const selectId = (type === 'partenza') ? 'selPartenza' : 'selArrivo';
     const select = document.getElementById(selectId);
     
     if (select) {
-        // 1. Imposta il valore visivo
         select.value = value;
-        
-        // 2. Feedback visivo (flash giallo)
-        select.style.backgroundColor = "#fff3cd"; 
-        setTimeout(() => select.style.backgroundColor = "white", 500);
-        
-        // 3. CHIAMA LA FUNZIONE DI FILTRO
-        // Questo è il passaggio mancante nel tuo codice originale.
-        // Simuliamo l'azione dell'utente chiamando manualmente la logica.
+        window.flashInputFeedback(selectId); // Effetto visivo nuovo
         window.handleBusSelectionChange(type);
-        
-        // 4. Chiude il popup della mappa (opzionale, per pulizia)
         if(window.currentBusMap) window.currentBusMap.closePopup();
     }
 };
@@ -534,93 +585,215 @@ window.setBusStop = function(type, value) {
 window.toggleBusMap = function() {
     const container = document.getElementById('bus-map-wrapper');
     const btn = document.getElementById('btn-bus-map-toggle');
-    if (!container || !btn) return;
-    const isHidden = container.style.display === 'none';
+    
+    if (!container) return;
+    
+    const isHidden = container.classList.contains('hidden');
+    
     if (isHidden) {
-        container.style.display = 'block';
-        btn.innerHTML = `📍 ${window.t('hide_map')} ▾`;
-        btn.style.backgroundColor = '#D1C4E9'; 
+        container.classList.remove('hidden');
+        if (btn) {
+            btn.classList.add('bg-indigo-500', 'text-white', 'border-transparent');
+            btn.classList.remove('bg-indigo-50', 'text-indigo-500', 'border-indigo-100');
+            btn.innerHTML = '<span class="material-icons text-lg">expand_less</span>'; // Icona chiudi
+        }
+        // Invalida size dopo che il container è visibile per renderizzare i tile corretti
         setTimeout(() => { if (window.currentBusMap) { window.currentBusMap.invalidateSize(); } }, 100);
     } else {
-        container.style.display = 'none';
-        btn.innerHTML = `🗺️ ${window.t('show_map')} ▾`;
-        btn.style.backgroundColor = '#EDE7F6'; 
+        container.classList.add('hidden');
+        if (btn) {
+            btn.classList.remove('bg-indigo-500', 'text-white', 'border-transparent');
+            btn.classList.add('bg-indigo-50', 'text-indigo-500', 'border-indigo-100');
+            btn.innerHTML = '<span class="material-icons text-lg">map</span>'; // Icona mappa
+        }
+    }
+};
+// ============================================================
+// LOGICA BUS (Bidirezionale + DB)
+// ============================================================
+
+// 1. CARICAMENTO INIZIALE: Popola TUTTI e DUE i campi
+window.loadAllStops = async function() {
+    const selPart = document.getElementById('selPartenza');
+    const selArr = document.getElementById('selArrivo');
+    if(!selPart || !selArr) return;
+
+    if (!window.cachedStops) {
+        // Scarica dal DB solo se non ce li ha
+        const { data, error } = await window.supabaseClient
+            .from('Fermate_bus')
+            .select('ID, NOME_FERMATA, LAT, LONG') 
+            .order('NOME_FERMATA', { ascending: true });
+        
+        if (error) { console.error("Errore fermate:", error); return; }
+        window.cachedStops = data;
+    }
+
+    // Crea le opzioni
+    const options = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+    const placeholderStart = `<option value="" selected>${window.t('select_start')}</option>`;
+    const placeholderEnd = `<option value="" selected>Scegli Arrivo</option>`; // Placeholder generico
+
+    // Popola ENTRAMBI senza restrizioni iniziali
+    selPart.innerHTML = placeholderStart + options;
+    selArr.innerHTML = placeholderEnd + options;
+
+    // Abilita entrambi
+    selPart.disabled = false;
+    selArr.disabled = false;
+
+    // Init Mappa Bus
+    if (window.initBusMap) window.initBusMap(window.cachedStops);
+};
+
+// 2. GESTIONE SELEZIONE (Intelligente)
+window.handleBusSelectionChange = async function(source) {
+    const selPart = document.getElementById('selPartenza');
+    const selArr = document.getElementById('selArrivo');
+    
+    if (!selPart || !selArr || !window.cachedStops) return;
+
+    // Chi sta cambiando?
+    const changedSelect = (source === 'partenza') ? selPart : selArr;
+    const targetSelect = (source === 'partenza') ? selArr : selPart;
+    
+    const selectedId = changedSelect.value;
+    const currentTargetValue = targetSelect.value; // Salviamo cosa c'era nell'altro
+
+    // Se l'utente ha deselezionato (tornato a vuoto), resetta l'altro campo a TUTTE le opzioni
+    if (!selectedId) {
+        const options = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+        const placeholder = `<option value="" selected>Scegli...</option>`;
+        targetSelect.innerHTML = placeholder + options;
+        targetSelect.value = currentTargetValue; // Rimetti il valore se c'era
+        return;
+    }
+
+    // Feedback visivo "Flash" sull'input cambiato
+    if(window.flashInputFeedback) window.flashInputFeedback((source === 'partenza') ? 'selPartenza' : 'selArrivo');
+
+    try {
+        // 1. Trova le corse che passano per la fermata selezionata
+        const { data: corsePassanti } = await window.supabaseClient
+            .from('Orari_bus')
+            .select('ID_CORSA')
+            .eq('ID_FERMATA', selectedId);
+        
+        const runIds = corsePassanti.map(c => c.ID_CORSA);
+        
+        if (runIds.length === 0) return; // Nessuna corsa passa di qui (strano)
+
+        // 2. Trova tutte le ALTRE fermate collegate a queste corse
+        const { data: fermateCollegate } = await window.supabaseClient
+            .from('Orari_bus')
+            .select('ID_FERMATA')
+            .in('ID_CORSA', runIds);
+
+        // Lista ID validi (Escludi se stesso)
+        const validIds = [...new Set(fermateCollegate.map(x => x.ID_FERMATA))]
+                         .filter(id => id != selectedId);
+
+        // 3. Filtra la lista cachedStops
+        let validStops = window.cachedStops.filter(s => validIds.includes(s.ID));
+        validStops.sort((a, b) => a.NOME_FERMATA.localeCompare(b.NOME_FERMATA));
+
+        // 4. Aggiorna l'ALTRO box
+        const newOptions = validStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+        const placeholder = `<option value="" disabled selected>Destinazioni valide...</option>`;
+        
+        targetSelect.innerHTML = placeholder + newOptions;
+
+        // Se il valore che c'era nell'altro box è ancora valido, tienilo, altrimenti resetta
+        if (currentTargetValue && validIds.includes(parseInt(currentTargetValue))) {
+            targetSelect.value = currentTargetValue;
+        } else {
+            targetSelect.value = ""; 
+        }
+
+    } catch (err) {
+        console.error("Errore filtro bus:", err);
     }
 };
 
-window.eseguiRicercaTraghetto = async function() {
+
+// ============================================================
+// LOGICA BATTELLI (Bidirezionale + Static Data)
+// ============================================================
+
+// 1. CARICAMENTO INIZIALE BATTELLI (Corretto)
+window.initFerrySearch = function() {
     const selPart = document.getElementById('selPartenzaFerry');
     const selArr = document.getElementById('selArrivoFerry');
-    const selOra = document.getElementById('selOraFerry');
+    if (!selPart || !selArr) return;
 
-    const resultsContainer = document.getElementById('ferryResultsContainer');
-    const nextCard = document.getElementById('nextFerryCard');
-    const list = document.getElementById('otherFerryList');
+    const stops = window.FERRY_STOPS || [
+        { id: 'levanto', label: 'Levanto' }, { id: 'monterosso', label: 'Monterosso' },
+        { id: 'vernazza', label: 'Vernazza' }, { id: 'corniglia', label: 'Corniglia' },
+        { id: 'manarola', label: 'Manarola' }, { id: 'riomaggiore', label: 'Riomaggiore' },
+        { id: 'portovenere', label: 'Portovenere' }, { id: 'la spezia', label: 'La Spezia' },
+        { id: 'lerici', label: 'Lerici' }
+    ];
 
-    if (!selPart.value || !selArr.value || !selOra.value) return;
-
-    resultsContainer.style.display = 'block';
-    nextCard.innerHTML = `<div style="text-align:center; padding:20px;">${window.t('loading')} <span class="material-icons spin">sync</span></div>`;
-    list.innerHTML = '';
-
-    const startCol = selPart.value; 
-    const endCol = selArr.value;    
-    const timeFilter = selOra.value; 
-
-    const { data, error } = await window.supabaseClient
-        .from('Orari_traghetti')
-        .select(`id, direzione, validita, "${startCol}", "${endCol}"`); 
-
-    if (error || !data) {
-        nextCard.innerHTML = `<p style="padding:15px; text-align:center;">${window.t('error')}: ${error ? error.message : 'Nessun dato'}</p>`;
-        return;
-    }
-
-    let validRuns = data.filter(row => {
-        const tStart = row[startCol]; 
-        const tEnd = row[endCol];     
-
-        if (!tStart || !tEnd) return false;
-
-        if (tStart >= tEnd) return false;
-
-        if (tStart < timeFilter) return false;
-
-        return true;
-    });
-
-    validRuns.sort((a, b) => a[startCol].localeCompare(b[startCol]));
-
-    if (validRuns.length === 0) {
-        nextCard.innerHTML = `
-            <div style="text-align:center; padding:15px; color:#c62828;">
-                <span class="material-icons">directions_boat_filled</span><br>
-                <strong>${window.t('bus_not_found')}</strong><br>
-                <small style="display:block; margin-top:5px;">Verifica che la tratta sia diretta.</small>
-            </div>`;
-        return;
-    }
-
-    const primo = validRuns[0];
-    nextCard.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-            <span style="font-size:0.75rem; color:#e1f5fe; text-transform:uppercase; font-weight:bold;">${window.t('next_departure')}</span>
-            <span class="badge-weekday" style="background:#0288D1">Navigazione</span>
-        </div>
-        <div class="bus-time-big">${primo[startCol].slice(0,5)}</div>
-        <div style="font-size:1rem; color:#e1f5fe;">${window.t('arrival')}: <strong>${primo[endCol].slice(0,5)}</strong></div>
-        <div style="font-size:0.75rem; color:#b3e5fc; margin-top:5px;">Direzione: ${primo.direzione || '--'}</div>
-    `;
-
-    const successivi = validRuns.slice(1);
-    list.innerHTML = successivi.map(run => `
-        <div class="bus-list-item">
-            <span style="font-weight:bold; color:#01579b;">${run[startCol].slice(0,5)}</span>
-            <span style="color:#666;">➜ ${run[endCol].slice(0,5)}</span>
-        </div>
-    `).join('');
+    const options = stops.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
     
-    setTimeout(() => { 
-        resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
-    }, 150);
+    // Rimuoviamo 'disabled' dal placeholder per sicurezza su mobile
+    selPart.innerHTML = `<option value="" selected>${window.t('select_start')}</option>` + options;
+    selArr.innerHTML = `<option value="" selected>Scegli Arrivo</option>` + options;
+};
+
+// 2. GESTIONE SELEZIONE BATTELLI (Fix "Destinazioni non selezionabile")
+window.handleFerrySelectionChange = function(source) {
+    const selPart = document.getElementById('selPartenzaFerry');
+    const selArr = document.getElementById('selArrivoFerry');
+    
+    const stops = window.FERRY_STOPS || [
+        { id: 'levanto', label: 'Levanto' }, { id: 'monterosso', label: 'Monterosso' },
+        { id: 'vernazza', label: 'Vernazza' }, { id: 'corniglia', label: 'Corniglia' },
+        { id: 'manarola', label: 'Manarola' }, { id: 'riomaggiore', label: 'Riomaggiore' },
+        { id: 'portovenere', label: 'Portovenere' }, { id: 'la spezia', label: 'La Spezia' },
+        { id: 'lerici', label: 'Lerici' }
+    ];
+
+    const changedSelect = (source === 'partenza') ? selPart : selArr;
+    const targetSelect = (source === 'partenza') ? selArr : selPart;
+    
+    const selectedVal = changedSelect.value;
+    const currentTargetVal = targetSelect.value;
+
+    if(window.flashInputFeedback) window.flashInputFeedback((source === 'partenza') ? 'selPartenzaFerry' : 'selArrivoFerry');
+
+    // Se l'utente ha resettato a vuoto
+    if (!selectedVal) {
+        const options = stops.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+        targetSelect.innerHTML = `<option value="" selected>Scegli...</option>` + options;
+        targetSelect.value = currentTargetVal;
+        targetSelect.disabled = false; // Assicuriamoci che sia attivo
+        return;
+    }
+
+    // Filtra: Mostra tutti TRANNE quello selezionato
+    const validStops = stops.filter(s => s.id !== selectedVal);
+    const newOptions = validStops.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+    
+    // FIX: Rimosso 'disabled' dal placeholder e forzato l'enable del select
+    targetSelect.innerHTML = `<option value="" selected>Destinazioni...</option>` + newOptions;
+    
+    // Logica di persistenza valore
+    if (currentTargetVal && validStops.some(s => s.id === currentTargetVal)) {
+        targetSelect.value = currentTargetVal;
+    } else {
+        targetSelect.value = "";
+    }
+    
+    targetSelect.disabled = false; // SBLOCCA IL CAMPO
+};
+
+// --- HELPER PER FLASH VISIVO ---
+window.flashInputFeedback = function(elementId) {
+    const el = document.getElementById(elementId);
+    if (el && el.parentElement && el.parentElement.parentElement) {
+        const wrapper = el.parentElement.parentElement; 
+        wrapper.classList.add('bg-slate-100', 'rounded-lg');
+        setTimeout(() => wrapper.classList.remove('bg-slate-100', 'rounded-lg'), 300);
+    }
 };
