@@ -9,7 +9,7 @@ window.getModalContent = function(type, payload, item) {
    if (type === 'ristorante' || type === 'restaurant') {
     const item = JSON.parse(decodeURIComponent(payload));
     const nome = window.dbCol(item, 'Nome');
-    const nomeIT = window.valIT(item, 'Nome'); // FIX CLOUDINARY
+    const nomeIT = window.valIT(item, 'Nome'); 
     const indirizzo = window.dbCol(item, 'Paesi') || ''; 
     const desc = window.dbCol(item, 'Descrizioni') || window.t('desc_missing'); 
     
@@ -30,7 +30,7 @@ window.getModalContent = function(type, payload, item) {
     else if (type === 'product') {
         const p = JSON.parse(decodeURIComponent(payload));
         const nome = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
-        const nomeIT = window.valIT(p, 'Prodotti') || window.valIT(p, 'Nome'); // FIX
+        const nomeIT = window.valIT(p, 'Prodotti') || window.valIT(p, 'Nome');
         const desc = window.dbCol(p, 'Descrizione');   
         const ideale = window.dbCol(p, 'Ideale per'); 
         const fotoKey = p.Prodotti_foto || nomeIT;
@@ -212,7 +212,7 @@ window.getModalContent = function(type, payload, item) {
     else if (type === 'Attrazioni' || type === 'attrazione') {
         if (!item) { return { html: '', class: '' }; }
         const titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
-        const titoloIT = window.valIT(item, 'Attrazioni') || window.valIT(item, 'Titolo'); // FIX
+        const titoloIT = window.valIT(item, 'Attrazioni') || window.valIT(item, 'Titolo'); 
         const curiosita = window.dbCol(item, 'Curiosita');
         const desc = window.dbCol(item, 'Descrizione');
         const img = window.getSmartUrl(titoloIT, '', 800); 
@@ -239,13 +239,11 @@ window.getModalContent = function(type, payload, item) {
                 </div>
             </div>`;
     }
-    // --- TRASPORTI (Treno = Originale / Bus & Ferry = Widget) ---
+    // --- TRASPORTI ---
     else if (type === 'transport') {
     const transportId = payload; 
 
-    // ============================================================
-    // A. CASO TRENO (Logica Originale - Informativa)
-    // ============================================================
+    // A. TRENO
     if (transportId === 'train') {
         contentHtml = `
         <div class="relative bg-white min-h-[400px]">
@@ -262,7 +260,6 @@ window.getModalContent = function(type, payload, item) {
             </div>
 
             <div class="px-5 -mt-8 relative z-10 animate-pop">
-                
                 <div class="bg-white rounded-[2rem] shadow-xl shadow-orange-100/50 p-6 border border-slate-100 mb-6">
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
                         <span class="material-icons text-sm text-ct-terracotta">timer</span> ${window.t('avg_times')}
@@ -296,13 +293,10 @@ window.getModalContent = function(type, payload, item) {
                 <p class="text-center text-[10px] text-slate-400 mt-4 font-bold uppercase tracking-wide opacity-70 mb-6">${window.t('check_site')}</p>
             </div>
         </div>`;
-        
         return { html: contentHtml, class: 'bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto' };
     }
 
-    // ============================================================
-    // B. CASO BUS & BATTELLI (Nuovo Travel Widget)
-    // ============================================================
+    // B. BUS & BATTELLI
     else {
         const isBus = transportId === 'bus';
         
@@ -420,8 +414,7 @@ window.getModalContent = function(type, payload, item) {
                         <span class="material-icons text-sm">confirmation_number</span> ${window.t('how_to_ticket')}
                     </button>
                     <div id="ticket-info-box" class="hidden mt-2 p-4 bg-white rounded-xl text-xs text-slate-500 border border-slate-200 shadow-sm animate-fade mx-auto text-center leading-relaxed">
-                        <p class="mb-2">🎟 <strong>Dove acquistare:</strong> Point informativi del Parco o tramite App ufficiale.</p>
-                        <p class="text-xs opacity-75">Nota: A bordo potrebbe esserci un sovrapprezzo. Per i traghetti, biglietteria al molo.</p>
+                        <p class="mb-2">${window.t('ticket_info_text')}</p>
                     </div>
                 </div>
             </div>
@@ -466,37 +459,6 @@ window.getModalContent = function(type, payload, item) {
     return { html: contentHtml, class: modalClass };
 };
 
-// Helper Treni (Usa Terracotta)
-window.trainSearchRenderer = (data, nowTime) => {
-    return `
-    <div class="animate-fade">
-        <div class="bg-ct-terracotta-light border-l-4 border-ct-terracotta p-4 rounded-r-xl mb-6">
-            <p class="text-ct-terracotta-dark font-medium leading-relaxed text-sm">${window.t('train_desc')}</p>
-        </div>
-        
-        <div class="bg-white border border-slate-100 rounded-2xl p-5 mb-6 shadow-sm">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">⏱️ ${window.t('avg_times')}</h4>
-            <div class="space-y-3 text-sm">
-                <div class="flex justify-between items-center">
-                    <span class="text-slate-600">La Spezia ↔ Riomaggiore</span> <b class="text-slate-900 bg-slate-100 px-2 py-1 rounded">7 min</b>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-slate-600">${window.t('between_villages')}</span> <b class="text-slate-900 bg-slate-100 px-2 py-1 rounded">2-4 min</b>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-slate-600">Monterosso ↔ Levanto</span> <b class="text-slate-900 bg-slate-100 px-2 py-1 rounded">5 min</b>
-                </div>
-            </div>
-        </div>
-
-        <button onclick="apriTrenitalia()" class="w-full py-4 rounded-xl bg-ct-terracotta text-white font-bold text-lg shadow-lg shadow-ct-terracotta/30 active:scale-95 transition-transform flex items-center justify-center gap-2">
-            <span>${window.t('train_cta')}</span> <span class="material-icons text-sm">open_in_new</span>
-        </button>
-        
-        <p class="text-center text-[10px] text-slate-400 mt-4">${window.t('check_site')}</p>
-    </div>`;
-};
-
 // LISTA FERMATE TRAGHETTI (Invariato)
 const FERRY_STOPS_UI = [
     { id: 'levanto', label: 'Levanto' },
@@ -515,13 +477,13 @@ window.initFerrySearch = function() {
     const selArr = document.getElementById('selArrivoFerry');
     if (!selPart || !selArr) return;
 
-    selPart.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` + 
+    selPart.innerHTML = `<option value="" disabled selected>${window.t('select_start')}</option>` + 
         FERRY_STOPS_UI.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
 
     selPart.addEventListener('change', function() {
         const startVal = this.value;
         const destOpts = FERRY_STOPS_UI.filter(s => s.id !== startVal);
-        selArr.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` + 
+        selArr.innerHTML = `<option value="" disabled selected>${window.t('select_arrival_placeholder')}</option>` + 
             destOpts.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
         selArr.disabled = false;
     });
