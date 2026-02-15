@@ -2,12 +2,15 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <title>Five2Go</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/@raruto/leaflet-elevation/dist/leaflet-elevation.min.css" />
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -38,7 +41,7 @@
                     },
                     boxShadow: {
                         'soft': '0 4px 20px -5px rgba(0,0,0,0.1)', 
-                        'floating': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', // Ombra più leggera e moderna
+                        'floating': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
                     },
                     borderRadius: {
                         '3xl': '1.5rem', 
@@ -50,11 +53,19 @@
     </script>
 
     <style>
+        /* FIX SAFARI: min-height 100dvh */
         html, body {
-            height: 100%; width: 100%; overflow-x: hidden;
-            overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent;
+            height: 100%; 
+            min-height: 100dvh;
+            width: 100%; 
+            overflow-x: hidden;
+            overscroll-behavior-y: none; 
+            -webkit-tap-highlight-color: transparent;
             background-color: #F4F1DE; 
             color: #264653;
+            /* Gestione SafeArea per iPhone X e successivi */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -65,10 +76,9 @@
         }
         .animate-pop { animation: popIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         
-        /* BUMP CENTRALE COMPATTO */
         .nav-center-bump {
             position: absolute;
-            top: -24px; /* Meno pronunciato */
+            top: -24px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -78,7 +88,6 @@
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
         }
         
-        /* Quando nascosto */
         .nav-center-bump.hidden-bump {
             transform: translateX(-50%) translateY(80px);
             opacity: 0;
@@ -86,7 +95,7 @@
         }
 
         .nav-center-btn {
-            width: 48px; /* Più piccolo (era 58px) */
+            width: 48px;
             height: 48px;
             border-radius: 50%;
             background: white;
@@ -109,9 +118,11 @@
     <script src="https://unpkg.com/@raruto/leaflet-elevation/dist/leaflet-elevation.js"></script>
 </head>
 
-<body class="text-slate-700 antialiased pb-28"> <header class="fixed top-0 left-0 right-0 z-50 pointer-events-none"></header>
+<body class="text-slate-700 antialiased opacity-0 transition-opacity duration-500" onload="document.body.classList.remove('opacity-0')"> 
+    
+    <header class="fixed top-0 left-0 right-0 z-50 pointer-events-none"></header>
 
-    <main id="app-content" class="max-w-2xl mx-auto px-4 pt-4 min-h-screen">
+    <main id="app-content" class="max-w-2xl mx-auto px-4 pt-4 min-h-[100dvh] pb-32">
         <div id="data-container" class="flex flex-col items-center justify-center h-[80vh]">
             <div class="relative w-16 h-16">
                 <div class="absolute inset-0 bg-ct-yellow rounded-full animate-ping opacity-30"></div>
@@ -123,7 +134,7 @@
         </div>    
     </main>
 
-    <nav id="bottom-nav" class="fixed bottom-4 left-4 right-4 h-16 bg-white/95 backdrop-blur-xl rounded-2xl shadow-floating flex justify-between items-center z-50 px-1 border border-white/50">
+    <nav id="bottom-nav" class="fixed bottom-4 left-4 right-4 h-16 bg-white/95 backdrop-blur-xl rounded-2xl shadow-floating flex justify-between items-center z-50 px-1 border border-white/50 pb-[env(safe-area-inset-bottom)]">
         
         <div class="flex flex-1 justify-around items-center h-full">
             <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('home', this)">
@@ -157,15 +168,22 @@
 
     </nav>
 
-    <script src="js/data-logic.js"></script>
-    <script src="js/ui-renderers.js"></script>
-    <script src="js/legal-render.js"></script>
-    <script src="js/ui-modal-contents.js"></script> 
-    <script src="js/ui-modal.js"></script> 
-    <script src="js/app.js"></script>
+    <script src="./data-logic.js" defer></script>
+    <script src="./ui-renderers.js" defer></script>
+    <script src="./legal-render.js" defer></script>
+    <script src="./ui-modal-contents.js" defer></script> 
+    <script src="./ui-modal.js" defer></script> 
+    <script src="./app.js" defer></script>
 
     <a href="#" id="ghost-cookie-btn" class="lb-cs-settings-link hidden"></a>
-    <script type="text/javascript" src="https://app.legalblink.it/api/scripts/lb_cs.js"></script>
-    <script id="lb_cs" type="text/javascript">lb_cs("6973df3d9398e90022bdb48d");</script>
+    <script type="text/javascript" src="https://app.legalblink.it/api/scripts/lb_cs.js" defer></script>
+    <script id="lb_cs" type="text/javascript">
+        // FIX: Avviare LegalBlink solo dopo caricamento DOM
+        document.addEventListener("DOMContentLoaded", function() {
+            if(typeof lb_cs === "function") {
+                lb_cs("6973df3d9398e90022bdb48d");
+            }
+        });
+    </script>
 </body> 
 </html>
