@@ -1,43 +1,42 @@
-console.log("✅ 6. app.js caricato (Smart Filter: Closed Init & Scroll Fix)");
+console.log("✅ 6. app.js caricato (Fixed Header & Filters)");
 
 const content = document.getElementById('app-content');
 window.pendingMaps = []; 
 
-// --- 1. SETUP LINGUA & HEADER ---
+// --- 1. SETUP HEADER (Nuovo Design Icona) ---
 function setupHeaderElements() {
     const header = document.querySelector('header');
     
+    // Rimuove vecchi elementi
     const oldActions = header.querySelector('.header-actions');
     if (oldActions) oldActions.remove();
-    const oldShare = document.getElementById('header-btn-share');
-    if (oldShare) oldShare.remove();
 
     if (window.currentViewName !== 'home') return; 
 
+    // Crea contenitore per l'icona
     const actionsContainer = document.createElement('div');
-    actionsContainer.className = 'header-actions animate-fade absolute left-5 top-8 z-50'; 
+    actionsContainer.className = 'header-actions animate-fade fixed top-5 right-5 z-[60]'; 
     actionsContainer.id = 'header-btn-lang'; 
 
-    const currFlag = window.AVAILABLE_LANGS.find(l => l.code === window.currentLang).flag;
-    const currCode = window.currentLang.toUpperCase();
+    const currFlag = window.AVAILABLE_LANGS.find(l => l.code === window.currentLang)?.flag || '🌍';
 
-    const langSelector = document.createElement('div');
-    langSelector.className = 'relative'; 
-    langSelector.innerHTML = `
-        <button class="flex items-center gap-2 bg-black/20 backdrop-blur-md border border-white/20 rounded-full px-3 py-1.5 text-sm font-bold text-white shadow-sm transition-transform active:scale-95 hover:bg-black/30" onclick="toggleLangDropdown(event)">
-            <span>${currFlag}</span> ${currCode} ▾
-        </button>
-        <div class="absolute top-10 left-0 bg-white rounded-2xl shadow-xl p-2 min-w-[160px] opacity-0 invisible -translate-y-2 transition-all duration-200 z-[60]" id="lang-dropdown">
-            ${window.AVAILABLE_LANGS.map(l => `
-                <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left text-slate-700 font-bold ${l.code === window.currentLang ? 'bg-ct-blue-light text-ct-blue' : ''}" onclick="changeLanguage('${l.code}')">
-                    <span class="text-lg">${l.flag}</span> ${l.label}
-                </button>
-            `).join('')}
+    // Dropdown minimale
+    actionsContainer.innerHTML = `
+        <div class="relative">
+            <button class="w-10 h-10 bg-white/20 backdrop-blur-md border border-white/30 rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-transform" onclick="toggleLangDropdown(event)">
+                <span class="text-xl filter drop-shadow-sm">${currFlag}</span>
+            </button>
+            <div class="absolute top-12 right-0 bg-white rounded-2xl shadow-xl p-2 min-w-[150px] opacity-0 invisible -translate-y-2 transition-all duration-200 origin-top-right z-[70]" id="lang-dropdown">
+                ${window.AVAILABLE_LANGS.map(l => `
+                    <button class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors text-left text-slate-700 font-bold ${l.code === window.currentLang ? 'bg-indigo-50 text-indigo-600' : ''}" onclick="changeLanguage('${l.code}')">
+                        <span class="text-lg">${l.flag}</span> <span class="text-sm">${l.label}</span>
+                    </button>
+                `).join('')}
+            </div>
         </div>`;
-    actionsContainer.appendChild(langSelector);
+    
     header.appendChild(actionsContainer);
 }
-
 function updateNavBar() {
     const labels = document.querySelectorAll('.nav-label');
     if (labels.length >= 4) {
@@ -54,6 +53,7 @@ window.changeLanguage = function(langCode) {
     setupHeaderElements(); 
     updateNavBar(); 
     
+    // Refresh vista
     const activeNav = document.querySelector('.nav-item.active'); 
     if(activeNav) {
         const onclickAttr = activeNav.getAttribute('onclick');
@@ -326,60 +326,51 @@ function getUniqueValues(allData, key, customOrder = []) {
 }
 
 // 1. SMART FILTER SINGOLO
+// --- SMART FILTER (Aggiornato con window.t) ---
+
 function renderHorizontalFilterView(allData, filterKey, container, cardRenderer) {
     const tags = getUniqueValues(allData, filterKey, ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso"]);
     const filterId = `filter-${Math.random().toString(36).substr(2, 9)}`;
     const triggerId = `trigger-${filterId}`;
     const panelId = `panel-${filterId}`;
+    const labelAll = window.t('label_all');
 
-    // FIX SCROLL: top-[85px] invece di 76px per spaziare meglio dal menu
-    // FIX CONTAINER: padding-bottom nel container dei chip
     container.innerHTML = `
         <div class="smart-filter-bar-container sticky top-[85px] z-20 -mx-4 px-4 mb-4">
             <button id="${triggerId}" class="w-full bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl py-3 px-4 flex items-center justify-between transition-all active:scale-95" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">
                 <div class="flex items-center gap-2">
                     <span class="material-icons text-ct-terracotta text-sm">tune</span>
-                    <span id="filter-label-${filterId}" class="text-sm font-bold text-slate-700">Tutti</span>
+                    <span id="filter-label-${filterId}" class="text-sm font-bold text-slate-700">${labelAll}</span>
                 </div>
                 <span class="material-icons text-slate-400 text-sm transition-transform duration-300" id="icon-${filterId}">expand_more</span>
             </button>
-            
             <div id="${panelId}" class="hidden overflow-hidden transition-all duration-300 bg-ct-sand/95 backdrop-blur-md rounded-b-xl border-x border-b border-stone-200/50 shadow-md">
                 <div class="p-3 overflow-x-auto no-scrollbar flex gap-2" id="chips-${filterId}"></div>
             </div>
         </div>
-
         <div id="dynamic-list" class="flex flex-col gap-3 pb-24 animate-fade min-h-[50vh]"></div>
     `;
 
     const chipContainer = container.querySelector(`#chips-${filterId}`);
     const listContainer = container.querySelector('#dynamic-list');
     const labelSpan = container.querySelector(`#filter-label-${filterId}`);
-
     let activeTag = 'Tutti';
 
     function renderChips() {
         chipContainer.innerHTML = tags.map(tag => {
             const isActive = tag === activeTag;
-            const style = isActive 
-                ? "bg-ct-terracotta text-white border-transparent shadow-md" 
-                : "bg-white text-slate-600 border-stone-200";
-            return `<button class="flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold border transition-all ${style}" onclick="window.applySingleSmartFilter('${tag}', '${filterId}')">${tag === 'Tutti' ? 'Tutto' : tag}</button>`;
+            const style = isActive ? "bg-ct-terracotta text-white border-transparent shadow-md" : "bg-white text-slate-600 border-stone-200";
+            const displayTag = (tag === 'Tutti') ? labelAll : tag;
+            return `<button class="flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold border transition-all ${style}" onclick="window.applySingleSmartFilter('${tag}', '${filterId}', true)">${displayTag}</button>`;
         }).join('');
     }
 
-    // Parametro extra 'fromClick' per gestire chiusura pannello
     window.applySingleSmartFilter = (tag, fId, fromClick = false) => {
         activeTag = tag;
         renderChips();
-        labelSpan.innerText = (tag === 'Tutti') ? 'Tutti' : tag;
-        
-        // FIX: Chiude il pannello SOLO se l'azione viene da un click (non all'init)
-        if (fromClick) {
-            toggleSmartFilter(panelId, triggerId);
-        }
+        labelSpan.innerText = (tag === 'Tutti') ? labelAll : tag;
+        if (fromClick) toggleSmartFilter(panelId, triggerId);
 
-        // Filtra Dati
         const pinnedItem = allData.find(item => {
              const nome = String(window.dbCol(item, 'Nome') || '').toLowerCase();
              return nome.includes('numero unico') || nome.includes('emergenza');
@@ -390,7 +381,6 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer)
             return valDB && String(valDB).trim().includes(tag);
         });
         if (pinnedItem && tag === 'Tutti') filtered = [pinnedItem, ...filtered];
-
         updateList(filtered);
     };
 
@@ -403,13 +393,10 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer)
             setTimeout(() => { if(window.initPendingMaps) window.initPendingMaps(); }, 100);
         }
     }
-
     renderChips();
-    // INIT: Chiamata senza 3° parametro, quindi fromClick è false -> NON CHIUDE (perché parte già chiuso)
     window.applySingleSmartFilter('Tutti', filterId); 
 }
 
-// 2. SMART FILTER DOPPIO (Attrazioni)
 function renderDoubleHorizontalFilterView(allData, filtersConfig, container, cardRenderer) {
     const values1 = getUniqueValues(allData, filtersConfig.primary.key, filtersConfig.primary.customOrder);
     const values2 = getUniqueValues(allData, filtersConfig.secondary.key);
@@ -417,29 +404,30 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     const filterId = `filter-dbl-${Math.random().toString(36).substr(2, 9)}`;
     const triggerId = `trigger-${filterId}`;
     const panelId = `panel-${filterId}`;
+    const labelAll = window.t('label_all');
+    const labelAllFem = window.t('label_all_fem');
+    const btnClose = window.t('btn_close_show');
 
-    // FIX SCROLL: top-[85px]
     container.innerHTML = `
         <div class="smart-filter-bar-container sticky top-[85px] z-20 -mx-4 px-4 mb-4">
             <button id="${triggerId}" class="w-full bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl py-3 px-4 flex items-center justify-between transition-all active:scale-95" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">
                 <div class="flex items-center gap-2 overflow-hidden">
                     <span class="material-icons text-ct-blue text-sm">tune</span>
-                    <span id="filter-label-${filterId}" class="text-sm font-bold text-slate-700 truncate">Tutti • Tutte</span>
+                    <span id="filter-label-${filterId}" class="text-sm font-bold text-slate-700 truncate">${labelAll} • ${labelAllFem}</span>
                 </div>
                 <span class="material-icons text-slate-400 text-sm transition-transform duration-300" id="icon-${filterId}">expand_more</span>
             </button>
-            
             <div id="${panelId}" class="hidden overflow-hidden transition-all duration-300 bg-ct-sand/95 backdrop-blur-md rounded-b-xl border-x border-b border-stone-200/50 shadow-md">
                 <div class="p-3 space-y-3">
                     <div>
-                        <div class="text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Borgo</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">${window.t('filter_village')}</div>
                         <div class="overflow-x-auto no-scrollbar flex gap-2" id="row1-${filterId}"></div>
                     </div>
                     <div>
-                        <div class="text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Categoria</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">${window.t('filter_cat')}</div>
                         <div class="overflow-x-auto no-scrollbar flex gap-2" id="row2-${filterId}"></div>
                     </div>
-                    <button class="w-full py-2 bg-ct-blue text-white rounded-lg text-xs font-bold uppercase mt-2 shadow-md active:scale-95 transition-transform" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">Chiudi & Mostra</button>
+                    <button class="w-full py-2 bg-ct-blue text-white rounded-lg text-xs font-bold uppercase mt-2 shadow-md active:scale-95 transition-transform" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">${btnClose}</button>
                 </div>
             </div>
         </div>
@@ -457,13 +445,10 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     window.applyDoubleSmartFilter = (level, val, fId) => {
         if (level === 1) activeVal1 = val;
         if (level === 2) activeVal2 = val;
-        
         renderControls();
-        
-        const txt1 = activeVal1 === 'Tutti' ? 'Tutti' : activeVal1;
-        const txt2 = activeVal2 === 'Tutti' ? 'Tutte' : activeVal2;
+        const txt1 = activeVal1 === 'Tutti' ? labelAll : activeVal1;
+        const txt2 = activeVal2 === 'Tutti' ? labelAllFem : activeVal2;
         labelSpan.innerText = `${txt1} • ${txt2}`;
-
         executeFilter();
     };
 
@@ -489,18 +474,15 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
             const match2 = (activeVal2 === 'Tutti') || val2.toLowerCase().includes(activeVal2.toLowerCase());
             return match1 && match2;
         });
-        
         if (filtered.length === 0) {
             listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`;
         } else {
             listContainer.innerHTML = filtered.map(item => cardRenderer(item)).join('');
         }
     }
-
     renderControls();
-    executeFilter(); // Inizia con "Tutti/Tutti", pannello hidden di default
+    executeFilter(); 
 }
-
 // Helper Toggle Globale
 window.toggleSmartFilter = function(panelId, triggerId) {
     const panel = document.getElementById(panelId);

@@ -1,19 +1,19 @@
-console.log("✅ 4. ui-modal-contents.js caricato (Cinque Terre Palette)");
+console.log("✅ 4. ui-modal-contents.js caricato (Fixed)");
 
 window.getModalContent = function(type, payload, item) {
     
     let contentHtml = '';
     let modalClass = ''; 
 
-    // --- RISTORANTE (Usa Giallo) ---
+    // --- RISTORANTE ---
    if (type === 'ristorante' || type === 'restaurant') {
     const item = JSON.parse(decodeURIComponent(payload));
     const nome = window.dbCol(item, 'Nome');
+    const nomeIT = window.valIT(item, 'Nome'); // FIX CLOUDINARY
     const indirizzo = window.dbCol(item, 'Paesi') || ''; 
     const desc = window.dbCol(item, 'Descrizioni') || window.t('desc_missing'); 
     
-    // Genera l'URL per la modale (magari con larghezza maggiore, es. 800)
-    const imgUrl = window.getSmartUrl(nome, 'Home/Ristoranti', 800);
+    const imgUrl = window.getSmartUrl(nomeIT, 'Home/Ristoranti', 800);
 
     contentHtml = `
         <div class="relative h-64 w-full">
@@ -22,15 +22,18 @@ window.getModalContent = function(type, payload, item) {
         </div>
         <div class="p-6 text-center">
             <h2 class="font-serif text-3xl font-bold text-slate-800 mb-2 leading-tight">${nome}</h2>
-            </div>`;
-}
-    // --- PRODOTTI (Usa Terracotta) ---
+            <p class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">📍 ${indirizzo}</p>
+            <div class="text-slate-600 leading-relaxed text-lg">${desc}</div>
+        </div>`;
+    }
+    // --- PRODOTTI ---
     else if (type === 'product') {
         const p = JSON.parse(decodeURIComponent(payload));
-        const nome = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome') || 'Prodotto';
+        const nome = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
+        const nomeIT = window.valIT(p, 'Prodotti') || window.valIT(p, 'Nome'); // FIX
         const desc = window.dbCol(p, 'Descrizione');   
         const ideale = window.dbCol(p, 'Ideale per'); 
-        const fotoKey = p.Prodotti_foto || nome;
+        const fotoKey = p.Prodotti_foto || nomeIT;
         const bigImg = window.getSmartUrl(fotoKey, '', 800);
 
         contentHtml = `
@@ -51,7 +54,7 @@ window.getModalContent = function(type, payload, item) {
     else if (type === 'Vini' || type === 'wine') {
         if (!item) { return { html: '', class: '' }; }
         const nome = window.dbCol(item, 'Nome');
-        const tipo = window.dbCol(item, 'Tipo');
+        const tipoLabel = window.t('wine_red'); // Fallback
         const produttore = window.dbCol(item, 'Produttore');
         const uve = window.dbCol(item, 'Uve');
         const gradi = window.dbCol(item, 'Gradi');
@@ -59,22 +62,25 @@ window.getModalContent = function(type, payload, item) {
         const desc = window.dbCol(item, 'Descrizione');
         const foto = window.dbCol(item, 'Foto');
 
-        const t = String(tipo).toLowerCase();
+        // Logic color based on IT
+        const tipoIT = String(window.valIT(item, 'Tipo')).toLowerCase();
         let colorText = 'text-ct-terracotta'; 
         let bgBadge = 'bg-ct-terracotta-light text-ct-terracotta';
-        let iconColor = 'text-ct-terracotta';
-        
-        if (t.includes('bianco')) { 
+        let displayType = window.t('wine_red');
+
+        if (tipoIT.includes('bianco')) { 
             colorText = 'text-ct-yellow'; 
-            bgBadge = 'bg-ct-yellow-light text-ct-yellow'; // Nota: bg-ct-yellow-light deve essere definito nel config o usiamo giallo chiaro standard
-            iconColor = 'text-ct-yellow';
-        } 
+            bgBadge = 'bg-ct-yellow-light text-ct-yellow';
+            displayType = window.t('wine_white');
+        } else if (tipoIT.includes('passito') || tipoIT.includes('sciacchetr')) {
+            displayType = window.t('wine_passito');
+        }
 
         contentHtml = `
             <div class="pb-6">
                 ${foto ? `<div class="h-72 w-full relative"><img src="${foto}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div></div>` : 
                 `<div class="py-10 bg-ct-sand flex justify-center border-b border-dashed border-slate-200">
-                    <i class="ph-fill ph-wine text-7xl ${iconColor} drop-shadow-sm"></i>
+                    <i class="ph-fill ph-wine text-7xl ${colorText} drop-shadow-sm"></i>
                 </div>`}
 
                 <div class="px-6 -mt-8 relative z-10">
@@ -84,7 +90,7 @@ window.getModalContent = function(type, payload, item) {
                              <div class="text-xs font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
                                 <span class="material-icons text-sm">storefront</span> ${produttore}
                             </div>
-                            <span class="px-3 py-1 rounded-lg text-xs font-bold uppercase ${bgBadge}">${tipo || '--'}</span>
+                            <span class="px-3 py-1 rounded-lg text-xs font-bold uppercase ${bgBadge}">${displayType}</span>
                         </div>
                     </div>
                 </div>
@@ -100,7 +106,6 @@ window.getModalContent = function(type, payload, item) {
                             <div class="font-bold text-slate-700 text-sm leading-tight">${uve || '--'}</div>
                         </div>
                     </div>
-
                     <div class="prose prose-slate prose-p:text-slate-600 prose-p:leading-relaxed mb-6">
                         <p>${desc}</p>
                     </div>
@@ -178,20 +183,6 @@ window.getModalContent = function(type, payload, item) {
             </div>
         `;
     }
-    
-    // --- MAPPA ---
-    else if (type === 'map') {
-        const uniqueMapId = 'modal-map-' + Math.random().toString(36).substr(2, 9);
-        contentHtml = `
-            <div class="p-4 h-full flex flex-col">
-                <h3 class="text-center font-bold text-slate-700 mb-3">${window.t('map_route_title')}</h3>
-                <div id="${uniqueMapId}" class="flex-1 min-h-[450px] w-full rounded-2xl border border-slate-200 shadow-inner z-0 overflow-hidden"></div>
-                <p class="text-center text-xs font-medium text-slate-400 mt-3 flex items-center justify-center gap-1">
-                    <span class="material-icons text-sm">touch_app</span> ${window.t('map_zoom_hint')}
-                </p>
-            </div>
-        `;
-    }
 
     // --- SPIAGGE ---
     else if (type === 'Spiagge') {
@@ -211,7 +202,7 @@ window.getModalContent = function(type, payload, item) {
                 </div>
                 <div class="w-full h-px bg-slate-100 mb-6"></div>
                 <div class="text-slate-600 leading-relaxed text-lg text-justify">
-                    ${desc || window.t('desc_missing') || 'Descrizione non disponibile.'}
+                    ${desc || window.t('desc_missing')}
                 </div>
              </div>
         `;
@@ -221,9 +212,10 @@ window.getModalContent = function(type, payload, item) {
     else if (type === 'Attrazioni' || type === 'attrazione') {
         if (!item) { return { html: '', class: '' }; }
         const titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
+        const titoloIT = window.valIT(item, 'Attrazioni') || window.valIT(item, 'Titolo'); // FIX
         const curiosita = window.dbCol(item, 'Curiosita');
         const desc = window.dbCol(item, 'Descrizione');
-        const img = window.dbCol(item, 'Immagine') || window.dbCol(item, 'Foto'); 
+        const img = window.getSmartUrl(titoloIT, '', 800); 
 
         contentHtml = `
             ${img ? 
@@ -247,11 +239,8 @@ window.getModalContent = function(type, payload, item) {
                 </div>
             </div>`;
     }
-    
-    // --- TRASPORTI ---
-    // --- TRASPORTI (MODERN TRAVEL WIDGET - BUS & BATTELLI) ---
-// --- TRASPORTI (Treno = Originale / Bus & Ferry = Widget) ---
-else if (type === 'transport') {
+    // --- TRASPORTI (Treno = Originale / Bus & Ferry = Widget) ---
+    else if (type === 'transport') {
     const transportId = payload; 
 
     // ============================================================
