@@ -54,7 +54,14 @@ window.changeLanguage = function(langCode) {
 
 // --- SWITCH VIEW ---
 window.switchView = async function(view, el) {
+    // Riferimento al contenitore scrollabile
+    const content = document.getElementById('app-content');
     if (!content) return;
+
+    // --- FIX SCROLL: Resetta lo scroll in alto ---
+    content.scrollTop = 0; 
+    // ---------------------------------------------
+
     window.currentViewName = view; 
     
     const centerBtnWrapper = document.getElementById('center-lang-btn-wrapper');
@@ -238,12 +245,14 @@ window.renderSubMenu = function(options, defaultTable) {
 
 // 2. Modifica loadTableData per aggiornare lo stato attivo e scrollare il menu
 window.loadTableData = async function(tableName, btnEl) {
-    // 1. Aggiorna lo stato globale
-    window.currentActiveTable = tableName;
+    // --- FIX SCROLL: Resetta lo scroll del contenitore principale ---
+    const mainContainer = document.getElementById('app-content');
+    if (mainContainer) mainContainer.scrollTop = 0;
+    // ----------------------------------------------------------------
 
+    window.currentActiveTable = tableName;
     const subContent = document.getElementById('sub-content');
     if (!subContent) return;
-
     // 2. GESTIONE VISIVA DEI BOTTONI (Cruciale per lo swipe)
     // Se la funzione è chiamata dallo swipe, btnEl è null, quindi lo cerchiamo noi.
     if (!btnEl) {
