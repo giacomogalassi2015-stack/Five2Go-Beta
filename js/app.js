@@ -1,10 +1,11 @@
-console.log("✅ 6. app.js caricato (Chicco Fixed in Body)");
+console.log("✅ 6. app.js caricato (Swipe Optimized)");
 
 const content = document.getElementById('app-content');
 window.pendingMaps = []; 
+
 // --- VARIABILI GLOBALI PER LO SWIPE ---
-window.currentMenuOptions = []; // Salva le tab attuali (es. Vini, Ristoranti...)
-window.currentActiveTable = null; // Salva quale tab è aperta
+window.currentMenuOptions = []; // Salva l'elenco delle tab correnti (es. Prodotti, Vini...)
+window.currentActiveTable = null; // Salva la tabella attualmente visibile
 window.touchStartX = 0;
 window.touchStartY = 0;
 
@@ -191,14 +192,14 @@ function renderHome() {
 }
 
 // 1. Modifica renderSubMenu per salvare le opzioni
-function renderSubMenu(options, defaultTable) {
-    // FIX 3: Salva le opzioni per la navigazione Swipe
+window.renderSubMenu = function(options, defaultTable) {
+    // 1. Salva le opzioni per la logica dello swipe
     window.currentMenuOptions = options;
     
     let menuHtml = `
-    <div class="nav-sticky-header sticky top-0 z-30 bg-ct-sand/95 backdrop-blur-md py-4 -mx-5 px-5 shadow-sm mb-4 flex items-center justify-between gap-3 border-b border-stone-200/50">
+    <div class="nav-sticky-header sticky top-0 z-30 bg-ct-sand/95 backdrop-blur-md py-4 -mx-5 px-5 shadow-sm mb-4 flex items-center justify-between gap-3 border-b border-stone-200/50 transition-all">
         <div class="nav-scroll-container flex gap-3 overflow-x-auto no-scrollbar items-center flex-1 pr-2 pb-1" id="nav-tabs-container">
-            ${options.map(opt => {
+            ${options.map((opt, index) => {
                 const colorMap = {
                     'orange': 'bg-white text-ct-terracotta border-orange-100 active:border-ct-terracotta shadow-sm',
                     'yellow': 'bg-white text-yellow-700 border-yellow-100 active:border-ct-yellow shadow-sm',
@@ -209,10 +210,11 @@ function renderSubMenu(options, defaultTable) {
                 const theme = colorMap[opt.color] || colorMap['blue'];
                 const icon = opt.icon || 'star';
 
-                // Aggiunto attributo data-table per trovarlo facilmente
+                // Aggiungiamo data-index e data-table per identificarli rapidamente
                 return `
-                <button class="btn-pop-menu flex-shrink-0 px-4 py-2.5 rounded-2xl flex items-center gap-2 border transition-all duration-200 ${theme}" 
+                <button class="btn-pop-menu flex-shrink-0 px-4 py-2.5 rounded-2xl flex items-center gap-2 border transition-all duration-300 transform ${theme}" 
                     data-table="${opt.table}"
+                    data-index="${index}"
                     onclick="loadTableData('${opt.table}', this)">
                     <span class="material-icons text-lg opacity-80">${icon}</span>
                     <span class="text-xs font-bold uppercase tracking-wide">${opt.label}</span>
@@ -221,49 +223,53 @@ function renderSubMenu(options, defaultTable) {
         </div>
         <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-ct-sand to-transparent pointer-events-none"></div>
     </div>
-    <div id="sub-content" class="min-h-[300px] touch-pan-y"></div>`; // touch-pan-y aiuta lo scroll verticale
+    
+    <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-200 ease-out"></div>`; 
     
     const content = document.getElementById('app-content');
     content.innerHTML = menuHtml;
     
-    // Trova il bottone di default o il primo
+    // Trova e attiva il bottone di default
     const defaultBtn = content.querySelector(`button[data-table="${defaultTable}"]`) || content.querySelector('.btn-pop-menu');
     if (defaultBtn) {
-        // Estrai il nome tabella corretto dall'attributo se non passato
-        const tableToLoad = defaultBtn.getAttribute('data-table');
-        loadTableData(tableToLoad, defaultBtn);
+        loadTableData(defaultBtn.getAttribute('data-table'), defaultBtn);
     }
-}
+};
 
 // 2. Modifica loadTableData per aggiornare lo stato attivo e scrollare il menu
 window.loadTableData = async function(tableName, btnEl) {
-    // FIX 3: Aggiorna stato attivo
+    // 1. Aggiorna lo stato globale
     window.currentActiveTable = tableName;
 
     const subContent = document.getElementById('sub-content');
     if (!subContent) return;
 
-    // Gestione visuale bottoni e Auto-Scroll
-    if (btnEl) {
-        document.querySelectorAll('.btn-pop-menu').forEach(b => {
-            b.classList.remove('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105');
-        });
-        btnEl.classList.add('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105'); 
-        
-        // Auto-scroll del menu orizzontale per rendere visibile il bottone attivo
-        btnEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    } else {
-        // Se la funzione è chiamata senza btnEl (es. dallo swipe), trovalo e attivalo
-        const targetBtn = document.querySelector(`button[data-table="${tableName}"]`);
-        if(targetBtn) {
-             document.querySelectorAll('.btn-pop-menu').forEach(b => {
-                b.classList.remove('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105');
-            });
-            targetBtn.classList.add('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105');
-            targetBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }
+    // 2. GESTIONE VISIVA DEI BOTTONI (Cruciale per lo swipe)
+    // Se la funzione è chiamata dallo swipe, btnEl è null, quindi lo cerchiamo noi.
+    if (!btnEl) {
+        btnEl = document.querySelector(`button[data-table="${tableName}"]`);
     }
 
+    // Reset stile di tutti i bottoni
+    document.querySelectorAll('.btn-pop-menu').forEach(b => {
+        b.classList.remove('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105', 'shadow-md');
+        b.style.opacity = '0.7'; // Leggermente trasparente se inattivo
+    });
+
+    // Attiva stile bottone corrente
+    if (btnEl) {
+        btnEl.classList.add('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105', 'shadow-md');
+        btnEl.style.opacity = '1';
+        
+        // --- AUTO-SCROLL: Porta il bottone attivo al centro dello schermo ---
+        btnEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+
+    // 3. EFFETTO FADE OUT/IN PER IL CONTENUTO
+    subContent.style.opacity = '0.5'; // Fade out rapido
+    setTimeout(() => { subContent.style.opacity = '1'; }, 200);
+
+    // 4. LOGICA DI CARICAMENTO DATI (Invariata)
     if (!window.appCache[tableName]) {
         subContent.innerHTML = `<div class="py-20 flex flex-col items-center justify-center gap-4">
             <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-ct-terracotta"></div>
@@ -291,6 +297,7 @@ window.loadTableData = async function(tableName, btnEl) {
 
     window.currentTableData = data; 
 
+    // Rendering specifico per tipo
     if (tableName === 'Vini') { renderHorizontalFilterView(data, 'Tipo', subContent, window.vinoRenderer); }
     else if (tableName === 'Spiagge') { renderHorizontalFilterView(data, 'Paesi', subContent, window.spiaggiaRenderer); }
     else if (tableName === 'Prodotti') {
@@ -601,18 +608,13 @@ window.toggleTicketInfo = function() {
     if (box) { box.classList.toggle('hidden'); }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    window.currentViewName = 'home'; 
-    setupHeaderElements(); 
-    updateNavBar(); 
-    switchView('home');
-});
-// 3. LISTENERS PER LO SWIPE (Incollali alla fine di app.js)
+// 1. Inizio tocco
 document.addEventListener('touchstart', (e) => {
     window.touchStartX = e.changedTouches[0].screenX;
     window.touchStartY = e.changedTouches[0].screenY;
 }, { passive: true });
 
+// 2. Fine tocco (Logica Swipe)
 document.addEventListener('touchend', (e) => {
     // Se non siamo in una vista con sottomenu, esci
     if (!document.getElementById('sub-content')) return;
@@ -621,33 +623,46 @@ document.addEventListener('touchend', (e) => {
     const touchEndX = e.changedTouches[0].screenX;
     const touchEndY = e.changedTouches[0].screenY;
 
-    // Calcola distanze
     const xDiff = touchEndX - window.touchStartX;
     const yDiff = touchEndY - window.touchStartY;
 
-    // Se lo scroll è prevalentemente verticale, ignora (l'utente sta scrollando la pagina)
+    // --- FILTRI ANTIMOVIMENTO ACCIDENTALE ---
+    
+    // 1. Se lo scroll è verticale (più Y che X), ignoriamo. L'utente sta leggendo.
     if (Math.abs(yDiff) > Math.abs(xDiff)) return;
 
-    // Soglia minima per considerare lo swipe (es. 50px)
-    if (Math.abs(xDiff) < 50) return;
+    // 2. Soglia minima: Lo swipe deve essere di almeno 60px per attivarsi
+    if (Math.abs(xDiff) < 60) return;
 
-    // Trova indice corrente
+    // --- CALCOLO NUOVA TAB ---
+    
+    // Trova l'indice della tabella attuale
     const currentIndex = window.currentMenuOptions.findIndex(o => o.table === window.currentActiveTable);
     if (currentIndex === -1) return;
 
+    let nextIndex = -1;
+
     if (xDiff > 0) {
-        // Swipe DESTRA -> Torna Indietro (Precedente)
+        // SWIPE VERSO DESTRA -> (Vado indietro: tab precedente)
+        // Esempio: Da Vini torno a Prodotti
         if (currentIndex > 0) {
-            const prevTab = window.currentMenuOptions[currentIndex - 1];
-            loadTableData(prevTab.table, null);
+            nextIndex = currentIndex - 1;
         }
     } else {
-        // Swipe SINISTRA -> Vai Avanti (Successivo)
+        // SWIPE VERSO SINISTRA -> (Vado avanti: tab successiva)
+        // Esempio: Da Prodotti vado a Vini
         if (currentIndex < window.currentMenuOptions.length - 1) {
-            const nextTab = window.currentMenuOptions[currentIndex + 1];
-            loadTableData(nextTab.table, null);
+            nextIndex = currentIndex + 1;
         }
     }
+
+    // Se abbiamo trovato una nuova tab valida, carichiamola
+    if (nextIndex !== -1) {
+        const nextTab = window.currentMenuOptions[nextIndex];
+        // Passiamo null come secondo argomento, così loadTableData trova il bottone da solo
+        loadTableData(nextTab.table, null);
+    }
+
 }, { passive: true });
 
 window.apriTrenitalia = function() {
