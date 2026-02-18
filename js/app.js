@@ -616,6 +616,21 @@ window.toggleTicketInfo = function() {
     const box = document.getElementById('ticket-info-box');
     if (box) { box.classList.toggle('hidden'); }
 };
+// --- INIZIALIZZAZIONE DELL'APP ---
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("🚀 App Inizializzata");
+
+    // 1. Imposta la vista di partenza
+    window.currentViewName = 'home'; 
+    
+    // 2. Configura gli elementi della barra di navigazione
+    if (typeof setupHeaderElements === 'function') setupHeaderElements(); 
+    if (typeof updateNavBar === 'function') updateNavBar(); 
+    
+    // 3. SBLOCCO FONDAMENTALE: Lancia la vista Home
+    // Questo sostituisce la schermata di caricamento con la Home
+    switchView('home');
+});
 
 // 1. Inizio tocco
 document.addEventListener('touchstart', (e) => {
