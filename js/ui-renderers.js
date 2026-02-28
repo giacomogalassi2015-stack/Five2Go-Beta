@@ -2,25 +2,25 @@ console.log("✅ 2. ui-renderers.js caricato (Buttons 50% & Compact Cards)");
 
 /** HELPER: CANDY BTN (Per le altre card standard) */
 function getCandyBtn(icon, label, color, onclick) {
+    // Colori pastello/soft meno vibranti
     const colors = {
-        'orange': 'bg-ct-terracotta text-white shadow-orange-200 active:bg-orange-600', 
-        'blue':   'bg-ct-blue text-white shadow-teal-200 active:bg-teal-700',       
-        'green':  'bg-ct-green text-white shadow-green-200 active:bg-green-800',    
-        'red':    'bg-red-500 text-white shadow-red-200 active:bg-red-600',
-        'purple': 'bg-slate-600 text-white shadow-slate-300 active:bg-slate-800',
-        'yellow': 'bg-ct-yellow text-slate-800 shadow-yellow-200 active:bg-yellow-500', 
+        'orange': 'bg-orange-50 text-orange-600 border-orange-100', 
+        'blue':   'bg-sky-50 text-sky-600 border-sky-100',       
+        'green':  'bg-emerald-50 text-emerald-600 border-emerald-100',    
+        'red':    'bg-rose-50 text-rose-600 border-rose-100',
+        'purple': 'bg-slate-50 text-slate-600 border-slate-200',
+        'yellow': 'bg-amber-50 text-amber-600 border-amber-100', 
     };
     const theme = colors[color] || colors['blue'];
 
     return `
     <button class="flex flex-col items-center justify-center gap-1 group/btn active:scale-95 transition-all duration-200 min-w-[50px]" onclick="${onclick}">
-        <div class="h-9 w-9 rounded-xl ${theme} shadow-sm flex items-center justify-center border border-white/10">
-            <span class="material-icons text-lg drop-shadow-sm">${icon}</span>
+        <div class="h-9 w-9 rounded-xl ${theme} shadow-sm flex items-center justify-center border">
+            <span class="material-icons text-lg">${icon}</span>
         </div>
         ${label ? `<span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 group-hover/btn:text-slate-600 transition-colors">${label}</span>` : ''}
     </button>`;
 }
-
 // MODIFICA 4: Ridotto mb-6 a mb-4 per avvicinare le schede (Prossimità)
 function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml }) {
     let headerHtml = '';
@@ -91,10 +91,7 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
                 <span class="material-icons text-[14px] text-slate-300">storefront</span>
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">${producer}</span>
             </div>
-            <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-[10px] text-slate-400 italic font-medium truncate max-w-[140px]">
-                    ${grapes || 'Uve autoctone'}
-                </span>
+           <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-end">
                 <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600 transition-colors">
                     <span class="text-[9px] font-bold uppercase">${window.t('btn_details')}</span>
                     <span class="material-icons text-xs">arrow_forward</span>
@@ -146,7 +143,7 @@ window.ristoranteRenderer = (r) => {
         iconFallback: 'restaurant',
         themeColor: 'yellow',
         buttonsHtml: `
-            ${getCandyBtn('visibility', window.t('btn_info'), 'blue', `event.stopPropagation(); openModal('ristorante', '${safeObj}')`)}
+            ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('ristorante', '${safeObj}')`)}
             ${getCandyBtn('map', window.t('btn_map'), 'green', `event.stopPropagation(); window.open('${mapLink}', '_blank')`)}
             ${numero ? getCandyBtn('call', 'Tel', 'green', `event.stopPropagation(); window.location.href='tel:${numero}'`) : ''}
         `
@@ -169,7 +166,7 @@ window.attrazioniRenderer = function(item) {
     else if (labelRaw.includes('panoram') || labelRaw.includes('natur')) { catLabel = window.t('cat_panorama'); themeColor = 'green'; iconFallback = 'landscape'; }
     else if (labelRaw.includes('stori') || labelRaw.includes('castell')) { catLabel = window.t('cat_history'); themeColor = 'orange'; iconFallback = 'castle'; }
 
-    return renderMasterCard({
+  return renderMasterCard({
         id: safeId,
         onClick: `openModal('attrazione', '${safeId}')`,
         label: `${catLabel} • ${paese}`,
@@ -180,7 +177,7 @@ window.attrazioniRenderer = function(item) {
         themeColor: themeColor,
         buttonsHtml: `
             ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('attrazione', '${safeId}')`)}
-            ${(lat && lon) ? getCandyBtn('near_me', window.t('btn_go'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
+            ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
         `
     });
 };
@@ -204,8 +201,8 @@ window.spiaggiaRenderer = function(item) {
         iconFallback: 'waves',
         themeColor: 'blue',
         buttonsHtml: `
-            ${getCandyBtn('visibility', window.t('btn_info'), 'blue', `event.stopPropagation(); openModal('Spiagge', '${safeObj}')`)}
-            ${(lat && lon) ? getCandyBtn('directions', window.t('btn_go'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
+            ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('Spiagge', '${safeObj}')`)}
+            ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
         `
     });
 };
@@ -222,12 +219,12 @@ window.prodottoRenderer = (p) => {
         onClick: `openModal('product', '${safeObj}')`,
         label: null, 
         title: titolo,
-        subText: 'Sapori autentici della tradizione ligure.',
+        subText: '', // <-- Rimossa la descrizione come da richiesta
         image: imgUrl,
         iconFallback: 'restaurant',
         themeColor: 'orange',
         buttonsHtml: `
-            <div class="text-xs font-bold text-slate-300 uppercase tracking-widest mr-auto mt-2">${window.t('btn_discover')}</div>
+            <div class="text-xs font-bold text-slate-300 uppercase tracking-widest mr-auto mt-2">${window.t('btn_details')}</div>
             ${getCandyBtn('chevron_right', '', 'blue', `event.stopPropagation(); openModal('product', '${safeObj}')`)}
         `
     });
@@ -268,8 +265,8 @@ window.sentieroRenderer = (s) => {
     const uniqueId = 'k-map-' + (s.poi_id || Math.floor(Math.random() * 99999));
     const nome = s.nome || s.Titolo || 'Sentiero';
     const safeObj = encodeURIComponent(JSON.stringify(s)).replace(/'/g, "%27");
-    const durata = s.Durata || '--';
-    const dist = s.Distanza || '--';
+    const durata = s.durata_minuti ? s.durata_minuti + ' min' : (s.Durata || '--');
+    const dist = s.distanza_km ? s.distanza_km + ' km' : (s.Distanza || '--');
 
     if(s.gpx_url) { 
         if(!window.pendingMaps) window.pendingMaps = []; 
@@ -306,10 +303,36 @@ window.sentieroRenderer = (s) => {
 };
 
 window.farmacieRenderer = (f) => {
+    // Estrazione sicura per il Nome (previene l'effetto [object Object])
+    let nome = f.Nome; 
+    try { 
+        if (typeof nome === 'string' && nome.startsWith('{')) {
+            const parsed = JSON.parse(nome);
+            nome = parsed[window.currentLang] || parsed['it'] || parsed['en'];
+        } else if (typeof nome === 'object' && nome !== null) {
+            nome = nome[window.currentLang] || nome['it'] || nome['en'];
+        }
+    } catch(e) {}
+    
+    // Estrazione sicura per il Paese/Indirizzo
+    let paesi = f.Paesi;
+    try { 
+        if (typeof paesi === 'string' && paesi.startsWith('{')) {
+            const parsed = JSON.parse(paesi);
+            paesi = parsed[window.currentLang] || parsed['it'] || parsed['en'];
+        } else if (typeof paesi === 'object' && paesi !== null) {
+            paesi = paesi[window.currentLang] || paesi['it'] || paesi['en'];
+        }
+    } catch(e) {}
+
+    // Fallback finali se i campi sono comunque vuoti
+    const fallbackNome = typeof nome === 'string' ? nome : 'Farmacia';
+    const fallbackPaesi = typeof paesi === 'string' ? paesi : (f.Indirizzo || 'Servizio');
+
     return renderUtilityCard({
         icon: 'local_pharmacy',
-        title: f.Nome || 'Farmacia',
-        subtitle: f.Paesi || 'Servizio',
+        title: fallbackNome,
+        subtitle: fallbackPaesi,
         phone: f.Numero,
         color: 'green'
     });

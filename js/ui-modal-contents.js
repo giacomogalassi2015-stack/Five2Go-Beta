@@ -176,9 +176,9 @@ window.getModalContent = function(type, payload, item) {
         const nome = item.Nome || item.Titolo || 'Dettagli Sentiero';
         const desc = window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione') || 'Descrizione non disponibile.';
         
-        // Dati tecnici con fallback
-        const dist = item.Distanza || '--';
-        const dur = item.Durata || '--';
+        // Dati tecnici connessi al database
+        const dist = item.distanza_km ? item.distanza_km + ' km' : (item.Distanza || '--');
+        const dur = item.durata_minuti ? item.durata_minuti + ' min' : (item.Durata || '--');
         const diff = item.Tag || item.Difficolta || 'Medio';
         
         // Colore badge difficoltà
@@ -229,12 +229,6 @@ window.getModalContent = function(type, payload, item) {
                 </div>
 
                 <div class="p-6 pt-8">
-                    
-                    <div class="mb-6 flex justify-center">
-                        <span class="px-4 py-1.5 rounded-full border ${diffColor} text-xs font-bold uppercase tracking-wide flex items-center gap-2">
-                            <span class="material-icons text-sm">info</span> Difficoltà: ${diff}
-                        </span>
-                    </div>
 
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">
                         Descrizione del percorso

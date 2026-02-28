@@ -203,9 +203,9 @@ window.renderSubMenu = function(options, defaultTable) {
     // 1. Salva le opzioni per la logica dello swipe
     window.currentMenuOptions = options;
     
-    let menuHtml = `
-    <div class="nav-sticky-header sticky top-0 z-30 bg-ct-sand/95 backdrop-blur-md py-4 -mx-5 px-5 shadow-sm mb-4 flex items-center justify-between gap-3 border-b border-stone-200/50 transition-all">
-        <div class="nav-scroll-container flex gap-3 overflow-x-auto no-scrollbar items-center flex-1 pr-2 pb-1" id="nav-tabs-container">
+   let menuHtml = `
+    <div class="nav-sticky-header sticky top-0 z-30 bg-ct-sand/95 backdrop-blur-md py-4 shadow-sm mb-4 border-b border-stone-200/50 transition-all">
+        <div class="nav-scroll-container flex gap-3 overflow-x-auto no-scrollbar items-center px-4 pt-2 pb-2 w-full" id="nav-tabs-container">
             ${options.map((opt, index) => {
                 const colorMap = {
                     'orange': 'bg-white text-ct-terracotta border-orange-100 active:border-ct-terracotta shadow-sm',
@@ -217,7 +217,6 @@ window.renderSubMenu = function(options, defaultTable) {
                 const theme = colorMap[opt.color] || colorMap['blue'];
                 const icon = opt.icon || 'star';
 
-                // Aggiungiamo data-index e data-table per identificarli rapidamente
                 return `
                 <button class="btn-pop-menu flex-shrink-0 px-4 py-2.5 rounded-2xl flex items-center gap-2 border transition-all duration-300 transform ${theme}" 
                     data-table="${opt.table}"
@@ -228,10 +227,9 @@ window.renderSubMenu = function(options, defaultTable) {
                 </button>
             `}).join('')}
         </div>
-        <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-ct-sand to-transparent pointer-events-none"></div>
     </div>
     
-    <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-200 ease-out"></div>`; 
+    <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-200 ease-out"></div>`;
     
     const content = document.getElementById('app-content');
     content.innerHTML = menuHtml;
@@ -387,16 +385,33 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer)
         labelSpan.innerText = (tag === 'Tutti') ? labelAll : tag;
         if (fromClick) toggleSmartFilter(panelId, triggerId);
 
-        const pinnedItem = allData.find(item => {
-             const nome = String(window.dbCol(item, 'Nome') || '').toLowerCase();
+        // 1. Cerca il Numero d'Emergenza
+        const emergencyItems = allData.filter(item => {
+             const nome = String(window.dbCol(item, 'Nome') || item.Nome || '').toLowerCase();
              return nome.includes('numero unico') || nome.includes('emergenza');
         });
-        const otherData = pinnedItem ? allData.filter(i => i !== pinnedItem) : allData;
+
+        // 2. Cerca i Taxi
+        const taxiItems = allData.filter(item => {
+             const nome = String(window.dbCol(item, 'Nome') || item.Nome || '').toLowerCase();
+             return nome.includes('taxi');
+        });
+
+        // 3. Escludi gli elementi "pinnati" dal resto dei dati per non duplicarli
+        const pinnedSet = new Set([...emergencyItems, ...taxiItems]);
+        const otherData = allData.filter(i => !pinnedSet.has(i));
+        
+        // 4. Applica il filtro al resto dei dati
         let filtered = tag === 'Tutti' ? otherData : otherData.filter(item => {
             let valDB = window.dbCol(item, filterKey);
             return valDB && String(valDB).trim().includes(tag);
         });
-        if (pinnedItem && tag === 'Tutti') filtered = [pinnedItem, ...filtered];
+        
+        // 5. Se siamo nella tab "Tutti", metti in cima Emergenza e poi Taxi
+        if (tag === 'Tutti') {
+            filtered = [...emergencyItems, ...taxiItems, ...filtered];
+        }
+
         updateList(filtered);
     };
 

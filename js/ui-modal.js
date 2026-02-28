@@ -41,12 +41,13 @@ window.openModal = async function(type, payload) {
     }
 };
 
-// FIXED: Funzione TechMap con classi Tailwind (Z-Index alto)
+// FIXED: Funzione TechMap con classi Tailwind (Z-Index alto e HCI Layout)
 window.openTechMap = function(safeObj) {
     try {
         const s = JSON.parse(decodeURIComponent(safeObj));
         let gpxUrl = s.gpx_url ? s.gpx_url.trim() : null;
 
+        // Dati con formattazione e fallback
         const dist = s.distanza_km || '--';
         const dur = s.durata_minuti || '--';
         const d_plus = s.dislivello_positivo || s.dislivello_passivo || '--';
@@ -54,53 +55,76 @@ window.openTechMap = function(safeObj) {
         const alt_max = s.altitudine_max || '--';
         const alt_min = s.altitudine_minima || '--';
         
-        // Genera un ID univoco per evitare conflitti con altre mappe
         const mapContainerId = 'tech-map-canvas-' + Math.floor(Math.random() * 10000);
 
         const modalHtml = `
-            <div class="tech-container bg-white w-full h-full md:max-w-xl md:h-[90vh] md:rounded-[2rem] flex flex-col relative overflow-hidden shadow-2xl">
+            <div class="tech-container bg-slate-50 w-full h-full md:max-w-xl md:h-[90vh] md:rounded-[2rem] flex flex-col relative overflow-hidden shadow-2xl">
                 
-                <button onclick="closeModal()" class="absolute top-4 right-4 z-[201] w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-800 shadow-md active:scale-90 transition-transform">
-                    <span class="material-icons text-xl">close</span>
-                </button>
-
-                <div class="tech-scroll-wrapper flex-1 overflow-y-auto bg-slate-50">
+                <div class="relative w-full h-[45vh] min-h-[300px] shrink-0 z-0">
+                    <button onclick="closeModal()" class="absolute top-4 right-4 z-[400] w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-800 shadow-sm active:scale-90 transition-transform">
+                        <span class="material-icons text-xl">close</span>
+                    </button>
+                    <div class="absolute top-4 left-4 z-[400] bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl shadow-sm text-xs font-bold text-slate-700 flex items-center gap-1">
+                        <span class="material-icons text-sm text-ct-green">map</span> Traccia GPS
+                    </div>
                     
-                    <div class="grid grid-cols-3 gap-0 border-b border-slate-200 bg-white sticky top-0 z-[100] shadow-sm">
-                        <div class="p-4 text-center border-r border-slate-100">
-                            <div class="text-2xl font-bold text-slate-700 leading-none">${dist}<small class="text-xs text-slate-400 font-normal">km</small></div>
-                            <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Distanza</div>
-                        </div>
-                        <div class="p-4 text-center border-r border-slate-100">
-                             <div class="text-2xl font-bold text-slate-700 leading-none">${dur}<small class="text-xs text-slate-400 font-normal">min</small></div>
-                            <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Durata</div>
-                        </div>
-                        <div class="p-4 text-center">
-                            <div class="flex flex-col items-center justify-center h-full gap-1">
-                                <div class="text-xs font-bold text-red-500">D+ ${d_plus}m</div>
-                                <div class="text-xs font-bold text-green-500">D- ${d_minus}m</div>
+                    <div id="${mapContainerId}" class="w-full h-full bg-slate-200"></div>
+                </div>
+
+                <div class="tech-scroll-wrapper flex-1 overflow-y-auto bg-slate-50 relative z-10 -mt-5 rounded-t-[1.5rem] flex flex-col">
+                    
+                    <div class="w-full flex justify-center pt-3 pb-1 bg-white rounded-t-[1.5rem]">
+                        <div class="w-12 h-1.5 bg-slate-200 rounded-full"></div>
+                    </div>
+
+                    <div class="bg-white p-5 px-6 shadow-sm border-b border-slate-100">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">Dati Tecnici</h3>
+                        
+                        <div class="grid grid-cols-3 gap-y-6 gap-x-2">
+                            <div class="flex flex-col items-center justify-center text-center">
+                                <span class="material-icons text-slate-300 text-lg mb-1">straighten</span>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${dist}<span class="text-[10px] text-slate-400 font-normal ml-0.5">km</span></div>
+                                <div class="text-[9px] uppercase font-bold text-slate-400 mt-1">Distanza</div>
+                            </div>
+                            <div class="flex flex-col items-center justify-center text-center border-l border-r border-slate-100">
+                                <span class="material-icons text-slate-300 text-lg mb-1">schedule</span>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${dur}<span class="text-[10px] text-slate-400 font-normal ml-0.5">min</span></div>
+                                <div class="text-[9px] uppercase font-bold text-slate-400 mt-1">Durata</div>
+                            </div>
+                            <div class="flex flex-col items-center justify-center text-center">
+                                <span class="material-icons text-red-300 text-lg mb-1">trending_up</span>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${d_plus}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                <div class="text-[9px] uppercase font-bold text-red-400 mt-1">Dislivello +</div>
+                            </div>
+                            <div class="flex flex-col items-center justify-center text-center mt-2">
+                                <span class="material-icons text-emerald-300 text-lg mb-1">trending_down</span>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${d_minus}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                <div class="text-[9px] uppercase font-bold text-emerald-500 mt-1">Dislivello -</div>
+                            </div>
+                            <div class="flex flex-col items-center justify-center text-center border-l border-r border-slate-100 mt-2">
+                                <span class="material-icons text-slate-300 text-lg mb-1">terrain</span>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${alt_max}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                <div class="text-[9px] uppercase font-bold text-slate-400 mt-1">Alt. Max</div>
+                            </div>
+                            <div class="flex flex-col items-center justify-center text-center mt-2">
+                                <span class="material-icons text-slate-300 text-lg mb-1">south</span>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${alt_min}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                <div class="text-[9px] uppercase font-bold text-slate-400 mt-1">Alt. Min</div>
                             </div>
                         </div>
                     </div>
 
-                    <div id="${mapContainerId}" class="w-full h-[450px] bg-slate-200 z-0"></div>
-                    
-                    <div id="elevation-div" class="hidden bg-white p-2 border-t border-slate-200 h-[180px]"></div>
-                    
-                    <div class="p-4 grid grid-cols-2 gap-4 text-center text-sm text-slate-500">
-                        <div>Alt. Max: <b>${alt_max}m</b></div>
-                        <div>Alt. Min: <b>${alt_min}m</b></div>
-                    </div>
+                    <div id="elevation-div" class="hidden bg-white mx-4 mt-4 p-2 rounded-2xl shadow-sm border border-slate-100 h-[180px]"></div>
                 </div>
 
-                <div class="p-4 bg-white border-t border-slate-100 flex gap-2 z-[200]">
-                    <button class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95" onclick="window.downloadGPX('${gpxUrl}')">
+                <div class="p-4 bg-white border-t border-slate-100 flex gap-2 z-[200] shrink-0">
+                    <button class="flex-1 py-3 bg-slate-50 text-slate-600 border border-slate-200 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform" onclick="window.downloadGPX('${gpxUrl}')">
                         <span class="material-icons text-sm">download</span> GPX
                     </button>
-                    <button id="btn-gps" class="flex-1 py-3 bg-sky-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-sky-200 active:scale-95" onclick="window.toggleGPS()">
+                    <button id="btn-gps" class="flex-1 py-3 bg-sky-50 text-sky-600 border border-sky-200 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform" onclick="window.toggleGPS()">
                         <span class="material-icons text-sm">my_location</span> GPS
                     </button>
-                    <button id="btn-toggle-ele" class="flex-1 py-3 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/30 active:scale-95" onclick="toggleElevationChart()">
+                    <button id="btn-toggle-ele" class="flex-1 py-3 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform" onclick="toggleElevationChart()">
                         <span class="material-icons text-sm">show_chart</span> Grafico
                     </button>
                 </div>
@@ -108,7 +132,6 @@ window.openTechMap = function(safeObj) {
             </div>
         `;
 
-        // Crea il container FULL SCREEN
         let modalOverlay = document.createElement('div');
         modalOverlay.id = 'tech-modal-overlay';
         modalOverlay.className = 'fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-0 md:p-6 animate-fade';
@@ -120,7 +143,6 @@ window.openTechMap = function(safeObj) {
 
     } catch (e) { console.error("Errore TechMap:", e); }
 };
-
 window.toggleElevationChart = function() {
     const elDiv = document.getElementById('elevation-div');
     const btn = document.getElementById('btn-toggle-ele');
