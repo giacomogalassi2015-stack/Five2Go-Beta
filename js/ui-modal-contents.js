@@ -13,19 +13,21 @@ window.getModalContent = function(type, payload, item) {
     const indirizzo = window.dbCol(item, 'Paesi') || ''; 
     const desc = window.dbCol(item, 'Descrizioni') || window.t('desc_missing'); 
     
-    const imgUrl = window.getSmartUrl(nomeIT, 'Home/Ristoranti', 800);
+    const imgUrl = window.getSmartUrl(nomeIT, '', 600);
 
     contentHtml = `
-        <div class="relative h-64 w-full">
-            <img src="${imgUrl}" class="w-full h-full object-cover" onerror="this.parentElement.style.display='none'">
-            <div class="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
+        <div class="relative h-72 w-full bg-slate-200">
+            <img src="${imgUrl}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.classList.add('flex','items-center','justify-center'); this.style.display='none'; this.parentElement.innerHTML+='<span class=\'material-icons text-5xl text-slate-400\'>restaurant</span>'">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent pointer-events-none"></div>
+            <div class="absolute bottom-0 left-0 p-6 w-full">
+                <h2 class="text-3xl font-serif font-bold text-white mb-2 leading-tight shadow-black drop-shadow-md">${nome}</h2>
+                ${indirizzo ? `<span class="inline-block bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-3 py-1 rounded-full">📍 ${indirizzo}</span>` : ''}
+            </div>
         </div>
-        <div class="p-6 text-center">
-            <h2 class="font-serif text-3xl font-bold text-slate-800 mb-2 leading-tight">${nome}</h2>
-            <p class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">📍 ${indirizzo}</p>
-            <div class="text-slate-600 leading-relaxed text-lg">${desc}</div>
+        <div class="p-6">
+            <p class="text-slate-600 leading-relaxed text-lg">${desc}</p>
         </div>`;
-    }
+        }
     // --- PRODOTTI ---
     else if (type === 'product') {
         const p = JSON.parse(decodeURIComponent(payload));
@@ -34,12 +36,12 @@ window.getModalContent = function(type, payload, item) {
         const desc = window.dbCol(p, 'Descrizione');   
         const ideale = window.dbCol(p, 'Ideale per'); 
         const fotoKey = p.Prodotti_foto || nomeIT;
-        const bigImg = window.getSmartUrl(fotoKey, '', 800);
+        const bigImg = window.getSmartUrl(fotoKey, '', 600);
 
         contentHtml = `
-            <div class="relative h-72 w-full">
-                <img src="${bigImg}" class="w-full h-full object-cover" onerror="this.style.display='none'">
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+            <div class="relative h-72 w-full bg-slate-200">
+                <img src="${bigImg}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.classList.add('flex','items-center','justify-center'); this.style.display='none'; this.parentElement.innerHTML+='<span class=\'material-icons text-5xl text-slate-400\'>lunch_dining</span>'">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent pointer-events-none"></div>
                 <div class="absolute bottom-0 left-0 p-6 w-full">
                     <h2 class="text-3xl font-serif font-bold text-white mb-2 leading-tight shadow-black drop-shadow-md">${nome}</h2>
                     ${ideale ? `<span class="inline-block bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-3 py-1 rounded-full">✨ ${window.t('ideal_for')}: ${ideale}</span>` : ''}
@@ -257,20 +259,25 @@ window.getModalContent = function(type, payload, item) {
         if (!beachItem || Object.keys(beachItem).length === 0) { return { html: `<div class="p-8 text-center text-slate-500">Dati non trovati</div>`, class: '' }; }
 
         const nome = window.dbCol(beachItem, 'Nome') || 'Spiaggia';
+        const nomeIT = window.valIT(beachItem, 'Nome') || nome;
         const tipo = window.dbCol(beachItem, 'Tipo');
+        const paesi = window.dbCol(beachItem, 'Paesi');
         const desc = window.dbCol(beachItem, 'Descrizione');
+        const imgUrl = window.getSmartUrl(nomeIT, '', 600);
         
         contentHtml = `
-             <div class="p-8">
-                <div class="mb-4">
-                    <h2 class="font-serif text-3xl font-bold text-ct-blue mb-2">${nome}</h2>
-                    ${tipo ? `<span class="inline-block px-3 py-1 bg-ct-blue-light text-ct-blue rounded-full text-xs font-bold uppercase tracking-wide">${tipo}</span>` : ''}
+            <div class="relative h-72 w-full bg-slate-200">
+                <img src="${imgUrl}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.classList.add('flex','items-center','justify-center'); this.style.display='none'; this.parentElement.innerHTML+='<span class=\'material-icons text-5xl text-slate-400\'>beach_access</span>'">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent pointer-events-none"></div>
+                <div class="absolute bottom-0 left-0 p-6 w-full">
+                    <h2 class="text-3xl font-serif font-bold text-white mb-2 leading-tight shadow-black drop-shadow-md">${nome}</h2>
+                    ${tipo ? `<span class="inline-block bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-3 py-1 rounded-full mr-2">🌊 ${tipo}</span>` : ''}
+                    ${paesi ? `<span class="inline-block bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-3 py-1 rounded-full">📍 ${paesi}</span>` : ''}
                 </div>
-                <div class="w-full h-px bg-slate-100 mb-6"></div>
-                <div class="text-slate-600 leading-relaxed text-lg text-justify">
-                    ${desc || window.t('desc_missing')}
-                </div>
-             </div>
+            </div>
+            <div class="p-6">
+                <p class="text-slate-600 leading-relaxed text-lg">${desc || window.t('desc_missing')}</p>
+            </div>
         `;
     }
 
@@ -281,12 +288,12 @@ window.getModalContent = function(type, payload, item) {
         const titoloIT = window.valIT(item, 'Attrazioni') || window.valIT(item, 'Titolo'); 
         const curiosita = window.dbCol(item, 'Curiosita');
         const desc = window.dbCol(item, 'Descrizione');
-        const img = window.getSmartUrl(titoloIT, '', 800); 
+        const img = window.getSmartUrl(titoloIT, '', 600); 
 
         contentHtml = `
             ${img ? 
-            `<div class="h-64 w-full relative"><img src="${img}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/70 to-transparent"></div></div>` : 
-            `<div class="py-8 bg-slate-100 flex justify-center border-b border-slate-200"><i class="fa-solid fa-landmark text-6xl text-slate-400"></i></div>`}
+            `<div class="h-64 w-full relative bg-slate-200"><img src="${img}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.classList.add('flex','items-center','justify-center'); this.style.display='none'; this.parentElement.innerHTML+='<span class=\'material-icons text-5xl text-slate-400\'>attractions</span>'"><div class="absolute inset-0 bg-gradient-to-t from-slate-900/70 to-transparent pointer-events-none"></div></div>` : 
+            `<div class="py-8 bg-slate-100 flex justify-center border-b border-slate-200"><span class="material-icons text-6xl text-slate-400">attractions</span></div>`}
 
             <div class="p-8 ${img ? '-mt-12 relative z-10' : ''}">
                 <div class="${img ? 'bg-white p-6 rounded-2xl shadow-lg' : ''}">

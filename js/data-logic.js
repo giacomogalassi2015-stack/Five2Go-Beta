@@ -537,7 +537,9 @@ window.getSmartUrl = function(name, folder = '', width = 600) {
     if (!name) return 'https://via.placeholder.com/600x400?text=No+Image';
     const safeName = encodeURIComponent(name.trim()); 
     const folderPath = folder ? `${folder}/` : '';
-    return `${CLOUDINARY_BASE_URL}/w_${width},c_fill,f_auto,q_auto:good,fl_progressive/${folderPath}${safeName}`;
+    // q_auto:eco: ~30% più leggero rispetto a :good, impercettibile su mobile
+    // dpr_1.0: evita di servire immagini 2x su schermi non-retina
+    return `${CLOUDINARY_BASE_URL}/w_${width},c_fill,g_auto,f_auto,q_auto:eco,dpr_1.0,fl_progressive/${folderPath}${safeName}`;
 };
 
 window.valIT = function(item, field) {
