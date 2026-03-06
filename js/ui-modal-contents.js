@@ -529,6 +529,140 @@ window.getModalContent = function(type, payload, item) {
             </div>`;
     }
 
+    // --- LUOGO MAPPA ---
+    else if (type === 'luogo_mappa') {
+        const item = JSON.parse(decodeURIComponent(payload));
+
+        const cfg     = {
+            vino:       { emoji:'🍷', label:'Vino',       color:'#C0392B', bg:'#FFF0EE' },
+            aperitivo:  { emoji:'🥂', label:'Aperitivo',  color:'#D97706', bg:'#FFFBEB' },
+            spiaggia:   { emoji:'🏖️', label:'Spiaggia',   color:'#0369A1', bg:'#EFF6FF' },
+            attrazione: { emoji:'🏛️', label:'Attrazioni', color:'#15803D', bg:'#ECFDF5' },
+        };
+        const catCfg  = cfg[item.categoria] || cfg.attrazione;
+        const borgCol = {
+            Riomaggiore:'#E76F51', Manarola:'#2A9D8F',
+            Corniglia:'#C9A600',   Vernazza:'#264653', Monterosso:'#606C38'
+        }[item.borgo] || '#264653';
+
+        const hasPhoto = !!item.foto;
+
+        contentHtml = `
+            <!-- HERO immagine o fallback colorato -->
+            ${hasPhoto
+                ? `<div class="h-60 w-full relative bg-slate-200">
+                       <img src="${item.foto}" loading="lazy"
+                            class="w-full h-full object-cover"
+                            onerror="this.style.display='none'">
+                       <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none"></div>
+                       <!-- Overlay info sul hero -->
+                       <div class="absolute bottom-0 left-0 p-5 w-full">
+                           <div class="flex flex-wrap gap-1.5 mb-2">
+                               <span class="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                                   style="color:white; background:${borgCol}99; border:1px solid ${borgCol}60;">
+                                   📍 ${item.borgo}
+                               </span>
+                               <span class="text-[11px] font-bold uppercase px-2 py-0.5 rounded-full"
+                                   style="background:${catCfg.bg}cc; color:${catCfg.color}; border:1px solid ${catCfg.color}40;">
+                                   ${catCfg.emoji} ${catCfg.label}
+                               </span>
+                           </div>
+                           <h2 class="font-serif text-2xl font-bold text-white leading-tight drop-shadow-lg">${item.nome}</h2>
+                       </div>
+                   </div>`
+                : `<div class="h-36 w-full flex items-center justify-center relative overflow-hidden"
+                        style="background:linear-gradient(135deg, ${catCfg.bg}, white);">
+                       <span class="text-7xl opacity-20 absolute -right-2 -bottom-2 rotate-12">${catCfg.emoji}</span>
+                       <div class="relative z-10 text-center px-6">
+                           <div class="text-4xl mb-1">${catCfg.emoji}</div>
+                           <div class="flex flex-wrap justify-center gap-1.5 mb-2">
+                               <span class="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                                   style="color:${borgCol}; background:${borgCol}18; border:1px solid ${borgCol}30;">
+                                   📍 ${item.borgo}
+                               </span>
+                           </div>
+                           <h2 class="font-serif text-xl font-bold text-slate-800 leading-tight">${item.nome}</h2>
+                       </div>
+                   </div>`}
+
+            <!-- CORPO -->
+            <div class="p-5 ${hasPhoto ? '' : 'pt-4'}">
+
+                <!-- Badge categoria (solo se no-photo, altrimenti è già nell'hero) -->
+                ${!hasPhoto ? `
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-[11px] font-bold uppercase px-3 py-1 rounded-full border"
+                        style="background:${catCfg.bg}; color:${catCfg.color}; border-color:${catCfg.color}30;">
+                        ${catCfg.emoji} ${catCfg.label}
+                    </span>
+                    ${item.prezzo ? `<span class="ml-auto text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-full">${item.prezzo}</span>` : ''}
+                </div>` : `
+                ${item.prezzo ? `<div class="flex justify-end mb-3">
+                    <span class="text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-full">${item.prezzo}</span>
+                </div>` : ''}`}
+
+                <!-- Descrizione -->
+                ${item.descrizione ? `
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">${item.descrizione}</p>` : ''}
+
+                <!-- Info grid: indirizzo / orari / telefono -->
+                ${(item.indirizzo || item.orari || item.telefono) ? `
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-4 flex flex-col gap-3">
+                    ${item.indirizzo ? `
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 border border-slate-100">
+                            <span class="material-icons text-slate-400 text-sm">place</span>
+                        </div>
+                        <div>
+                            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Indirizzo</div>
+                            <div class="text-sm font-medium text-slate-700">${item.indirizzo}</div>
+                        </div>
+                    </div>` : ''}
+                    ${item.orari ? `
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 border border-slate-100">
+                            <span class="material-icons text-slate-400 text-sm">schedule</span>
+                        </div>
+                        <div>
+                            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Orari</div>
+                            <div class="text-sm font-medium text-slate-700">${item.orari}</div>
+                        </div>
+                    </div>` : ''}
+                    ${item.telefono ? `
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 border border-slate-100">
+                            <span class="material-icons text-slate-400 text-sm">call</span>
+                        </div>
+                        <div>
+                            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Telefono</div>
+                            <a href="tel:${item.telefono}"
+                                class="text-sm font-bold text-ct-blue active:opacity-70">${item.telefono}</a>
+                        </div>
+                    </div>` : ''}
+                </div>` : ''}
+
+                <!-- Tag -->
+                ${item.tag ? `
+                <div class="flex flex-wrap gap-1.5 mb-4">
+                    ${item.tag.split(',').map(t => `
+                    <span class="text-[11px] font-bold bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full border border-slate-200">
+                        ${t.trim()}
+                    </span>`).join('')}
+                </div>` : ''}
+
+                <!-- Azioni: Google Maps -->
+                ${item.link_maps ? `
+                <a href="${item.link_maps}" target="_blank" rel="noopener"
+                    class="flex items-center justify-center gap-2 w-full py-3.5 bg-ct-blue text-white font-bold rounded-2xl shadow-md active:scale-95 transition-transform text-sm">
+                    <span class="material-icons text-lg">directions</span>
+                    Indicazioni stradali
+                </a>` : ''}
+
+            </div>`;
+
+        return { html: contentHtml, class: 'bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative max-h-[88vh] overflow-y-auto' };
+    }
+
     return { html: contentHtml, class: modalClass };
 };
 

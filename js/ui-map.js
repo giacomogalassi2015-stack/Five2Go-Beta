@@ -131,6 +131,45 @@ const MOCK_DATA = [
         .place-card { transition:transform 0.12s ease; }
         .place-card:active { transform:scale(0.98); }
 
+        /* ── GPS ── */
+        .gps-user-dot {
+            width: 18px; height: 18px;
+            background: #2196F3;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.5);
+            position: relative;
+        }
+        .gps-user-dot::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            background: rgba(33,150,243,0.2);
+            animation: gpsPulse 1.8s ease-out infinite;
+        }
+        @keyframes gpsPulse {
+            0%   { transform: scale(1);   opacity: 0.6; }
+            100% { transform: scale(2.4); opacity: 0;   }
+        }
+        #map-gps-btn {
+            transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #map-gps-btn.gps-searching {
+            background: #F59E0B !important;
+            color: white !important;
+        }
+        #map-gps-btn.gps-active {
+            background: #2196F3 !important;
+            color: white !important;
+            box-shadow: 0 0 0 4px rgba(33,150,243,0.2);
+        }
+        @keyframes spinCW {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+        .spin-anim { animation: spinCW 1s linear infinite; display:inline-block; }
+
         /* Separatore borgo nella lista */
         .borgo-separator {
             display:flex; align-items:center; gap:8px;
@@ -141,6 +180,28 @@ const MOCK_DATA = [
         }
         .borgo-separator-line {
             flex:1; height:1px; background:#e2e8f0;
+        }
+
+        /* Sheet slide-out when detail is open */
+        #map-sheet {
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #map-sheet.sheet-hidden {
+            transform: translateY(110%) !important;
+            pointer-events: none;
+        }
+
+        /* Detail banner full redesign */
+        #map-detail-sheet {
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        opacity 0.25s ease;
+        }
+        #map-detail-sheet.detail-entering {
+            animation: detailSlideUp 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        @keyframes detailSlideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0);    }
         }
     `;
     document.head.appendChild(s);
@@ -159,6 +220,12 @@ window._sheetState      = 'peek';
 window._sheetSnapPeek   = 0;    // calcolati dopo mount
 window._sheetSnapHalf   = 0;
 window._sheetSnapFull   = 0;
+
+// GPS tracking state
+window._gpsWatchId      = null;   // ID del watchPosition
+window._gpsUserMarker   = null;   // Marker pulsante sulla mappa
+window._gpsAccCircle    = null;   // Cerchio accuratezza
+window._gpsLatLng       = null;   // Ultima posizione nota {lat, lng}
 
 // ---------------------------------------------------------------------------
 // RENDER PRINCIPALE
@@ -240,30 +307,46 @@ window.renderMappaInterattiva = async function() {
 
         <!-- ── MAPPA (occupa tutto lo spazio) ── -->
         <div id="map-leaflet"
-            style="position:absolute; top:0; left:0; right:0; bottom:0; z-index:100;">
+            style="position:absolute; top:0; left:0; right:0; bottom:80px; z-index:100;">
         </div>
 
         <!-- Badge LIVE: bottom-right della mappa, sopra i controlli zoom -->
         <div id="map-live-badge"
-            style="position:absolute; z-index:600; pointer-events:none; bottom:56px; right:12px;"
+            style="position:absolute; z-index:600; pointer-events:none; bottom:16px; right:12px;"
             class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full px-2.5 py-1 shadow-md border border-slate-100">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></span>
             <span class="text-[11px] font-black text-slate-700 uppercase tracking-widest">Live</span>
         </div>
 
-        <!-- Leggenda collassabile: bottom-left della mappa -->
-        <div id="map-legend-wrap"
-            style="position:absolute; z-index:600; bottom:12px; left:12px;">
-            <!-- Bottone toggle -->
+        <!-- Controlli bottom-left: GPS + Legenda in riga, ancorati sopra il peek del sheet -->
+        <div style="position:absolute; z-index:600; bottom:96px; left:12px; display:flex; gap:8px; align-items:center;">
+
+            <!-- GPS -->
+            <button id="map-gps-btn"
+                onclick="window.mapToggleGPS()"
+                class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full pl-2.5 pr-3 py-1.5 shadow-md border border-slate-100 active:scale-95 transition-transform"
+                title="Mostra posizione GPS">
+                <span class="material-icons text-slate-600 text-sm" id="map-gps-icon">my_location</span>
+                <span class="text-[11px] font-black text-slate-600 uppercase tracking-widest" id="map-gps-label">GPS</span>
+            </button>
+
+            <!-- Legenda -->
             <button id="map-legend-btn"
                 onclick="window.mapToggleLegend()"
                 class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full pl-2.5 pr-3 py-1.5 shadow-md border border-slate-100 active:scale-95 transition-transform">
                 <span class="material-icons text-slate-600 text-sm">info_outline</span>
                 <span class="text-[11px] font-black text-slate-600 uppercase tracking-widest">Legenda</span>
             </button>
+        </div>
+
+        <!-- Legenda pannello (posizionato separatamente per non creare overflow issues) -->
+        <div id="map-legend-wrap"
+            style="position:absolute; z-index:600; bottom:132px; left:12px;">
+            <!-- Bottone toggle invisibile — usato solo per il pannello espanso -->
+            <button id="map-legend-btn-ghost" style="display:none;"></button>
             <!-- Pannello espanso (nascosto di default) -->
             <div id="map-legend-panel"
-                class="hidden absolute bottom-10 left-0 bg-white/97 backdrop-blur rounded-2xl shadow-xl border border-slate-100 p-3 min-w-[140px]"
+                class="hidden absolute bottom-0 left-0 bg-white/97 backdrop-blur rounded-2xl shadow-xl border border-slate-100 p-3 min-w-[140px]"
                 style="animation: slideUpSheet 0.2s cubic-bezier(0.2,0.8,0.2,1) forwards;">
                 ${Object.entries(CATEGORIE).map(([k,c]) => `
                 <div class="flex items-center gap-2 py-1">
@@ -297,16 +380,58 @@ window.renderMappaInterattiva = async function() {
             </div>
         </div>
 
-        <!-- Sheet dettaglio marker (sovrapposto al bottom sheet) -->
+        <!-- ── Detail Banner (rimpiazza la lista quando si seleziona un luogo) ── -->
         <div id="map-detail-sheet"
             class="hidden"
-            style="position:fixed; bottom:76px; left:0; right:0; z-index:1100; padding:0 16px;">
-            <div class="sheet-detail-enter bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden relative">
-                <div id="map-detail-content" class="p-5 pb-5"></div>
-                <button onclick="window.mapCloseDetail()"
-                    class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center active:scale-90 transition-transform z-10">
-                    <span class="material-icons text-slate-500 text-sm">close</span>
-                </button>
+            style="position:fixed; bottom:80px; left:0; right:0; z-index:1100; padding:0 12px;">
+
+            <!-- Card banner -->
+            <div id="map-detail-card"
+                class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden relative">
+
+                <!-- Barra colore top -->
+                <div id="map-detail-color-bar" class="h-1 w-full"></div>
+
+                <div class="flex items-stretch">
+
+                    <!-- Colonna emoji/categoria -->
+                    <div id="map-detail-side"
+                        class="w-16 flex-shrink-0 flex items-center justify-center text-3xl">
+                    </div>
+
+                    <!-- Contenuto principale -->
+                    <div class="flex-1 px-4 py-3.5 min-w-0">
+                        <div id="map-detail-badges" class="flex flex-wrap gap-1.5 mb-1.5"></div>
+                        <h3 id="map-detail-title"
+                            class="font-serif text-lg font-bold text-slate-800 leading-tight truncate"></h3>
+                        <p id="map-detail-desc"
+                            class="text-slate-400 text-[11px] leading-snug mt-0.5 line-clamp-2"></p>
+                        <!-- Meta row: indirizzo / orari -->
+                        <div id="map-detail-meta" class="flex items-center gap-3 mt-1.5"></div>
+                    </div>
+
+                    <!-- Colonna azioni -->
+                    <div class="flex flex-col items-center justify-center gap-2 px-3 py-3 flex-shrink-0">
+                        <!-- Dettagli (apre modal) -->
+                        <button id="map-detail-cta"
+                            class="flex flex-col items-center justify-center gap-1 bg-ct-terracotta text-white w-14 h-12 rounded-2xl shadow-md active:scale-90 transition-transform">
+                            <span class="material-icons text-base">info</span>
+                            <span class="text-[9px] font-bold uppercase tracking-wide leading-none">Dettagli</span>
+                        </button>
+                        <!-- Naviga (Google Maps) -->
+                        <button id="map-detail-navigate"
+                            class="flex flex-col items-center justify-center gap-1 bg-ct-blue text-white w-14 h-12 rounded-2xl shadow-md active:scale-90 transition-transform">
+                            <span class="material-icons text-base">directions</span>
+                            <span class="text-[9px] font-bold uppercase tracking-wide leading-none">Naviga</span>
+                        </button>
+                        <!-- Chiudi -->
+                        <button onclick="window.mapCloseDetail()"
+                            class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 active:scale-90 transition-transform">
+                            <span class="material-icons text-slate-400 text-sm">close</span>
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -325,10 +450,13 @@ window._mapInit = async function() {
     const mapEl = document.getElementById('map-leaflet');
     if (!mapEl) return;
 
-    // Sposta mappa sotto l'header
-    const header = document.getElementById('map-header');
+    // Sposta mappa sotto l'header e limita al di sopra del sheet peek
+    const header  = document.getElementById('map-header');
     const headerH = header ? header.offsetHeight : 160;
-    mapEl.style.top = headerH + 'px';
+    mapEl.style.top    = headerH + 'px';
+    // bottom già fissato a 80px nell'HTML (sheet peek); lo confermiamo via JS
+    // così fitBounds/flyToBounds terrà conto dell'area realmente visibile
+    mapEl.style.bottom = '80px';
 
     const map = L.map('map-leaflet', {
         zoomControl: false, attributionControl: false,
@@ -341,6 +469,7 @@ window._mapInit = async function() {
         maxZoom:19, subdomains:'abcd'
     }).addTo(map);
 
+    // Zoom controls dentro la mappa visibile, margine dal basso
     L.control.zoom({ position:'bottomright' }).addTo(map);
 
     // Render iniziale marker
@@ -351,8 +480,10 @@ window._mapInit = async function() {
         window._mapUpdateListFromBounds();
     });
 
-    // Chiudi detail al click sulla mappa
-    map.on('click', () => window.mapCloseDetail());
+    // Chiudi detail al click sulla mappa e ripristina lista
+    map.on('click', () => {
+        window.mapCloseDetail();
+    });
 
     setTimeout(() => {
         map.invalidateSize();
@@ -404,7 +535,11 @@ window._mapRenderMarkers = function() {
             iconSize:[40,52], iconAnchor:[20,52], popupAnchor:[0,-54],
         });
         const marker = L.marker([item.lat, item.lon], { icon, zIndexOffset:400 }).addTo(map);
-        marker.on('click', e => { L.DomEvent.stopPropagation(e); window.mapOpenDetail(item); });
+        marker.on('click', e => {
+            L.DomEvent.stopPropagation(e);
+            window._sheetHide();
+            window.mapOpenDetail(item);
+        });
         window._mapMarkers.push(marker);
     });
 };
@@ -601,6 +736,22 @@ window._sheetSetSnap = function(snap, animate = true) {
     if (map) setTimeout(() => map.invalidateSize(), 350);
 };
 
+// Slide il list sheet fuori dallo schermo (verso il basso)
+window._sheetHide = function() {
+    const sheet = document.getElementById('map-sheet');
+    if (!sheet) return;
+    sheet.classList.add('sheet-hidden');
+};
+
+// Ripristina il list sheet alla posizione peek
+window._sheetShow = function() {
+    const sheet = document.getElementById('map-sheet');
+    if (!sheet) return;
+    sheet.classList.remove('sheet-hidden');
+    // Forza snap peek per avere una posizione pulita
+    window._sheetSetSnap('peek');
+};
+
 // ---------------------------------------------------------------------------
 // NAVIGAZIONE
 // ---------------------------------------------------------------------------
@@ -660,10 +811,10 @@ window.mapFlyTo = function(borgo, btnEl) {
         const all = window._mapAllData;
         if (all.length > 0) {
             const group = L.featureGroup(all.map(d => L.marker([d.lat, d.lon])));
-            map.flyToBounds(group.getBounds(), { padding:[60,60], maxZoom:14, duration:0.7 });
+            map.flyToBounds(group.getBounds(), { paddingTopLeft:[60,60], paddingBottomRight:[60,20], maxZoom:14, duration:0.7 });
         }
     } else if (BORGHI_BOUNDS[borgo]) {
-        map.flyToBounds(BORGHI_BOUNDS[borgo], { padding:[30,30], duration:0.7 });
+        map.flyToBounds(BORGHI_BOUNDS[borgo], { paddingTopLeft:[30,30], paddingBottomRight:[30,20], duration:0.7 });
     } else if (BORGHI_COORDS[borgo]) {
         map.flyTo(BORGHI_COORDS[borgo], 15, { duration:0.7 });
     }
@@ -688,59 +839,245 @@ window.mapSetCat = function(cat, btnEl) {
     window._mapUpdateListFromBounds();
 };
 
-// Tap su card lista → vola al marker e apre detail
+// Tap su card lista → nascondi sheet, vola al marker, apri detail
 window.mapFocusItem = function(id) {
     const item = window._mapAllData.find(d => d.id === id);
     if (!item || !window._mapLeaflet) return;
-    window._mapLeaflet.flyTo([item.lat, item.lon], 16, { duration:0.6 });
-    window._sheetSetSnap('peek'); // ripiega il sheet per vedere la mappa
-    setTimeout(() => window.mapOpenDetail(item), 500);
+
+    // 1. Nascondi subito il list sheet con animazione
+    window._sheetHide();
+
+    // 2. FlyTo con feedback toast
+    _showMapToast('📍 ' + item.nome);
+    window._mapLeaflet.flyTo([item.lat, item.lon], 16, { duration: 0.6 });
+
+    // 3. Mostra il detail banner dopo il volo
+    setTimeout(() => window.mapOpenDetail(item), 550);
 };
 
 // ---------------------------------------------------------------------------
-// DETAIL SHEET (tap marker o card)
+// DETAIL BANNER (tap marker o card lista)
 // ---------------------------------------------------------------------------
 window.mapOpenDetail = function(item) {
-    const sheet = document.getElementById('map-detail-sheet');
-    const inner = document.getElementById('map-detail-content');
-    if (!sheet || !inner) return;
+    const sheet    = document.getElementById('map-detail-sheet');
+    const colorBar = document.getElementById('map-detail-color-bar');
+    const sideEl   = document.getElementById('map-detail-side');
+    const badgesEl = document.getElementById('map-detail-badges');
+    const titleEl  = document.getElementById('map-detail-title');
+    const descEl   = document.getElementById('map-detail-desc');
+    const metaEl   = document.getElementById('map-detail-meta');
+    const ctaBtn   = document.getElementById('map-detail-cta');
+    if (!sheet) return;
 
     const cfg     = CATEGORIE[item.categoria] || CATEGORIE.attrazione;
     const borgCol = BORGHI_COLORS[item.borgo] || '#264653';
 
-    inner.innerHTML = `
-    <div class="absolute top-0 left-0 right-0 h-1"
-        style="background:linear-gradient(90deg, ${cfg.markerBorder}, ${cfg.color});"></div>
-    <div class="flex items-start gap-4 mt-1">
-        <div class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-2xl border-2"
-            style="background:${cfg.markerBg}; border-color:${cfg.markerBorder};">${cfg.emoji}</div>
-        <div class="flex-1 min-w-0">
-            <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
-                <span class="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-                    style="color:${borgCol}; background:${borgCol}18; border:1px solid ${borgCol}30;">
-                    📍 ${item.borgo}
-                </span>
-                <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${cfg.pill}">
-                    ${cfg.emoji} ${cfg.label}
-                </span>
-            </div>
-            <h3 class="font-serif text-xl font-bold text-slate-800 leading-tight">${item.nome}</h3>
-        </div>
-    </div>
-    ${item.descrizione ? `
-    <div class="mt-3 pt-3 border-t border-slate-100">
-        <p class="text-slate-500 text-sm leading-relaxed">${item.descrizione}</p>
-    </div>` : ''}
-    ${item.indirizzo ? `
-    <div class="mt-2 flex items-center gap-2 text-slate-400">
-        <span class="material-icons text-sm">place</span>
-        <span class="text-xs font-medium">${item.indirizzo}</span>
-    </div>` : ''}`;
+    // Color bar gradient
+    if (colorBar) colorBar.style.background =
+        `linear-gradient(90deg, ${cfg.markerBorder}, ${cfg.color})`;
 
+    // Side emoji block
+    if (sideEl) {
+        sideEl.textContent  = cfg.emoji;
+        sideEl.style.background = cfg.markerBg;
+    }
+
+    // Badges: borgo + categoria
+    if (badgesEl) badgesEl.innerHTML = `
+        <span class="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+            style="color:${borgCol}; background:${borgCol}18; border:1px solid ${borgCol}30;">
+            📍 ${item.borgo}
+        </span>
+        <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${cfg.pill}">
+            ${cfg.emoji} ${cfg.label}
+        </span>`;
+
+    // Title
+    if (titleEl) titleEl.textContent = item.nome;
+
+    // Description (short)
+    if (descEl) {
+        descEl.textContent  = item.descrizione || '';
+        descEl.style.display = item.descrizione ? '' : 'none';
+    }
+
+    // Meta row: indirizzo + orari
+    if (metaEl) {
+        let metaHtml = '';
+        if (item.indirizzo) metaHtml += `
+            <span class="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+                <span class="material-icons text-xs">place</span>${item.indirizzo}
+            </span>`;
+        if (item.orari) metaHtml += `
+            <span class="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+                <span class="material-icons text-xs">schedule</span>${item.orari}
+            </span>`;
+        metaEl.innerHTML = metaHtml;
+        metaEl.style.display = metaHtml ? '' : 'none';
+    }
+
+    // CTA → apre il modal completo
+    if (ctaBtn) {
+        ctaBtn.onclick = () => {
+            const safePayload = encodeURIComponent(JSON.stringify(item)).replace(/'/g, '%27');
+            window.openModal('luogo_mappa', safePayload);
+        };
+    }
+
+    // Naviga → apre Google/Apple Maps con destinazione preimpostata
+    const navBtn = document.getElementById('map-detail-navigate');
+    if (navBtn) {
+        navBtn.onclick = () => {
+            const dest = `${item.lat},${item.lon}`;
+            let url;
+            if (window._gpsLatLng) {
+                // GPS attivo: route precisa da posizione corrente
+                const orig = `${window._gpsLatLng.lat},${window._gpsLatLng.lng}`;
+                url = `https://www.google.com/maps/dir/${orig}/${dest}`;
+            } else {
+                // GPS non attivo: Maps userà la posizione del dispositivo
+                url = `https://www.google.com/maps/dir//${dest}`;
+            }
+            window.open(url, '_blank');
+        };
+    }
+
+    // Nascondi list sheet se ancora visibile
+    window._sheetHide();
+
+    // Mostra detail con animazione
     sheet.classList.remove('hidden');
-    // Riattiva animazione
-    const card = sheet.querySelector('div');
-    if (card) { card.classList.remove('sheet-detail-enter'); void card.offsetWidth; card.classList.add('sheet-detail-enter'); }
+    const card = document.getElementById('map-detail-card');
+    if (card) {
+        card.classList.remove('detail-entering');
+        void card.offsetWidth; // reflow
+        card.classList.add('detail-entering');
+    }
+
+    // Store item reference for potential re-open
+    window._mapDetailItem = item;
+};
+
+// ---------------------------------------------------------------------------
+// GPS TRACKING
+// ---------------------------------------------------------------------------
+window.mapToggleGPS = function() {
+    const map   = window._mapLeaflet;
+    const btn   = document.getElementById('map-gps-btn');
+    const icon  = document.getElementById('map-gps-icon');
+    const label = document.getElementById('map-gps-label');
+    if (!map) return;
+
+    // ── Se GPS già attivo → spegnilo ──────────────────────────────────────
+    if (window._gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(window._gpsWatchId);
+        window._gpsWatchId = null;
+        window._gpsLatLng  = null;
+
+        if (window._gpsUserMarker) { map.removeLayer(window._gpsUserMarker); window._gpsUserMarker = null; }
+        if (window._gpsAccCircle)  { map.removeLayer(window._gpsAccCircle);  window._gpsAccCircle  = null; }
+
+        if (btn)   { btn.classList.remove('gps-active', 'gps-searching'); }
+        if (icon)  { icon.textContent = 'my_location'; icon.classList.remove('spin-anim'); }
+        if (label) { label.textContent = 'GPS'; }
+        _showMapToast('📍 GPS disattivato');
+        return;
+    }
+
+    // ── Controllo supporto ────────────────────────────────────────────────
+    if (!navigator.geolocation) {
+        _showMapToast('⚠️ GPS non supportato');
+        return;
+    }
+
+    // ── Stato: ricerca in corso ───────────────────────────────────────────
+    if (btn)   { btn.classList.add('gps-searching'); }
+    if (icon)  { icon.textContent = 'sync'; icon.classList.add('spin-anim'); }
+    if (label) { label.textContent = 'Cerco...'; }
+
+    const opts = { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 };
+
+    window._gpsWatchId = navigator.geolocation.watchPosition(
+        // ── Success ──────────────────────────────────────────────────────
+        (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const acc = Math.round(pos.coords.accuracy);
+            window._gpsLatLng = { lat, lng };
+
+            // Prima fix: centra la mappa e aggiorna UI
+            const isFirstFix = !window._gpsUserMarker;
+
+            // Rimuovi vecchi layer
+            if (window._gpsUserMarker) map.removeLayer(window._gpsUserMarker);
+            if (window._gpsAccCircle)  map.removeLayer(window._gpsAccCircle);
+
+            // Marker pulsante personalizzato
+            const dotIcon = L.divIcon({
+                className: '',
+                html: '<div class="gps-user-dot"></div>',
+                iconSize: [18, 18],
+                iconAnchor: [9, 9],
+            });
+            window._gpsUserMarker = L.marker([lat, lng], {
+                icon: dotIcon,
+                zIndexOffset: 1000,
+                interactive: true,
+            }).addTo(map);
+
+            // Click sul marker → toast con accuratezza
+            window._gpsUserMarker.on('click', () => {
+                _showMapToast(`📡 Precisione: ±${acc}m`);
+            });
+
+            // Cerchio accuratezza (semi-trasparente)
+            window._gpsAccCircle = L.circle([lat, lng], {
+                radius: pos.coords.accuracy,
+                color: '#2196F3',
+                fillColor: '#2196F3',
+                fillOpacity: 0.08,
+                weight: 1.5,
+                opacity: 0.4,
+            }).addTo(map);
+
+            // Prima fix: vola alla posizione
+            if (isFirstFix) {
+                map.flyTo([lat, lng], 16, { duration: 0.8 });
+                _showMapToast('📡 Posizione trovata!');
+            }
+
+            // Aggiorna bottone → stato attivo
+            if (btn)   { btn.classList.remove('gps-searching'); btn.classList.add('gps-active'); }
+            if (icon)  { icon.textContent = 'my_location'; icon.classList.remove('spin-anim'); }
+            if (label) { label.textContent = 'Attivo'; }
+        },
+
+        // ── Error ─────────────────────────────────────────────────────────
+        (err) => {
+            console.warn('GPS error:', err.message);
+            navigator.geolocation.clearWatch(window._gpsWatchId);
+            window._gpsWatchId = null;
+            window._gpsLatLng  = null;
+
+            if (btn)   { btn.classList.remove('gps-searching', 'gps-active'); }
+            if (icon)  { icon.textContent = 'location_off'; icon.classList.remove('spin-anim'); }
+            if (label) { label.textContent = 'Errore'; }
+
+            const msgs = {
+                1: '⛔ Permesso GPS negato',
+                2: '📡 Segnale GPS assente',
+                3: '⏱ Timeout GPS',
+            };
+            _showMapToast(msgs[err.code] || '⚠️ Errore GPS');
+
+            // Reset label dopo 3s
+            setTimeout(() => {
+                if (icon)  icon.textContent = 'my_location';
+                if (label) label.textContent = 'GPS';
+            }, 3000);
+        },
+        opts
+    );
 };
 
 window.mapToggleLegend = function() {
@@ -759,6 +1096,8 @@ window.mapToggleLegend = function() {
 window.mapCloseDetail = function() {
     const sheet = document.getElementById('map-detail-sheet');
     if (sheet) sheet.classList.add('hidden');
+    // Ripristina il list sheet
+    window._sheetShow();
 };
 
 // Cleanup quando si lascia la vista
@@ -766,6 +1105,15 @@ const _origSwitchView = window.switchView;
 if (_origSwitchView) {
     window.switchView = async function(view, el) {
         if (view !== 'mappa') {
+            // Stop GPS watch → evita drain batteria
+            if (window._gpsWatchId !== null) {
+                navigator.geolocation.clearWatch(window._gpsWatchId);
+                window._gpsWatchId = null;
+                window._gpsLatLng  = null;
+            }
+            window._gpsUserMarker = null;
+            window._gpsAccCircle  = null;
+
             // Ripristina padding-bottom di app-content
             const content = document.getElementById('app-content');
             if (content) content.style.paddingBottom = '';
