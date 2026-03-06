@@ -7,10 +7,8 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/@raruto/leaflet-elevation/dist/leaflet-elevation.min.css" />
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Material Icons only – Phosphor and Font Awesome removed -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
 
@@ -24,24 +22,24 @@
                         serif: ['"Roboto Slab"', 'serif'],
                     },
                     colors: {
-                        primary: '#264653',          
-                        'ct-terracotta': '#E76F51',  
-                        'ct-terracotta-light': '#FFEDE1', 
-                        'ct-yellow': '#E9C46A',      
+                        primary: '#264653',
+                        'ct-terracotta': '#E76F51',
+                        'ct-terracotta-light': '#FFEDE1',
+                        'ct-yellow': '#E9C46A',
                         'ct-yellow-light': '#FFFBEB',
-                        'ct-blue': '#2A9D8F',        
+                        'ct-blue': '#2A9D8F',
                         'ct-blue-light': '#E0F7FA',
-                        'ct-green': '#606C38',       
+                        'ct-green': '#606C38',
                         'ct-green-light': '#ECFCCB',
-                        'ct-sand': '#F4F1DE',        
+                        'ct-sand': '#F4F1DE',
                         surface: '#FFFFFF',
                     },
                     boxShadow: {
-                        'soft': '0 4px 20px -5px rgba(0,0,0,0.1)', 
-                        'floating': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', // Ombra più leggera e moderna
+                        'soft': '0 4px 20px -5px rgba(0,0,0,0.1)',
+                        'floating': '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
                     },
                     borderRadius: {
-                        '3xl': '1.5rem', 
+                        '3xl': '1.5rem',
                         '4xl': '2.5rem',
                     }
                 }
@@ -49,142 +47,159 @@
         }
     </script>
 
-   <style>
-        /* 1. BLOCCO TOTALE DELLA PAGINA (Nessun rimbalzo globale) */
+    <style>
+        /* 1. BLOCCO TOTALE DELLA PAGINA */
         html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden; /* Blocca lo scroll della finestra principale */
-            position: fixed;  /* Blocca il layout su iOS/Desktop */
+            width: 100%; height: 100%;
+            margin: 0; padding: 0;
+            overflow: hidden;
+            position: fixed;
             background-color: #F4F1DE;
             color: #264653;
-            touch-action: none; /* Disabilita gesture del browser (zoom, swipe back) */
+            touch-action: none;
         }
 
-        /* 2. AREA DI SCROLL INTERNA (Solo il contenuto scorre) */
+        /* 2. AREA DI SCROLL INTERNA */
         #app-content {
-            height: 100%;
-            width: 100%;
-            overflow-y: auto; /* Abilita lo scroll verticale qui */
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch; /* Scroll fluido su iOS */
-            padding-bottom: 120px; /* Spazio extra per non coprire il contenuto con la navbar */
-            position: relative;
-            z-index: 10;
+            height: 100%; width: 100%;
+            overflow-y: auto; overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 120px;
+            position: relative; z-index: 10;
         }
 
-        /* Nascondi scrollbar esteticamente */
-        .no-scrollbar::-webkit-scrollbar, 
+        /* Nascondi scrollbar */
+        .no-scrollbar::-webkit-scrollbar,
         #app-content::-webkit-scrollbar { display: none; }
         .no-scrollbar, #app-content { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        @keyframes popIn { 
-            0% { opacity: 0; transform: translateY(10px) scale(0.95); } 
-            100% { opacity: 1; transform: translateY(0) scale(1); } 
+
+        @keyframes popIn {
+            0%   { opacity: 0; transform: translateY(10px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         .animate-pop { animation: popIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        
-        /* BUMP CENTRALE COMPATTO */
+
+        /* BUMP CENTRALE */
         .nav-center-bump {
-            position: absolute;
-            top: -24px;
-            left: 50%;
+            position: absolute; top: -24px; left: 50%;
             transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             z-index: 60;
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+            transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease;
         }
-        
         .nav-center-bump.hidden-bump {
             transform: translateX(-50%) translateY(80px);
-            opacity: 0;
-            pointer-events: none;
+            opacity: 0; pointer-events: none;
+        }
+        .nav-center-btn {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: white;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            border: 4px solid #F4F1DE;
+            cursor: default;
+        }
+        body.is-home .nav-center-btn { border-color: #1a1a1a; }
+
+        /* Loading bar animation */
+        @keyframes loadingBar {
+            0%   { transform: translateX(-100%); width: 40%; }
+            50%  { transform: translateX(150%);  width: 60%; }
+            100% { transform: translateX(300%);  width: 40%; }
         }
 
-        .nav-center-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            border: 4px solid #F4F1DE; 
-            cursor: default; 
-        }
-        
-        body.is-home .nav-center-btn {
-            border-color: #1a1a1a;
-        }
+        /* Nav labels: minimum 11px */
+        .nav-label { font-size: 11px; }
     </style>
+
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
     <script src="https://unpkg.com/@raruto/leaflet-elevation/dist/leaflet-elevation.js"></script>
 </head>
 
-<body class="text-slate-700 antialiased pb-28"> <header class="fixed top-0 left-0 right-0 z-50 pointer-events-none"></header>
+<body class="text-slate-700 antialiased pb-28">
+<header class="fixed top-0 left-0 right-0 z-50 pointer-events-none"></header>
 
-    <main id="app-content" class="max-w-2xl mx-auto px-4 pt-4 min-h-screen">
-        <div id="data-container" class="flex flex-col items-center justify-center h-[80vh]">
-            <div class="relative w-16 h-16">
-                <div class="absolute inset-0 bg-ct-yellow rounded-full animate-ping opacity-30"></div>
-                <div class="relative bg-white p-3 rounded-full shadow-soft border-2 border-ct-terracotta">
-                    <span class="material-icons text-2xl text-ct-terracotta">explore</span>
-                </div>
-            </div>
-            <p class="font-bold text-primary mt-4 uppercase tracking-widest text-xs opacity-60">Caricamento...</p>
-        </div>    
-    </main>
+<main id="app-content" class="max-w-2xl mx-auto px-4 pt-4 min-h-screen">
+    <!-- ── SCHERMATA DI AVVIO / LOADING ── -->
+    <div id="data-container" class="flex flex-col items-center justify-center h-[80vh] px-8">
 
-    <nav id="bottom-nav" class="fixed bottom-4 left-4 right-4 h-16 bg-white/95 backdrop-blur-xl rounded-2xl shadow-floating flex justify-between items-center z-50 px-1 border border-white/50">
-        
-        <div class="flex flex-1 justify-around items-center h-full">
-            <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('home', this)">
-                <span class="material-icons text-[24px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-green group-[.active]:-translate-y-2">home</span>
-                <span class="text-[9px] font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-green nav-label absolute bottom-2 uppercase tracking-wide">Home</span>
-            </button>
-            <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('cibo', this)">
-                <span class="material-icons text-[22px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-terracotta group-[.active]:-translate-y-2">restaurant</span>
-                <span class="text-[9px] font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-terracotta nav-label absolute bottom-2 uppercase tracking-wide">Cibo</span>
-            </button>
-        </div>
-
-        <div class="relative w-12 h-full flex justify-center z-50 pointer-events-none">
-            <div id="center-lang-btn-wrapper" class="nav-center-bump">
-                <div class="nav-center-btn">
-                    <span id="nav-lang-flag" class="text-2xl filter drop-shadow-sm leading-none pt-0.5">🇮🇹</span>
-                </div>
+        <!-- Icona pulsante -->
+        <div class="relative w-16 h-16 mb-5">
+            <div class="absolute inset-0 bg-ct-yellow rounded-full animate-ping opacity-30"></div>
+            <div class="relative bg-white p-3 rounded-full shadow-soft border-2 border-ct-terracotta flex items-center justify-center">
+                <span class="material-icons text-2xl text-ct-terracotta">explore</span>
             </div>
         </div>
 
-        <div class="flex flex-1 justify-around items-center h-full">
-            <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('outdoor', this)">
-                <span class="material-icons text-[22px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-yellow group-[.active]:-translate-y-2">hiking</span>
-                <span class="text-[9px] font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-yellow nav-label absolute bottom-2 uppercase tracking-wide">Outdoor</span>
-            </button>
-            <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('servizi', this)">
-                <span class="material-icons text-[22px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-blue group-[.active]:-translate-y-2">grid_view</span>
-                <span class="text-[9px] font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-blue nav-label absolute bottom-2 uppercase tracking-wide">Servizi</span>
-            </button>
+        <!-- Step text -->
+        <p id="loading-step" class="font-bold text-primary uppercase tracking-widest text-[11px] opacity-60 text-center mb-4">
+            Connessione in corso...
+        </p>
+
+        <!-- Barra di progresso indeterminata -->
+        <div id="loading-bar-wrap" class="w-48 h-1 bg-slate-200 rounded-full overflow-hidden">
+            <div class="h-full bg-ct-terracotta rounded-full" style="animation: loadingBar 1.4s ease-in-out infinite;"></div>
         </div>
 
-    </nav>
+        <!-- Stato errore di rete (nascosto di default) -->
+        <p id="loading-error" class="hidden mt-6 text-center">
+            <span class="material-icons text-3xl text-slate-400 block mb-2">wifi_off</span>
+            <span class="text-sm font-bold text-slate-500 block mb-1">Connessione assente</span>
+            <span class="text-[11px] text-slate-400 block mb-4">Controlla la rete e riprova</span>
+            <button onclick="location.reload()"
+                class="bg-ct-terracotta text-white text-[11px] font-bold uppercase tracking-widest px-5 py-2.5 rounded-2xl active:scale-95 transition-transform shadow-md">
+                Riprova
+            </button>
+        </p>
+    </div>
+</main>
 
-    <script src="js/data-logic.js"></script>
-    <script src="js/ui-renderers.js"></script>
-    <script src="js/legal-render.js"></script>
-    <script src="js/ui-modal-contents.js"></script> 
-    <script src="js/ui-modal.js"></script> 
-    <script src="js/app.js"></script>
+<nav id="bottom-nav" class="fixed bottom-4 left-4 right-4 h-16 bg-white/95 backdrop-blur-xl rounded-2xl shadow-floating flex justify-between items-center z-50 px-1 border border-white/50">
 
-    <a href="#" id="ghost-cookie-btn" class="lb-cs-settings-link hidden"></a>
-    <script type="text/javascript" src="https://app.legalblink.it/api/scripts/lb_cs.js"></script>
-    <script id="lb_cs" type="text/javascript">lb_cs("6973df3d9398e90022bdb48d");</script>
-</body> 
+    <div class="flex flex-1 justify-around items-center h-full">
+        <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('home', this)">
+            <span class="material-icons text-[24px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-green group-[.active]:-translate-y-2">home</span>
+            <span class="nav-label font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-green nav-label absolute bottom-2 uppercase tracking-wide">Home</span>
+        </button>
+        <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('cibo', this)">
+            <span class="material-icons text-[22px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-terracotta group-[.active]:-translate-y-2">restaurant</span>
+            <span class="nav-label font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-terracotta nav-label absolute bottom-2 uppercase tracking-wide">Cibo</span>
+        </button>
+    </div>
+
+    <div class="relative w-12 h-full flex justify-center z-50 pointer-events-none">
+        <div id="center-lang-btn-wrapper" class="nav-center-bump">
+            <div class="nav-center-btn">
+                <span id="nav-lang-flag" class="text-2xl filter drop-shadow-sm leading-none pt-0.5">🇮🇹</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-1 justify-around items-center h-full">
+        <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('outdoor', this)">
+            <span class="material-icons text-[22px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-yellow group-[.active]:-translate-y-2">hiking</span>
+            <span class="nav-label font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-yellow nav-label absolute bottom-2 uppercase tracking-wide">Outdoor</span>
+        </button>
+        <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('servizi', this)">
+            <span class="material-icons text-[22px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-blue group-[.active]:-translate-y-2">grid_view</span>
+            <span class="nav-label font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-blue nav-label absolute bottom-2 uppercase tracking-wide">Servizi</span>
+        </button>
+    </div>
+
+</nav>
+
+<script src="js/data-logic.js"></script>
+<script src="js/ui-renderers.js"></script>
+<script src="js/legal-render.js"></script>
+<script src="js/ui-modal-contents.js"></script>
+<script src="js/ui-modal.js"></script>
+<script src="js/ui-map.js"></script>
+<script src="js/app.js"></script>
+
+<a href="#" id="ghost-cookie-btn" class="lb-cs-settings-link hidden"></a>
+<script type="text/javascript" src="https://app.legalblink.it/api/scripts/lb_cs.js"></script>
+<script id="lb_cs" type="text/javascript">lb_cs("6973df3d9398e90022bdb48d");</script>
+</body>
 </html>

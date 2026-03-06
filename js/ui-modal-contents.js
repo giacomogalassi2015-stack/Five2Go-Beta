@@ -100,11 +100,11 @@ window.getModalContent = function(type, payload, item) {
                 <div class="px-6 mt-6">
                     <div class="grid grid-cols-2 gap-3 mb-6">
                         <div class="bg-ct-sand p-3 rounded-xl text-center border border-slate-100">
-                            <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">${window.t('wine_deg')}</div>
+                            <div class="text-[11px] uppercase font-bold text-slate-400 mb-1">${window.t('wine_deg')}</div>
                             <div class="font-bold text-slate-700 text-lg">${gradi || '--'}</div>
                         </div>
                         <div class="bg-ct-sand p-3 rounded-xl text-center border border-slate-100 flex flex-col justify-center">
-                            <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">${window.t('wine_grapes')}</div>
+                            <div class="text-[11px] uppercase font-bold text-slate-400 mb-1">${window.t('wine_grapes')}</div>
                             <div class="font-bold text-slate-700 text-sm leading-tight">${uve || '--'}</div>
                         </div>
                     </div>
@@ -139,17 +139,17 @@ window.getModalContent = function(type, payload, item) {
                 <div class="bg-ct-sand p-3 rounded-2xl text-center border border-slate-100">
                     <span class="material-icons text-primary mb-1">straighten</span>
                     <div class="font-extrabold text-slate-700 text-lg leading-none">${dist}</div>
-                    <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">${window.t('distance')}</div>
+                    <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">${window.t('distance')}</div>
                 </div>
                 <div class="bg-ct-sand p-3 rounded-2xl text-center border border-slate-100">
                     <span class="material-icons text-primary mb-1">schedule</span>
                     <div class="font-extrabold text-slate-700 text-lg leading-none">${dura}</div>
-                    <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">${window.t('duration')}</div>
+                    <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">${window.t('duration')}</div>
                 </div>
                 <div class="bg-ct-sand p-3 rounded-2xl text-center border border-slate-100">
                     <span class="material-icons text-primary mb-1">terrain</span>
                     <div class="font-extrabold text-slate-600 text-sm pt-1 leading-none uppercase">${diff}</div>
-                    <div class="text-[10px] uppercase font-bold text-slate-400 mt-2">${window.t('level')}</div>
+                    <div class="text-[11px] uppercase font-bold text-slate-400 mt-2">${window.t('level')}</div>
                 </div>
             </div>
 
@@ -197,7 +197,7 @@ window.getModalContent = function(type, payload, item) {
                     </div>
                     
                     <div class="relative z-10">
-                        <span class="inline-block py-1 px-3 rounded-lg bg-white/20 backdrop-blur border border-white/30 text-white text-[10px] font-bold uppercase tracking-widest mb-3">
+                        <span class="inline-block py-1 px-3 rounded-lg bg-white/20 backdrop-blur border border-white/30 text-white text-[11px] font-bold uppercase tracking-widest mb-3">
                             Outdoor & Trekking
                         </span>
                         <h2 class="font-serif text-3xl font-bold text-white leading-tight shadow-black drop-shadow-md pr-4">
@@ -212,19 +212,19 @@ window.getModalContent = function(type, payload, item) {
                         <div class="flex flex-col items-center justify-center text-center px-1">
                             <span class="material-icons text-ct-green text-xl mb-1">schedule</span>
                             <span class="text-sm font-extrabold text-slate-700 leading-none">${dur}</span>
-                            <span class="text-[9px] font-bold text-slate-400 uppercase mt-1">Durata</span>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">Durata</span>
                         </div>
 
                         <div class="flex flex-col items-center justify-center text-center px-1">
                             <span class="material-icons text-ct-green text-xl mb-1">straighten</span>
                             <span class="text-sm font-extrabold text-slate-700 leading-none">${dist}</span>
-                            <span class="text-[9px] font-bold text-slate-400 uppercase mt-1">Lunghezza</span>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">Lunghezza</span>
                         </div>
 
                         <div class="flex flex-col items-center justify-center text-center px-1">
                             <span class="material-icons text-ct-green text-xl mb-1">signal_cellular_alt</span>
                             <span class="text-sm font-extrabold text-slate-700 leading-none truncate w-full">${diff.slice(0,8)}</span>
-                            <span class="text-[9px] font-bold text-slate-400 uppercase mt-1">Livello</span>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">Livello</span>
                         </div>
 
                     </div>
@@ -241,7 +241,7 @@ window.getModalContent = function(type, payload, item) {
                     </div>
 
                     <div class="mt-8 pt-6 border-t border-dashed border-slate-200 text-center">
-                        <p class="text-[10px] text-slate-400 italic">
+                        <p class="text-[11px] text-slate-400 italic">
                             Ricorda: indossa sempre scarpe adatte e porta acqua con te.
                         </p>
                     </div>
@@ -323,7 +323,7 @@ window.getModalContent = function(type, payload, item) {
             <div class="bg-ct-terracotta p-6 pb-10 rounded-b-[2.5rem] shadow-soft relative z-0">
                 <div class="flex justify-between items-start pt-2">
                     <div>
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-white/80 mb-1 block">Cinque Terre Express</span>
+                        <span class="text-[11px] font-bold uppercase tracking-widest text-white/80 mb-1 block">Cinque Terre Express</span>
                         <h2 class="font-serif text-3xl font-bold text-white leading-none">${window.t('label_train')}</h2>
                     </div>
                     <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-sm">
@@ -363,7 +363,7 @@ window.getModalContent = function(type, payload, item) {
                     <span class="material-icons text-sm relative z-10">open_in_new</span>
                 </button>
                 
-                <p class="text-center text-[10px] text-slate-400 mt-4 font-bold uppercase tracking-wide opacity-70 mb-6">${window.t('check_site')}</p>
+                <p class="text-center text-[11px] text-slate-400 mt-4 font-bold uppercase tracking-wide opacity-70 mb-6">${window.t('check_site')}</p>
             </div>
         </div>`;
         return { html: contentHtml, class: 'bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto' };
@@ -405,7 +405,7 @@ window.getModalContent = function(type, payload, item) {
             <div class="${config.bg} p-6 pb-12 rounded-b-[2.5rem] shadow-soft relative z-0 transition-colors duration-500">
                 <div class="flex justify-between items-start pt-2">
                     <div>
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-white/80 mb-1 block">Travel & Go</span>
+                        <span class="text-[11px] font-bold uppercase tracking-widest text-white/80 mb-1 block">Travel & Go</span>
                         <h2 class="font-serif text-3xl font-bold text-white leading-none">${config.title}</h2>
                     </div>
                     <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-sm">
@@ -431,7 +431,7 @@ window.getModalContent = function(type, payload, item) {
                         </button>` : ''}
 
                         <div class="pl-10 mb-6 group relative mr-12">
-                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">${window.t('departure')}</label>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">${window.t('departure')}</label>
                             <div class="relative">
                                 <select id="${idPartenza}" 
                                     class="w-full appearance-none bg-transparent text-xl font-bold text-slate-800 focus:outline-none cursor-pointer truncate pr-2 py-1 border-b border-transparent hover:border-slate-100 transition-colors"
@@ -442,7 +442,7 @@ window.getModalContent = function(type, payload, item) {
                         </div>
 
                         <div class="pl-10 mb-2 group relative mr-12">
-                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">${window.t('arrival')}</label>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">${window.t('arrival')}</label>
                             <div class="relative">
                                 <select id="${idArrivo}" 
                                     class="w-full appearance-none bg-transparent text-xl font-bold text-slate-800 focus:outline-none cursor-pointer truncate pr-2 py-1 border-b border-transparent hover:border-slate-100 transition-colors"
@@ -468,7 +468,7 @@ window.getModalContent = function(type, payload, item) {
 
             ${config.mapToggle ? `
             <div id="bus-map-wrapper" class="hidden mx-5 mt-3 rounded-2xl overflow-hidden shadow-inner border-2 border-white bg-slate-200 animate-fade relative h-64 z-0">
-                 <div class="absolute top-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold text-slate-500 shadow-sm z-[400] pointer-events-none border border-slate-200 whitespace-nowrap">
+                 <div class="absolute top-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[11px] font-bold text-slate-500 shadow-sm z-[400] pointer-events-none border border-slate-200 whitespace-nowrap">
                     ${window.t('map_hint')}
                 </div>
                 <div id="bus-map" class="h-full w-full"></div>
@@ -483,7 +483,7 @@ window.getModalContent = function(type, payload, item) {
                 </button>
                 
                 <div class="mt-4 text-center">
-                    <button onclick="toggleTicketInfo()" class="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-slate-400 hover:text-slate-600 transition-colors py-2 px-4 rounded-full hover:bg-slate-100">
+                    <button onclick="toggleTicketInfo()" class="inline-flex items-center gap-1 text-[11px] font-bold uppercase text-slate-400 hover:text-slate-600 transition-colors py-2 px-4 rounded-full hover:bg-slate-100">
                         <span class="material-icons text-sm">confirmation_number</span> ${window.t('how_to_ticket')}
                     </button>
                     <div id="ticket-info-box" class="hidden mt-2 p-4 bg-white rounded-xl text-xs text-slate-500 border border-slate-200 shadow-sm animate-fade mx-auto text-center leading-relaxed">
@@ -496,7 +496,7 @@ window.getModalContent = function(type, payload, item) {
                 <div id="${isBus ? 'nextBusCard' : 'nextFerryCard'}" class="bg-gradient-to-br ${isBus ? 'from-ct-yellow to-orange-400' : 'from-ct-blue to-teal-600'} text-white p-6 rounded-[2rem] shadow-lg mb-8 text-center relative overflow-hidden ring-4 ring-slate-50"></div>
                 <div class="pl-2 mb-4 flex items-center gap-2">
                      <div class="h-px bg-slate-100 flex-1"></div>
-                     <span class="text-[10px] font-bold uppercase text-slate-300 tracking-widest">${window.t('next_runs')}</span>
+                     <span class="text-[11px] font-bold uppercase text-slate-300 tracking-widest">${window.t('next_runs')}</span>
                      <div class="h-px bg-slate-100 flex-1"></div>
                 </div>
                 <div id="${isBus ? 'otherBusList' : 'otherFerryList'}" class="space-y-3"></div>

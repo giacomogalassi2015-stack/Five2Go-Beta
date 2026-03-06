@@ -13,6 +13,38 @@ window.openModal = async function(type, payload) {
         }
     };
 
+    // ── Swipe-down gesture to close ──
+    let _swipeStartY = 0, _swipeStartX = 0;
+    modal.addEventListener('touchstart', e => {
+        _swipeStartY = e.touches[0].clientY;
+        _swipeStartX = e.touches[0].clientX;
+    }, { passive: true });
+    modal.addEventListener('touchmove', e => {
+        const dy = e.touches[0].clientY - _swipeStartY;
+        const dx = e.touches[0].clientX - _swipeStartX;
+        if (dy > 0 && Math.abs(dy) > Math.abs(dx)) {
+            const inner = modal.querySelector('[class*="rounded"]');
+            if (inner) {
+                inner.style.transform = `translateY(${Math.min(dy * 0.45, 70)}px)`;
+                inner.style.opacity   = String(Math.max(0.55, 1 - dy / 280));
+                inner.style.transition = 'none';
+            }
+        }
+    }, { passive: true });
+    modal.addEventListener('touchend', e => {
+        const dy = e.changedTouches[0].clientY - _swipeStartY;
+        const inner = modal.querySelector('[class*="rounded"]');
+        if (dy > 90) {
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.remove(), 180);
+        } else if (inner) {
+            inner.style.transition = 'transform 0.3s cubic-bezier(0.2,0.8,0.2,1), opacity 0.3s ease';
+            inner.style.transform  = '';
+            inner.style.opacity    = '';
+            setTimeout(() => { inner.style.transition = ''; }, 320);
+        }
+    }, { passive: true });
+
     let item = null; 
     if (window.currentTableData && (['Vini', 'Attrazioni', 'attrazione', 'wine'].includes(type))) {
         item = window.currentTableData.find(i => i.id == payload || i.ID == payload || i.POI_ID == payload);
@@ -83,33 +115,33 @@ window.openTechMap = function(safeObj) {
                         <div class="grid grid-cols-3 gap-y-6 gap-x-2">
                             <div class="flex flex-col items-center justify-center text-center">
                                 <span class="material-icons text-slate-300 text-lg mb-1">straighten</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${dist}<span class="text-[10px] text-slate-400 font-normal ml-0.5">km</span></div>
-                                <div class="text-[9px] uppercase font-bold text-slate-400 mt-1">Distanza</div>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${dist}<span class="text-[11px] text-slate-400 font-normal ml-0.5">km</span></div>
+                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Distanza</div>
                             </div>
                             <div class="flex flex-col items-center justify-center text-center border-l border-r border-slate-100">
                                 <span class="material-icons text-slate-300 text-lg mb-1">schedule</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${dur}<span class="text-[10px] text-slate-400 font-normal ml-0.5">min</span></div>
-                                <div class="text-[9px] uppercase font-bold text-slate-400 mt-1">Durata</div>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${dur}<span class="text-[11px] text-slate-400 font-normal ml-0.5">min</span></div>
+                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Durata</div>
                             </div>
                             <div class="flex flex-col items-center justify-center text-center">
                                 <span class="material-icons text-red-300 text-lg mb-1">trending_up</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${d_plus}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[9px] uppercase font-bold text-red-400 mt-1">Dislivello +</div>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${d_plus}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                <div class="text-[11px] uppercase font-bold text-red-400 mt-1">Dislivello +</div>
                             </div>
                             <div class="flex flex-col items-center justify-center text-center mt-2">
                                 <span class="material-icons text-emerald-300 text-lg mb-1">trending_down</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${d_minus}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[9px] uppercase font-bold text-emerald-500 mt-1">Dislivello -</div>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${d_minus}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                <div class="text-[11px] uppercase font-bold text-emerald-500 mt-1">Dislivello -</div>
                             </div>
                             <div class="flex flex-col items-center justify-center text-center border-l border-r border-slate-100 mt-2">
                                 <span class="material-icons text-slate-300 text-lg mb-1">terrain</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${alt_max}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[9px] uppercase font-bold text-slate-400 mt-1">Alt. Max</div>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${alt_max}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Alt. Max</div>
                             </div>
                             <div class="flex flex-col items-center justify-center text-center mt-2">
                                 <span class="material-icons text-slate-300 text-lg mb-1">south</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${alt_min}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[9px] uppercase font-bold text-slate-400 mt-1">Alt. Min</div>
+                                <div class="text-lg font-bold text-slate-700 leading-none">${alt_min}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Alt. Min</div>
                             </div>
                         </div>
                     </div>
@@ -332,8 +364,8 @@ window.eseguiRicercaBus = async function() {
     const isFestivo = (typeof isItalianHoliday === 'function') ? isItalianHoliday(dateObj) : (dateObj.getDay() === 0);
 
     const dayBadge = isFestivo 
-        ? `<span class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-white border border-white/20">📅 ${window.t('badge_holiday')}</span>` 
-        : `<span class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-white border border-white/20">🏢 ${window.t('badge_weekday')}</span>`;
+        ? `<span class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider text-white border border-white/20">📅 ${window.t('badge_holiday')}</span>` 
+        : `<span class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider text-white border border-white/20">🏢 ${window.t('badge_weekday')}</span>`;
 
     // Chiamata DB
     const { data, error } = await window.supabaseClient.rpc('trova_bus', { 
@@ -363,7 +395,7 @@ window.eseguiRicercaBus = async function() {
     // --- CARD PRINCIPALE (HERO) ---
     nextCard.innerHTML = `
         <div class="flex justify-between items-start mb-6">
-            <span class="text-[10px] font-bold uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-lg bg-black/5">${window.t('next_departure')}</span>
+            <span class="text-[11px] font-bold uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-lg bg-black/5">${window.t('next_departure')}</span>
             ${dayBadge}
         </div>
         
@@ -376,7 +408,7 @@ window.eseguiRicercaBus = async function() {
             </div>
             <div class="text-right pb-1">
                 <div class="text-2xl font-bold text-white/90 leading-none">${primo.ora_arrivo.slice(0,5)}</div>
-                <div class="text-[10px] font-bold text-amber-100 uppercase tracking-widest opacity-80">Arrivo</div>
+                <div class="text-[11px] font-bold text-amber-100 uppercase tracking-widest opacity-80">Arrivo</div>
             </div>
         </div>
 
@@ -401,7 +433,7 @@ window.eseguiRicercaBus = async function() {
                 <div class="flex items-center gap-4">
                     <div class="flex flex-col">
                         <span class="text-xl font-bold text-slate-700 leading-none group-hover:text-amber-600 transition-colors">${b.ora_partenza.slice(0,5)}</span>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Partenza</span>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">Partenza</span>
                     </div>
                     
                     <div class="flex flex-col items-center px-1 opacity-40">
@@ -410,12 +442,12 @@ window.eseguiRicercaBus = async function() {
 
                     <div class="flex flex-col">
                         <span class="text-lg font-bold text-slate-500 leading-none">${b.ora_arrivo.slice(0,5)}</span>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Arrivo</span>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">Arrivo</span>
                     </div>
                 </div>
 
                 <div class="bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm group-hover:bg-amber-50 group-hover:border-amber-100 transition-colors">
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-amber-600">Bus</span>
+                    <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-amber-600">Bus</span>
                 </div>
             </div>
         `).join('');
@@ -481,8 +513,8 @@ window.eseguiRicercaTraghetto = async function() {
     // --- CARD PRINCIPALE (HERO - BLU) ---
     nextCard.innerHTML = `
         <div class="flex justify-between items-start mb-6">
-            <span class="text-[10px] font-bold uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-lg bg-black/5">${window.t('next_departure')}</span>
-            <span class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-white border border-white/20">🌊 Mare</span>
+            <span class="text-[11px] font-bold uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-lg bg-black/5">${window.t('next_departure')}</span>
+            <span class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider text-white border border-white/20">🌊 Mare</span>
         </div>
         
         <div class="flex items-end justify-between relative z-10">
@@ -494,7 +526,7 @@ window.eseguiRicercaTraghetto = async function() {
             </div>
             <div class="text-right pb-1">
                 <div class="text-2xl font-bold text-white/90 leading-none">${primo[endCol].slice(0,5)}</div>
-                <div class="text-[10px] font-bold text-cyan-100 uppercase tracking-widest opacity-80">Arrivo</div>
+                <div class="text-[11px] font-bold text-cyan-100 uppercase tracking-widest opacity-80">Arrivo</div>
             </div>
         </div>
 
@@ -518,7 +550,7 @@ window.eseguiRicercaTraghetto = async function() {
                 <div class="flex items-center gap-4">
                     <div class="flex flex-col">
                         <span class="text-xl font-bold text-slate-700 leading-none group-hover:text-cyan-600 transition-colors">${run[startCol].slice(0,5)}</span>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Partenza</span>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">Partenza</span>
                     </div>
                     
                     <div class="flex flex-col items-center px-1 opacity-40">
@@ -527,12 +559,12 @@ window.eseguiRicercaTraghetto = async function() {
 
                     <div class="flex flex-col">
                         <span class="text-lg font-bold text-slate-500 leading-none">${run[endCol].slice(0,5)}</span>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Arrivo</span>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">Arrivo</span>
                     </div>
                 </div>
 
                 <div class="bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm group-hover:bg-cyan-50 group-hover:border-cyan-100 transition-colors">
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-cyan-600">Ferry</span>
+                    <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-cyan-600">Ferry</span>
                 </div>
             </div>
         `).join('');

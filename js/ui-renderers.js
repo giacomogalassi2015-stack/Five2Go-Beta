@@ -18,7 +18,7 @@ function getCandyBtn(icon, label, color, onclick) {
         <div class="h-9 w-9 rounded-xl ${theme} shadow-sm flex items-center justify-center border">
             <span class="material-icons text-lg">${icon}</span>
         </div>
-        ${label ? `<span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 group-hover/btn:text-slate-600 transition-colors">${label}</span>` : ''}
+        ${label ? `<span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 group-hover/btn:text-slate-600 transition-colors">${label}</span>` : ''}
     </button>`;
 }
 // MODIFICA 4: Ridotto mb-6 a mb-4 per avvicinare le schede (Prossimità)
@@ -53,7 +53,7 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
         <div class="p-5 flex-1 flex flex-col justify-start">
             ${label ? `
             <div class="flex items-center gap-2 mb-2">
-                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 font-sans">${label}</span>
+                <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 font-sans">${label}</span>
                 <div class="h-px bg-slate-100 flex-1"></div>
             </div>` : ''}
             <h3 class="font-serif text-2xl font-bold text-slate-800 leading-tight mb-2 group-hover:text-primary transition-colors">${title}</h3>
@@ -82,7 +82,7 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
         </div>
         <div class="flex-1 p-4 flex flex-col relative bg-white">
             <div class="mb-2">
-                <span class="inline-block px-2 py-0.5 rounded border border-slate-100 bg-slate-50 text-[9px] font-bold uppercase tracking-widest text-slate-500 font-sans">
+                <span class="inline-block px-2 py-0.5 rounded border border-slate-100 bg-slate-50 text-[11px] font-bold uppercase tracking-widest text-slate-500 font-sans">
                     ${typeLabel}
                 </span>
             </div>
@@ -93,7 +93,7 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
             </div>
            <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-end">
                 <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600 transition-colors">
-                    <span class="text-[9px] font-bold uppercase">${window.t('btn_details')}</span>
+                    <span class="text-[11px] font-bold uppercase">${window.t('btn_details')}</span>
                     <span class="material-icons text-xs">arrow_forward</span>
                 </div>
             </div>
@@ -115,7 +115,7 @@ function renderUtilityCard({ icon, title, subtitle, phone, color }) {
         </div>
         <div class="flex-1 min-w-0">
             <h3 class="font-bold text-slate-800 text-sm truncate">${title}</h3>
-            <p class="text-[10px] font-bold uppercase text-slate-400 tracking-wide truncate">${subtitle}</p>
+            <p class="text-[11px] font-bold uppercase text-slate-400 tracking-wide truncate">${subtitle}</p>
         </div>
         ${phone ? `<button onclick="window.location.href='tel:${phone}'" class="ml-3 w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 active:bg-slate-100 transition-colors"><span class="material-icons text-xl">call</span></button>` : ''}
     </div>`;
@@ -277,14 +277,14 @@ window.sentieroRenderer = (s) => {
     return `
     <div class="bg-white rounded-[2rem] shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group border border-slate-100/50 hover:shadow-lg transition-all">
         <div id="${uniqueId}" class="h-48 w-full bg-slate-100 relative border-b border-slate-100 cursor-pointer" onclick="window.openTechMap('${safeObj}')">
-            <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[10px] font-bold text-ct-green shadow-sm z-[400] font-sans tracking-widest uppercase">
+            <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[11px] font-bold text-ct-green shadow-sm z-[400] font-sans tracking-widest uppercase">
                 🥾 Outdoor
             </div>
             <div class="absolute inset-0 z-[300]"></div>
         </div>
         <div class="p-5 flex-1 flex flex-col">
             <div class="flex items-center gap-2 mb-2">
-                 <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 font-sans">
+                 <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 font-sans">
                     ⏱ ${durata} • 📏 ${dist}
                  </span>
             </div>
