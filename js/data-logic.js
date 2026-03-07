@@ -49,6 +49,8 @@ const UI_TEXT = {
         menu_wine: "Vini", menu_legal: "Note Legali",
         label_bus: "Bus Navetta", label_ferry: "Battello", label_train: "Treno",
         footer_rights: "Tutti i diritti riservati.",
+        aperitivo_hint_label: "Aperitivo Time",
+        aperitivo_hint_desc: "Vedi i posti migliori per l'aperitivo",
         filter_title: "Filtra per", filter_all: "Tutti", show_results: "Mostra Risultati", 
         filter_cat: "Categoria", filter_village: "Borgo",
         wine_type: "Tipologia", wine_grapes: "Uve", wine_pairings: "Abbinamenti", wine_deg: "Gradi",
@@ -112,7 +114,15 @@ const UI_TEXT = {
         trivia_23: "Il traghetto è il modo migliore per vedere la costa dal mare. Una prospettiva unica.",
         trivia_24: "In estate fa caldo! Porta sempre una borraccia e un cappello se cammini ed evita le ore più calde.",
         trivia_25: "Se c'è allerta meteo (Arancione/Rossa), i sentieri vengono chiusi per sicurezza.",
-        trivia_26: "Goditi il momento. Metti via il telefono per 5 minuti e ascolta il rumore del mare."
+        trivia_26: "Goditi il momento. Metti via il telefono per 5 minuti e ascolta il rumore del mare.",
+            chicco_map_1: "🍷 Aperitivo time? Manarola e Vernazza hanno i migliori tramonti sul mare. Cerca aperitivo nella sezione Cibo!",
+            chicco_map_2: "🗺️ Stai guardando la mappa? I puntini colorati sono i posti che conosco io. Toccali per scoprirli!",
+            chicco_map_3: "🌅 L'ora d'oro a Riomaggiore è intorno alle 18:30. Perfetta per un calice di Sciacchetrà sul molo.",
+            chicco_map_4: "🍋 Vernazza è il borgo più fotografato. Ma il segreto? La vista migliore è dal sentiero sopra il castello.",
+            chicco_map_5: "🚶 Corniglia è l'unico borgo senza porto. Ma ha la terrazza più alta... e il miglior gelato al limone.",
+            chicco_map_6: "⚓ Manarola di sera si svuota dai turisti. Resta — è il momento più bello per esplorare i vicoli.",
+            chicco_map_7: "🍸 Monterosso ha la spiaggia più grande. I bar sul lungomare offrono spritz con vista sulla torre medievale.",
+            chicco_map_8: "🐟 Il giovedì a Riomaggiore c'è il mercatino locale. Acciughe, pesto fresco e limoncino artigianale."
     },
     en: {
         loading: "Loading...", error: "Error", search_placeholder: "🔍 Search restaurants, wines, trails...", no_results: "No results found.",
@@ -128,6 +138,8 @@ const UI_TEXT = {
         menu_wine: "Wines", menu_legal: "Legal & Privacy",
         label_bus: "Shuttle Bus", label_ferry: "Ferry", label_train: "Train",
         footer_rights: "All rights reserved.",
+        aperitivo_hint_label: "Aperitivo Time",
+        aperitivo_hint_desc: "Discover the best spots for aperitivo",
         filter_title: "Filter by", filter_all: "All", show_results: "Show Results", 
         filter_cat: "Category", filter_village: "Village",
         wine_type: "Type", wine_grapes: "Grapes", wine_pairings: "Pairings", wine_deg: "Alcohol",
@@ -191,7 +203,15 @@ const UI_TEXT = {
         trivia_23: "The ferry is the best way to see the coast from the sea. A unique perspective.",
         trivia_24: "It's hot in summer! Always bring a water bottle and a hat, and avoid the hottest hours.",
         trivia_25: "If there is a weather alert (Orange/Red), trails are closed for safety.",
-        trivia_26: "Enjoy the moment. Put your phone away for 5 minutes and listen to the sea."
+        trivia_26: "Enjoy the moment. Put your phone away for 5 minutes and listen to the sea.",
+            chicco_map_1: "🍷 Aperitivo time? Manarola and Vernazza have the best sea sunsets. Search aperitivo in the Food section!",
+            chicco_map_2: "🗺️ Looking at the map? The coloured dots are places I know. Tap them to discover more!",
+            chicco_map_3: "🌅 Golden hour in Riomaggiore is around 6:30 PM. Perfect for a glass of Sciacchetrà at the dock.",
+            chicco_map_4: "🍋 Vernazza is the most photographed village. But the secret? The best view is from the trail above the castle.",
+            chicco_map_5: "🚶 Corniglia is the only village without a harbour. But it has the highest terrace — and the best lemon gelato.",
+            chicco_map_6: "⚓ Manarola in the evening empties of tourists. Stay — it's the best time to explore the alleys.",
+            chicco_map_7: "🍸 Monterosso has the biggest beach. The bars along the promenade serve spritz with a view of the medieval tower.",
+            chicco_map_8: "🐟 On Thursdays in Riomaggiore there's a local market. Anchovies, fresh pesto and artisan limoncino."
     },
     fr: {
         loading: "Chargement...", error: "Erreur", search_placeholder: "🔍 Cherchez restaurants, vins, randonnées...", no_results: "Aucun résultat.",
@@ -207,6 +227,8 @@ const UI_TEXT = {
         menu_wine: "Vins", menu_legal: "Mentions Légales",
         label_bus: "Navette", label_ferry: "Bateau", label_train: "Train",
         footer_rights: "Tous droits réservés.",
+        aperitivo_hint_label: "Aperitivo Time",
+        aperitivo_hint_desc: "Découvrez les meilleurs endroits pour l'apéritif",
         filter_title: "Filtrer par", filter_all: "Tous", show_results: "Afficher Résultats",
         filter_cat: "Catégorie", filter_village: "Village",
         wine_type: "Type", wine_grapes: "Raisins", wine_pairings: "Accords", wine_deg: "Degrés",
@@ -268,7 +290,15 @@ const UI_TEXT = {
         trivia_23: "Le bateau est le meilleur moyen de voir la côte depuis la mer. Une perspective unique.",
         trivia_24: "En été, il fait chaud ! Apportez toujours de l'eau et un chapeau, et évitez les heures chaudes.",
         trivia_25: "En cas d'alerte météo (Orange/Rouge), les sentiers sont fermés pour sécurité.",
-        trivia_26: "Profitez du moment. Rangez le téléphone 5 minutes et écoutez le bruit de la mer."
+        trivia_26: "Profitez du moment. Rangez le téléphone 5 minutes et écoutez le bruit de la mer.",
+            chicco_map_1: "🍷 L'heure de l'apéritif ? Manarola et Vernazza ont les meilleurs couchers de soleil. Cherchez l'apéritif dans la section Nourriture !",
+            chicco_map_2: "🗺️ Vous regardez la carte ? Les points colorés sont des lieux que je connais. Touchez-les pour les découvrir !",
+            chicco_map_3: "🌅 L'heure dorée à Riomaggiore est vers 18h30. Parfait pour un verre de Sciacchetrà au quai.",
+            chicco_map_4: "🍋 Vernazza est le village le plus photographié. Le secret ? La meilleure vue est depuis le sentier au-dessus du château.",
+            chicco_map_5: "🚶 Corniglia est le seul village sans port. Mais il a la terrasse la plus haute et la meilleure glace au citron.",
+            chicco_map_6: "⚓ Manarola le soir se vide des touristes. Restez — c'est le meilleur moment pour explorer les ruelles.",
+            chicco_map_7: "🍸 Monterosso a la plus grande plage. Les bars servent des spritz avec vue sur la tour médiévale.",
+            chicco_map_8: "🐟 Le jeudi à Riomaggiore il y a un marché local. Anchois, pesto frais et limoncino artisanal."
     },
 
     de: {
@@ -285,6 +315,8 @@ const UI_TEXT = {
         menu_wine: "Weine", menu_legal: "Rechtliches",
         label_bus: "Shuttlebus", label_ferry: "Fähre", label_train: "Zug",
         footer_rights: "Alle Rechte vorbehalten.",
+        aperitivo_hint_label: "Aperitivo Time",
+        aperitivo_hint_desc: "Entdecke die besten Orte für Aperitivo",
         filter_title: "Filtern nach", filter_all: "Alle", show_results: "Ergebnisse zeigen",
         filter_cat: "Kategorie", filter_village: "Dorf",
         wine_type: "Typ", wine_grapes: "Trauben", wine_pairings: "Paarungen", wine_deg: "Alkoholgehalt",
@@ -346,7 +378,15 @@ const UI_TEXT = {
         trivia_23: "Die Fähre ist der beste Weg, die Küste vom Meer aus zu sehen. Eine einzigartige Perspektive.",
         trivia_24: "Im Sommer ist es heiß! Bring Wasser und Hut mit und meide die Mittagshitze.",
         trivia_25: "Bei Wetterwarnung (Orange/Rot) werden die Wege zur Sicherheit gesperrt.",
-        trivia_26: "Genieße den Moment. Leg das Handy 5 Minuten weg und hör dem Meer zu."
+        trivia_26: "Genieße den Moment. Leg das Handy 5 Minuten weg und hör dem Meer zu.",
+            chicco_map_1: "🍷 Aperitivo-Zeit? Manarola und Vernazza haben die schönsten Sonnenuntergänge am Meer. Suche aperitivo im Bereich Essen!",
+            chicco_map_2: "🗺️ Du schaust dir die Karte an? Die farbigen Punkte sind Orte, die ich kenne. Tippe darauf, um mehr zu entdecken!",
+            chicco_map_3: "🌅 Die goldene Stunde in Riomaggiore ist gegen 18:30 Uhr. Perfekt für ein Glas Sciacchetrà am Pier.",
+            chicco_map_4: "🍋 Vernazza ist das meistfotografierte Dorf. Das Geheimnis? Der beste Aussichtspunkt ist vom Pfad über der Burg.",
+            chicco_map_5: "🚶 Corniglia ist das einzige Dorf ohne Hafen. Aber es hat die höchste Terrasse... und das beste Zitroneneeis.",
+            chicco_map_6: "⚓ Manarola am Abend leert sich von Touristen. Bleib — es ist die schönste Zeit, die Gassen zu erkunden.",
+            chicco_map_7: "🍸 Monterosso hat den größten Strand. Die Bars an der Promenade servieren Spritz mit Blick auf den mittelalterlichen Turm.",
+            chicco_map_8: "🐟 Donnerstags in Riomaggiore gibt es einen lokalen Markt. Sardellen, frisches Pesto und handgemachten Limoncino."
     },
 
     es: {
@@ -363,6 +403,8 @@ const UI_TEXT = {
         menu_wine: "Vinos", menu_legal: "Notas Legales",
         label_bus: "Autobús", label_ferry: "Barco", label_train: "Tren",
         footer_rights: "Todos los derechos reservados.",
+        aperitivo_hint_label: "Aperitivo Time",
+        aperitivo_hint_desc: "Descubre los mejores lugares para el aperitivo",
         filter_title: "Filtrar por", filter_all: "Todos", show_results: "Mostrar Resultados",
         filter_cat: "Categoría", filter_village: "Pueblo",
         wine_type: "Tipo", wine_grapes: "Uvas", wine_pairings: "Maridaje", wine_deg: "Grados",
@@ -424,7 +466,15 @@ const UI_TEXT = {
         trivia_23: "El barco es la mejor manera de ver la costa desde el mar. Una perspectiva única.",
         trivia_24: "¡En verano hace calor! Lleva siempre agua y sombrero, y evita las horas más calurosas.",
         trivia_25: "Si hay alerta meteorológica (Naranja/Roja), los senderos se cierran por seguridad.",
-        trivia_26: "Disfruta el momento. Guarda el teléfono 5 minutos y escucha el sonido del mar."
+        trivia_26: "Disfruta el momento. Guarda el teléfono 5 minutos y escucha el sonido del mar.",
+            chicco_map_1: "🍷 ¿Hora del aperitivo? Manarola y Vernazza tienen los mejores atardeceres al mar. ¡Busca aperitivo en la sección Comida!",
+            chicco_map_2: "🗺️ ¿Mirando el mapa? Los puntos de colores son lugares que conozco. ¡Tócalos para descubrir más!",
+            chicco_map_3: "🌅 La hora dorada en Riomaggiore es alrededor de las 18:30. Perfecta para una copa de Sciacchetrà en el muelle.",
+            chicco_map_4: "🍋 Vernazza es el pueblo más fotografiado. El secreto: la mejor vista es desde el sendero sobre el castillo.",
+            chicco_map_5: "🚶 Corniglia es el único pueblo sin puerto. Pero tiene la terraza más alta y el mejor helado de limón.",
+            chicco_map_6: "⚓ Manarola por la noche se vacía de turistas. Quédate — es el mejor momento para explorar los callejones.",
+            chicco_map_7: "🍸 Monterosso tiene la playa más grande. Los bares sirven spritz con vista a la torre medieval.",
+            chicco_map_8: "🐟 Los jueves en Riomaggiore hay un mercadillo local. Anchoas, pesto fresco y limoncino artesanal."
     },
 
     zh: {
@@ -441,6 +491,8 @@ const UI_TEXT = {
         menu_wine: "葡萄酒", menu_legal: "法律声明",
         label_bus: "穿梭巴士", label_ferry: "渡轮", label_train: "火车",
         footer_rights: "版权所有。",
+        aperitivo_hint_label: "开胃酒时刻",
+        aperitivo_hint_desc: "探索最佳开胃酒地点",
         filter_title: "筛选", filter_all: "全部", show_results: "显示结果",
         filter_cat: "类别", filter_village: "村庄",
         wine_type: "类型", wine_grapes: "葡萄品种", wine_pairings: "搭配", wine_deg: "酒精度",
@@ -502,7 +554,15 @@ const UI_TEXT = {
         trivia_23: "渡轮是从海上观赏海岸的最佳方式。视角独特。",
         trivia_24: "夏天很热！如果徒步，请随身带水和帽子，并避开最热的时段。",
         trivia_25: "如果有天气预警（橙色/红色），步道将为了安全而关闭。",
-        trivia_26: "享受当下。放下手机5分钟，倾听大海的声音。"
+        trivia_26: "享受当下。放下手机5分钟，倾听大海的声音。",
+            chicco_map_1: "🍷 开胃酒时间！马纳罗拉和韦尔纳扎有最美的海上日落。在美食板块搜索aperitivo！",
+            chicco_map_2: "🗺️ 正在看地图？彩色小点是我知道的好去处。点击它们来发现更多！",
+            chicco_map_3: "🌅 里奥马焦雷的黄金时刻在傍晚六点半。在码头喝一杯Sciacchetrà，完美！",
+            chicco_map_4: "🍋 韦尔纳扎是拍照最多的小镇。秘密：城堡上方步道才是最好的观景点。",
+            chicco_map_5: "🚶 科尔尼利亚是唯一没有港口的村庄，拥有最高的露台和最好吃的柠檬冰淇淋。",
+            chicco_map_6: "⚓ 马纳罗拉傍晚游客散去，那才是探索小巷最美的时刻。",
+            chicco_map_7: "🍸 蒙泰罗索有最大的海滩，海滨酒吧供应Spritz，可欣赏中世纪塔楼。",
+            chicco_map_8: "🐟 每逢周四，里奥马焦雷有本地集市：鳀鱼、新鲜罗勒酱和手工柠檬酒。"
     }
 };
 
@@ -636,6 +696,11 @@ const TRIVIA_KEYS = [
     "trivia_21", "trivia_22", "trivia_23", "trivia_24", "trivia_25", "trivia_26"
 ];
 
+const MAP_CHICCO_KEYS = [
+    "chicco_map_1", "chicco_map_2", "chicco_map_3", "chicco_map_4",
+    "chicco_map_5", "chicco_map_6", "chicco_map_7", "chicco_map_8"
+];
+
 window.getChiccoRealTimeAdvice = async function() {
     try {
         if (!localStorage.getItem('chicco_intro_done')) {
@@ -672,8 +737,15 @@ window.getChiccoRealTimeAdvice = async function() {
 
         const weatherPhrase = `${icon} <b>${window.t(weatherKey)}</b>, ${temp}°C<br>💧 ${window.t('label_humidity')} ${hum}%<br>${seaIcon} ${window.t('label_sea')} ${window.t(seaKey)}`;
         
-        const randomKey = TRIVIA_KEYS[Math.floor(Math.random() * TRIVIA_KEYS.length)];
-        const adviceText = window.t(randomKey);
+        // Use map-specific phrases when on the map view
+        let adviceText;
+        if (window.currentViewName === 'mappa') {
+            const mapKey = MAP_CHICCO_KEYS[Math.floor(Math.random() * MAP_CHICCO_KEYS.length)];
+            adviceText = window.t(mapKey);
+        } else {
+            const randomKey = TRIVIA_KEYS[Math.floor(Math.random() * TRIVIA_KEYS.length)];
+            adviceText = window.t(randomKey);
+        }
 
         return {
             weather: weatherPhrase,

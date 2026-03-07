@@ -453,6 +453,28 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer)
         updateList(filtered);
     };
 
+    // Aperitivo editorial strip — above the list, below the filter bar, only for Ristoranti
+    const isRistorantiView = (filterKey === 'Paesi' && cardRenderer === window.ristoranteRenderer);
+    if (isRistorantiView) {
+        const strip = document.createElement('div');
+        strip.className = 'animate-fade';
+        strip.style.cssText = 'margin-bottom:12px;';
+        strip.innerHTML = `
+            <div onclick="window._openMapAperitivo && window._openMapAperitivo()"
+                class="flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer active:scale-[0.98] transition-all touch-manipulation"
+                style="background:linear-gradient(100deg,#fffbeb,#fff7ed); border:1px solid rgba(217,119,6,0.2); box-shadow:0 1px 4px rgba(217,119,6,0.08);">
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(217,119,6,0.1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">🥂</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:#b45309;line-height:1;margin-bottom:2px;">${window.t('aperitivo_hint_label') || 'Aperitivo Time'}</div>
+                    <div style="font-size:12px;color:rgba(120,53,15,0.7);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${window.t('aperitivo_hint_desc') || 'Scopri i migliori posti per aperitivo'}</div>
+                </div>
+                <span class="material-icons" style="color:#F59E0B;font-size:18px;flex-shrink:0;">chevron_right</span>
+            </div>`;
+        // Insert right before #dynamic-list
+        const dynList = container.querySelector('#dynamic-list');
+        if (dynList) dynList.parentNode.insertBefore(strip, dynList);
+    }
+
     function updateList(items) {
         if (!items || items.length === 0) { 
             listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`; 
@@ -1271,20 +1293,87 @@ window.initBusMap = function(fermate) {
     const mapContainer = document.getElementById('bus-map');
     if (!mapContainer) return;
     if (window.currentBusMap) { window.currentBusMap.remove(); window.currentBusMap = null; }
-    const map = L.map('bus-map').setView([44.1000, 9.7385], 13);
-    window.currentBusMap = map; 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap, © CARTO', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+
+    const map = L.map('bus-map', { zoomControl: false }).setView([44.1000, 9.7385], 13);
+    window.currentBusMap = map;
+
+    // Warm, cartographic tile style (Carto Voyager)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap, © CARTO', subdomains: 'abcd', maxZoom: 20
+    }).addTo(map);
+
+    // ── Custom bus stop icon ──
+    const busIcon = L.divIcon({
+        className: '',
+        html: `<div style="
+            width:28px; height:28px; border-radius:50%;
+            background: linear-gradient(135deg, #E9C46A, #F4A261);
+            border: 2.5px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; line-height:1;">🚌</div>`,
+        iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -16]
+    });
+
     const markersGroup = new L.FeatureGroup();
     const labelPartenza = window.t('departure') || 'Partenza';
     const labelArrivo = window.t('arrival') || 'Arrivo';
+
     fermate.forEach(f => {
         if (!f.LAT || !f.LONG) return;
-        const marker = L.marker([f.LAT, f.LONG]).addTo(map);
-        marker.bindPopup(`<div style="text-align:center; min-width:150px;"><h3 style="margin:0 0 10px 0; font-size:1rem; color:#333;">${f.NOME_FERMATA}</h3><div style="display:flex; gap:5px; justify-content:center;"><button onclick="setBusStop('partenza', '${f.ID}')" class="btn-popup-start" style="background:#27ae60; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:0.75rem; font-weight:bold; text-transform:uppercase;">${labelPartenza}</button><button onclick="setBusStop('arrivo', '${f.ID}')" class="btn-popup-end" style="background:#c0392b; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:0.75rem; font-weight:bold; text-transform:uppercase;">${labelArrivo}</button></div></div>`);
+        const marker = L.marker([f.LAT, f.LONG], { icon: busIcon }).addTo(map);
+        marker.bindPopup(`
+            <div style="text-align:center; min-width:160px; font-family:inherit;">
+                <div style="font-weight:800; font-size:0.9rem; color:#1e293b; margin-bottom:10px; line-height:1.2;">${f.NOME_FERMATA}</div>
+                <div style="display:flex; gap:6px; justify-content:center;">
+                    <button onclick="setBusStop('partenza','${f.ID}')"
+                        style="flex:1; background:#16a34a; color:white; border:none; padding:7px 8px; border-radius:8px; cursor:pointer; font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em;">
+                        ↑ ${labelPartenza}
+                    </button>
+                    <button onclick="setBusStop('arrivo','${f.ID}')"
+                        style="flex:1; background:#dc2626; color:white; border:none; padding:7px 8px; border-radius:8px; cursor:pointer; font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em;">
+                        ↓ ${labelArrivo}
+                    </button>
+                </div>
+            </div>`
+        );
         markersGroup.addLayer(marker);
     });
     map.addLayer(markersGroup);
-    setTimeout(() => { map.invalidateSize(); }, 200);
+
+    // ── Geolocation via shared cache (no repeated GPS calls) ──
+    window._busGeoMarker = null;
+
+    let firstPositionReceived = false;
+
+    const placeUserDot = (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        // Update marker position silently on each watch update
+        if (window._busGeoMarker) { map.removeLayer(window._busGeoMarker); }
+        const userIcon = L.divIcon({
+            className: '',
+            html: `<div style="position:relative;width:20px;height:20px;">
+                <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.22);animation:geoPulse 1.8s ease-out infinite;"></div>
+                <div style="position:absolute;inset:4px;border-radius:50%;background:#3b82f6;border:2px solid white;box-shadow:0 2px 6px rgba(59,130,246,0.55);"></div>
+                <style>@keyframes geoPulse{0%{transform:scale(1);opacity:.6}70%{transform:scale(2.5);opacity:0}100%{opacity:0}}</style>
+            </div>`,
+            iconSize: [20, 20], iconAnchor: [10, 10]
+        });
+        window._busGeoMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 })
+            .addTo(map)
+            .bindPopup(`<div style="font-weight:700;font-size:0.85rem;color:#1e293b;">📍 Sei qui</div>`);
+        // Pan to user only on first fix, not on subsequent updates
+        if (!firstPositionReceived && lat > 43.9 && lat < 44.3 && lng > 9.5 && lng < 10.0) {
+            map.setView([lat, lng], 14, { animate: true });
+        }
+        firstPositionReceived = true;
+    };
+
+    setTimeout(() => {
+        map.invalidateSize();
+        window.startBusGeoWatch(placeUserDot);
+    }, 250);
 };
 
 window.setBusStop = function(type, value) {
@@ -1310,6 +1399,59 @@ window.toggleBusMap = function() {
         container.classList.add('hidden');
         if (btn) { btn.classList.remove('bg-indigo-500', 'text-white', 'border-transparent'); btn.classList.add('bg-indigo-50', 'text-indigo-500', 'border-indigo-100'); btn.innerHTML = '<span class="material-icons text-lg">map</span>'; }
     }
+};
+
+// ── Open map pre-filtered to aperitivo ──
+window._openMapAperitivo = function() {
+    window._mapPreFilter = 'aperitivo';
+    switchView('mappa');
+};
+
+// ── Geolocation — watchPosition while modal open, 60s hardware cache ──
+// Strategy: one watchPosition per modal open, cleared on close.
+// The browser caches the GPS fix for 60s (maximumAge), so hardware
+// doesn't re-acquire on every update — just uses the existing fix.
+// Walking at 5 km/h = ~83 m/min, so 60s = ~80m drift max.
+window._geoWatchId     = null;   // active watchPosition id
+window._geoLastPos     = null;   // most recent position
+
+window.startBusGeoWatch = function(onPositionUpdate) {
+    if (!navigator.geolocation) return;
+    // Clear any stale watch
+    if (window._geoWatchId !== null) {
+        navigator.geolocation.clearWatch(window._geoWatchId);
+        window._geoWatchId = null;
+    }
+    window._geoWatchId = navigator.geolocation.watchPosition(
+        (pos) => {
+            window._geoLastPos = pos;
+            onPositionUpdate(pos);
+        },
+        (err) => { console.log('Geo watch error:', err.code); },
+        {
+            enableHighAccuracy: true,
+            maximumAge:  60000,   // reuse hardware fix for up to 60s → no battery drain
+            timeout:     10000    // give up after 10s on first fix
+        }
+    );
+};
+
+window.stopBusGeoWatch = function() {
+    if (window._geoWatchId !== null) {
+        navigator.geolocation.clearWatch(window._geoWatchId);
+        window._geoWatchId = null;
+    }
+};
+
+// Legacy helper kept for any other callers
+window.getCachedPosition = function(callback, options = {}) {
+    if (window._geoLastPos) { callback(window._geoLastPos); return; }
+    if (!navigator.geolocation) { if (options.onError) options.onError(); return; }
+    navigator.geolocation.getCurrentPosition(
+        (pos) => { window._geoLastPos = pos; callback(pos); },
+        (err) => { if (options.onError) options.onError(err); },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
 };
 
 window.loadAllStops = async function() {

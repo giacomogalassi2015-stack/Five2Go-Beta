@@ -457,8 +457,11 @@ window.getModalContent = function(type, payload, item) {
                             </select>
                         </div>
                         ${isBus ? `<button onclick="toggleBusMap()" id="btn-bus-map-toggle"
-                            class="shrink-0 w-10 h-10 flex items-center justify-center bg-indigo-50 text-indigo-400 rounded-xl border border-indigo-100 active:scale-95 transition-all touch-manipulation mt-0.5">
-                            <span class="material-icons text-lg">map</span>
+                            class="shrink-0 w-11 h-11 flex items-center justify-center rounded-xl active:scale-90 transition-all touch-manipulation mt-0.5 relative overflow-hidden shadow-sm"
+                            style="background:linear-gradient(135deg,#F59E0B,#E9C46A); border:1.5px solid rgba(255,255,255,0.6);"
+                            title="${window.t('show_map')}">
+                            <span class="absolute inset-0" style="background:radial-gradient(circle at 28% 28%, rgba(255,255,255,0.45), transparent 55%);"></span>
+                            <span style="font-size:17px; line-height:1; position:relative; z-index:10; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.15));">🚏</span>
                         </button>` : ''}
                     </div>
 

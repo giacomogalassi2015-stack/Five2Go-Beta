@@ -237,6 +237,9 @@ window.renderMappaInterattiva = async function() {
     // Blocca padding-bottom di app-content durante la mappa
     content.style.paddingBottom = '0';
 
+    // Reset always to 'Tutte' — pre-filter (if any) is applied after init
+    window._mapActiveCat = 'Tutte';
+
     await window._mapLoadData();
 
     content.innerHTML = `
@@ -440,6 +443,24 @@ window.renderMappaInterattiva = async function() {
 
     await window._mapInit();
     window._sheetInit();
+
+    // Apply pre-filter if set (e.g. coming from aperitivo shortcut)
+    if (window._mapPreFilter) {
+        const cat = window._mapPreFilter;
+        window._mapPreFilter = null; // consume — don't re-apply on next open
+        // Simulate a cat-toggle button click once DOM is ready
+        requestAnimationFrame(() => {
+            const btn = document.querySelector(`.cat-toggle[data-cat="${cat}"]`);
+            if (btn) {
+                window.mapSetCat(cat, btn);
+            } else {
+                // Fallback: set directly without button highlight
+                window._mapActiveCat = cat;
+                window._mapRenderMarkers();
+                window._mapUpdateListFromBounds();
+            }
+        });
+    }
 };
 
 // ---------------------------------------------------------------------------
