@@ -456,17 +456,22 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer)
     // Aperitivo editorial strip — above the list, below the filter bar, only for Ristoranti
     const isRistorantiView = (filterKey === 'Paesi' && cardRenderer === window.ristoranteRenderer);
     const isVinoView       = (filterKey === 'Tipo'  && cardRenderer === window.vinoRenderer);
+    const isSpiaggiaView   = (filterKey === 'Paesi' && cardRenderer === window.spiaggiaRenderer);
 
-    if (isRistorantiView || isVinoView) {
+    if (isRistorantiView || isVinoView || isSpiaggiaView) {
         const isVino = isVinoView;
         const strip = document.createElement('div');
         strip.className = 'animate-fade';
         strip.style.cssText = 'margin-bottom:12px;';
 
         // Visual tokens per category
-        const cfg = isVino
-            ? { fn: '_openMapVino',      bg: 'linear-gradient(100deg,#fff0ee,#fef2f2)',  border: 'rgba(192,57,43,0.2)',  shadow: 'rgba(192,57,43,0.08)',  iconBg: 'rgba(192,57,43,0.1)',  emoji: '🍷', labelColor: '#9b1c1c', textColor: 'rgba(127,29,29,0.7)', arrowColor: '#E74C3C',  labelKey: 'vino_map_hint_label',   descKey: 'vino_map_hint_desc',   labelFallback: 'Dove acquistare', descFallback: 'Cantine e enoteche sulla mappa' }
-            : { fn: '_openMapAperitivo', bg: 'linear-gradient(100deg,#fffbeb,#fff7ed)',  border: 'rgba(217,119,6,0.2)',  shadow: 'rgba(217,119,6,0.08)',  iconBg: 'rgba(217,119,6,0.1)',  emoji: '🥂', labelColor: '#b45309', textColor: 'rgba(120,53,15,0.7)', arrowColor: '#F59E0B',  labelKey: 'aperitivo_hint_label',  descKey: 'aperitivo_hint_desc',   labelFallback: 'Aperitivo Time',  descFallback: 'Scopri i migliori posti' };
+        const MAP_STRIP_CFG = {
+            aperitivo:  { fn: '_openMapAperitivo',  bg: 'linear-gradient(100deg,#fffbeb,#fff7ed)',  border: 'rgba(217,119,6,0.2)',  shadow: 'rgba(217,119,6,0.08)',  iconBg: 'rgba(217,119,6,0.1)',  emoji: '🥂', labelColor: '#b45309', textColor: 'rgba(120,53,15,0.7)', arrowColor: '#F59E0B', labelKey: 'aperitivo_hint_label',  descKey: 'aperitivo_hint_desc'  },
+            vino:       { fn: '_openMapVino',        bg: 'linear-gradient(100deg,#fff0ee,#fef2f2)',  border: 'rgba(192,57,43,0.2)',  shadow: 'rgba(192,57,43,0.08)',  iconBg: 'rgba(192,57,43,0.1)',  emoji: '🍷', labelColor: '#9b1c1c', textColor: 'rgba(127,29,29,0.7)', arrowColor: '#E74C3C', labelKey: 'vino_map_hint_label',   descKey: 'vino_map_hint_desc'   },
+            spiaggia:   { fn: '_openMapSpiaggia',    bg: 'linear-gradient(100deg,#eff6ff,#f0f9ff)',  border: 'rgba(3,105,161,0.2)',   shadow: 'rgba(3,105,161,0.08)',   iconBg: 'rgba(3,105,161,0.1)',   emoji: '🏖️', labelColor: '#075985', textColor: 'rgba(7,89,133,0.7)',  arrowColor: '#38BDF8', labelKey: 'spiaggia_map_hint_label', descKey: 'spiaggia_map_hint_desc' },
+            attrazione: { fn: '_openMapAttrazione',  bg: 'linear-gradient(100deg,#f0fdf4,#ecfdf5)',  border: 'rgba(21,128,61,0.2)',   shadow: 'rgba(21,128,61,0.08)',   iconBg: 'rgba(21,128,61,0.1)',   emoji: '🏛️', labelColor: '#166534', textColor: 'rgba(20,83,45,0.7)',  arrowColor: '#34D399', labelKey: 'attrazione_map_hint_label', descKey: 'attrazione_map_hint_desc' },
+        };
+        const cfg = isVino ? MAP_STRIP_CFG.vino : isSpiaggiaView ? MAP_STRIP_CFG.spiaggia : MAP_STRIP_CFG.aperitivo;
 
         strip.innerHTML = `
             <div onclick="window.${cfg.fn} && window.${cfg.fn}()"
@@ -532,6 +537,32 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
         </div>
         <div id="dynamic-list" class="flex flex-col gap-3 pb-24 animate-fade min-h-[50vh]"></div>
     `;
+
+    // Attrazioni strip — same pattern as other views
+    if (cardRenderer === window.attrazioniRenderer) {
+        const MAP_STRIP_ATTRAZ = {
+            fn: '_openMapAttrazione', bg: 'linear-gradient(100deg,#f0fdf4,#ecfdf5)',
+            border: 'rgba(21,128,61,0.2)', shadow: 'rgba(21,128,61,0.08)', iconBg: 'rgba(21,128,61,0.1)',
+            emoji: '🏛️', labelColor: '#166534', textColor: 'rgba(20,83,45,0.7)', arrowColor: '#34D399',
+            labelKey: 'attrazione_map_hint_label', descKey: 'attrazione_map_hint_desc'
+        };
+        const strip = document.createElement('div');
+        strip.className = 'animate-fade';
+        strip.style.cssText = 'margin-bottom:12px;';
+        strip.innerHTML = `
+            <div onclick="window.${MAP_STRIP_ATTRAZ.fn} && window.${MAP_STRIP_ATTRAZ.fn}()"
+                class="flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer active:scale-[0.98] transition-all touch-manipulation"
+                style="background:${MAP_STRIP_ATTRAZ.bg}; border:1px solid ${MAP_STRIP_ATTRAZ.border}; box-shadow:0 1px 4px ${MAP_STRIP_ATTRAZ.shadow};">
+                <div style="width:36px;height:36px;border-radius:10px;background:${MAP_STRIP_ATTRAZ.iconBg};display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">${MAP_STRIP_ATTRAZ.emoji}</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:${MAP_STRIP_ATTRAZ.labelColor};line-height:1;margin-bottom:2px;">${window.t(MAP_STRIP_ATTRAZ.labelKey) || 'Sulla mappa'}</div>
+                    <div style="font-size:12px;color:${MAP_STRIP_ATTRAZ.textColor};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${window.t(MAP_STRIP_ATTRAZ.descKey) || 'Vedi le attrazioni sulla mappa'}</div>
+                </div>
+                <span class="material-icons" style="color:${MAP_STRIP_ATTRAZ.arrowColor};font-size:18px;flex-shrink:0;">chevron_right</span>
+            </div>`;
+        const dynList = container.querySelector('#dynamic-list');
+        if (dynList) dynList.parentNode.insertBefore(strip, dynList);
+    }
 
     const c1 = container.querySelector(`#row1-${filterId}`);
     const c2 = container.querySelector(`#row2-${filterId}`);
@@ -1352,35 +1383,26 @@ window.initBusMap = function(fermate) {
     // ── Geolocation via shared cache (no repeated GPS calls) ──
     window._busGeoMarker = null;
 
-    let firstPositionReceived = false;
-
-    const placeUserDot = (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        // Update marker position silently on each watch update
-        if (window._busGeoMarker) { map.removeLayer(window._busGeoMarker); }
-        const userIcon = L.divIcon({
-            className: '',
-            html: `<div style="position:relative;width:20px;height:20px;">
-                <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.22);animation:geoPulse 1.8s ease-out infinite;"></div>
-                <div style="position:absolute;inset:4px;border-radius:50%;background:#3b82f6;border:2px solid white;box-shadow:0 2px 6px rgba(59,130,246,0.55);"></div>
-                <style>@keyframes geoPulse{0%{transform:scale(1);opacity:.6}70%{transform:scale(2.5);opacity:0}100%{opacity:0}}</style>
-            </div>`,
-            iconSize: [20, 20], iconAnchor: [10, 10]
-        });
-        window._busGeoMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 })
-            .addTo(map)
-            .bindPopup(`<div style="font-weight:700;font-size:0.85rem;color:#1e293b;">📍 Sei qui</div>`);
-        // Pan to user only on first fix, not on subsequent updates
-        if (!firstPositionReceived && lat > 43.9 && lat < 44.3 && lng > 9.5 && lng < 10.0) {
-            map.setView([lat, lng], 14, { animate: true });
-        }
-        firstPositionReceived = true;
-    };
-
     setTimeout(() => {
         map.invalidateSize();
-        window.startBusGeoWatch(placeUserDot);
+        window.GeoTracker.start('bus', ({ lat, lng, accuracy, isFirst }) => {
+            if (window._busGeoMarker) { map.removeLayer(window._busGeoMarker); }
+            const userIcon = L.divIcon({
+                className: '',
+                html: `<div style="position:relative;width:20px;height:20px;">
+                    <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.22);animation:geoPulse 1.8s ease-out infinite;"></div>
+                    <div style="position:absolute;inset:4px;border-radius:50%;background:#3b82f6;border:2px solid white;box-shadow:0 2px 6px rgba(59,130,246,0.55);"></div>
+                    <style>@keyframes geoPulse{0%{transform:scale(1);opacity:.6}70%{transform:scale(2.5);opacity:0}100%{opacity:0}}</style>
+                </div>`,
+                iconSize: [20, 20], iconAnchor: [10, 10]
+            });
+            window._busGeoMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 })
+                .addTo(map)
+                .bindPopup(`<div style="font-weight:700;font-size:0.85rem;color:#1e293b;">📍 Sei qui</div>`);
+            if (isFirst && lat > 43.9 && lat < 44.3 && lng > 9.5 && lng < 10.0) {
+                map.setView([lat, lng], 14, { animate: true });
+            }
+        });
     }, 250);
 };
 
@@ -1421,51 +1443,91 @@ window._openMapVino = function() {
     switchView('mappa');
 };
 
-// ── Geolocation — watchPosition while modal open, 60s hardware cache ──
-// Strategy: one watchPosition per modal open, cleared on close.
-// The browser caches the GPS fix for 60s (maximumAge), so hardware
-// doesn't re-acquire on every update — just uses the existing fix.
-// Walking at 5 km/h = ~83 m/min, so 60s = ~80m drift max.
-window._geoWatchId     = null;   // active watchPosition id
-window._geoLastPos     = null;   // most recent position
+// ── Open map pre-filtered to spiaggia ──
+window._openMapSpiaggia = function() {
+    window._mapPreFilter = 'spiaggia';
+    switchView('mappa');
+};
 
-window.startBusGeoWatch = function(onPositionUpdate) {
-    if (!navigator.geolocation) return;
-    // Clear any stale watch
-    if (window._geoWatchId !== null) {
-        navigator.geolocation.clearWatch(window._geoWatchId);
-        window._geoWatchId = null;
-    }
-    window._geoWatchId = navigator.geolocation.watchPosition(
-        (pos) => {
-            window._geoLastPos = pos;
-            onPositionUpdate(pos);
-        },
-        (err) => { console.log('Geo watch error:', err.code); },
-        {
-            enableHighAccuracy: true,
-            maximumAge:  60000,   // reuse hardware fix for up to 60s → no battery drain
-            timeout:     10000    // give up after 10s on first fix
+// ── Open map pre-filtered to attrazione ──
+window._openMapAttrazione = function() {
+    window._mapPreFilter = 'attrazione';
+    switchView('mappa');
+};
+
+// ══════════════════════════════════════════════════════════════════
+// GeoTracker — unified, precision-smoothed, battery-friendly
+// ══════════════════════════════════════════════════════════════════
+//
+// Precision strategy: accuracy-adaptive EMA smoothing.
+//   α = clamp(20 / accuracy_meters, 0.05, 1.0)
+//   → fix with 10m accuracy  → α ≈ 1.0  (full update, trust it)
+//   → fix with 50m accuracy  → α = 0.4  (blend in slowly)
+//   → fix with 150m accuracy → α = 0.13 (mostly ignore)
+// This is a lightweight 1-state Kalman approximation: zero arrays,
+// just two multiplications per GPS update.
+//
+// Battery strategy:
+//   maximumAge: 60 000 ms — OS reuses existing chip fix, no re-acquisition
+//   One active watchId per named tracker (bus, mappa). Callers call
+//   stop() when they unmount; watch is cleaned up automatically.
+//
+window.GeoTracker = (function() {
+    const _watchers = {};   // name → watchId
+    const _smoothed = {};   // name → { lat, lng }
+    const _firstFix = {};   // name → bool
+
+    function _smooth(name, rawLat, rawLng, accuracy) {
+        const clampedAcc = Math.max(accuracy || 50, 1);
+        const alpha = Math.min(1.0, Math.max(0.05, 20 / clampedAcc));
+        if (!_smoothed[name]) {
+            _smoothed[name] = { lat: rawLat, lng: rawLng };
+        } else {
+            _smoothed[name].lat = _smoothed[name].lat * (1 - alpha) + rawLat * alpha;
+            _smoothed[name].lng = _smoothed[name].lng * (1 - alpha) + rawLng * alpha;
         }
-    );
-};
-
-window.stopBusGeoWatch = function() {
-    if (window._geoWatchId !== null) {
-        navigator.geolocation.clearWatch(window._geoWatchId);
-        window._geoWatchId = null;
+        return { lat: _smoothed[name].lat, lng: _smoothed[name].lng, accuracy: clampedAcc, alpha };
     }
-};
 
-// Legacy helper kept for any other callers
-window.getCachedPosition = function(callback, options = {}) {
-    if (window._geoLastPos) { callback(window._geoLastPos); return; }
-    if (!navigator.geolocation) { if (options.onError) options.onError(); return; }
-    navigator.geolocation.getCurrentPosition(
-        (pos) => { window._geoLastPos = pos; callback(pos); },
-        (err) => { if (options.onError) options.onError(err); },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-    );
+    return {
+        // Check if a named tracker is currently active
+        _isTracking(name) { return _watchers[name] != null; },
+        // Start tracking. onUpdate({ lat, lng, accuracy, isFirst })
+        start(name, onUpdate) {
+            if (!navigator.geolocation) return;
+            this.stop(name); // clear any previous watch for this name
+            _firstFix[name] = true;
+            _smoothed[name] = null;
+            _watchers[name] = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const s = _smooth(name, pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+                    const isFirst = _firstFix[name];
+                    _firstFix[name] = false;
+                    onUpdate({ ...s, isFirst });
+                },
+                (err) => { console.log(`GeoTracker[${name}] error:`, err.code); },
+                { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 }
+            );
+        },
+        stop(name) {
+            if (_watchers[name] != null) {
+                navigator.geolocation.clearWatch(_watchers[name]);
+                delete _watchers[name];
+                delete _smoothed[name];
+            }
+        },
+        stopAll() {
+            Object.keys(_watchers).forEach(n => this.stop(n));
+        }
+    };
+})();
+
+// Legacy shims kept for backwards compatibility
+window.startBusGeoWatch = (cb) => window.GeoTracker.start('bus', p => cb({ coords: { latitude: p.lat, longitude: p.lng, accuracy: p.accuracy } }));
+window.stopBusGeoWatch  = ()   => window.GeoTracker.stop('bus');
+window.getCachedPosition = (cb) => {
+    const tmp = window.GeoTracker;
+    tmp.start('_once', p => { tmp.stop('_once'); cb({ coords: { latitude: p.lat, longitude: p.lng, accuracy: p.accuracy } }); });
 };
 
 window.loadAllStops = async function() {

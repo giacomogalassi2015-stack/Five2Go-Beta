@@ -509,6 +509,8 @@ window._mapInit = async function() {
     setTimeout(() => {
         map.invalidateSize();
         window._mapUpdateListFromBounds();
+        // Auto-start GPS silently — fires only if user grants permission
+        window.mapToggleGPS(true);
     }, 200);
 };
 
@@ -982,22 +984,20 @@ window.mapOpenDetail = function(item) {
 // ---------------------------------------------------------------------------
 // GPS TRACKING
 // ---------------------------------------------------------------------------
-window.mapToggleGPS = function() {
+window.mapToggleGPS = function(autoStart = false) {
     const map   = window._mapLeaflet;
     const btn   = document.getElementById('map-gps-btn');
     const icon  = document.getElementById('map-gps-icon');
     const label = document.getElementById('map-gps-label');
     if (!map) return;
 
-    // ── Se GPS già attivo → spegnilo ──────────────────────────────────────
-    if (window._gpsWatchId !== null) {
-        navigator.geolocation.clearWatch(window._gpsWatchId);
-        window._gpsWatchId = null;
-        window._gpsLatLng  = null;
-
+    // ── Se GPS già attivo e non è auto-start → spegnilo ──────────────────
+    const isTracking = window.GeoTracker && window.GeoTracker._isTracking('mappa');
+    if (!autoStart && isTracking) {
+        window.GeoTracker.stop('mappa');
+        window._gpsLatLng = null;
         if (window._gpsUserMarker) { map.removeLayer(window._gpsUserMarker); window._gpsUserMarker = null; }
         if (window._gpsAccCircle)  { map.removeLayer(window._gpsAccCircle);  window._gpsAccCircle  = null; }
-
         if (btn)   { btn.classList.remove('gps-active', 'gps-searching'); }
         if (icon)  { icon.textContent = 'my_location'; icon.classList.remove('spin-anim'); }
         if (label) { label.textContent = 'GPS'; }
@@ -1005,100 +1005,46 @@ window.mapToggleGPS = function() {
         return;
     }
 
-    // ── Controllo supporto ────────────────────────────────────────────────
-    if (!navigator.geolocation) {
-        _showMapToast('⚠️ GPS non supportato');
-        return;
-    }
+    if (!navigator.geolocation) { _showMapToast('⚠️ GPS non supportato'); return; }
 
     // ── Stato: ricerca in corso ───────────────────────────────────────────
     if (btn)   { btn.classList.add('gps-searching'); }
     if (icon)  { icon.textContent = 'sync'; icon.classList.add('spin-anim'); }
     if (label) { label.textContent = 'Cerco...'; }
 
-    const opts = { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 };
+    window.GeoTracker.start('mappa', ({ lat, lng, accuracy, isFirst }) => {
+        window._gpsLatLng = { lat, lng };
 
-    window._gpsWatchId = navigator.geolocation.watchPosition(
-        // ── Success ──────────────────────────────────────────────────────
-        (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const acc = Math.round(pos.coords.accuracy);
-            window._gpsLatLng = { lat, lng };
+        if (window._gpsUserMarker) map.removeLayer(window._gpsUserMarker);
+        if (window._gpsAccCircle)  map.removeLayer(window._gpsAccCircle);
 
-            // Prima fix: centra la mappa e aggiorna UI
-            const isFirstFix = !window._gpsUserMarker;
+        const dotIcon = L.divIcon({
+            className: '',
+            html: '<div class="gps-user-dot"></div>',
+            iconSize: [18, 18], iconAnchor: [9, 9],
+        });
+        window._gpsUserMarker = L.marker([lat, lng], {
+            icon: dotIcon, zIndexOffset: 1000, interactive: true,
+        }).addTo(map);
+        window._gpsUserMarker.on('click', () => {
+            _showMapToast(`📡 Precisione: ±${Math.round(accuracy)}m`);
+        });
 
-            // Rimuovi vecchi layer
-            if (window._gpsUserMarker) map.removeLayer(window._gpsUserMarker);
-            if (window._gpsAccCircle)  map.removeLayer(window._gpsAccCircle);
+        // Accuracy circle — radius from raw fix, position from smoothed
+        window._gpsAccCircle = L.circle([lat, lng], {
+            radius: accuracy, color: '#2196F3', fillColor: '#2196F3',
+            fillOpacity: 0.07, weight: 1.5, opacity: 0.35,
+        }).addTo(map);
 
-            // Marker pulsante personalizzato
-            const dotIcon = L.divIcon({
-                className: '',
-                html: '<div class="gps-user-dot"></div>',
-                iconSize: [18, 18],
-                iconAnchor: [9, 9],
-            });
-            window._gpsUserMarker = L.marker([lat, lng], {
-                icon: dotIcon,
-                zIndexOffset: 1000,
-                interactive: true,
-            }).addTo(map);
+        if (isFirst) {
+            map.flyTo([lat, lng], 16, { duration: 0.8 });
+            _showMapToast('📡 Posizione trovata!');
+        }
 
-            // Click sul marker → toast con accuratezza
-            window._gpsUserMarker.on('click', () => {
-                _showMapToast(`📡 Precisione: ±${acc}m`);
-            });
-
-            // Cerchio accuratezza (semi-trasparente)
-            window._gpsAccCircle = L.circle([lat, lng], {
-                radius: pos.coords.accuracy,
-                color: '#2196F3',
-                fillColor: '#2196F3',
-                fillOpacity: 0.08,
-                weight: 1.5,
-                opacity: 0.4,
-            }).addTo(map);
-
-            // Prima fix: vola alla posizione
-            if (isFirstFix) {
-                map.flyTo([lat, lng], 16, { duration: 0.8 });
-                _showMapToast('📡 Posizione trovata!');
-            }
-
-            // Aggiorna bottone → stato attivo
-            if (btn)   { btn.classList.remove('gps-searching'); btn.classList.add('gps-active'); }
-            if (icon)  { icon.textContent = 'my_location'; icon.classList.remove('spin-anim'); }
-            if (label) { label.textContent = 'Attivo'; }
-        },
-
-        // ── Error ─────────────────────────────────────────────────────────
-        (err) => {
-            console.warn('GPS error:', err.message);
-            navigator.geolocation.clearWatch(window._gpsWatchId);
-            window._gpsWatchId = null;
-            window._gpsLatLng  = null;
-
-            if (btn)   { btn.classList.remove('gps-searching', 'gps-active'); }
-            if (icon)  { icon.textContent = 'location_off'; icon.classList.remove('spin-anim'); }
-            if (label) { label.textContent = 'Errore'; }
-
-            const msgs = {
-                1: '⛔ Permesso GPS negato',
-                2: '📡 Segnale GPS assente',
-                3: '⏱ Timeout GPS',
-            };
-            _showMapToast(msgs[err.code] || '⚠️ Errore GPS');
-
-            // Reset label dopo 3s
-            setTimeout(() => {
-                if (icon)  icon.textContent = 'my_location';
-                if (label) label.textContent = 'GPS';
-            }, 3000);
-        },
-        opts
-    );
+        if (btn)   { btn.classList.remove('gps-searching'); btn.classList.add('gps-active'); }
+        if (icon)  { icon.textContent = 'my_location'; icon.classList.remove('spin-anim'); }
+        if (label) { label.textContent = 'Attivo'; }
+    });
 };
 
 window.mapToggleLegend = function() {
@@ -1139,6 +1085,7 @@ if (_origSwitchView) {
             const content = document.getElementById('app-content');
             if (content) content.style.paddingBottom = '';
             // Distruggi mappa per evitare memory leak
+            if (window.GeoTracker) window.GeoTracker.stop('mappa');
             if (window._mapLeaflet) { window._mapLeaflet.remove(); window._mapLeaflet = null; }
             window._mapAllData = []; // forza reload al prossimo accesso
         }
