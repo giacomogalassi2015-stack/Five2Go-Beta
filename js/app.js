@@ -94,7 +94,16 @@ window.switchView = async function(view, el) {
     }
 
     try {
-        if (view === 'home') renderHome();
+        if (view === 'home') {
+            renderHome();
+            const overlay = document.getElementById('splash-overlay');
+            if (overlay && !overlay.classList.contains('fade-out')) {
+                requestAnimationFrame(() => {
+                    overlay.classList.add('fade-out');
+                    setTimeout(() => overlay.classList.add('gone'), 600);
+                });
+            }
+        }
         else if (view === 'cibo') {
             renderSubMenu([
                 { label: window.t('menu_prod'), table: "Prodotti", icon: "lunch_dining", color: "orange" },
@@ -154,7 +163,7 @@ function renderHome() {
                 <button id="search-clear-btn"
                     class="hidden absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 bg-transparent flex items-center justify-center active:scale-90 transition-transform touch-manipulation"
                     onclick="window._closeSearch()">
-                    <span class="material-icons text-white text-base leading-none">close</span>
+                    <span class="material-icons text-white text-sm leading-none">close</span>
                 </button>
             </div>
         </div>
@@ -247,7 +256,7 @@ window.renderSubMenu = function(options, defaultTable) {
                 const icon = opt.icon || 'star';
 
                 return `
-                <button class="btn-pop-menu flex-shrink-0 px-4 py-2.5 rounded-2xl flex items-center gap-2 border transition-all duration-300 transform touch-manipulation cursor-pointer ${theme}" 
+                <button class="btn-pop-menu flex-shrink-0 px-4 py-2.5 rounded-2xl flex items-center gap-2 border transition-all duration-300 transform ${theme}" 
                     data-table="${opt.table}"
                     data-index="${index}"
                     onclick="loadTableData('${opt.table}', this)">
@@ -314,7 +323,7 @@ window.loadTableData = async function(tableName, btnEl) {
     }
     
     if (tableName === 'Mappe') {
-        subContent.innerHTML = `<div class="rounded-[2rem] overflow-hidden shadow-soft border-2 border-white h-[70vh] animate-fade"><iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="100%" height="100%" style="border:0;"></iframe></div>`;
+        subContent.innerHTML = `<div class="rounded-2xl overflow-hidden shadow-soft border-2 border-white h-[70vh] animate-fade"><iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="100%" height="100%" style="border:0;"></iframe></div>`;
         return; 
     }
 
@@ -367,7 +376,7 @@ function getUniqueValues(allData, key, customOrder = []) {
     } else {
         unique.sort();
     }
-    if (!unique.includes('Tutti')) unique.unshift('Tutti');
+    if (!unique.includes('__ALL__')) unique.unshift('__ALL__');
     return unique;
 }
 
@@ -397,21 +406,21 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer)
     const chipContainer = container.querySelector(`#chips-${filterId}`);
     const listContainer = container.querySelector('#dynamic-list');
     const labelSpan = container.querySelector(`#filter-label-${filterId}`);
-    let activeTag = 'Tutti';
+    let activeTag = '__ALL__';
 
     function renderChips() {
         chipContainer.innerHTML = tags.map(tag => {
             const isActive = tag === activeTag;
             const style = isActive ? "bg-ct-terracotta text-white border-transparent shadow-md" : "bg-white text-slate-600 border-stone-200";
-            const displayTag = (tag === 'Tutti') ? labelAll : tag;
-            return `<button class="flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold border transition-all ${style}" onclick="window.applySingleSmartFilter('${tag}', '${filterId}', true)">${displayTag}</button>`;
+            const displayTag = (tag === '__ALL__') ? labelAll : tag;
+            return `<button class="flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold border transition-all active:scale-95 touch-manipulation ${style}" onclick="window.applySingleSmartFilter('${tag}', '${filterId}', true)">${displayTag}</button>`;
         }).join('');
     }
 
     window.applySingleSmartFilter = (tag, fId, fromClick = false) => {
         activeTag = tag;
         renderChips();
-        labelSpan.innerText = (tag === 'Tutti') ? labelAll : tag;
+        labelSpan.innerText = (tag === '__ALL__') ? labelAll : tag;
         if (fromClick) toggleSmartFilter(panelId, triggerId);
 
         // 1. Cerca il Numero d'Emergenza
@@ -431,13 +440,13 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer)
         const otherData = allData.filter(i => !pinnedSet.has(i));
         
         // 4. Applica il filtro al resto dei dati
-        let filtered = tag === 'Tutti' ? otherData : otherData.filter(item => {
+        let filtered = tag === '__ALL__' ? otherData : otherData.filter(item => {
             let valDB = window.dbCol(item, filterKey);
             return valDB && String(valDB).trim().includes(tag);
         });
         
         // 5. Se siamo nella tab "Tutti", metti in cima Emergenza e poi Taxi
-        if (tag === 'Tutti') {
+        if (tag === '__ALL__') {
             filtered = [...emergencyItems, ...taxiItems, ...filtered];
         }
 
@@ -454,7 +463,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer)
         }
     }
     renderChips();
-    window.applySingleSmartFilter('Tutti', filterId); 
+    window.applySingleSmartFilter('__ALL__', filterId); 
 }
 
 function renderDoubleHorizontalFilterView(allData, filtersConfig, container, cardRenderer) {
@@ -499,15 +508,15 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     const listContainer = container.querySelector('#dynamic-list');
     const labelSpan = container.querySelector(`#filter-label-${filterId}`);
 
-    let activeVal1 = 'Tutti';
-    let activeVal2 = 'Tutti';
+    let activeVal1 = '__ALL__';
+    let activeVal2 = '__ALL__';
 
     window.applyDoubleSmartFilter = (level, val, fId) => {
         if (level === 1) activeVal1 = val;
         if (level === 2) activeVal2 = val;
         renderControls();
-        const txt1 = activeVal1 === 'Tutti' ? labelAll : activeVal1;
-        const txt2 = activeVal2 === 'Tutti' ? labelAllFem : activeVal2;
+        const txt1 = activeVal1 === '__ALL__' ? labelAll : activeVal1;
+        const txt2 = activeVal2 === '__ALL__' ? labelAllFem : activeVal2;
         labelSpan.innerText = `${txt1} • ${txt2}`;
         executeFilter();
     };
@@ -516,13 +525,15 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
         c1.innerHTML = values1.map(v => {
             const isActive = v === activeVal1;
             const style = isActive ? "bg-ct-terracotta text-white shadow-md border-transparent" : "bg-white text-slate-600 border-stone-200";
-            return `<button class="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${style}" onclick="window.applyDoubleSmartFilter(1, '${v}', '${filterId}')">${v}</button>`;
+            const displayV1 = (v === '__ALL__') ? labelAll : v;
+            return `<button class="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 touch-manipulation ${style}" onclick="window.applyDoubleSmartFilter(1, '${v}', '${filterId}')">${displayV1}</button>`;
         }).join('');
 
         c2.innerHTML = values2.map(v => {
             const isActive = v === activeVal2;
             const style = isActive ? "bg-ct-blue text-white shadow-md border-transparent" : "bg-white text-slate-600 border-stone-200";
-            return `<button class="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${style}" onclick="window.applyDoubleSmartFilter(2, '${v}', '${filterId}')">${v}</button>`;
+            const displayV2 = (v === '__ALL__') ? labelAllFem : v;
+            return `<button class="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 touch-manipulation ${style}" onclick="window.applyDoubleSmartFilter(2, '${v}', '${filterId}')">${displayV2}</button>`;
         }).join('');
     }
 
@@ -530,8 +541,8 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
         const filtered = allData.filter(item => {
             const val1 = window.dbCol(item, filtersConfig.primary.key) || '';
             const val2 = window.dbCol(item, filtersConfig.secondary.key) || '';
-            const match1 = (activeVal1 === 'Tutti') || val1.includes(activeVal1);
-            const match2 = (activeVal2 === 'Tutti') || val2.toLowerCase().includes(activeVal2.toLowerCase());
+            const match1 = (activeVal1 === '__ALL__') || val1.includes(activeVal1);
+            const match2 = (activeVal2 === '__ALL__') || val2.toLowerCase().includes(activeVal2.toLowerCase());
             return match1 && match2;
         });
         if (filtered.length === 0) {
@@ -577,63 +588,60 @@ window.renderServicesGrid = async function() {
         </div>
     `;
 
-    // FIX 1: Cambiato gap-4 in gap-2 e ridotto padding (p-4 invece di p-6)
+    const busImg    = window.getSmartUrl('Bus', '', 400);
+    const trainImg  = window.getSmartUrl('Treno', '', 400);
+    const ferryImg  = window.getSmartUrl('Battello', '', 400);
+
     let gridHtml = `
-    <div class="grid grid-cols-2 gap-2 pb-32 animate-pop">
-        
-        <div class="col-span-2 relative bg-ct-yellow rounded-[2rem] p-4 shadow-soft active:scale-95 transition-transform cursor-pointer touch-manipulation overflow-hidden group min-h-[120px] flex flex-col justify-between border border-yellow-200" onclick="openModal('transport', 'bus')">
-            <div class="absolute -right-2 -bottom-4 opacity-10 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[130px] text-yellow-900">directions_bus</span></div>
-            <div class="relative z-10">
-                <div class="bg-white/80 backdrop-blur w-10 h-10 rounded-xl flex items-center justify-center mb-2 shadow-sm border border-white"><span class="material-icons text-xl text-yellow-700">directions_bus</span></div>
-                <h3 class="text-2xl font-serif font-bold leading-none text-slate-800 mb-1">${window.t('label_bus')}</h3>
-                <p class="text-yellow-800 text-[11px] font-bold uppercase tracking-widest">Orari ATC & Navette</p>
+    <div class="flex flex-col gap-2.5 pb-32 animate-pop">
+        <div class="grid grid-cols-3 gap-2">
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.96] transition-all duration-150 touch-manipulation shadow-soft" style="height:128px" onclick="openModal('transport', 'bus')">
+                <img src="${busImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
+                <div class="absolute inset-0 bg-gradient-to-t from-ct-yellow/95 via-ct-yellow/60 to-ct-yellow/20"></div>
+                <div class="absolute inset-0 p-3 flex flex-col justify-between z-10">
+                    <div class="w-8 h-8 rounded-xl bg-white/70 backdrop-blur flex items-center justify-center shadow-sm"><span class="material-icons text-base text-yellow-700">directions_bus</span></div>
+                    <div><div class="font-serif font-bold text-slate-800 text-sm leading-tight">${window.t('label_bus')}</div><div class="text-[10px] font-bold uppercase tracking-wider text-yellow-900 opacity-70 mt-0.5">ATC</div></div>
+                </div>
             </div>
-        </div>
-
-        <div class="bg-ct-terracotta rounded-[2rem] p-4 shadow-soft active:scale-95 transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[130px] relative overflow-hidden" onclick="openModal('transport', 'train')">
-            <div class="absolute -right-4 -bottom-4 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[90px] text-white">train</span></div>
-            <div class="relative z-10">
-                <div class="bg-white/20 backdrop-blur w-10 h-10 rounded-xl flex items-center justify-center mb-2 border border-white/30"><span class="material-icons text-xl text-white">train</span></div>
-                <div>
-                    <h3 class="font-serif font-bold text-white text-lg leading-tight mb-1">${window.t('label_train')}</h3>
-                    <p class="text-red-100 text-[11px] font-bold uppercase tracking-widest">Trenitalia</p>
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.96] transition-all duration-150 touch-manipulation shadow-soft" style="height:128px" onclick="openModal('transport', 'train')">
+                <img src="${trainImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
+                <div class="absolute inset-0 bg-gradient-to-t from-ct-terracotta/95 via-ct-terracotta/60 to-ct-terracotta/20"></div>
+                <div class="absolute inset-0 p-3 flex flex-col justify-between z-10">
+                    <div class="w-8 h-8 rounded-xl bg-white/25 backdrop-blur flex items-center justify-center border border-white/30"><span class="material-icons text-base text-white">train</span></div>
+                    <div><div class="font-serif font-bold text-white text-sm leading-tight">${window.t('label_train')}</div><div class="text-[10px] font-bold uppercase tracking-wider text-red-100 opacity-80 mt-0.5">Trenitalia</div></div>
+                </div>
+            </div>
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.96] transition-all duration-150 touch-manipulation shadow-soft" style="height:128px" onclick="openModal('transport', 'ferry')">
+                <img src="${ferryImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
+                <div class="absolute inset-0 bg-gradient-to-t from-ct-blue/95 via-ct-blue/60 to-ct-blue/20"></div>
+                <div class="absolute inset-0 p-3 flex flex-col justify-between z-10">
+                    <div class="w-8 h-8 rounded-xl bg-white/25 backdrop-blur flex items-center justify-center border border-white/30"><span class="material-icons text-base text-white">directions_boat</span></div>
+                    <div><div class="font-serif font-bold text-white text-sm leading-tight">${window.t('label_ferry')}</div><div class="text-[10px] font-bold uppercase tracking-wider text-teal-100 opacity-80 mt-0.5">Navigazione</div></div>
                 </div>
             </div>
         </div>
-
-        <div class="bg-ct-blue rounded-[2rem] p-4 shadow-soft active:scale-95 transition-transform cursor-pointer flex flex-col justify-between group h-full min-h-[130px] relative overflow-hidden" onclick="openModal('transport', 'ferry')">
-            <div class="absolute -right-4 -bottom-4 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[90px] text-white">directions_boat</span></div>
-            <div class="relative z-10">
-                <div class="bg-white/20 backdrop-blur w-10 h-10 rounded-xl flex items-center justify-center mb-2 border border-white/30"><span class="material-icons text-xl text-white">directions_boat</span></div>
-                <div>
-                    <h3 class="font-serif font-bold text-white text-lg leading-tight mb-1">${window.t('label_ferry')}</h3>
-                    <p class="text-teal-100 text-[11px] font-bold uppercase tracking-widest">Navigazione</p>
-                </div>
+        <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation" onclick="renderSimpleList('Numeri_utili')">
+            <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 shadow-sm"><span class="material-icons text-xl text-white">phonelink_ring</span></div>
+            <div class="flex-1 min-w-0">
+                <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_num')}</h3>
+                <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">Emergenze & Numeri utili</p>
             </div>
+            <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
-
-        <div class="col-span-2 bg-slate-700 rounded-[2rem] p-4 flex items-center justify-between shadow-soft active:scale-95 transition-transform cursor-pointer mt-1" onclick="renderSimpleList('Numeri_utili')">
-            <div class="flex items-center gap-3 relative z-10">
-                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white border border-white/20"><span class="material-icons text-lg">phonelink_ring</span></div>
-                <div><h3 class="font-serif text-white font-bold text-lg leading-tight">${window.t('menu_num')}</h3><p class="text-slate-300 text-[11px] font-bold uppercase tracking-widest mt-0.5">Emergenze</p></div>
+        <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation" onclick="renderSimpleList('Farmacie')">
+            <div class="w-12 h-12 rounded-xl bg-ct-green flex items-center justify-center shrink-0 shadow-sm"><span class="material-icons text-xl text-white">medical_services</span></div>
+            <div class="flex-1 min-w-0">
+                <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_pharm')}</h3>
+                <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">Turni & Orari</p>
             </div>
-            <span class="material-icons text-white/50 bg-white/5 rounded-full p-1 relative z-10">chevron_right</span>
+            <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
-
-        <div class="col-span-2 bg-ct-green rounded-[2rem] p-4 flex items-center justify-between shadow-soft active:scale-95 transition-transform cursor-pointer" onclick="renderSimpleList('Farmacie')">
-            <div class="flex items-center gap-3 relative z-10">
-                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white border border-white/30"><span class="material-icons text-lg">medical_services</span></div>
-                <div><h3 class="font-serif text-white font-bold text-lg leading-tight">${window.t('menu_pharm')}</h3><p class="text-green-100 text-[11px] font-bold uppercase tracking-widest mt-0.5">Turni</p></div>
-            </div>
-            <span class="material-icons text-white/50 bg-white/10 rounded-full p-1 relative z-10">chevron_right</span>
-        </div>
-
-        <div class="col-span-2 text-center mt-4 mb-4">
-            <button onclick="renderLegalPage()" class="text-slate-400 text-[11px] font-bold uppercase tracking-widest hover:text-ct-terracotta transition-colors flex items-center justify-center gap-2 mx-auto py-2 bg-white px-4 rounded-full shadow-sm border border-slate-200">
+        <div class="text-center pt-2">
+            <button onclick="renderLegalPage()" class="text-slate-400 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 mx-auto py-2 px-4 rounded-xl bg-white shadow-sm border border-slate-200 active:scale-95 touch-manipulation">
                 <span class="material-icons text-sm">policy</span> ${window.t('menu_legal')}
             </button>
         </div>
-    </div>`; 
+    </div>`;
 
     targetEl.innerHTML = headerHtml + gridHtml;
 };
@@ -1272,56 +1280,135 @@ window.toggleBusMap = function() {
 };
 
 window.loadAllStops = async function() {
-    const selPart = document.getElementById('selPartenza'); const selArr = document.getElementById('selArrivo');
-    if(!selPart || !selArr) return;
-    if (!window.cachedStops) { const { data, error } = await window.supabaseClient.from('Fermate_bus').select('ID, NOME_FERMATA, LAT, LONG').order('NOME_FERMATA', { ascending: true }); if (error) { console.error("Errore fermate:", error); return; } window.cachedStops = data; }
-    const options = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
-    const placeholderStart = `<option value="" selected>${window.t('select_start')}</option>`;
-    const placeholderEnd = `<option value="" selected>Scegli Arrivo</option>`; 
-    selPart.innerHTML = placeholderStart + options; selArr.innerHTML = placeholderEnd + options; selPart.disabled = false; selArr.disabled = false;
+    const selPart = document.getElementById('selPartenza');
+    const selArr  = document.getElementById('selArrivo');
+    if (!selPart || !selArr) return;
+
+    // ── 1. Carica le fermate (con cache) ──
+    if (!window.cachedStops) {
+        const { data, error } = await window.supabaseClient
+            .from('Fermate_bus')
+            .select('ID, NOME_FERMATA, LAT, LONG')
+            .order('NOME_FERMATA', { ascending: true });
+        if (error) { console.error('Errore fermate:', error); return; }
+        window.cachedStops = data;
+    }
+
+    // ── 2. Pre-carica TUTTI gli orari e costruisce la lookup map (una volta sola) ──
+    //    Formato: window._busConnMap = Map<fermataId, Set<corsaId>>
+    if (!window._busConnMap) {
+        // Mostra spinner sulla label del select durante il caricamento
+        selPart.innerHTML = `<option value="" disabled selected>⏳ Caricamento orari...</option>`;
+        selPart.disabled = true;
+
+        const { data: allOrari, error: errOrari } = await window.supabaseClient
+            .from('Orari_bus')
+            .select('ID_FERMATA, ID_CORSA');
+
+        if (!errOrari && allOrari) {
+            const map = new Map();
+            for (const row of allOrari) {
+                if (!map.has(row.ID_FERMATA)) map.set(row.ID_FERMATA, new Set());
+                map.get(row.ID_FERMATA).add(row.ID_CORSA);
+            }
+            window._busConnMap = map;
+        }
+        selPart.disabled = false;
+    }
+
+    // ── 3. Popola SEMPRE il select della Partenza con TUTTE le fermate ──
+    const allOpts = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+    selPart.innerHTML = `<option value="" selected>${window.t('select_start')}</option>` + allOpts;
+    selArr.innerHTML  = `<option value="" selected>${window.t('select_placeholder')}</option>`;
+    selArr.disabled   = false;
+
     if (window.initBusMap) window.initBusMap(window.cachedStops);
 };
 
-window.handleBusSelectionChange = async function(source) {
-    const selPart = document.getElementById('selPartenza'); const selArr = document.getElementById('selArrivo');
+window.handleBusSelectionChange = function(source) {
+    const selPart = document.getElementById('selPartenza');
+    const selArr  = document.getElementById('selArrivo');
     if (!selPart || !selArr || !window.cachedStops) return;
-    const changedSelect = (source === 'partenza') ? selPart : selArr; const targetSelect = (source === 'partenza') ? selArr : selPart;
-    const selectedId = changedSelect.value; const currentTargetValue = targetSelect.value; 
-    if (!selectedId) {
-        const options = window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
-        const placeholder = `<option value="" selected>${window.t('select_placeholder')}</option>`;
-        targetSelect.innerHTML = placeholder + options; targetSelect.value = currentTargetValue; return;
+
+    // ── REGOLA FONDAMENTALE: solo la PARTENZA filtra l'ARRIVO, mai il contrario.
+    //    Se cambia l'arrivo, non tocchiamo la partenza — l'utente sceglie libero.
+    if (source === 'arrivo') return;
+
+    const partenzaId = parseInt(selPart.value);
+    const prevArrivo = selArr.value;
+
+    if (window.flashInputFeedback) window.flashInputFeedback('selPartenza');
+
+    // Nessuna partenza → ripristina arrivo completo
+    if (!partenzaId) {
+        const allOpts = window.cachedStops
+            .map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+        selArr.innerHTML = `<option value="" selected>${window.t('select_placeholder')}</option>` + allOpts;
+        return;
     }
-    if(window.flashInputFeedback) window.flashInputFeedback((source === 'partenza') ? 'selPartenza' : 'selArrivo');
-    try {
-        const { data: corsePassanti } = await window.supabaseClient.from('Orari_bus').select('ID_CORSA').eq('ID_FERMATA', selectedId);
-        const runIds = corsePassanti.map(c => c.ID_CORSA); if (runIds.length === 0) return; 
-        const { data: fermateCollegate } = await window.supabaseClient.from('Orari_bus').select('ID_FERMATA').in('ID_CORSA', runIds);
-        const validIds = [...new Set(fermateCollegate.map(x => x.ID_FERMATA))].filter(id => id != selectedId);
-        let validStops = window.cachedStops.filter(s => validIds.includes(s.ID)); validStops.sort((a, b) => a.NOME_FERMATA.localeCompare(b.NOME_FERMATA));
+
+    // ── Calcolo ISTANTANEO tramite lookup map pre-costruita ──
+    if (window._busConnMap) {
+        const corsePartenza = window._busConnMap.get(partenzaId) || new Set();
+        const validIds = new Set();
+        window._busConnMap.forEach((corse, fermataId) => {
+            if (fermataId === partenzaId) return;
+            for (const corsaId of corse) {
+                if (corsePartenza.has(corsaId)) { validIds.add(fermataId); break; }
+            }
+        });
+        const validStops = window.cachedStops
+            .filter(s => validIds.has(s.ID))
+            .sort((a, b) => a.NOME_FERMATA.localeCompare(b.NOME_FERMATA));
         const newOptions = validStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
         const placeholder = `<option value="" disabled selected>${window.t('valid_destinations')}</option>`;
-        targetSelect.innerHTML = placeholder + newOptions;
-        if (currentTargetValue && validIds.includes(parseInt(currentTargetValue))) { targetSelect.value = currentTargetValue; } else { targetSelect.value = ""; }
-    } catch (err) { console.error("Errore filtro bus:", err); }
+        selArr.innerHTML = placeholder + newOptions;
+        // Mantieni arrivo selezionato se ancora valido
+        const prevId = parseInt(prevArrivo);
+        selArr.value = validIds.has(prevId) ? prevArrivo : '';
+    } else {
+        // Fallback se la map non è ancora pronta (raro): lascia arrivo invariato
+        selArr.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` +
+            window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+    }
 };
 
 window.handleFerrySelectionChange = function(source) {
-    const selPart = document.getElementById('selPartenzaFerry'); const selArr = document.getElementById('selArrivoFerry');
+    const selPart = document.getElementById('selPartenzaFerry');
+    const selArr  = document.getElementById('selArrivoFerry');
+    // Usa window.FERRY_STOPS (esposto da ui-modal-contents.js)
     const stops = window.FERRY_STOPS || [];
-    const changedSelect = (source === 'partenza') ? selPart : selArr; const targetSelect = (source === 'partenza') ? selArr : selPart;
-    const selectedVal = changedSelect.value; const currentTargetVal = targetSelect.value;
-    if(window.flashInputFeedback) window.flashInputFeedback((source === 'partenza') ? 'selPartenzaFerry' : 'selArrivoFerry');
+    if (!stops.length) { console.warn('FERRY_STOPS non ancora disponibile'); return; }
+
+    // ── Stessa regola bus: solo PARTENZA filtra ARRIVO, mai il contrario ──
+    if (source === 'arrivo') return;
+
+    if (!selPart || !selArr) return;
+    const selectedVal = selPart.value;
+    const prevArrivo  = selArr.value;
+
+    if (window.flashInputFeedback) window.flashInputFeedback('selPartenzaFerry');
+
     if (!selectedVal) {
-        const options = stops.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
-        targetSelect.innerHTML = `<option value="" selected>${window.t('select_placeholder')}</option>` + options;
-        targetSelect.value = currentTargetVal; targetSelect.disabled = false; return;
+        // Reset arrivo al completo
+        selArr.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` +
+            stops.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+        selArr.disabled = false;
+        return;
     }
+
+    // Filtra: tutte le fermate tranne quella di partenza
     const validStops = stops.filter(s => s.id !== selectedVal);
-    const newOptions = validStops.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
-    targetSelect.innerHTML = `<option value="" selected>${window.t('valid_destinations')}</option>` + newOptions;
-    if (currentTargetVal && validStops.some(s => s.id === currentTargetVal)) { targetSelect.value = currentTargetVal; } else { targetSelect.value = ""; }
-    targetSelect.disabled = false;
+    selArr.innerHTML = `<option value="" disabled selected>${window.t('select_arrival_placeholder')}</option>` +
+        validStops.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+    selArr.disabled = false;
+
+    // Mantieni arrivo se ancora valido
+    if (prevArrivo && validStops.some(s => s.id === prevArrivo)) {
+        selArr.value = prevArrivo;
+    } else {
+        selArr.value = '';
+    }
 };
 
 window.flashInputFeedback = function(elementId) {

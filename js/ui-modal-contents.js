@@ -666,32 +666,35 @@ window.getModalContent = function(type, payload, item) {
     return { html: contentHtml, class: modalClass };
 };
 
-// LISTA FERMATE TRAGHETTI (Invariato)
-const FERRY_STOPS_UI = [
-    { id: 'levanto', label: 'Levanto' },
-    { id: 'monterosso', label: 'Monterosso' },
-    { id: 'vernazza', label: 'Vernazza' },
-    { id: 'corniglia', label: 'Corniglia' },
-    { id: 'manarola', label: 'Manarola' },
+// LISTA FERMATE TRAGHETTI — esposta globalmente per handleFerrySelectionChange in app.js
+window.FERRY_STOPS = [
+    { id: 'levanto',      label: 'Levanto' },
+    { id: 'monterosso',  label: 'Monterosso' },
+    { id: 'vernazza',    label: 'Vernazza' },
+    { id: 'corniglia',   label: 'Corniglia' },
+    { id: 'manarola',    label: 'Manarola' },
     { id: 'riomaggiore', label: 'Riomaggiore' },
     { id: 'portovenere', label: 'Portovenere' },
-    { id: 'la spezia', label: 'La Spezia' },
-    { id: 'lerici', label: 'Lerici' }
+    { id: 'la spezia',   label: 'La Spezia' },
+    { id: 'lerici',      label: 'Lerici' }
 ];
+const FERRY_STOPS_UI = window.FERRY_STOPS; // alias locale per compatibilità
 
 window.initFerrySearch = function() {
     const selPart = document.getElementById('selPartenzaFerry');
-    const selArr = document.getElementById('selArrivoFerry');
+    const selArr  = document.getElementById('selArrivoFerry');
     if (!selPart || !selArr) return;
 
-    selPart.innerHTML = `<option value="" disabled selected>${window.t('select_start')}</option>` + 
-        FERRY_STOPS_UI.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+    const stops = window.FERRY_STOPS || [];
 
-    selPart.addEventListener('change', function() {
-        const startVal = this.value;
-        const destOpts = FERRY_STOPS_UI.filter(s => s.id !== startVal);
-        selArr.innerHTML = `<option value="" disabled selected>${window.t('select_arrival_placeholder')}</option>` + 
-            destOpts.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
-        selArr.disabled = false;
-    });
+    // Popola partenza con tutte le fermate
+    selPart.innerHTML = `<option value="" disabled selected>${window.t('select_start')}</option>` +
+        stops.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+    selPart.disabled = false;
+
+    // Popola arrivo vuoto (verrà filtrato da handleFerrySelectionChange via onchange)
+    selArr.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>`;
+    selArr.disabled = false;
+    // NOTA: NON aggiungiamo addEventListener qui — il <select> ha già onchange="handleFerrySelectionChange"
+    // per evitare il doppio firing.
 };

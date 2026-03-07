@@ -48,7 +48,7 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
     }
 
     return `
-    <div class="bg-white rounded-[2rem] shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group cursor-pointer border border-slate-100/50 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" data-card-id="${id}" onclick="${onClick}">
+    <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group cursor-pointer touch-manipulation border border-slate-100/50 hover:shadow-lg transition-all duration-300 active:scale-[0.98] active:shadow-sm" data-card-id="${id}" onclick="${onClick}">
         ${headerHtml}
         <div class="p-5 flex-1 flex flex-col justify-start">
             ${label ? `
@@ -59,7 +59,7 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
             <h3 class="font-serif text-2xl font-bold text-slate-800 leading-tight mb-2 group-hover:text-primary transition-colors">${title}</h3>
             ${subText ? `<p class="text-sm text-slate-500 font-medium leading-relaxed line-clamp-2">${subText}</p>` : ''}
         </div>
-        <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-3 backdrop-blur-sm">
+        <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-4 backdrop-blur-sm">
             ${buttonsHtml}
         </div>
     </div>`;
@@ -76,7 +76,7 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
 
     // MODIFICA 4: Ridotto mb-5 a mb-3
     return `
-    <div class="flex bg-white rounded-[1.5rem] shadow-sm border border-slate-100 overflow-hidden min-h-[140px] cursor-pointer transform active:scale-95 transition-all duration-200 mb-3 group hover:shadow-md" data-card-id="${id}" onclick="${onClick}">
+    <div class="flex bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-h-[140px] cursor-pointer touch-manipulation active:scale-[0.98] active:shadow-sm transition-all duration-150 mb-3 group" data-card-id="${id}" onclick="${onClick}">
         <div class="w-24 ${themeClass} flex items-center justify-center relative overflow-hidden shrink-0">
             <span class="material-icons text-4xl ${iconColor} drop-shadow-sm opacity-90 relative z-10">wine_bar</span>
         </div>
@@ -92,7 +92,7 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">${producer}</span>
             </div>
            <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-end">
-                <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600 transition-colors">
+                <div class="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-xl text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600 transition-colors">
                     <span class="text-[11px] font-bold uppercase">${window.t('btn_details')}</span>
                     <span class="material-icons text-xs">arrow_forward</span>
                 </div>
@@ -109,7 +109,7 @@ function renderUtilityCard({ id, icon, title, subtitle, phone, color }) {
     const iconTheme = iconColors[color] || iconColors['blue'];
     // MODIFICA 4: Ridotto mb-3 a mb-2
     return `
-    <div class="flex items-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm mb-2 animate-pop active:scale-95 transition-transform" data-card-id="${id || ''}">
+    <div class="flex items-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm mb-2 animate-pop active:scale-[0.98] active:shadow-none transition-all duration-150 touch-manipulation cursor-pointer" data-card-id="${id || ''}">
         <div class="w-12 h-12 rounded-xl ${iconTheme} flex items-center justify-center shrink-0 mr-4">
             <span class="material-icons text-2xl">${icon}</span>
         </div>
@@ -275,7 +275,7 @@ window.sentieroRenderer = (s) => {
 
     // FIX 2: Rimosso onclick duplicato nel div interno "absolute inset-0"
     return `
-    <div class="bg-white rounded-[2rem] shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group border border-slate-100/50 hover:shadow-lg transition-all">
+    <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group border border-slate-100/50 hover:shadow-lg transition-all">
         <div id="${uniqueId}" class="h-48 w-full bg-slate-100 relative border-b border-slate-100 cursor-pointer" onclick="window.openTechMap('${safeObj}')">
             <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[11px] font-bold text-ct-green shadow-sm z-[400] font-sans tracking-widest uppercase">
                 🥾 Outdoor
@@ -291,11 +291,11 @@ window.sentieroRenderer = (s) => {
             <h3 class="font-serif text-2xl font-bold text-slate-800 leading-tight mb-2">${nome}</h3>
         </div>
         
-        <div class="px-4 py-4 border-t border-slate-100 bg-slate-50/30 flex items-center gap-3">
-             <button onclick="window.openTechMap('${safeObj}')" class="flex-1 py-3 bg-ct-green text-white rounded-xl font-bold text-xs uppercase tracking-wide shadow-md shadow-green-100 active:scale-95 transition-transform flex items-center justify-center gap-2 border-b-2 border-green-700">
+        <div class="px-4 py-4 border-t border-slate-100 bg-slate-50/30 flex items-center gap-2.5">
+             <button onclick="window.openTechMap('${safeObj}')" class="flex-1 py-3 bg-ct-green text-white rounded-xl font-bold text-xs uppercase tracking-wide shadow-sm active:scale-[0.97] transition-all duration-150 touch-manipulation flex items-center justify-center gap-2">
                 <span class="material-icons text-sm">map</span> ${window.t('btn_map')}
              </button>
-             <button onclick="window.openModal('sentieroInfo', '${safeObj}')" class="flex-1 py-3 bg-ct-blue text-white rounded-xl font-bold text-xs uppercase tracking-wide shadow-md shadow-cyan-100 active:scale-95 transition-transform flex items-center justify-center gap-2 border-b-2 border-teal-700">
+             <button onclick="window.openModal('sentieroInfo', '${safeObj}')" class="flex-1 py-3 bg-ct-blue text-white rounded-xl font-bold text-xs uppercase tracking-wide shadow-sm active:scale-[0.97] transition-all duration-150 touch-manipulation flex items-center justify-center gap-2">
                 <span class="material-icons text-sm">visibility</span> ${window.t('btn_info')}
              </button>
         </div>
