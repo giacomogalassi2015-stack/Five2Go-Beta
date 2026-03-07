@@ -36,7 +36,7 @@ window.AVAILABLE_LANGS = [
 
 const UI_TEXT = {
     it: {
-        loading: "Caricamento...", error: "Errore", search_placeholder: "🔍 Cosa scopri oggi nelle 5 Terre?", no_results: "Nessun risultato.",
+        loading: "Caricamento...", error: "Errore", search_placeholder: "🔍 Cerca ristoranti, vini, sentieri...", no_results: "Nessun risultato.",
         btn_discover: "Scopri", btn_go: "Vai", btn_info: "Info", btn_map: "Mappa", 
         btn_call: "Chiama", btn_close_show: "Chiudi & Mostra", btn_details: "Vedi Dettagli",
         label_all: "Tutti", label_all_fem: "Tutte", 
@@ -60,8 +60,8 @@ const UI_TEXT = {
         next_runs: "CORSE SUCCESSIVE", next_departure: "PROSSIMA PARTENZA",
         select_placeholder: "Seleziona...", select_start: "-- Seleziona Partenza --",
         // --- NUOVE CHIAVI BUS/TRAGHETTI ---
-        select_arrival_placeholder: "Scegli Arrivo",
-        valid_destinations: "Destinazioni valide...",
+        select_arrival_placeholder: "→ Seleziona l'arrivo",
+        valid_destinations: "↓ Seleziona la stazione di arrivo",
         no_runs_today: "Nessun'altra corsa oggi",
         last_run_day: "Ultima corsa della giornata",
         direction_dir: "Dir.",
@@ -115,7 +115,7 @@ const UI_TEXT = {
         trivia_26: "Goditi il momento. Metti via il telefono per 5 minuti e ascolta il rumore del mare."
     },
     en: {
-        loading: "Loading...", error: "Error", search_placeholder: "🔍 What will you explore today?", no_results: "No results found.",
+        loading: "Loading...", error: "Error", search_placeholder: "🔍 Search restaurants, wines, trails...", no_results: "No results found.",
         btn_discover: "Discover", btn_go: "Go", btn_info: "Info", btn_map: "Map", 
         btn_call: "Call", btn_close_show: "Close & Show", btn_details: "See Details",
         label_all: "All", label_all_fem: "All",
@@ -139,8 +139,8 @@ const UI_TEXT = {
         next_runs: "NEXT RUNS", next_departure: "NEXT DEPARTURE",
         select_placeholder: "Select...", select_start: "-- Select Departure --",
         // --- TRANSLATIONS ---
-        select_arrival_placeholder: "Select Arrival",
-        valid_destinations: "Valid destinations...",
+        select_arrival_placeholder: "→ Select arrival",
+        valid_destinations: "↓ Select your arrival stop",
         no_runs_today: "No other runs today",
         last_run_day: "Last run of the day",
         direction_dir: "Dir.",
@@ -194,7 +194,7 @@ const UI_TEXT = {
         trivia_26: "Enjoy the moment. Put your phone away for 5 minutes and listen to the sea."
     },
     fr: {
-        loading: "Chargement...", error: "Erreur", search_placeholder: "🔍 Que voulez-vous découvrir aujourd'hui?", no_results: "Aucun résultat.",
+        loading: "Chargement...", error: "Erreur", search_placeholder: "🔍 Cherchez restaurants, vins, randonnées...", no_results: "Aucun résultat.",
         btn_discover: "Découvrir", btn_go: "Y aller", btn_info: "Infos", btn_map: "Carte",
         btn_call: "Appeler", btn_close_show: "Fermer & Afficher", btn_details: "Voir Détails",
         label_all: "Tous", label_all_fem: "Toutes",
@@ -217,8 +217,8 @@ const UI_TEXT = {
         date_trip: "DATE VOYAGE", time_trip: "HEURE", find_times: "TROUVER HORAIRES",
         next_runs: "PROCHAINS DÉPARTS", next_departure: "PROCHAIN DÉPART",
         select_placeholder: "Sélectionner...", select_start: "-- Sélectionner Départ --",
-        select_arrival_placeholder: "Choisir Arrivée",
-        valid_destinations: "Destinations valides...",
+        select_arrival_placeholder: "→ Choisir l'arrivée",
+        valid_destinations: "↓ Choisissez votre arrêt d'arrivée",
         no_runs_today: "Plus de trajets aujourd'hui",
         last_run_day: "Dernier trajet de la journée",
         direction_dir: "Dir.",
@@ -272,7 +272,7 @@ const UI_TEXT = {
     },
 
     de: {
-        loading: "Laden...", error: "Fehler", search_placeholder: "🔍 Was entdeckst du heute in den 5 Terre?", no_results: "Keine Ergebnisse.",
+        loading: "Laden...", error: "Fehler", search_placeholder: "🔍 Restaurants, Weine, Wanderwege...", no_results: "Keine Ergebnisse.",
         btn_discover: "Entdecken", btn_go: "Los", btn_info: "Info", btn_map: "Karte",
         btn_call: "Anrufen", btn_close_show: "Schließen & Zeigen", btn_details: "Details ansehen",
         label_all: "Alle", label_all_fem: "Alle",
@@ -295,8 +295,8 @@ const UI_TEXT = {
         date_trip: "REISEDATUM", time_trip: "UHRZEIT", find_times: "ZEITEN FINDEN",
         next_runs: "NÄCHSTE FAHRTEN", next_departure: "NÄCHSTE ABFAHRT",
         select_placeholder: "Wählen...", select_start: "-- Abfahrt wählen --",
-        select_arrival_placeholder: "Ankunft wählen",
-        valid_destinations: "Gültige Ziele...",
+        select_arrival_placeholder: "→ Ankunft wählen",
+        valid_destinations: "↓ Ankunftshaltestelle wählen",
         no_runs_today: "Keine weiteren Fahrten heute",
         last_run_day: "Letzte Fahrt des Tages",
         direction_dir: "Rtg.",
@@ -350,7 +350,7 @@ const UI_TEXT = {
     },
 
     es: {
-        loading: "Cargando...", error: "Error", search_placeholder: "🔍 ¿Qué vas a descubrir hoy en las 5 Terre?", no_results: "Sin resultados.",
+        loading: "Cargando...", error: "Error", search_placeholder: "🔍 Busca restaurantes, vinos, rutas...", no_results: "Sin resultados.",
         btn_discover: "Descubrir", btn_go: "Ir", btn_info: "Info", btn_map: "Mapa",
         btn_call: "Llamar", btn_close_show: "Cerrar & Mostrar", btn_details: "Ver Detalles",
         label_all: "Todos", label_all_fem: "Todas",
@@ -373,8 +373,8 @@ const UI_TEXT = {
         date_trip: "FECHA VIAJE", time_trip: "HORA", find_times: "BUSCAR HORARIOS",
         next_runs: "PRÓXIMAS SALIDAS", next_departure: "PRÓXIMA SALIDA",
         select_placeholder: "Selecciona...", select_start: "-- Selecciona Salida --",
-        select_arrival_placeholder: "Elige Llegada",
-        valid_destinations: "Destinos válidos...",
+        select_arrival_placeholder: "→ Elige llegada",
+        valid_destinations: "↓ Elige tu parada de llegada",
         no_runs_today: "No hay más viajes hoy",
         last_run_day: "Último viaje del día",
         direction_dir: "Dir.",
@@ -428,7 +428,7 @@ const UI_TEXT = {
     },
 
     zh: {
-        loading: "加载中...", error: "错误", search_placeholder: "🔍 今天想在五渔村发现什么？", no_results: "无结果。",
+        loading: "加载中...", error: "错误", search_placeholder: "🔍 搜索餐厅、葡萄酒、徒步路线...", no_results: "无结果。",
         btn_discover: "发现", btn_go: "前往", btn_info: "信息", btn_map: "地图",
         btn_call: "拨打", btn_close_show: "关闭并显示", btn_details: "查看详情",
         label_all: "全部", label_all_fem: "全部",
@@ -451,8 +451,8 @@ const UI_TEXT = {
         date_trip: "日期", time_trip: "时间", find_times: "查询时刻",
         next_runs: "后续班次", next_departure: "下一班出发",
         select_placeholder: "请选择...", select_start: "-- 选择出发地 --",
-        select_arrival_placeholder: "选择目的地",
-        valid_destinations: "有效目的地...",
+        select_arrival_placeholder: "→ 选择到达站",
+        valid_destinations: "↓ 请选择到达站",
         no_runs_today: "今日已无更多班次",
         last_run_day: "今日末班车",
         direction_dir: "方向",

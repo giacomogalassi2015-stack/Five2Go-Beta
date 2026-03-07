@@ -112,36 +112,68 @@ window.openTechMap = function(safeObj) {
                     <div class="bg-white p-5 px-6 shadow-sm border-b border-slate-100">
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">Dati Tecnici</h3>
                         
-                        <div class="grid grid-cols-3 gap-y-6 gap-x-2">
-                            <div class="flex flex-col items-center justify-center text-center">
-                                <span class="material-icons text-slate-300 text-lg mb-1">straighten</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${dist}<span class="text-[11px] text-slate-400 font-normal ml-0.5">km</span></div>
-                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Distanza</div>
+                        <div class="grid grid-cols-2 gap-3">
+
+                            <!-- Col 1 -->
+                            <div class="flex flex-col gap-3">
+
+                                <!-- Durata -->
+                                <div class="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
+                                    <span class="material-icons text-slate-300 text-lg shrink-0">schedule</span>
+                                    <div>
+                                        <div class="text-[10px] uppercase font-bold text-slate-400 leading-none mb-0.5">Durata</div>
+                                        <div class="text-base font-bold text-slate-700 leading-none">${dur}<span class="text-[10px] text-slate-400 font-normal ml-0.5">min</span></div>
+                                    </div>
+                                </div>
+
+                                <!-- Dislivello + -->
+                                <div class="flex items-center gap-3 bg-red-50 rounded-xl px-3 py-2.5 border border-red-100">
+                                    <span class="material-icons text-red-300 text-lg shrink-0">trending_up</span>
+                                    <div>
+                                        <div class="text-[10px] uppercase font-bold text-red-400 leading-none mb-0.5">Dislivello +</div>
+                                        <div class="text-base font-bold text-slate-700 leading-none">${d_plus}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                    </div>
+                                </div>
+
+                                <!-- Alt. Max -->
+                                <div class="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
+                                    <span class="material-icons text-slate-300 text-lg shrink-0">terrain</span>
+                                    <div>
+                                        <div class="text-[10px] uppercase font-bold text-slate-400 leading-none mb-0.5">Alt. Max</div>
+                                        <div class="text-base font-bold text-slate-700 leading-none">${alt_max}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="flex flex-col items-center justify-center text-center border-l border-r border-slate-100">
-                                <span class="material-icons text-slate-300 text-lg mb-1">schedule</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${dur}<span class="text-[11px] text-slate-400 font-normal ml-0.5">min</span></div>
-                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Durata</div>
-                            </div>
-                            <div class="flex flex-col items-center justify-center text-center">
-                                <span class="material-icons text-red-300 text-lg mb-1">trending_up</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${d_plus}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[11px] uppercase font-bold text-red-400 mt-1">Dislivello +</div>
-                            </div>
-                            <div class="flex flex-col items-center justify-center text-center mt-2">
-                                <span class="material-icons text-emerald-300 text-lg mb-1">trending_down</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${d_minus}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[11px] uppercase font-bold text-emerald-500 mt-1">Dislivello -</div>
-                            </div>
-                            <div class="flex flex-col items-center justify-center text-center border-l border-r border-slate-100 mt-2">
-                                <span class="material-icons text-slate-300 text-lg mb-1">terrain</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${alt_max}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Alt. Max</div>
-                            </div>
-                            <div class="flex flex-col items-center justify-center text-center mt-2">
-                                <span class="material-icons text-slate-300 text-lg mb-1">south</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${alt_min}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Alt. Min</div>
+
+                            <!-- Col 2 -->
+                            <div class="flex flex-col gap-3">
+
+                                <!-- Distanza -->
+                                <div class="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
+                                    <span class="material-icons text-slate-300 text-lg shrink-0">straighten</span>
+                                    <div>
+                                        <div class="text-[10px] uppercase font-bold text-slate-400 leading-none mb-0.5">Distanza</div>
+                                        <div class="text-base font-bold text-slate-700 leading-none">${dist}<span class="text-[10px] text-slate-400 font-normal ml-0.5">km</span></div>
+                                    </div>
+                                </div>
+
+                                <!-- Dislivello - -->
+                                <div class="flex items-center gap-3 bg-emerald-50 rounded-xl px-3 py-2.5 border border-emerald-100">
+                                    <span class="material-icons text-emerald-300 text-lg shrink-0">trending_down</span>
+                                    <div>
+                                        <div class="text-[10px] uppercase font-bold text-emerald-500 leading-none mb-0.5">Dislivello −</div>
+                                        <div class="text-base font-bold text-slate-700 leading-none">${d_minus}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                    </div>
+                                </div>
+
+                                <!-- Alt. Min -->
+                                <div class="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
+                                    <span class="material-icons text-slate-300 text-lg shrink-0">south</span>
+                                    <div>
+                                        <div class="text-[10px] uppercase font-bold text-slate-400 leading-none mb-0.5">Alt. Min</div>
+                                        <div class="text-base font-bold text-slate-700 leading-none">${alt_min}<span class="text-[10px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

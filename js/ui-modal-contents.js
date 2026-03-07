@@ -314,204 +314,236 @@ window.getModalContent = function(type, payload, item) {
     }
     // --- TRASPORTI ---
     else if (type === 'transport') {
-    const transportId = payload; 
+    const transportId = payload;
 
+    // ── Shared image URLs ──
+    const trainImgUrl  = window.getSmartUrl('Treno', '', 600);
+    const busImgUrl    = `https://res.cloudinary.com/dkg0jfady/image/upload/w_600,c_fill,g_north,f_auto,q_auto:eco,dpr_1.0,fl_progressive/Bus`;
+    const ferryImgUrl  = window.getSmartUrl('Battello', '', 600);
+
+    // ═══════════════════════
     // A. TRENO
+    // ═══════════════════════
     if (transportId === 'train') {
         contentHtml = `
-        <div class="relative bg-white min-h-[400px]">
-            <div class="bg-ct-terracotta p-6 pb-10 rounded-b-[2.5rem] shadow-soft relative z-0">
-                <div class="flex justify-between items-start pt-2">
-                    <div>
-                        <span class="text-[11px] font-bold uppercase tracking-widest text-white/80 mb-1 block">Cinque Terre Express</span>
-                        <h2 class="font-serif text-3xl font-bold text-white leading-none">${window.t('label_train')}</h2>
-                    </div>
-                    <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-sm">
-                        <span class="material-icons text-2xl text-white">train</span>
-                    </div>
+        <div class="relative bg-white">
+
+            <!-- Hero image -->
+            <div class="relative h-52 w-full overflow-hidden">
+                <img src="${trainImgUrl}" class="w-full h-full object-cover" onerror="this.parentElement.style.background='#E76F51'">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/30 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 p-5 w-full">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-white/70 block mb-1">Cinque Terre Express</span>
+                    <h2 class="font-serif text-3xl font-bold text-white leading-none drop-shadow-md">${window.t('label_train')}</h2>
                 </div>
             </div>
 
-            <div class="px-5 -mt-8 relative z-10 animate-pop">
-                <div class="bg-white rounded-[2rem] shadow-xl shadow-orange-100/50 p-6 border border-slate-100 mb-6">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+            <!-- Content -->
+            <div class="p-5 space-y-4">
+
+                <!-- Tempi medi card -->
+                <div class="bg-ct-sand rounded-2xl p-4 border border-slate-100">
+                    <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                         <span class="material-icons text-sm text-ct-terracotta">timer</span> ${window.t('avg_times')}
                     </h4>
-                    <div class="space-y-4 text-sm">
-                        <div class="flex justify-between items-center group">
-                            <span class="text-slate-600 font-medium">La Spezia ↔ Riomaggiore</span> 
-                            <b class="text-ct-terracotta bg-orange-50 px-3 py-1 rounded-lg border border-orange-100">7 min</b>
+                    <div class="space-y-2.5">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600 text-sm font-medium">La Spezia ↔ Riomaggiore</span>
+                            <span class="text-ct-terracotta font-bold text-sm bg-white px-3 py-0.5 rounded-xl border border-orange-100 shadow-sm">7 min</span>
                         </div>
-                        <div class="flex justify-between items-center group">
-                            <span class="text-slate-600 font-medium">${window.t('between_villages')}</span> 
-                            <b class="text-ct-terracotta bg-orange-50 px-3 py-1 rounded-lg border border-orange-100">2-4 min</b>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600 text-sm font-medium">${window.t('between_villages')}</span>
+                            <span class="text-ct-terracotta font-bold text-sm bg-white px-3 py-0.5 rounded-xl border border-orange-100 shadow-sm">2–4 min</span>
                         </div>
-                        <div class="flex justify-between items-center group">
-                            <span class="text-slate-600 font-medium">Monterosso ↔ Levanto</span> 
-                            <b class="text-ct-terracotta bg-orange-50 px-3 py-1 rounded-lg border border-orange-100">5 min</b>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600 text-sm font-medium">Monterosso ↔ Levanto</span>
+                            <span class="text-ct-terracotta font-bold text-sm bg-white px-3 py-0.5 rounded-xl border border-orange-100 shadow-sm">5 min</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-slate-50 border-l-4 border-ct-terracotta p-4 rounded-r-xl mb-6 shadow-sm">
-                    <p class="text-slate-600 font-medium leading-relaxed text-sm">${window.t('train_desc')}</p>
-                </div>
+                <!-- Descrizione -->
+                <p class="text-slate-500 text-sm leading-relaxed">${window.t('train_desc')}</p>
 
-                <button onclick="window.apriTrenitalia()" class="w-full py-4 rounded-2xl bg-ct-terracotta text-white font-bold text-lg shadow-xl shadow-orange-200 active:scale-95 transition-transform flex items-center justify-center gap-2 relative overflow-hidden group">
-                    <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-2xl"></span>
-                    <span class="relative z-10">${window.t('train_cta')}</span> 
-                    <span class="material-icons text-sm relative z-10">open_in_new</span>
+                <!-- CTA -->
+                <button onclick="window.apriTrenitalia()"
+                    class="w-full py-4 rounded-2xl bg-ct-terracotta text-white font-bold text-base shadow-md active:scale-[0.98] transition-all touch-manipulation flex items-center justify-center gap-2">
+                    <span>${window.t('train_cta')}</span>
+                    <span class="material-icons text-sm">open_in_new</span>
                 </button>
-                
-                <p class="text-center text-[11px] text-slate-400 mt-4 font-bold uppercase tracking-wide opacity-70 mb-6">${window.t('check_site')}</p>
+                <p class="text-center text-[11px] text-slate-400 font-bold uppercase tracking-wide pb-4">${window.t('check_site')}</p>
             </div>
         </div>`;
-        return { html: contentHtml, class: 'bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto' };
+        return { html: contentHtml, class: 'bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto' };
     }
 
-    // B. BUS & BATTELLI
+    // ═══════════════════════
+    // B. BUS & BATTELLO
+    // ═══════════════════════
     else {
         const isBus = transportId === 'bus';
-        
-        const config = isBus ? {
-            title: window.t('label_bus'),
-            bg: 'bg-ct-yellow', 
-            marker: 'bg-amber-500',
-            icon: 'directions_bus',
-            btnFunction: 'eseguiRicercaBus()',
-            changeFunction: "window.handleBusSelectionChange",
-            mapToggle: true
+
+        const cfg = isBus ? {
+            img:            busImgUrl,
+            accentBg:       'bg-ct-yellow',
+            accentFrom:     'from-amber-500',
+            accentTo:       'to-ct-yellow',
+            markerColor:    'bg-amber-500',
+            gradientOverlay:'from-amber-900/80 via-amber-900/30',
+            icon:           'directions_bus',
+            label:          'ATC · Navette',
+            btnFunction:    'eseguiRicercaBus()',
+            changeFn:       'window.handleBusSelectionChange',
+            mapToggle:      true,
+            resultsId:      'busResultsContainer',
+            nextCardId:     'nextBusCard',
+            otherListId:    'otherBusList',
+            nextCardGrad:   'from-ct-yellow to-orange-400',
         } : {
-            title: window.t('label_ferry'),
-            bg: 'bg-ct-blue', 
-            marker: 'bg-cyan-500',
-            icon: 'directions_boat',
-            btnFunction: 'eseguiRicercaTraghetto()',
-            changeFunction: "window.handleFerrySelectionChange",
-            mapToggle: false 
+            img:            ferryImgUrl,
+            accentBg:       'bg-ct-blue',
+            accentFrom:     'from-teal-700',
+            accentTo:       'to-ct-blue',
+            markerColor:    'bg-cyan-500',
+            gradientOverlay:'from-teal-900/80 via-teal-900/30',
+            icon:           'directions_boat',
+            label:          'Navigazione',
+            btnFunction:    'eseguiRicercaTraghetto()',
+            changeFn:       'window.handleFerrySelectionChange',
+            mapToggle:      false,
+            resultsId:      'ferryResultsContainer',
+            nextCardId:     'nextFerryCard',
+            otherListId:    'otherFerryList',
+            nextCardGrad:   'from-ct-blue to-teal-600',
         };
 
-        const todayISO = new Date().toISOString().split('T')[0];
-        const nowTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
-
-        const idPartenza = isBus ? 'selPartenza' : 'selPartenzaFerry';
-        const idArrivo = isBus ? 'selArrivo' : 'selArrivoFerry';
-        const idData = isBus ? 'selData' : 'selDataFerry';
-        const idOra = isBus ? 'selOra' : 'selOraFerry';
+        const idPartenza = isBus ? 'selPartenza'      : 'selPartenzaFerry';
+        const idArrivo   = isBus ? 'selArrivo'        : 'selArrivoFerry';
+        const idData     = isBus ? 'selData'           : 'selDataFerry';
+        const idOra      = isBus ? 'selOra'            : 'selOraFerry';
+        const todayISO   = new Date().toISOString().split('T')[0];
+        const nowTime    = new Date().getHours().toString().padStart(2,'0') + ':' + new Date().getMinutes().toString().padStart(2,'0');
 
         contentHtml = `
-        <div class="relative bg-slate-50 min-h-[500px]">
-            
-            <div class="${config.bg} p-6 pb-12 rounded-b-[2.5rem] shadow-soft relative z-0 transition-colors duration-500">
-                <div class="flex justify-between items-start pt-2">
-                    <div>
-                        <span class="text-[11px] font-bold uppercase tracking-widest text-white/80 mb-1 block">Travel & Go</span>
-                        <h2 class="font-serif text-3xl font-bold text-white leading-none">${config.title}</h2>
-                    </div>
-                    <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-sm">
-                        <span class="material-icons text-2xl text-white">${config.icon}</span>
-                    </div>
+        <div class="relative bg-white">
+
+            <!-- ── Hero image with gradient ── -->
+            <div class="relative h-48 w-full overflow-hidden">
+                <img src="${cfg.img}" class="w-full h-full object-cover" onerror="this.parentElement.style.background='#2A9D8F'">
+                <div class="absolute inset-0 bg-gradient-to-t ${cfg.gradientOverlay} to-transparent"></div>
+                <div class="absolute bottom-0 left-0 p-5 w-full">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-white/70 block mb-1">${cfg.label}</span>
+                    <h2 class="font-serif text-3xl font-bold text-white leading-none drop-shadow-md">${isBus ? window.t('label_bus') : window.t('label_ferry')}</h2>
                 </div>
             </div>
 
-            <div class="px-5 -mt-8 relative z-10">
-                <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/60 p-1 border border-white overflow-hidden">
-                    
-                    <div class="relative p-5 pb-2">
-                        
-                        <div class="absolute left-6 top-7 bottom-6 w-6 flex flex-col items-center pointer-events-none">
-                            <div class="w-3 h-3 rounded-full border-[3px] border-slate-300 bg-white shadow-sm z-10"></div>
-                            <div class="flex-1 w-0.5 border-l-2 border-dashed border-slate-300 my-1 opacity-50"></div>
-                            <div class="w-3 h-3 rounded-sm ${config.marker} shadow-sm z-10"></div>
-                        </div>
+            <!-- ── Search form card ── -->
+            <div class="mx-4 -mt-5 relative z-10 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden mb-4">
 
-                        ${config.mapToggle ? `
-                        <button onclick="toggleBusMap()" id="btn-bus-map-toggle" class="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center bg-indigo-50 text-indigo-500 rounded-2xl border border-indigo-100 shadow-sm active:scale-95 transition-all" title="${window.t('show_map')}">
-                            <span class="material-icons text-xl">map</span>
+                <!-- Route selector -->
+                <div class="p-4 pb-3 relative">
+                    <!-- Vertical connector line -->
+                    <div class="absolute left-7 top-[2.1rem] bottom-[2.6rem] w-px border-l-2 border-dashed border-slate-200 pointer-events-none"></div>
+
+                    <!-- Partenza -->
+                    <div class="flex items-start gap-3 mb-4">
+                        <div class="w-3 h-3 rounded-full border-[3px] border-slate-300 bg-white shadow-sm mt-[0.85rem] shrink-0 z-10"></div>
+                        <div class="flex-1 min-w-0">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">${window.t('departure')}</label>
+                            <select id="${idPartenza}"
+                                class="w-full appearance-none bg-transparent text-base font-bold text-slate-800 focus:outline-none cursor-pointer truncate py-0.5"
+                                onchange="${cfg.changeFn}('partenza')">
+                                <option value="" selected>${window.t('select_start')}</option>
+                            </select>
+                        </div>
+                        ${isBus ? `<button onclick="toggleBusMap()" id="btn-bus-map-toggle"
+                            class="shrink-0 w-10 h-10 flex items-center justify-center bg-indigo-50 text-indigo-400 rounded-xl border border-indigo-100 active:scale-95 transition-all touch-manipulation mt-0.5">
+                            <span class="material-icons text-lg">map</span>
                         </button>` : ''}
-
-                        <div class="pl-10 mb-6 group relative mr-12">
-                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">${window.t('departure')}</label>
-                            <div class="relative">
-                                <select id="${idPartenza}" 
-                                    class="w-full appearance-none bg-transparent text-xl font-bold text-slate-800 focus:outline-none cursor-pointer truncate pr-2 py-1 border-b border-transparent hover:border-slate-100 transition-colors"
-                                    onchange="${config.changeFunction}('partenza')">
-                                    <option value="" selected>${window.t('select_start')}</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="pl-10 mb-2 group relative mr-12">
-                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">${window.t('arrival')}</label>
-                            <div class="relative">
-                                <select id="${idArrivo}" 
-                                    class="w-full appearance-none bg-transparent text-xl font-bold text-slate-800 focus:outline-none cursor-pointer truncate pr-2 py-1 border-b border-transparent hover:border-slate-100 transition-colors"
-                                    onchange="${config.changeFunction}('arrivo')">
-                                    <option value="" selected>${window.t('select_placeholder')}</option>
-                                </select>
-                            </div>
-                        </div>
                     </div>
 
-                    <div class="bg-slate-50 border-t border-slate-100 p-3 flex items-center gap-3">
-                        <div class="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-3 py-3 flex items-center gap-2 cursor-pointer hover:border-slate-300 transition-colors">
-                            <span class="material-icons text-slate-400 text-sm">event</span>
-                            <input type="date" id="${idData}" class="bg-transparent text-sm font-bold text-slate-700 w-full focus:outline-none uppercase font-sans cursor-pointer" value="${todayISO}">
+                    <!-- Arrivo -->
+                    <div class="flex items-start gap-3">
+                        <div class="w-3 h-3 rounded-sm ${cfg.markerColor} shadow-sm mt-[0.85rem] shrink-0 z-10"></div>
+                        <div class="flex-1 min-w-0">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">${window.t('arrival')}</label>
+                            <select id="${idArrivo}"
+                                class="w-full appearance-none bg-transparent text-base font-bold text-slate-800 focus:outline-none cursor-pointer truncate py-0.5"
+                                onchange="${cfg.changeFn}('arrivo')">
+                                <option value="" selected>${window.t('select_placeholder')}</option>
+                            </select>
                         </div>
-                        <div class="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-3 py-3 flex items-center gap-2 cursor-pointer hover:border-slate-300 transition-colors">
-                             <span class="material-icons text-slate-400 text-sm">schedule</span>
-                             <input type="time" id="${idOra}" class="bg-transparent text-sm font-bold text-slate-700 w-full focus:outline-none cursor-pointer" value="${nowTime}">
-                        </div>
+                    </div>
+                </div>
+
+                <!-- Date + Time row -->
+                <div class="bg-slate-50 border-t border-slate-100 p-3 flex gap-2">
+                    <div class="flex-1 bg-white rounded-xl border border-slate-200 px-3 py-2.5 flex items-center gap-2">
+                        <span class="material-icons text-slate-300 text-sm">event</span>
+                        <input type="date" id="${idData}"
+                            class="bg-transparent text-sm font-bold text-slate-700 w-full focus:outline-none cursor-pointer"
+                            value="${todayISO}">
+                    </div>
+                    <div class="flex-1 bg-white rounded-xl border border-slate-200 px-3 py-2.5 flex items-center gap-2">
+                        <span class="material-icons text-slate-300 text-sm">schedule</span>
+                        <input type="time" id="${idOra}"
+                            class="bg-transparent text-sm font-bold text-slate-700 w-full focus:outline-none cursor-pointer"
+                            value="${nowTime}">
                     </div>
                 </div>
             </div>
 
-            ${config.mapToggle ? `
-            <div id="bus-map-wrapper" class="hidden mx-5 mt-3 rounded-2xl overflow-hidden shadow-inner border-2 border-white bg-slate-200 animate-fade relative h-64 z-0">
-                 <div class="absolute top-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[11px] font-bold text-slate-500 shadow-sm z-[400] pointer-events-none border border-slate-200 whitespace-nowrap">
+            <!-- ── Mappa bus (hidden by default) ── -->
+            ${isBus ? `
+            <div id="bus-map-wrapper" class="hidden mx-4 mb-4 rounded-2xl overflow-hidden shadow-inner border border-slate-200 bg-slate-100 relative h-56 z-0">
+                <div class="absolute top-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold text-slate-500 shadow-sm z-[400] pointer-events-none border border-slate-200 whitespace-nowrap">
                     ${window.t('map_hint')}
                 </div>
                 <div id="bus-map" class="h-full w-full"></div>
             </div>` : ''}
 
-            <div class="px-5 mt-6 mb-8">
-                <button onclick="${config.btnFunction}" 
-                    class="w-full py-4 rounded-2xl ${config.bg} text-white shadow-xl shadow-slate-300 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group relative overflow-hidden">
-                    <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-2xl"></span>
-                    <span class="material-icons relative z-10">search</span>
-                    <span class="font-bold text-lg tracking-wide relative z-10 uppercase">${window.t('find_times')}</span>
+            <!-- ── Search CTA ── -->
+            <div class="px-4 pb-4 space-y-3">
+                <button onclick="${cfg.btnFunction}"
+                    class="w-full py-4 rounded-2xl ${cfg.accentBg} text-white font-bold text-base shadow-md active:scale-[0.98] transition-all touch-manipulation flex items-center justify-center gap-2">
+                    <span class="material-icons">search</span>
+                    <span class="uppercase tracking-wide">${window.t('find_times')}</span>
                 </button>
-                
-                <div class="mt-4 text-center">
-                    <button onclick="toggleTicketInfo()" class="inline-flex items-center gap-1 text-[11px] font-bold uppercase text-slate-400 hover:text-slate-600 transition-colors py-2 px-4 rounded-full hover:bg-slate-100">
+
+                <div class="text-center">
+                    <button onclick="toggleTicketInfo()"
+                        class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 py-2 px-4 rounded-xl hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation">
                         <span class="material-icons text-sm">confirmation_number</span> ${window.t('how_to_ticket')}
                     </button>
-                    <div id="ticket-info-box" class="hidden mt-2 p-4 bg-white rounded-xl text-xs text-slate-500 border border-slate-200 shadow-sm animate-fade mx-auto text-center leading-relaxed">
-                        <p class="mb-2">${window.t('ticket_info_text')}</p>
+                    <div id="ticket-info-box" class="hidden mt-2 p-4 bg-slate-50 rounded-xl text-xs text-slate-500 border border-slate-100 text-center leading-relaxed">
+                        <p>${window.t('ticket_info_text')}</p>
                     </div>
                 </div>
             </div>
 
-            <div id="${isBus ? 'busResultsContainer' : 'ferryResultsContainer'}" class="hidden px-5 pb-12 border-t border-slate-200/60 pt-6 bg-white rounded-t-[2.5rem] shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.05)]">
-                <div id="${isBus ? 'nextBusCard' : 'nextFerryCard'}" class="bg-gradient-to-br ${isBus ? 'from-ct-yellow to-orange-400' : 'from-ct-blue to-teal-600'} text-white p-6 rounded-[2rem] shadow-lg mb-8 text-center relative overflow-hidden ring-4 ring-slate-50"></div>
-                <div class="pl-2 mb-4 flex items-center gap-2">
-                     <div class="h-px bg-slate-100 flex-1"></div>
-                     <span class="text-[11px] font-bold uppercase text-slate-300 tracking-widest">${window.t('next_runs')}</span>
-                     <div class="h-px bg-slate-100 flex-1"></div>
+            <!-- ── Results area ── -->
+            <div id="${cfg.resultsId}" class="hidden px-4 pb-10 pt-2 border-t border-slate-100 bg-white">
+                <div id="${cfg.nextCardId}"
+                    class="bg-gradient-to-br ${cfg.nextCardGrad} text-white p-6 rounded-2xl shadow-md mb-6 relative overflow-hidden">
                 </div>
-                <div id="${isBus ? 'otherBusList' : 'otherFerryList'}" class="space-y-3"></div>
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="h-px bg-slate-100 flex-1"></div>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-300">${window.t('next_runs')}</span>
+                    <div class="h-px bg-slate-100 flex-1"></div>
+                </div>
+                <div id="${cfg.otherListId}" class="space-y-3"></div>
             </div>
         </div>`;
 
         setTimeout(() => {
-            if(isBus && window.loadAllStops) window.loadAllStops();
-            else if(!isBus && window.initFerrySearch) window.initFerrySearch();
+            if (isBus && window.loadAllStops)       window.loadAllStops();
+            else if (!isBus && window.initFerrySearch) window.initFerrySearch();
         }, 100);
 
-        return { html: contentHtml, class: 'bg-slate-50 w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto' };
+        return { html: contentHtml, class: 'bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto' };
     }
 
-    // --- FARMACIA ---
+    // --- FARMACIA ---    // --- FARMACIA ---
     } else if (type === 'farmacia') {
         const item = JSON.parse(decodeURIComponent(payload)); 
         const nome = window.dbCol(item, 'Nome');

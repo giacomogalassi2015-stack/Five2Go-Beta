@@ -588,55 +588,88 @@ window.renderServicesGrid = async function() {
         </div>
     `;
 
-    const busImg    = window.getSmartUrl('Bus', '', 400);
-    const trainImg  = window.getSmartUrl('Treno', '', 400);
-    const ferryImg  = window.getSmartUrl('Battello', '', 400);
+    const busImg    = `https://res.cloudinary.com/dkg0jfady/image/upload/w_600,c_fill,g_north,f_auto,q_auto:eco,dpr_1.0,fl_progressive/Bus`;
+    const trainImg  = window.getSmartUrl('Treno', '', 600);
+    const ferryImg  = window.getSmartUrl('Battello', '', 600);
 
     let gridHtml = `
-    <div class="flex flex-col gap-2.5 pb-32 animate-pop">
-        <div class="grid grid-cols-3 gap-2">
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.96] transition-all duration-150 touch-manipulation shadow-soft" style="height:128px" onclick="openModal('transport', 'bus')">
-                <img src="${busImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
-                <div class="absolute inset-0 bg-gradient-to-t from-ct-yellow/95 via-ct-yellow/60 to-ct-yellow/20"></div>
-                <div class="absolute inset-0 p-3 flex flex-col justify-between z-10">
-                    <div class="w-8 h-8 rounded-xl bg-white/70 backdrop-blur flex items-center justify-center shadow-sm"><span class="material-icons text-base text-yellow-700">directions_bus</span></div>
-                    <div><div class="font-serif font-bold text-slate-800 text-sm leading-tight">${window.t('label_bus')}</div><div class="text-[10px] font-bold uppercase tracking-wider text-yellow-900 opacity-70 mt-0.5">ATC</div></div>
+    <div class="flex flex-col gap-3 pb-32 animate-pop">
+
+        <!-- ── BUS: hero full-width, most prominent (most-used transit) ── -->
+        <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft" style="height:190px" onclick="openModal('transport', 'bus')">
+            <img src="${busImg}" class="absolute inset-0 w-full h-full object-cover scale-[1.02]" onerror="this.style.display='none'">
+            <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+            <div class="absolute inset-0 p-5 flex flex-col justify-between z-10">
+                <div class="flex items-center justify-between">
+                    <span class="bg-ct-yellow/90 backdrop-blur text-yellow-900 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">ATC · Navette</span>
+                    <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border border-white/30">
+                        <span class="material-icons text-xl text-white">directions_bus</span>
+                    </div>
                 </div>
-            </div>
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.96] transition-all duration-150 touch-manipulation shadow-soft" style="height:128px" onclick="openModal('transport', 'train')">
-                <img src="${trainImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
-                <div class="absolute inset-0 bg-gradient-to-t from-ct-terracotta/95 via-ct-terracotta/60 to-ct-terracotta/20"></div>
-                <div class="absolute inset-0 p-3 flex flex-col justify-between z-10">
-                    <div class="w-8 h-8 rounded-xl bg-white/25 backdrop-blur flex items-center justify-center border border-white/30"><span class="material-icons text-base text-white">train</span></div>
-                    <div><div class="font-serif font-bold text-white text-sm leading-tight">${window.t('label_train')}</div><div class="text-[10px] font-bold uppercase tracking-wider text-red-100 opacity-80 mt-0.5">Trenitalia</div></div>
-                </div>
-            </div>
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.96] transition-all duration-150 touch-manipulation shadow-soft" style="height:128px" onclick="openModal('transport', 'ferry')">
-                <img src="${ferryImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
-                <div class="absolute inset-0 bg-gradient-to-t from-ct-blue/95 via-ct-blue/60 to-ct-blue/20"></div>
-                <div class="absolute inset-0 p-3 flex flex-col justify-between z-10">
-                    <div class="w-8 h-8 rounded-xl bg-white/25 backdrop-blur flex items-center justify-center border border-white/30"><span class="material-icons text-base text-white">directions_boat</span></div>
-                    <div><div class="font-serif font-bold text-white text-sm leading-tight">${window.t('label_ferry')}</div><div class="text-[10px] font-bold uppercase tracking-wider text-teal-100 opacity-80 mt-0.5">Navigazione</div></div>
+                <div>
+                    <h3 class="font-serif text-2xl font-bold text-white leading-none drop-shadow-md">${window.t('label_bus')}</h3>
+                    <p class="text-white/70 text-xs font-bold uppercase tracking-wider mt-1">Orari & Connessioni tra borghi</p>
                 </div>
             </div>
         </div>
+
+        <!-- ── TRENO + BATTELLO: due card di pari peso ── -->
+        <div class="grid grid-cols-2 gap-3">
+
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-150 touch-manipulation shadow-soft" style="height:170px" onclick="openModal('transport', 'train')">
+                <img src="${trainImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
+                <div class="absolute inset-0 bg-gradient-to-t from-ct-terracotta/95 via-ct-terracotta/50 to-ct-terracotta/10"></div>
+                <div class="absolute inset-0 p-4 flex flex-col justify-between z-10">
+                    <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border border-white/30">
+                        <span class="material-icons text-lg text-white">train</span>
+                    </div>
+                    <div>
+                        <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-md">${window.t('label_train')}</h3>
+                        <p class="text-red-100/80 text-[10px] font-bold uppercase tracking-wider mt-0.5">Trenitalia</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-150 touch-manipulation shadow-soft" style="height:170px" onclick="openModal('transport', 'ferry')">
+                <img src="${ferryImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
+                <div class="absolute inset-0 bg-gradient-to-t from-ct-blue/95 via-ct-blue/50 to-ct-blue/10"></div>
+                <div class="absolute inset-0 p-4 flex flex-col justify-between z-10">
+                    <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border border-white/30">
+                        <span class="material-icons text-lg text-white">directions_boat</span>
+                    </div>
+                    <div>
+                        <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-md">${window.t('label_ferry')}</h3>
+                        <p class="text-teal-100/80 text-[10px] font-bold uppercase tracking-wider mt-0.5">Navigazione</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── UTILITY ROWS ── -->
         <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation" onclick="renderSimpleList('Numeri_utili')">
-            <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 shadow-sm"><span class="material-icons text-xl text-white">phonelink_ring</span></div>
+            <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 shadow-sm">
+                <span class="material-icons text-xl text-white">phonelink_ring</span>
+            </div>
             <div class="flex-1 min-w-0">
                 <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_num')}</h3>
                 <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">Emergenze & Numeri utili</p>
             </div>
             <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
+
         <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation" onclick="renderSimpleList('Farmacie')">
-            <div class="w-12 h-12 rounded-xl bg-ct-green flex items-center justify-center shrink-0 shadow-sm"><span class="material-icons text-xl text-white">medical_services</span></div>
+            <div class="w-12 h-12 rounded-xl bg-ct-green flex items-center justify-center shrink-0 shadow-sm">
+                <span class="material-icons text-xl text-white">medical_services</span>
+            </div>
             <div class="flex-1 min-w-0">
                 <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_pharm')}</h3>
                 <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">Turni & Orari</p>
             </div>
             <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
-        <div class="text-center pt-2">
+
+        <div class="text-center pt-1">
             <button onclick="renderLegalPage()" class="text-slate-400 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 mx-auto py-2 px-4 rounded-xl bg-white shadow-sm border border-slate-200 active:scale-95 touch-manipulation">
                 <span class="material-icons text-sm">policy</span> ${window.t('menu_legal')}
             </button>
