@@ -455,22 +455,30 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer)
 
     // Aperitivo editorial strip — above the list, below the filter bar, only for Ristoranti
     const isRistorantiView = (filterKey === 'Paesi' && cardRenderer === window.ristoranteRenderer);
-    if (isRistorantiView) {
+    const isVinoView       = (filterKey === 'Tipo'  && cardRenderer === window.vinoRenderer);
+
+    if (isRistorantiView || isVinoView) {
+        const isVino = isVinoView;
         const strip = document.createElement('div');
         strip.className = 'animate-fade';
         strip.style.cssText = 'margin-bottom:12px;';
+
+        // Visual tokens per category
+        const cfg = isVino
+            ? { fn: '_openMapVino',      bg: 'linear-gradient(100deg,#fff0ee,#fef2f2)',  border: 'rgba(192,57,43,0.2)',  shadow: 'rgba(192,57,43,0.08)',  iconBg: 'rgba(192,57,43,0.1)',  emoji: '🍷', labelColor: '#9b1c1c', textColor: 'rgba(127,29,29,0.7)', arrowColor: '#E74C3C',  labelKey: 'vino_map_hint_label',   descKey: 'vino_map_hint_desc',   labelFallback: 'Dove acquistare', descFallback: 'Cantine e enoteche sulla mappa' }
+            : { fn: '_openMapAperitivo', bg: 'linear-gradient(100deg,#fffbeb,#fff7ed)',  border: 'rgba(217,119,6,0.2)',  shadow: 'rgba(217,119,6,0.08)',  iconBg: 'rgba(217,119,6,0.1)',  emoji: '🥂', labelColor: '#b45309', textColor: 'rgba(120,53,15,0.7)', arrowColor: '#F59E0B',  labelKey: 'aperitivo_hint_label',  descKey: 'aperitivo_hint_desc',   labelFallback: 'Aperitivo Time',  descFallback: 'Scopri i migliori posti' };
+
         strip.innerHTML = `
-            <div onclick="window._openMapAperitivo && window._openMapAperitivo()"
+            <div onclick="window.${cfg.fn} && window.${cfg.fn}()"
                 class="flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer active:scale-[0.98] transition-all touch-manipulation"
-                style="background:linear-gradient(100deg,#fffbeb,#fff7ed); border:1px solid rgba(217,119,6,0.2); box-shadow:0 1px 4px rgba(217,119,6,0.08);">
-                <div style="width:36px;height:36px;border-radius:10px;background:rgba(217,119,6,0.1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">🥂</div>
+                style="background:${cfg.bg}; border:1px solid ${cfg.border}; box-shadow:0 1px 4px ${cfg.shadow};">
+                <div style="width:36px;height:36px;border-radius:10px;background:${cfg.iconBg};display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">${cfg.emoji}</div>
                 <div style="flex:1;min-width:0;">
-                    <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:#b45309;line-height:1;margin-bottom:2px;">${window.t('aperitivo_hint_label') || 'Aperitivo Time'}</div>
-                    <div style="font-size:12px;color:rgba(120,53,15,0.7);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${window.t('aperitivo_hint_desc') || 'Scopri i migliori posti per aperitivo'}</div>
+                    <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:${cfg.labelColor};line-height:1;margin-bottom:2px;">${window.t(cfg.labelKey) || cfg.labelFallback}</div>
+                    <div style="font-size:12px;color:${cfg.textColor};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${window.t(cfg.descKey) || cfg.descFallback}</div>
                 </div>
-                <span class="material-icons" style="color:#F59E0B;font-size:18px;flex-shrink:0;">chevron_right</span>
+                <span class="material-icons" style="color:${cfg.arrowColor};font-size:18px;flex-shrink:0;">chevron_right</span>
             </div>`;
-        // Insert right before #dynamic-list
         const dynList = container.querySelector('#dynamic-list');
         if (dynList) dynList.parentNode.insertBefore(strip, dynList);
     }
@@ -1404,6 +1412,12 @@ window.toggleBusMap = function() {
 // ── Open map pre-filtered to aperitivo ──
 window._openMapAperitivo = function() {
     window._mapPreFilter = 'aperitivo';
+    switchView('mappa');
+};
+
+// ── Open map pre-filtered to vino ──
+window._openMapVino = function() {
+    window._mapPreFilter = 'vino';
     switchView('mappa');
 };
 
