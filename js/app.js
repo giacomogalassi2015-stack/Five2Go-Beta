@@ -148,13 +148,13 @@ function renderHome() {
                     autocorrect="off"
                     spellcheck="false"
                     placeholder="${window.t('search_placeholder') || 'Cerca ristoranti, vini, spiagge...'}"
-                    class="w-full bg-white/15 backdrop-blur-xl border border-white/30 rounded-2xl pl-11 pr-10 py-3 text-sm font-semibold text-white placeholder-white/55 outline-none focus:bg-white/25 focus:border-white/60 focus:placeholder-white/70 transition-all"
+                    class="w-full bg-white/15 backdrop-blur-xl border border-white/30 rounded-2xl pl-11 pr-12 py-3 text-sm font-semibold text-white placeholder-white/55 outline-none focus:bg-white/25 focus:border-white/60 focus:placeholder-white/70 transition-all"
                     onfocus="window._searchPrefetch(); window._positionResultsSheet();"
                     oninput="window._searchDebounced(this.value)">
                 <button id="search-clear-btn"
-                    class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                    class="hidden absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 bg-transparent flex items-center justify-center active:scale-90 transition-transform touch-manipulation"
                     onclick="window._closeSearch()">
-                    <span class="material-icons text-white text-sm leading-none">close</span>
+                    <span class="material-icons text-white text-base leading-none">close</span>
                 </button>
             </div>
         </div>
@@ -247,7 +247,7 @@ window.renderSubMenu = function(options, defaultTable) {
                 const icon = opt.icon || 'star';
 
                 return `
-                <button class="btn-pop-menu flex-shrink-0 px-4 py-2.5 rounded-2xl flex items-center gap-2 border transition-all duration-300 transform ${theme}" 
+                <button class="btn-pop-menu flex-shrink-0 px-4 py-2.5 rounded-2xl flex items-center gap-2 border transition-all duration-300 transform touch-manipulation cursor-pointer ${theme}" 
                     data-table="${opt.table}"
                     data-index="${index}"
                     onclick="loadTableData('${opt.table}', this)">
@@ -581,7 +581,7 @@ window.renderServicesGrid = async function() {
     let gridHtml = `
     <div class="grid grid-cols-2 gap-2 pb-32 animate-pop">
         
-        <div class="col-span-2 relative bg-ct-yellow rounded-[2rem] p-4 shadow-soft active:scale-95 transition-transform cursor-pointer overflow-hidden group min-h-[120px] flex flex-col justify-between border border-yellow-200" onclick="openModal('transport', 'bus')">
+        <div class="col-span-2 relative bg-ct-yellow rounded-[2rem] p-4 shadow-soft active:scale-95 transition-transform cursor-pointer touch-manipulation overflow-hidden group min-h-[120px] flex flex-col justify-between border border-yellow-200" onclick="openModal('transport', 'bus')">
             <div class="absolute -right-2 -bottom-4 opacity-10 transform rotate-12 group-hover:scale-110 transition-transform duration-500"><span class="material-icons text-[130px] text-yellow-900">directions_bus</span></div>
             <div class="relative z-10">
                 <div class="bg-white/80 backdrop-blur w-10 h-10 rounded-xl flex items-center justify-center mb-2 shadow-sm border border-white"><span class="material-icons text-xl text-yellow-700">directions_bus</span></div>

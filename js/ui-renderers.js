@@ -14,8 +14,8 @@ function getCandyBtn(icon, label, color, onclick) {
     const theme = colors[color] || colors['blue'];
 
     return `
-    <button class="flex flex-col items-center justify-center gap-1 group/btn active:scale-95 transition-all duration-200 min-w-[50px]" onclick="${onclick}">
-        <div class="h-9 w-9 rounded-xl ${theme} shadow-sm flex items-center justify-center border">
+    <button class="flex flex-col items-center justify-center gap-1 group/btn active:scale-95 transition-all duration-200 min-w-[50px] cursor-pointer touch-manipulation" onclick="${onclick}">
+        <div class="h-11 w-11 rounded-xl ${theme} shadow-sm flex items-center justify-center border">
             <span class="material-icons text-lg">${icon}</span>
         </div>
         ${label ? `<span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 group-hover/btn:text-slate-600 transition-colors">${label}</span>` : ''}
@@ -117,7 +117,7 @@ function renderUtilityCard({ id, icon, title, subtitle, phone, color }) {
             <h3 class="font-bold text-slate-800 text-sm truncate">${title}</h3>
             <p class="text-[11px] font-bold uppercase text-slate-400 tracking-wide truncate">${subtitle}</p>
         </div>
-        ${phone ? `<button onclick="window.location.href='tel:${phone}'" class="ml-3 w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 active:bg-slate-100 transition-colors"><span class="material-icons text-xl">call</span></button>` : ''}
+        ${phone ? `<button onclick="window.location.href='tel:${phone}'" class="ml-3 w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 active:bg-slate-100 active:scale-95 transition-all touch-manipulation cursor-pointer"><span class="material-icons text-xl">call</span></button>` : ''}
     </div>`;
 }
 
