@@ -48,7 +48,7 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
     }
 
     return `
-    <div class="bg-white rounded-[2rem] shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group cursor-pointer border border-slate-100/50 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" onclick="${onClick}">
+    <div class="bg-white rounded-[2rem] shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group cursor-pointer border border-slate-100/50 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1" data-card-id="${id}" onclick="${onClick}">
         ${headerHtml}
         <div class="p-5 flex-1 flex flex-col justify-start">
             ${label ? `
@@ -76,7 +76,7 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
 
     // MODIFICA 4: Ridotto mb-5 a mb-3
     return `
-    <div class="flex bg-white rounded-[1.5rem] shadow-sm border border-slate-100 overflow-hidden min-h-[140px] cursor-pointer transform active:scale-95 transition-all duration-200 mb-3 group hover:shadow-md" onclick="${onClick}">
+    <div class="flex bg-white rounded-[1.5rem] shadow-sm border border-slate-100 overflow-hidden min-h-[140px] cursor-pointer transform active:scale-95 transition-all duration-200 mb-3 group hover:shadow-md" data-card-id="${id}" onclick="${onClick}">
         <div class="w-24 ${themeClass} flex items-center justify-center relative overflow-hidden shrink-0">
             <span class="material-icons text-4xl ${iconColor} drop-shadow-sm opacity-90 relative z-10">wine_bar</span>
         </div>
@@ -101,7 +101,7 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
     </div>`;
 }
 
-function renderUtilityCard({ icon, title, subtitle, phone, color }) {
+function renderUtilityCard({ id, icon, title, subtitle, phone, color }) {
     const iconColors = {
         'green': 'bg-green-100 text-green-700', 'blue': 'bg-blue-100 text-blue-700',
         'purple': 'bg-purple-100 text-purple-700', 'red': 'bg-red-100 text-red-700'
@@ -109,7 +109,7 @@ function renderUtilityCard({ icon, title, subtitle, phone, color }) {
     const iconTheme = iconColors[color] || iconColors['blue'];
     // MODIFICA 4: Ridotto mb-3 a mb-2
     return `
-    <div class="flex items-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm mb-2 animate-pop active:scale-95 transition-transform">
+    <div class="flex items-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm mb-2 animate-pop active:scale-95 transition-transform" data-card-id="${id || ''}">
         <div class="w-12 h-12 rounded-xl ${iconTheme} flex items-center justify-center shrink-0 mr-4">
             <span class="material-icons text-2xl">${icon}</span>
         </div>
@@ -330,6 +330,7 @@ window.farmacieRenderer = (f) => {
     const fallbackPaesi = typeof paesi === 'string' ? paesi : (f.Indirizzo || 'Servizio');
 
     return renderUtilityCard({
+        id: f.id,
         icon: 'local_pharmacy',
         title: fallbackNome,
         subtitle: fallbackPaesi,
@@ -355,6 +356,7 @@ window.numeriUtiliRenderer = (n) => {
     if(nomeCheck.includes('emergenza') || String(n.Numero).includes('112')) { icon = 'emergency'; color = 'red'; }
     
     return renderUtilityCard({
+        id: n.id,
         icon: icon,
         title: nome,
         subtitle: n.Paesi || 'Info',

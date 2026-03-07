@@ -101,6 +101,16 @@
         }
         body.is-home .nav-center-btn { border-color: #1a1a1a; }
 
+        /* Search results sheet scrollbar */
+        #search-results-sheet {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        #search-results-sheet::-webkit-scrollbar { display: none; }
+
+        /* Keyword highlight */
+        mark { background: rgba(252,211,77,0.45); border-radius: 3px; padding: 0 2px; color: inherit; font-style: inherit; }
+
         /* Loading bar animation */
         @keyframes loadingBar {
             0%   { transform: translateX(-100%); width: 40%; }

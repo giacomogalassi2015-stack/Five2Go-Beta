@@ -126,34 +126,62 @@ function renderHome() {
     content.innerHTML = `
     <div class="fixed inset-0 z-0 overflow-hidden">
         <img src="${bgImage}" class="w-full h-full object-cover animate-fade" alt="Cinque Terre" style="animation-duration: 2s;">
-        <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/90"></div>
     </div>
 
-    <div class="relative z-10 flex flex-col items-center justify-end h-[85vh] pb-24 px-6 text-center animate-pop">
+    <!-- Overlay scuro dietro i risultati (chiude al tap) -->
+    <div id="search-backdrop"
+        class="hidden fixed inset-0 z-[45] bg-black/40"
+        onclick="window._closeSearch()"></div>
+
+    <div class="relative z-[46] flex flex-col items-center justify-end h-[85vh] pb-24 px-6 text-center animate-pop">
         <h1 class="text-5xl font-serif font-bold text-white mb-2 drop-shadow-xl tracking-tight">Five2Go</h1>
-        <p class="text-white/90 text-sm font-medium mb-8 max-w-xs mx-auto leading-relaxed shadow-black drop-shadow-md">La tua guida essenziale per vivere la magia delle Cinque Terre.</p>
-        
-        <div class="mb-6 w-full max-w-sm">
-             <button class="w-full bg-ct-terracotta hover:bg-orange-600 text-white rounded-2xl py-4 shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 group" onclick="switchView('mappa')">
-                <span class="text-sm font-bold uppercase tracking-widest">${window.t('btn_discover')}</span>
-                <span class="material-icons group-hover:translate-x-1 transition-transform">arrow_forward</span>
-            </button>
+        <p class="text-white/80 text-sm font-medium mb-6 max-w-xs mx-auto leading-relaxed drop-shadow-md">La tua guida essenziale per vivere la magia delle Cinque Terre.</p>
+
+        <!-- ── SEARCH — input only; results sheet vive nel body (z-index indipendente) ── -->
+        <div class="w-full max-w-sm mb-5">
+            <div class="relative" id="global-search-anchor">
+                <span class="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-white/70 text-lg pointer-events-none">search</span>
+                <input id="global-search-input"
+                    type="search"
+                    autocomplete="off"
+                    autocorrect="off"
+                    spellcheck="false"
+                    placeholder="${window.t('search_placeholder') || 'Cerca ristoranti, vini, spiagge...'}"
+                    class="w-full bg-white/15 backdrop-blur-xl border border-white/30 rounded-2xl pl-11 pr-10 py-3 text-sm font-semibold text-white placeholder-white/55 outline-none focus:bg-white/25 focus:border-white/60 focus:placeholder-white/70 transition-all"
+                    onfocus="window._searchPrefetch(); window._positionResultsSheet();"
+                    oninput="window._searchDebounced(this.value)">
+                <button id="search-clear-btn"
+                    class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                    onclick="window._closeSearch()">
+                    <span class="material-icons text-white text-sm leading-none">close</span>
+                </button>
+            </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-3 w-full max-w-sm">
-            ${window.AVAILABLE_LANGS.map(l => {
-                const isActive = l.code === window.currentLang;
-                const activeClass = isActive 
-                    ? "bg-white text-slate-800 border-white shadow-xl scale-105 z-10 ring-2 ring-white/50" 
-                    : "bg-white/10 text-white border-white/20 hover:border-white/50 active:bg-white/20";
-                
-                return `
-                <button class="${activeClass} backdrop-blur-md border rounded-2xl py-3 flex flex-col items-center justify-center transition-all active:scale-95" onclick="changeLanguage('${l.code}')">
-                    <span class="text-2xl mb-1 drop-shadow-md">${l.flag}</span>
-                    <span class="text-[11px] font-bold uppercase tracking-widest opacity-80">${l.label}</span>
+        <div id="home-below-search" class="w-full max-w-sm transition-all duration-200">
+            <div class="mb-4">
+                <button class="w-full bg-ct-terracotta text-white rounded-2xl py-4 shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 group" onclick="switchView('mappa')">
+                    <span class="text-sm font-bold uppercase tracking-widest">${window.t('btn_discover')}</span>
+                    <span class="material-icons group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </button>
-                `;
-            }).join('')}
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+                ${window.AVAILABLE_LANGS.map(l => {
+                    const isActive = l.code === window.currentLang;
+                    const activeClass = isActive 
+                        ? "bg-white text-slate-800 border-white shadow-xl scale-105 z-10 ring-2 ring-white/50" 
+                        : "bg-white/10 text-white border-white/20 hover:border-white/50 active:bg-white/20";
+                    
+                    return `
+                    <button class="${activeClass} backdrop-blur-md border rounded-2xl py-3 flex flex-col items-center justify-center transition-all active:scale-95" onclick="changeLanguage('${l.code}')">
+                        <span class="text-2xl mb-1 drop-shadow-md">${l.flag}</span>
+                        <span class="text-[11px] font-bold uppercase tracking-widest opacity-80">${l.label}</span>
+                    </button>
+                    `;
+                }).join('')}
+            </div>
         </div>
     </div>`;
 
@@ -633,6 +661,403 @@ window.toggleTicketInfo = function() {
     if (box) { box.classList.toggle('hidden'); }
 };
 // --- INIZIALIZZAZIONE DELL'APP ---
+
+// ===========================================================================
+// GLOBAL SEARCH
+// ===========================================================================
+
+// Tabelle e metadati di ricerca
+// Sezione virtuale bus: keyword trigger senza tabella DB
+const _BUS_VIRTUAL = [
+    { _virtual: true, id: 'bus', Nome: 'Orari Bus', Alias: 'bus orari autobus ctbus', Sottotitolo: 'Cerca connessioni tra borghi' },
+];
+const _FERRY_VIRTUAL = [
+    { _virtual: true, id: 'ferry', Nome: 'Orari Traghetti', Alias: 'traghetto ferry orari nave battello', Sottotitolo: 'Collegamento via mare' },
+];
+
+const _SEARCH_SECTIONS = [
+    {
+        table:      'Ristoranti',
+        view:       'cibo',
+        label:      'Ristoranti',
+        icon:       'restaurant',
+        color:      '#E76F51',
+        bg:         '#FFEDE1',
+        getId:      item => item.id,
+        getName:    item => window.dbCol(item, 'Nome') || 'Ristorante',
+        getSub:     item => window.dbCol(item, 'Paesi') || '',
+        openModal:  item => { const s = encodeURIComponent(JSON.stringify(item)).replace(/'/g,'%27'); openModal('ristorante', s); },
+    },
+    {
+        table:      'Attrazioni',
+        view:       'outdoor',
+        label:      'Attrazioni',
+        icon:       'attractions',
+        color:      '#2A9D8F',
+        bg:         '#E0F7FA',
+        getId:      item => item.POI_ID || item.id,
+        getName:    item => window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo') || 'Attrazione',
+        getSub:     item => window.dbCol(item, 'Paese') || '',
+        openModal:  item => openModal('attrazione', item.POI_ID || item.id),
+    },
+    {
+        table:      'Spiagge',
+        view:       'outdoor',
+        label:      'Spiagge',
+        icon:       'beach_access',
+        color:      '#0369A1',
+        bg:         '#EFF6FF',
+        getId:      item => item.id,
+        getName:    item => window.dbCol(item, 'Spiagge') || window.dbCol(item, 'Nome') || 'Spiaggia',
+        getSub:     item => window.dbCol(item, 'Paesi') || '',
+        openModal:  item => { const s = encodeURIComponent(JSON.stringify(item)).replace(/'/g,'%27'); openModal('Spiagge', s); },
+    },
+    {
+        table:      'Prodotti',
+        view:       'cibo',
+        label:      'Prodotti',
+        icon:       'lunch_dining',
+        color:      '#C2410C',
+        bg:         '#FFF3E0',
+        getId:      item => item.id,
+        getName:    item => window.dbCol(item, 'Prodotti') || window.dbCol(item, 'Nome') || 'Prodotto',
+        getSub:     item => '',
+        openModal:  item => { const s = encodeURIComponent(JSON.stringify(item)).replace(/'/g,'%27'); openModal('product', s); },
+    },
+    {
+        table:      'Vini',
+        view:       'cibo',
+        label:      'Vini',
+        icon:       'wine_bar',
+        color:      '#9B2226',
+        bg:         '#FFF0EE',
+        getId:      item => item.id || item.ID,
+        getName:    item => item.Nome || 'Vino',
+        getSub:     item => item.Produttore || '',
+        openModal:  item => openModal('Vini', item.id || item.ID),
+    },
+    {
+        table:      'Farmacie',
+        view:       'servizi',
+        label:      'Farmacie',
+        icon:       'local_pharmacy',
+        color:      '#606C38',
+        bg:         '#ECFCCB',
+        getId:      item => item.id,
+        getName:    item => _safeStr(item.Nome) || 'Farmacia',
+        getSub:     item => _safeStr(item.Paesi) || item.Indirizzo || '',
+        openModal:  item => renderSimpleList('Farmacie'),
+    },
+    {
+        table:      'Numeri_utili',
+        view:       'servizi',
+        label:      'Numeri Utili',
+        icon:       'phonelink_ring',
+        color:      '#264653',
+        bg:         '#F1F5F9',
+        getId:      item => item.id,
+        getName:    item => _safeStr(item.Nome) || 'Numero Utile',
+        getSub:     item => item.Numero || '',
+        openModal:  item => renderSimpleList('Numeri_utili'),
+    },
+    // ── Sezioni virtuali (no fetch, keyword-based) ──
+    {
+        table:      '_bus',
+        view:       'servizi',
+        virtual:    true,
+        data:       _BUS_VIRTUAL,
+        label:      'Trasporti',
+        icon:       'directions_bus',
+        color:      '#B45309',
+        bg:         '#FFFBEB',
+        getId:      item => item.id,
+        getName:    item => item.Nome,
+        getSub:     item => item.Sottotitolo,
+        openModal:  item => openModal('transport', 'bus'),
+    },
+    {
+        table:      '_ferry',
+        view:       'servizi',
+        virtual:    true,
+        data:       _FERRY_VIRTUAL,
+        label:      'Traghetti',
+        icon:       'directions_boat',
+        color:      '#0369A1',
+        bg:         '#EFF6FF',
+        getId:      item => item.id,
+        getName:    item => item.Nome,
+        getSub:     item => item.Sottotitolo,
+        openModal:  item => openModal('transport', 'ferry'),
+    },
+];
+
+// Helper: estrae stringa da campo possibilmente JSON/oggetto multilingua
+function _safeStr(val) {
+    if (!val) return '';
+    if (typeof val === 'string') {
+        if (val.startsWith('{')) {
+            try { const p = JSON.parse(val); return p[window.currentLang] || p['it'] || ''; } catch(e) {}
+        }
+        return val;
+    }
+    if (typeof val === 'object') return val[window.currentLang] || val['it'] || '';
+    return String(val);
+}
+
+// Cerca la query in tutti i valori stringa di un item (multilingua incluso)
+function _searchInItem(item, q) {
+    for (const val of Object.values(item)) {
+        if (!val) continue;
+        let s = '';
+        if (typeof val === 'string')      s = val;
+        else if (typeof val === 'object')  s = Object.values(val).filter(Boolean).join(' ');
+        if (s.toLowerCase().includes(q)) return true;
+    }
+    return false;
+}
+
+// Results sheet vive nel body — z-index totalmente indipendente dall'hero
+(function _injectSearchSheet() {
+    if (document.getElementById('search-results-sheet')) return;
+    const sheet = document.createElement('div');
+    sheet.id = 'search-results-sheet';
+    sheet.className = 'hidden';
+    sheet.style.cssText = [
+        'position:fixed',
+        'z-index:9999',
+        'background:white',
+        'border-radius:1.5rem',
+        'box-shadow:0 20px 60px rgba(0,0,0,0.18)',
+        'border:1px solid #f1f5f9',
+        'overflow:hidden',
+        'max-height:58vh',
+        'overflow-y:auto',
+        'scrollbar-width:none',
+    ].join(';');
+    sheet.innerHTML = '<div id="search-results-content" style="padding:12px;"></div>';
+    document.body.appendChild(sheet);
+})();
+
+// Posiziona il sheet sotto l'anchor dell'input, rispettando viewport
+window._positionResultsSheet = function() {
+    const anchor = document.getElementById('global-search-anchor');
+    const sheet  = document.getElementById('search-results-sheet');
+    if (!anchor || !sheet) return;
+    const rect = anchor.getBoundingClientRect();
+    const gap  = 8;
+    sheet.style.top   = (rect.bottom + gap) + 'px';
+    sheet.style.left  = rect.left + 'px';
+    sheet.style.width = rect.width + 'px';
+};
+
+// Pre-fetch lazy: carica le tabelle non ancora in cache (skip sezioni virtuali)
+window._searchPrefetched = false;
+window._searchPrefetch = async function() {
+    if (window._searchPrefetched) return;
+    window._searchPrefetched = true;
+    const toLoad = _SEARCH_SECTIONS
+        .filter(s => !s.virtual && !window.appCache[s.table])
+        .map(s => window.supabaseClient.from(s.table).select('*')
+                      .then(({ data }) => { if (data) window.appCache[s.table] = data; }));
+    if (toLoad.length) await Promise.all(toLoad);
+};
+
+// Debounce 280ms
+let _searchTimer = null;
+window._searchDebounced = function(val) {
+    clearTimeout(_searchTimer);
+    const clearBtn = document.getElementById('search-clear-btn');
+    if (clearBtn) clearBtn.classList.toggle('hidden', !val);
+    if (!val || val.trim().length < 2) { _hideSearchResults(); return; }
+    _searchTimer = setTimeout(() => window._runSearch(val.trim()), 280);
+};
+
+window._runSearch = function(query) {
+    const q = query.toLowerCase();
+    let totalHits = 0;
+    const groups = [];
+
+    for (const sec of _SEARCH_SECTIONS) {
+        // Virtuals usano il proprio array fisso, le altre usano appCache
+        const data = sec.virtual ? sec.data : (window.appCache[sec.table] || []);
+        const hits = data.filter(item => _searchInItem(item, q)).slice(0, 6);
+        if (hits.length) {
+            groups.push({ sec, hits });
+            totalHits += hits.length;
+        }
+    }
+
+    _showSearchResults(query, groups, totalHits);
+};
+
+function _showSearchResults(query, groups, total) {
+    const sheet    = document.getElementById('search-results-sheet');
+    const content  = document.getElementById('search-results-content');
+    const backdrop = document.getElementById('search-backdrop');
+    if (!sheet || !content) return;
+
+    if (total === 0) {
+        content.innerHTML = `
+        <div class="py-8 text-center">
+            <span class="material-icons text-4xl text-slate-300 block mb-2">search_off</span>
+            <p class="text-sm font-bold text-slate-400">Nessun risultato per "<em>${query}</em>"</p>
+        </div>`;
+    } else {
+        let html = '';
+        for (const { sec, hits } of groups) {
+            // Salva hits per il callback onclick (prima del render)
+            window['_searchHits_' + sec.table.replace(/[^a-z]/gi,'_')] = hits;
+            const secIdx = _SEARCH_SECTIONS.indexOf(sec);
+
+            html += `
+            <div class="mb-2">
+                <div class="flex items-center gap-2 px-2 py-1 mb-0.5">
+                    <div class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
+                        style="background:${sec.bg};">
+                        <span class="material-icons text-xs" style="color:${sec.color}; font-size:13px;">${sec.icon}</span>
+                    </div>
+                    <span class="text-[10px] font-black uppercase tracking-widest" style="color:${sec.color};">${sec.label}</span>
+                    <span class="ml-auto text-[10px] font-bold text-slate-300">${hits.length}</span>
+                </div>
+                ${hits.map((item, i) => {
+                    const name   = sec.getName(item);
+                    const sub    = sec.getSub(item);
+                    const re     = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&') + ')', 'gi');
+                    const nameHL = name.replace(re,'<mark class="bg-amber-200/70 rounded px-0.5">$1</mark>');
+                    return `
+                    <button class="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-2xl active:bg-slate-100 transition-colors group"
+                        onclick="window._searchNavigateTo(${secIdx}, ${i})">
+                        <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style="background:${sec.bg};">
+                            <span class="material-icons text-sm" style="color:${sec.color};">${sec.icon}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-slate-800 truncate leading-snug">${nameHL}</p>
+                            ${sub ? `<p class="text-[11px] text-slate-400 truncate leading-none mt-0.5">${sub}</p>` : ''}
+                        </div>
+                        <span class="material-icons text-slate-200 text-base flex-shrink-0">chevron_right</span>
+                    </button>`;
+                }).join('')}
+            </div>`;
+        }
+        content.innerHTML = html;
+    }
+
+    window._searchSections = _SEARCH_SECTIONS;
+    sheet.classList.remove('hidden');
+    if (backdrop) backdrop.classList.remove('hidden');
+}
+
+function _hideSearchResults() {
+    const sheet   = document.getElementById('search-results-sheet');
+    const backdrop = document.getElementById('search-backdrop');
+    if (sheet)   sheet.classList.add('hidden');
+    if (backdrop) backdrop.classList.add('hidden');
+}
+
+window._closeSearch = function() {
+    const input    = document.getElementById('global-search-input');
+    const clearBtn = document.getElementById('search-clear-btn');
+    if (input)    { input.value = ''; input.blur(); }
+    if (clearBtn) clearBtn.classList.add('hidden');
+    _hideSearchResults();
+};
+
+// Evidenzia una card dopo la navigazione (flash ring + scroll)
+// Flash con retry polling: riprova ogni 80ms finché la card appare nel DOM
+window._flashCard = function(id, fallbackName, attempt) {
+    attempt = attempt || 0;
+    if (attempt > 20) return; // max 1.6s di attesa
+
+    const card = id
+        ? document.querySelector('[data-card-id="' + id + '"]')
+        : null;
+
+    // Fallback: cerca per testo se l'id non corrisponde
+    const target = card || (fallbackName
+        ? Array.from(document.querySelectorAll('[data-card-id]')).find(el =>
+            el.textContent.toLowerCase().includes(fallbackName.toLowerCase()))
+        : null);
+
+    if (!target) {
+        setTimeout(() => window._flashCard(id, fallbackName, attempt + 1), 80);
+        return;
+    }
+
+    const appContent = document.getElementById('app-content');
+    if (appContent) {
+        const rect   = target.getBoundingClientRect();
+        const mid    = rect.top + rect.height / 2;
+        const viewH  = window.innerHeight;
+        const offset = mid - viewH / 2;
+        appContent.scrollBy({ top: offset, behavior: 'smooth' });
+    } else {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    target.style.transition    = 'box-shadow 0.2s, outline 0.2s';
+    target.style.outline       = '3px solid #E76F51';
+    target.style.outlineOffset = '3px';
+    target.style.boxShadow     = '0 0 0 8px rgba(231,111,81,0.15)';
+    setTimeout(() => {
+        target.style.outline   = '3px solid transparent';
+        target.style.boxShadow = '';
+        setTimeout(() => { target.style.outline = ''; }, 300);
+    }, 2000);
+};
+
+// Naviga alla view corretta, carica la tabella, scrolla e apre il modal
+window._searchNavigateTo = async function(secIdx, hitIdx) {
+    const sec  = _SEARCH_SECTIONS[secIdx];
+    const item = (window['_searchHits_' + sec.table.replace(/[^a-z]/gi,'_')] || [])[hitIdx];
+    if (!sec || !item) return;
+
+    window._closeSearch();
+
+    const cardId       = sec.getId ? sec.getId(item) : item.id;
+    const fallbackName = sec.getName ? sec.getName(item) : '';
+
+    // ── Sezioni virtuali (bus/ferry) ──────────────────────────────────────
+    if (sec.virtual) {
+        const navBtn = document.querySelector('.nav-item[onclick*="servizi"]');
+        await switchView('servizi', navBtn);
+        setTimeout(() => sec.openModal(item), 350);
+        return;
+    }
+
+    // ── Farmacie / Numeri Utili: naviga + evidenzia + apri lista ─────────
+    if (sec.table === 'Farmacie' || sec.table === 'Numeri_utili') {
+        const navBtn = document.querySelector('.nav-item[onclick*="servizi"]');
+        await switchView('servizi', navBtn);
+        // Carica la lista (renderSimpleList → loadTableData)
+        await new Promise(r => setTimeout(r, 150));
+        sec.openModal(item); // renderSimpleList
+        // Flash dopo che renderSimpleList ha popola il DOM
+        setTimeout(() => window._flashCard(cardId, fallbackName), 400);
+        return;
+    }
+
+    // ── Sezioni con card + modal ──────────────────────────────────────────
+    const viewName  = sec.view;
+    const tableName = sec.table;
+
+    // 1. Naviga alla view
+    const navBtn = document.querySelector('.nav-item[onclick*="' + viewName + '"]');
+    await switchView(viewName, navBtn);
+
+    // 2. Attendi renderSubMenu, poi forza il tab corretto
+    await new Promise(r => setTimeout(r, 120));
+    const tabBtn = document.querySelector('button[data-table="' + tableName + '"]');
+    if (tabBtn) await loadTableData(tableName, tabBtn);
+
+    // 3. Flash con retry — non dipende da timeout fisso
+    //    Parte subito, il polling interno aspetta che la card appaia
+    window._flashCard(cardId, fallbackName);
+
+    // 4. Apri il modal (300ms dopo il flash per dare respiro visivo)
+    setTimeout(() => sec.openModal(item), 300);
+};
+
 // ─────────────────────────────────────────────
 // LOADING FEEDBACK + NETWORK ERROR
 // ─────────────────────────────────────────────

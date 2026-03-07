@@ -36,7 +36,7 @@ window.AVAILABLE_LANGS = [
 
 const UI_TEXT = {
     it: {
-        loading: "Caricamento...", error: "Errore", no_results: "Nessun risultato.",
+        loading: "Caricamento...", error: "Errore", search_placeholder: "Cerca vini, ristoranti, attrazioni...", no_results: "Nessun risultato.",
         btn_discover: "Scopri", btn_go: "Vai", btn_info: "Info", btn_map: "Mappa", 
         btn_call: "Chiama", btn_close_show: "Chiudi & Mostra", btn_details: "Vedi Dettagli",
         label_all: "Tutti", label_all_fem: "Tutte", 
@@ -115,7 +115,7 @@ const UI_TEXT = {
         trivia_26: "Goditi il momento. Metti via il telefono per 5 minuti e ascolta il rumore del mare."
     },
     en: {
-        loading: "Loading...", error: "Error", no_results: "No results found.",
+        loading: "Loading...", error: "Error", search_placeholder: "Search wines, restaurants, attractions...", no_results: "No results found.",
         btn_discover: "Discover", btn_go: "Go", btn_info: "Info", btn_map: "Map", 
         btn_call: "Call", btn_close_show: "Close & Show", btn_details: "See Details",
         label_all: "All", label_all_fem: "All",
@@ -194,7 +194,7 @@ const UI_TEXT = {
         trivia_26: "Enjoy the moment. Put your phone away for 5 minutes and listen to the sea."
     },
     fr: {
-        loading: "Chargement...", error: "Erreur", no_results: "Aucun résultat.",
+        loading: "Chargement...", error: "Erreur", search_placeholder: "Chercher vins, restaurants, attractions...", no_results: "Aucun résultat.",
         btn_discover: "Découvrir", btn_go: "Y aller", btn_info: "Infos", btn_map: "Carte",
         btn_call: "Appeler", btn_close_show: "Fermer & Afficher", btn_details: "Voir Détails",
         label_all: "Tous", label_all_fem: "Toutes",
@@ -272,7 +272,7 @@ const UI_TEXT = {
     },
 
     de: {
-        loading: "Laden...", error: "Fehler", no_results: "Keine Ergebnisse.",
+        loading: "Laden...", error: "Fehler", search_placeholder: "Weine, Restaurants, Sehenswürdigkeiten...", no_results: "Keine Ergebnisse.",
         btn_discover: "Entdecken", btn_go: "Los", btn_info: "Info", btn_map: "Karte",
         btn_call: "Anrufen", btn_close_show: "Schließen & Zeigen", btn_details: "Details ansehen",
         label_all: "Alle", label_all_fem: "Alle",
@@ -350,7 +350,7 @@ const UI_TEXT = {
     },
 
     es: {
-        loading: "Cargando...", error: "Error", no_results: "Sin resultados.",
+        loading: "Cargando...", error: "Error", search_placeholder: "Buscar vinos, restaurantes, atracciones...", no_results: "Sin resultados.",
         btn_discover: "Descubrir", btn_go: "Ir", btn_info: "Info", btn_map: "Mapa",
         btn_call: "Llamar", btn_close_show: "Cerrar & Mostrar", btn_details: "Ver Detalles",
         label_all: "Todos", label_all_fem: "Todas",
@@ -428,7 +428,7 @@ const UI_TEXT = {
     },
 
     zh: {
-        loading: "加载中...", error: "错误", no_results: "无结果。",
+        loading: "加载中...", error: "错误", search_placeholder: "搜索葡萄酒、餐厅、景点...", no_results: "无结果。",
         btn_discover: "发现", btn_go: "前往", btn_info: "信息", btn_map: "地图",
         btn_call: "拨打", btn_close_show: "关闭并显示", btn_details: "查看详情",
         label_all: "全部", label_all_fem: "全部",
