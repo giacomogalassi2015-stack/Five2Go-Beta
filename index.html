@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Five2Go</title>
 
+    <!-- PWA Manifest + meta cross-browser -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#264653">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Five2Go">
+    <meta name="mobile-web-app-capable" content="yes">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/@raruto/leaflet-elevation/dist/leaflet-elevation.min.css" />
 
@@ -57,6 +65,10 @@
             background-color: #F4F1DE;
             color: #264653;
             touch-action: none;
+            /* Fix scroll rimbalzante su Firefox Android */
+            overscroll-behavior: none;
+            /* Rimuove il flash grigio al tap su Android Chrome */
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* 2. AREA DI SCROLL INTERNA */
@@ -66,6 +78,7 @@
             -webkit-overflow-scrolling: touch;
             padding-bottom: 120px;
             position: relative; z-index: 10;
+            scroll-behavior: smooth;
         }
 
         /* Nascondi scrollbar */
@@ -129,6 +142,24 @@
         #splash-overlay.gone { display: none; }
         /* Nav labels: minimum 11px */
         .nav-label { font-size: 11px; }
+
+        /* ── CROSS-BROWSER FIXES ── */
+
+        /* Fix 1: Nasconde il pulsante X nativo dell'input search su Chrome/Safari/Edge */
+        input[type="search"]::-webkit-search-decoration,
+        input[type="search"]::-webkit-search-cancel-button,
+        input[type="search"]::-webkit-search-results-button,
+        input[type="search"]::-webkit-search-results-decoration { display: none; }
+        /* Firefox */
+        input[type="search"] { -moz-appearance: none; appearance: none; }
+
+        /* Fix 2: Fallback opaco per browser senza backdrop-filter (Firefox < 103, alcuni Android) */
+        @supports not (backdrop-filter: blur(1px)) {
+            #bottom-nav { background: rgba(255,255,255,0.98) !important; }
+            .nav-sticky-header { background: rgba(244,241,222,0.98) !important; }
+            #search-results-sheet { background: #ffffff !important; }
+            .smart-filter-bar-container button { background: rgba(255,255,255,0.98) !important; }
+        }
     </style>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>

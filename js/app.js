@@ -1177,6 +1177,25 @@ function showNetworkError() {
     if (stepEl)   stepEl.classList.add('hidden');
 }
 
+// navigator.onLine non è affidabile su Firefox (può restituire true anche offline).
+// Facciamo un vero ping HTTP leggero per verificare la connettività reale.
+async function checkRealConnectivity() {
+    if (!navigator.onLine) return false;
+    try {
+        const ctrl = new AbortController();
+        const timeout = setTimeout(() => ctrl.abort(), 3000);
+        // HEAD request all'endpoint Supabase: nessun payload, risponde in pochi ms
+        await fetch('https://ydrpicezcwtfwdqpihsb.supabase.co/rest/v1/', {
+            method: 'HEAD',
+            signal: ctrl.signal
+        });
+        clearTimeout(timeout);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("🚀 App Inizializzata");
 
@@ -1187,8 +1206,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }, 8000);
 
-    // If browser reports offline immediately, show error right away
-    if (!navigator.onLine) {
+    // Verifica connettività reale (più affidabile di navigator.onLine su Firefox)
+    const isOnline = await checkRealConnectivity();
+    if (!isOnline) {
         clearTimeout(netErrorTimer);
         showNetworkError();
         return;
@@ -1301,16 +1321,318 @@ window.initPendingMaps = function() {
     window.pendingMaps = [];
 };
 
-window.watchId = null; window.userMarker = null; 
-window.toggleGPS = function() {
-    const map = window.currentMap; const btn = document.getElementById('btn-gps');
-    if (!map) return;
-    if (window.watchId !== null) { navigator.geolocation.clearWatch(window.watchId); window.watchId = null; if (window.userMarker) { map.removeLayer(window.userMarker); window.userMarker = null; } btn.style.backgroundColor = '#29B6F6'; btn.innerHTML = '<span class="material-icons">my_location</span> GPS'; return; }
-    if (!navigator.geolocation) { alert("GPS non supportato dal tuo browser."); return; }
-    btn.innerHTML = '<span class="material-icons spin">refresh</span> Cerco...'; btn.style.backgroundColor = '#f39c12'; 
-    const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
-    window.watchId = navigator.geolocation.watchPosition((pos) => { const lat = pos.coords.latitude; const lng = pos.coords.longitude; if (!window.userMarker) { window.userMarker = L.circleMarker([lat, lng], { radius: 8, fillColor: "#2196F3", color: "#fff", weight: 2, opacity: 1, fillOpacity: 1 }).addTo(map); map.setView([lat, lng], 15); btn.innerHTML = '<span class="material-icons">stop_circle</span> Stop'; btn.style.backgroundColor = '#c0392b'; } else { window.userMarker.setLatLng([lat, lng]); } }, (err) => { console.error("Errore GPS:", err); alert("Impossibile trovare la posizione."); btn.innerHTML = '<span class="material-icons">error</span> Err'; btn.style.backgroundColor = '#7f8c8d'; window.watchId = null; }, options);
+window.watchId = null; window.userMarker = null;
+
+// ─────────────────────────────────────────────────────────────────
+// GPS — MODAL BRANDED + PERMESSO NATIVO
+//
+// Flusso:
+//   1. Qualsiasi funzione che ha bisogno della posizione chiama
+//      window._requestGeoPermission(onGranted, onDenied)
+//   2. Se il permesso non è ancora stato concesso → mostra modal
+//      branded che spiega perché serve la posizione
+//   3. Utente tocca "Consenti" nel modal branded → callback onGranted
+//   4. SOLO ORA viene chiamato watchPosition → il browser mostra
+//      il suo popup nativo (obbligatorio per sicurezza, non bypassabile)
+//   5. Su Firefox/Chrome appare anche il banner nella toolbar
+//
+// Usato da: toggleGPS (mappa interattiva), mapToggleGPS (ui-map.js),
+//           initBusMap (mappa bus)
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Punto di accesso unificato per la geolocalizzazione.
+ * Gestisce il controllo del permesso e mostra il modal branded prima
+ * di invocare qualsiasi chiamata nativa al browser.
+ *
+ * @param {Function} onGranted  - chiamata quando il permesso è/viene concesso
+ * @param {Function} [onDenied] - chiamata opzionale se il permesso è negato
+ */
+window._requestGeoPermission = async function(onGranted, onDenied) {
+    if (!navigator.geolocation) {
+        _showGeoErrorModal("GPS non supportato", "Il tuo browser non supporta la geolocalizzazione. Prova ad aggiornarlo o usane uno diverso.");
+        if (onDenied) onDenied();
+        return;
+    }
+
+    let permState = 'prompt'; // default conservativo per browser senza Permissions API
+    if (navigator.permissions) {
+        try {
+            const perm = await navigator.permissions.query({ name: 'geolocation' });
+            permState = perm.state;
+            perm.onchange = () => {
+                if (perm.state === 'denied') {
+                    _showGeoErrorModal("Posizione bloccata", "Hai negato l'accesso alla posizione. Per riabilitarla vai nelle impostazioni del browser.");
+                }
+            };
+        } catch (e) { /* Permissions API non disponibile (es. Safari) — si mostra comunque il modal */ }
+    }
+
+    if (permState === 'denied') {
+        _showGeoErrorModal("Posizione bloccata", "Hai già negato l'accesso alla posizione. Per riabilitarla vai nelle impostazioni del browser e cerca i permessi per questo sito.");
+        if (onDenied) onDenied();
+        return;
+    }
+
+    if (permState === 'granted') {
+        // Permesso già concesso in precedenza: parte subito, nessun modal
+        onGranted();
+        return;
+    }
+
+    // permState === 'prompt': mostra il modal branded PRIMA del popup nativo
+    _showGeoRequestModal(onGranted, onDenied);
 };
+
+window.toggleGPS = function() {
+    const map = window.currentMap;
+    const btn = document.getElementById('btn-gps');
+    if (!map) return;
+
+    // Stop tracking se già attivo
+    if (window.watchId !== null) {
+        navigator.geolocation.clearWatch(window.watchId);
+        window.watchId = null;
+        if (window.userMarker) { map.removeLayer(window.userMarker); window.userMarker = null; }
+        btn.style.backgroundColor = '#29B6F6';
+        btn.innerHTML = '<span class="material-icons">my_location</span> GPS';
+        return;
+    }
+
+    window._requestGeoPermission(
+        () => _startGeoWatch(btn, map),   // onGranted
+        () => {                            // onDenied
+            btn.innerHTML = '<span class="material-icons">my_location</span> GPS';
+            btn.style.backgroundColor = '#29B6F6';
+        }
+    );
+};
+
+// Modal branded mostrato PRIMA del popup nativo del browser
+function _showGeoRequestModal(onGranted, onDenied) {
+    if (document.getElementById('geo-modal-overlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'geo-modal-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:24px;';
+
+    overlay.innerHTML = `
+        <div id="geo-modal-card" style="
+            background:#fff; border-radius:28px; padding:28px 24px 24px;
+            max-width:400px; width:calc(100% - 32px);
+            box-shadow:0 -4px 40px rgba(0,0,0,0.18);
+            animation: geoModalIn 0.35s cubic-bezier(0.2,0.8,0.2,1) forwards;
+        ">
+            <style>
+                @keyframes geoModalIn {
+                    from { opacity:0; transform:translateY(40px); }
+                    to   { opacity:1; transform:translateY(0); }
+                }
+            </style>
+
+            <!-- Icona -->
+            <div style="display:flex;justify-content:center;margin-bottom:20px;">
+                <div style="
+                    width:64px;height:64px;border-radius:20px;
+                    background:linear-gradient(135deg,#E76F51,#c0392b);
+                    display:flex;align-items:center;justify-content:center;
+                    box-shadow:0 8px 20px rgba(231,111,81,0.35);
+                ">
+                    <span class="material-icons" style="color:white;font-size:32px;">my_location</span>
+                </div>
+            </div>
+
+            <!-- Testo -->
+            <h2 style="text-align:center;font-family:'Roboto Slab',serif;font-size:1.3rem;font-weight:700;color:#264653;margin:0 0 10px;">
+                Dove sei?
+            </h2>
+            <p style="text-align:center;font-size:0.88rem;color:#64748b;line-height:1.6;margin:0 0 8px;">
+                Per mostrarti la tua posizione sulla mappa e trovare le fermate più vicine, Five2Go ha bisogno di accedere alla tua posizione.
+            </p>
+            <p style="text-align:center;font-size:0.78rem;color:#94a3b8;line-height:1.5;margin:0 0 24px;">
+                🔒 La tua posizione viene usata solo in questa sessione e non viene mai salvata o condivisa.
+            </p>
+
+            <!-- Info browser (visibile solo su Firefox/Chrome dove il popup è nella toolbar) -->
+            <div id="geo-browser-hint" style="
+                display:none;background:#F4F1DE;border-radius:12px;
+                padding:10px 14px;margin-bottom:16px;
+                font-size:0.78rem;color:#606C38;font-weight:600;
+                text-align:center;line-height:1.5;
+            ">
+                📍 Dopo aver toccato "Consenti", cerca la richiesta nella <strong>barra in alto del browser</strong> e approva da lì.
+            </div>
+
+            <!-- Bottoni -->
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button id="geo-modal-confirm" style="
+                    width:100%;padding:16px;border:none;border-radius:16px;
+                    background:linear-gradient(135deg,#E76F51,#c0392b);
+                    color:white;font-size:0.9rem;font-weight:800;
+                    letter-spacing:0.06em;text-transform:uppercase;
+                    cursor:pointer;
+                    box-shadow:0 4px 14px rgba(231,111,81,0.4);
+                    transition:transform 0.15s,box-shadow 0.15s;
+                    font-family:'Plus Jakarta Sans',sans-serif;
+                " ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform='scale(1)'">
+                    <span class="material-icons" style="vertical-align:middle;font-size:18px;margin-right:6px;">gps_fixed</span>
+                    Consenti posizione
+                </button>
+                <button id="geo-modal-cancel" style="
+                    width:100%;padding:14px;border:2px solid #e2e8f0;border-radius:16px;
+                    background:transparent;color:#94a3b8;
+                    font-size:0.82rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;
+                    cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;
+                    transition:border-color 0.15s,color 0.15s;
+                ">
+                    Non ora
+                </button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(overlay);
+
+    // Mostra il hint per Firefox/Chrome (non per Safari che ha il popup nativo visibile)
+    const isFirefoxOrChrome = navigator.permissions && !window.safari;
+    const hint = document.getElementById('geo-browser-hint');
+    if (hint && isFirefoxOrChrome) hint.style.display = 'block';
+
+    // ── Azioni bottoni ──
+    document.getElementById('geo-modal-confirm').addEventListener('click', () => {
+        _dismissGeoModal();
+        if (onGranted) onGranted();
+    });
+
+    document.getElementById('geo-modal-cancel').addEventListener('click', () => {
+        _dismissGeoModal();
+        if (onDenied) onDenied();
+    });
+
+    // Chiudi toccando fuori dalla card
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) _dismissGeoModal();
+    });
+}
+
+function _dismissGeoModal() {
+    const el = document.getElementById('geo-modal-overlay');
+    if (el) {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.25s';
+        setTimeout(() => el.remove(), 250);
+    }
+}
+
+// Modal di errore branded (sostituisce alert())
+function _showGeoErrorModal(title, message) {
+    if (document.getElementById('geo-modal-overlay')) _dismissGeoModal();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'geo-modal-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:24px;';
+
+    overlay.innerHTML = `
+        <div style="
+            background:#fff;border-radius:28px;padding:28px 24px 24px;
+            max-width:400px;width:calc(100% - 32px);
+            box-shadow:0 -4px 40px rgba(0,0,0,0.18);
+            animation:geoModalIn 0.35s cubic-bezier(0.2,0.8,0.2,1) forwards;
+        ">
+            <div style="display:flex;justify-content:center;margin-bottom:20px;">
+                <div style="width:64px;height:64px;border-radius:20px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;">
+                    <span class="material-icons" style="color:#94a3b8;font-size:32px;">location_off</span>
+                </div>
+            </div>
+            <h2 style="text-align:center;font-family:'Roboto Slab',serif;font-size:1.2rem;font-weight:700;color:#264653;margin:0 0 10px;">${title}</h2>
+            <p style="text-align:center;font-size:0.88rem;color:#64748b;line-height:1.6;margin:0 0 24px;">${message}</p>
+            <button onclick="document.getElementById('geo-modal-overlay').remove()" style="
+                width:100%;padding:15px;border:none;border-radius:16px;
+                background:#264653;color:white;font-size:0.9rem;font-weight:800;
+                letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;
+                font-family:'Plus Jakarta Sans',sans-serif;
+            ">Capito</button>
+        </div>`;
+
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
+// Avvia effettivamente il watchPosition (chiamato dopo consenso nel modal)
+function _startGeoWatch(btn, map) {
+    btn.innerHTML = '<span class="material-icons spin">refresh</span> Cerco...';
+    btn.style.backgroundColor = '#f39c12';
+
+    // Su Firefox/Chrome mostra banner nella toolbar dopo che watchPosition è stato chiamato
+    if (navigator.permissions) {
+        navigator.permissions.query({ name: 'geolocation' }).then(perm => {
+            if (perm.state === 'prompt') _showGeoBanner();
+        }).catch(() => {});
+    }
+
+    window.watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+            _dismissGeoBanner();
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            if (!window.userMarker) {
+                window.userMarker = L.circleMarker([lat, lng], {
+                    radius: 8, fillColor: "#2196F3", color: "#fff",
+                    weight: 2, opacity: 1, fillOpacity: 1
+                }).addTo(map);
+                map.setView([lat, lng], 15);
+                btn.innerHTML = '<span class="material-icons">stop_circle</span> Stop';
+                btn.style.backgroundColor = '#c0392b';
+            } else {
+                window.userMarker.setLatLng([lat, lng]);
+            }
+        },
+        (err) => {
+            _dismissGeoBanner();
+            console.error("Errore GPS:", err);
+            const messages = {
+                1: "Hai negato l'accesso alla posizione. Per riabilitarla, vai nelle impostazioni del browser.",
+                2: "Posizione non disponibile al momento.",
+                3: "Timeout: il GPS non ha risposto. Riprova."
+            };
+            _showGeoErrorModal("Posizione non trovata", messages[err.code] || "Impossibile trovare la posizione.");
+            window.watchId = null;
+            btn.innerHTML = '<span class="material-icons">my_location</span> GPS';
+            btn.style.backgroundColor = '#29B6F6';
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+}
+
+// Banner sottile per guidare l'utente a trovare il permesso nella toolbar di Firefox/Chrome
+function _showGeoBanner() {
+    if (document.getElementById('geo-permission-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'geo-permission-banner';
+    banner.style.cssText = [
+        'position:fixed','top:16px','left:50%','transform:translateX(-50%)',
+        'z-index:9999','background:#264653','color:white',
+        'padding:12px 20px','border-radius:14px','font-size:13px',
+        'font-weight:700','max-width:310px','width:calc(100% - 32px)',
+        'text-align:center','box-shadow:0 8px 24px rgba(0,0,0,0.3)',
+        'pointer-events:none','transition:opacity 0.3s'
+    ].join(';');
+    banner.innerHTML = '📍 Cerca il permesso nella <strong>barra del browser</strong> e tocca <strong>"Consenti"</strong>';
+    document.body.appendChild(banner);
+    setTimeout(_dismissGeoBanner, 8000);
+}
+
+function _dismissGeoBanner() {
+    const b = document.getElementById('geo-permission-banner');
+    if (b) { b.style.opacity = '0'; setTimeout(() => b.remove(), 300); }
+}
+
+function _showGeoError(btn, msg) {
+    _showGeoErrorModal("Errore GPS", msg);
+    if (btn) {
+        btn.innerHTML = '<span class="material-icons">my_location</span> GPS';
+        btn.style.backgroundColor = '#29B6F6';
+    }
+}
 
 window.toggleChicco = async function() {
     console.log("🍇 Click rilevato su Chicco!");
@@ -1385,24 +1707,29 @@ window.initBusMap = function(fermate) {
 
     setTimeout(() => {
         map.invalidateSize();
-        window.GeoTracker.start('bus', ({ lat, lng, accuracy, isFirst }) => {
-            if (window._busGeoMarker) { map.removeLayer(window._busGeoMarker); }
-            const userIcon = L.divIcon({
-                className: '',
-                html: `<div style="position:relative;width:20px;height:20px;">
-                    <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.22);animation:geoPulse 1.8s ease-out infinite;"></div>
-                    <div style="position:absolute;inset:4px;border-radius:50%;background:#3b82f6;border:2px solid white;box-shadow:0 2px 6px rgba(59,130,246,0.55);"></div>
-                    <style>@keyframes geoPulse{0%{transform:scale(1);opacity:.6}70%{transform:scale(2.5);opacity:0}100%{opacity:0}}</style>
-                </div>`,
-                iconSize: [20, 20], iconAnchor: [10, 10]
+
+        window._requestGeoPermission(() => {
+            // Permesso concesso: avvia il tracking
+            window.GeoTracker.start('bus', ({ lat, lng, accuracy, isFirst }) => {
+                if (window._busGeoMarker) { map.removeLayer(window._busGeoMarker); }
+                const userIcon = L.divIcon({
+                    className: '',
+                    html: `<div style="position:relative;width:20px;height:20px;">
+                        <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.22);animation:geoPulse 1.8s ease-out infinite;"></div>
+                        <div style="position:absolute;inset:4px;border-radius:50%;background:#3b82f6;border:2px solid white;box-shadow:0 2px 6px rgba(59,130,246,0.55);"></div>
+                        <style>@keyframes geoPulse{0%{transform:scale(1);opacity:.6}70%{transform:scale(2.5);opacity:0}100%{opacity:0}}</style>
+                    </div>`,
+                    iconSize: [20, 20], iconAnchor: [10, 10]
+                });
+                window._busGeoMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 })
+                    .addTo(map)
+                    .bindPopup(`<div style="font-weight:700;font-size:0.85rem;color:#1e293b;">📍 Sei qui</div>`);
+                if (isFirst && lat > 43.9 && lat < 44.3 && lng > 9.5 && lng < 10.0) {
+                    map.setView([lat, lng], 14, { animate: true });
+                }
             });
-            window._busGeoMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 })
-                .addTo(map)
-                .bindPopup(`<div style="font-weight:700;font-size:0.85rem;color:#1e293b;">📍 Sei qui</div>`);
-            if (isFirst && lat > 43.9 && lat < 44.3 && lng > 9.5 && lng < 10.0) {
-                map.setView([lat, lng], 14, { animate: true });
-            }
         });
+        // Se l'utente rifiuta o nega, la mappa bus rimane funzionante senza marker posizione
     }, 250);
 };
 
@@ -1500,12 +1827,16 @@ window.GeoTracker = (function() {
             _smoothed[name] = null;
             _watchers[name] = navigator.geolocation.watchPosition(
                 (pos) => {
+                    _dismissGeoBanner();
                     const s = _smooth(name, pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
                     const isFirst = _firstFix[name];
                     _firstFix[name] = false;
                     onUpdate({ ...s, isFirst });
                 },
-                (err) => { console.log(`GeoTracker[${name}] error:`, err.code); },
+                (err) => {
+                    _dismissGeoBanner();
+                    console.log(`GeoTracker[${name}] error:`, err.code);
+                },
                 { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 }
             );
         },

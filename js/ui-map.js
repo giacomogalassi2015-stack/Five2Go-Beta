@@ -1007,44 +1007,58 @@ window.mapToggleGPS = function(autoStart = false) {
 
     if (!navigator.geolocation) { _showMapToast('⚠️ GPS non supportato'); return; }
 
-    // ── Stato: ricerca in corso ───────────────────────────────────────────
-    if (btn)   { btn.classList.add('gps-searching'); }
-    if (icon)  { icon.textContent = 'sync'; icon.classList.add('spin-anim'); }
-    if (label) { label.textContent = 'Cerco...'; }
+    // ── Richiede il permesso tramite il modal branded condiviso ──────────
+    // _requestGeoPermission è definita in app.js ed è disponibile globalmente.
+    // Mostra il modal branded se il permesso non è ancora stato concesso,
+    // oppure parte direttamente se era già stato concesso in precedenza.
+    window._requestGeoPermission(
+        () => {
+            // Permesso concesso → stato "ricerca in corso"
+            if (btn)   { btn.classList.add('gps-searching'); }
+            if (icon)  { icon.textContent = 'sync'; icon.classList.add('spin-anim'); }
+            if (label) { label.textContent = 'Cerco...'; }
 
-    window.GeoTracker.start('mappa', ({ lat, lng, accuracy, isFirst }) => {
-        window._gpsLatLng = { lat, lng };
+            window.GeoTracker.start('mappa', ({ lat, lng, accuracy, isFirst }) => {
+                window._gpsLatLng = { lat, lng };
 
-        if (window._gpsUserMarker) map.removeLayer(window._gpsUserMarker);
-        if (window._gpsAccCircle)  map.removeLayer(window._gpsAccCircle);
+                if (window._gpsUserMarker) map.removeLayer(window._gpsUserMarker);
+                if (window._gpsAccCircle)  map.removeLayer(window._gpsAccCircle);
 
-        const dotIcon = L.divIcon({
-            className: '',
-            html: '<div class="gps-user-dot"></div>',
-            iconSize: [18, 18], iconAnchor: [9, 9],
-        });
-        window._gpsUserMarker = L.marker([lat, lng], {
-            icon: dotIcon, zIndexOffset: 1000, interactive: true,
-        }).addTo(map);
-        window._gpsUserMarker.on('click', () => {
-            _showMapToast(`📡 Precisione: ±${Math.round(accuracy)}m`);
-        });
+                const dotIcon = L.divIcon({
+                    className: '',
+                    html: '<div class="gps-user-dot"></div>',
+                    iconSize: [18, 18], iconAnchor: [9, 9],
+                });
+                window._gpsUserMarker = L.marker([lat, lng], {
+                    icon: dotIcon, zIndexOffset: 1000, interactive: true,
+                }).addTo(map);
+                window._gpsUserMarker.on('click', () => {
+                    _showMapToast(`📡 Precisione: ±${Math.round(accuracy)}m`);
+                });
 
-        // Accuracy circle — radius from raw fix, position from smoothed
-        window._gpsAccCircle = L.circle([lat, lng], {
-            radius: accuracy, color: '#2196F3', fillColor: '#2196F3',
-            fillOpacity: 0.07, weight: 1.5, opacity: 0.35,
-        }).addTo(map);
+                // Accuracy circle — radius from raw fix, position from smoothed
+                window._gpsAccCircle = L.circle([lat, lng], {
+                    radius: accuracy, color: '#2196F3', fillColor: '#2196F3',
+                    fillOpacity: 0.07, weight: 1.5, opacity: 0.35,
+                }).addTo(map);
 
-        if (isFirst) {
-            map.flyTo([lat, lng], 16, { duration: 0.8 });
-            _showMapToast('📡 Posizione trovata!');
+                if (isFirst) {
+                    map.flyTo([lat, lng], 16, { duration: 0.8 });
+                    _showMapToast('📡 Posizione trovata!');
+                }
+
+                if (btn)   { btn.classList.remove('gps-searching'); btn.classList.add('gps-active'); }
+                if (icon)  { icon.textContent = 'my_location'; icon.classList.remove('spin-anim'); }
+                if (label) { label.textContent = 'Attivo'; }
+            });
+        },
+        () => {
+            // Permesso negato/rifiutato → ripristina bottone
+            if (btn)   { btn.classList.remove('gps-searching', 'gps-active'); }
+            if (icon)  { icon.textContent = 'my_location'; icon.classList.remove('spin-anim'); }
+            if (label) { label.textContent = 'GPS'; }
         }
-
-        if (btn)   { btn.classList.remove('gps-searching'); btn.classList.add('gps-active'); }
-        if (icon)  { icon.textContent = 'my_location'; icon.classList.remove('spin-anim'); }
-        if (label) { label.textContent = 'Attivo'; }
-    });
+    );
 };
 
 window.mapToggleLegend = function() {
