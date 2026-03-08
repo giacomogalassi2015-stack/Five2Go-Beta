@@ -268,5 +268,22 @@
 <a href="#" id="ghost-cookie-btn" class="lb-cs-settings-link hidden"></a>
 <script type="text/javascript" src="https://app.legalblink.it/api/scripts/lb_cs.js"></script>
 <script id="lb_cs" type="text/javascript">lb_cs("6973df3d9398e90022bdb48d");</script>
+
+<script>
+// ── Registrazione Service Worker ──────────────────────────────────────────
+// Il SW è necessario per due cose:
+//   1. Offline support: intercetta le richieste di rete e serve asset/dati
+//      dalla CacheStorage quando non c'è connessione.
+//   2. Installabilità PWA: Chrome/Safari richiedono un SW attivo per mostrare
+//      il banner "Aggiungi alla schermata home".
+// La registrazione avviene su 'load' (non DOMContentLoaded) per non ritardare
+// il rendering iniziale dell'app.
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .catch(err => console.warn('[SW] Registrazione fallita:', err));
+    });
+}
+</script>
 </body>
 </html>

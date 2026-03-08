@@ -1209,6 +1209,7 @@ function showNetworkError() {
     if (stepEl)   stepEl.classList.add('hidden');
 }
 
+// ── Verifica connettività reale ──────────────────────────────────────────────
 // navigator.onLine non è affidabile su Firefox (può restituire true anche offline).
 // Facciamo un vero ping HTTP leggero per verificare la connettività reale.
 async function checkRealConnectivity() {
@@ -1216,7 +1217,6 @@ async function checkRealConnectivity() {
     try {
         const ctrl = new AbortController();
         const timeout = setTimeout(() => ctrl.abort(), 3000);
-        // HEAD request all'endpoint Supabase: nessun payload, risponde in pochi ms
         await fetch('https://ydrpicezcwtfwdqpihsb.supabase.co/rest/v1/', {
             method: 'HEAD',
             signal: ctrl.signal
@@ -1228,29 +1228,69 @@ async function checkRealConnectivity() {
     }
 }
 
+// Mostra un banner discreto non bloccante per la modalità offline
+function _showOfflineBanner() {
+    if (document.getElementById('offline-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'offline-banner';
+    banner.style.cssText = [
+        'position:fixed','top:12px','left:50%','transform:translateX(-50%)',
+        'z-index:9000','background:#264653','color:white',
+        'padding:8px 18px','border-radius:12px','font-size:12px',
+        'font-weight:700','white-space:nowrap','letter-spacing:0.04em',
+        'box-shadow:0 4px 16px rgba(0,0,0,0.25)','pointer-events:none',
+        'transition:opacity 0.4s ease'
+    ].join(';');
+    banner.textContent = '📵 Offline — dati dall\'ultima sessione';
+    document.body.appendChild(banner);
+    setTimeout(() => {
+        banner.style.opacity = '0';
+        setTimeout(() => banner.remove(), 400);
+    }, 4000);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
 
-    // Network-error fallback: if app doesn't start within 8s, show error
+    // Fallback: se l'app non parte entro 8s, mostra errore di rete
     const netErrorTimer = setTimeout(() => {
-        if (document.getElementById('loading-step')) {
-            showNetworkError();
-        }
+        if (document.getElementById('loading-step')) showNetworkError();
     }, 8000);
 
-    // Verifica connettività reale (più affidabile di navigator.onLine su Firefox)
-    const isOnline = await checkRealConnectivity();
+    // ── Logica di avvio online/offline ───────────────────────────────────────
+    // Con il Service Worker attivo, tutti gli asset statici (JS, CSS, font,
+    // librerie CDN) sono già in CacheStorage dopo la prima sessione online.
+    // L'app può quindi avviarsi anche offline, usando i dati Supabase cached
+    // dall'ultima sessione.
+    //
+    // Scenari:
+    //   A) Online → avvio normale, dati freschi da Supabase
+    //   B) Offline + SW attivo + cache popolata → avvio con banner, dati cached
+    //   C) Offline + nessun SW (prima installazione) → errore di rete, impossibile
+    //   D) Online ma Supabase irraggiungibile → errore dopo timeout 8s
+
+    const swActive = 'serviceWorker' in navigator && !!navigator.serviceWorker.controller;
+    const isOnline  = await checkRealConnectivity();
+
     if (!isOnline) {
-        clearTimeout(netErrorTimer);
-        showNetworkError();
-        return;
+        if (swActive) {
+            // Scenario B: offline ma SW ha i dati in cache → avvia l'app
+            clearTimeout(netErrorTimer);
+            _showOfflineBanner();
+            // Non tornare: prosegue l'avvio normalmente sotto
+        } else {
+            // Scenario C: offline senza cache → impossibile avviare
+            clearTimeout(netErrorTimer);
+            showNetworkError();
+            return;
+        }
     }
 
+    // Avvisa in tempo reale se la connessione cade durante la navigazione
     window.addEventListener('offline', () => {
-        if (document.getElementById('loading-step')) showNetworkError();
+        _showOfflineBanner();
     });
 
-    // Step messages while scripts initialise
-    setLoadingStep('Connessione stabilita...');
+    setLoadingStep(isOnline ? 'Connessione stabilita...' : 'Modalità offline...');
     await new Promise(r => setTimeout(r, 300));
     setLoadingStep('Caricamento dati...');
     await new Promise(r => setTimeout(r, 300));
