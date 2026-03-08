@@ -1,5 +1,3 @@
-console.log("✅ 6. app.js caricato (Swipe Optimized)");
-
 const content = document.getElementById('app-content');
 window.pendingMaps = []; 
 
@@ -143,7 +141,7 @@ function renderHome() {
         class="hidden fixed inset-0 z-[45] bg-black/40"
         onclick="window._closeSearch()"></div>
 
-    <div class="relative z-[46] flex flex-col items-center justify-end h-[85vh] pb-24 px-6 text-center animate-pop">
+    <div class="relative z-[46] flex flex-col items-center justify-end pb-24 px-6 text-center animate-pop" style="height:85vh;height:85dvh;">
         <h1 class="text-5xl font-serif font-bold text-white mb-2 drop-shadow-xl tracking-tight">Five2Go</h1>
         <p class="text-white/80 text-sm font-medium mb-6 max-w-xs mx-auto leading-relaxed drop-shadow-md">La tua guida essenziale per vivere la magia delle Cinque Terre.</p>
 
@@ -323,7 +321,7 @@ window.loadTableData = async function(tableName, btnEl) {
     }
     
     if (tableName === 'Mappe') {
-        subContent.innerHTML = `<div class="rounded-2xl overflow-hidden shadow-soft border-2 border-white h-[70vh] animate-fade"><iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="100%" height="100%" style="border:0;"></iframe></div>`;
+        subContent.innerHTML = `<div class="rounded-2xl overflow-hidden shadow-soft border-2 border-white animate-fade" style="height:70vh;height:70dvh;"><iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1" width="100%" height="100%" style="border:0;"></iframe></div>`;
         return; 
     }
 
@@ -634,7 +632,6 @@ window.toggleSmartFilter = function(panelId, triggerId) {
 };
 
 window.renderServicesGrid = async function() {
-    console.log("🔘 Avvio renderServicesGrid (Compact)...");
     const targetEl = document.getElementById('app-content');
     
     const stickyFilters = document.querySelectorAll('.smart-filter-bar-container');
@@ -1197,7 +1194,6 @@ async function checkRealConnectivity() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("🚀 App Inizializzata");
 
     // Network-error fallback: if app doesn't start within 8s, show error
     const netErrorTimer = setTimeout(() => {
@@ -1492,10 +1488,14 @@ function _showGeoRequestModal(onGranted, onDenied) {
 
     document.body.appendChild(overlay);
 
-    // Mostra il hint per Firefox/Chrome (non per Safari che ha il popup nativo visibile)
-    const isFirefoxOrChrome = navigator.permissions && !window.safari;
+    // Mostra il hint per Firefox/Chrome
+    // window.safari esiste solo su Safari macOS desktop, non su iOS Safari.
+    // Usiamo un check UA affidabile: Safari è l'unico browser che NON ha "Chrome" o "Firefox"
+    // nella stringa userAgent ma ha "Safari".
+    const ua = navigator.userAgent;
+    const isRealSafari = ua.includes('Safari') && !ua.includes('Chrome') && !ua.includes('Firefox') && !ua.includes('Edg');
     const hint = document.getElementById('geo-browser-hint');
-    if (hint && isFirefoxOrChrome) hint.style.display = 'block';
+    if (hint && !isRealSafari) hint.style.display = 'block';
 
     // ── Azioni bottoni ──
     document.getElementById('geo-modal-confirm').addEventListener('click', () => {
@@ -1635,7 +1635,6 @@ function _showGeoError(btn, msg) {
 }
 
 window.toggleChicco = async function() {
-    console.log("🍇 Click rilevato su Chicco!");
     const bubble = document.getElementById('chicco-bubble'); const textSpan = document.getElementById('chicco-text');
     const staticImg = document.getElementById('chicco-static'); const lottieAnim = document.getElementById('chicco-anim');
     if (!bubble || !textSpan) return;
@@ -1835,7 +1834,7 @@ window.GeoTracker = (function() {
                 },
                 (err) => {
                     _dismissGeoBanner();
-                    console.log(`GeoTracker[${name}] error:`, err.code);
+                    console.warn(`GeoTracker[${name}] error (code ${err.code})`);
                 },
                 { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 }
             );

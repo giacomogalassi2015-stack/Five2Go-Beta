@@ -1,5 +1,3 @@
-console.log("✅ 4. ui-modal-contents.js caricato (Fixed)");
-
 window.getModalContent = function(type, payload, item) {
     
     let contentHtml = '';
@@ -82,7 +80,7 @@ window.getModalContent = function(type, payload, item) {
             <div class="pb-6">
                 ${foto ? `<div class="h-72 w-full relative"><img src="${foto}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div></div>` : 
                 `<div class="py-10 bg-ct-sand flex justify-center border-b border-dashed border-slate-200">
-                    <i class="ph-fill ph-wine text-7xl ${colorText} drop-shadow-sm"></i>
+                    <span class="material-icons text-7xl ${colorText} drop-shadow-sm">wine_bar</span>
                 </div>`}
 
                 <div class="px-6 -mt-8 relative z-10">
@@ -701,7 +699,9 @@ window.getModalContent = function(type, payload, item) {
     return { html: contentHtml, class: modalClass };
 };
 
-// LISTA FERMATE TRAGHETTI — esposta globalmente per handleFerrySelectionChange in app.js
+// LISTA FERMATE TRAGHETTI
+// Ridefinita qui per sovrascrivere la definizione di data-logic.js (caricato prima),
+// garantendo che ui-modal-contents sia la fonte autoritativa per questa lista.
 window.FERRY_STOPS = [
     { id: 'levanto',      label: 'Levanto' },
     { id: 'monterosso',  label: 'Monterosso' },
@@ -713,7 +713,6 @@ window.FERRY_STOPS = [
     { id: 'la spezia',   label: 'La Spezia' },
     { id: 'lerici',      label: 'Lerici' }
 ];
-const FERRY_STOPS_UI = window.FERRY_STOPS; // alias locale per compatibilità
 
 window.initFerrySearch = function() {
     const selPart = document.getElementById('selPartenzaFerry');

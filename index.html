@@ -143,6 +143,22 @@
         /* Nav labels: minimum 11px */
         .nav-label { font-size: 11px; }
 
+        /* ── ANIMAZIONI MANCANTI ── */
+
+        /* .spin: usata da loader e icone di caricamento in tutti i file JS */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+        .spin { animation: spin 1s linear infinite; display: inline-block; }
+
+        /* animate-fade: usata per l'apparizione di contenuti dinamici */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade { animation: fadeIn 0.35s ease-out forwards; }
+
         /* ── CROSS-BROWSER FIXES ── */
 
         /* Fix 1: Nasconde il pulsante X nativo dell'input search su Chrome/Safari/Edge */
@@ -174,7 +190,7 @@
 
 <main id="app-content" class="max-w-2xl mx-auto px-4 pt-4 min-h-screen">
     <!-- ── SCHERMATA DI AVVIO / LOADING ── -->
-    <div id="data-container" class="flex flex-col items-center justify-center h-[80vh] px-8">
+    <div id="data-container" class="flex flex-col items-center justify-center px-8" style="height:80vh;height:80dvh;">
 
         <!-- Icona pulsante -->
         <div class="relative w-16 h-16 mb-5">

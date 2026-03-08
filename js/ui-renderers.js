@@ -1,5 +1,3 @@
-console.log("✅ 2. ui-renderers.js caricato (Buttons 50% & Compact Cards)");
-
 /** HELPER: CANDY BTN (Per le altre card standard) */
 function getCandyBtn(icon, label, color, onclick) {
     // Colori pastello/soft meno vibranti
@@ -368,5 +366,6 @@ window.numeriUtiliRenderer = (n) => {
 window.openMapBtn = function(e, lat, lon) {
     if (!e) return;
     e.stopPropagation(); e.preventDefault();
-    window.open(`http://googleusercontent.com/maps.google.com/?q=${lat},${lon}`, '_blank');
+    // Usa maps.google.com diretto — funziona su tutti i browser/OS aprendo l'app nativa
+    window.open(`https://www.google.com/maps?q=${lat},${lon}`, '_blank');
 };

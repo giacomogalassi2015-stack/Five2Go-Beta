@@ -1,5 +1,3 @@
-console.log("✅ 1. data-logic.js caricato");
-
 // 1. CONFIGURAZIONE SUPABASE
 const SUPABASE_URL = 'https://ydrpicezcwtfwdqpihsb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcnBpY2V6Y3d0ZndkcXBpaHNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNTQzMDAsImV4cCI6MjA4MzYzMDMwMH0.c89-gAZ8Pgp5Seq89BYRraTG-qqmP03LUCl1KqG9bOg';
@@ -10,15 +8,11 @@ window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // INIZIALIZZAZIONE CACHE
 window.appCache = {};
 
-const CLOUDINARY_CLOUD_NAME = 'dkg0jfady'; 
+const CLOUDINARY_CLOUD_NAME = 'dkg0jfady';
 const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/`;
 
-// 2. VARIABILI GLOBALI
-window.mapsToInit = [];
-window.tempTransportData = [];
-window.tempAttractionsData = [];
 window.currentLang = localStorage.getItem('app_lang') || 'it';
-window.currentViewName = 'home'; 
+window.currentViewName = 'home';
 
 // 3. CONFIGURAZIONE LINGUE
 window.AVAILABLE_LANGS = [
@@ -602,7 +596,9 @@ const UI_TEXT = {
     }
 };
 
-const FERRY_STOPS = [
+// FERRY_STOPS: esposto su window qui per evitare dipendenza dall'ordine di caricamento degli script.
+// ui-modal-contents.js lo sovrascrive con la stessa lista (compatibilità mantenuta).
+window.FERRY_STOPS = [
     { id: 'levanto', label: 'Levanto' },
     { id: 'monterosso', label: 'Monterosso' },
     { id: 'vernazza', label: 'Vernazza' },
@@ -647,32 +643,15 @@ window.valIT = function(item, field) {
     return value;
 };
 
+// Nota: questa definizione viene sovrascritta da app.js (caricato dopo).
+// Mantenuta come fallback di sicurezza con chiave localStorage coerente.
 window.changeLanguage = function(langCode) {
-    console.log("Cambio lingua a:", langCode);
-    
     window.currentLang = langCode;
-    localStorage.setItem('user_lang', langCode);
-
-    const chiccoText = document.getElementById('chicco-text');
-    if (chiccoText) chiccoText.innerHTML = ""; 
-
-    updateStaticInterface();
-
-    if (typeof renderCategory === 'function') {
-        const currentCategory = window.currentCategory || 'attrazioni'; 
-        renderCategory(currentCategory); 
-    } else {
-        location.reload(); 
-    }
+    localStorage.setItem('app_lang', langCode); // chiave unificata con app.js
+    location.reload();
 };
 
-function updateStaticInterface() {
-    const homeTitleEl = document.getElementById('home-title'); 
-    if(homeTitleEl) homeTitleEl.textContent = window.t('home_title');
-
-    const navFood = document.getElementById('nav-food');
-    if(navFood) navFood.textContent = window.t('nav_food');
-}
+// getLangText: rimosso (non usato — sostituito da window.dbCol e window.t)
 
 function getEasterDate(year) {
     const a = year % 19;
@@ -713,16 +692,7 @@ function isItalianHoliday(dateObj) {
     return false;
 }
 
-function getLangText(obj) {
-    const savedLang = localStorage.getItem('user_lang') || localStorage.getItem('language') || 'it';
-    const lang = savedLang.toLowerCase(); 
-    
-    if (obj) {
-        if (obj[lang]) return obj[lang];
-        return obj['it'] || obj['en'] || obj.text || "";
-    }
-    return "";
-}
+// getLangText era qui — rimossa perché mai utilizzata nel codebase attuale.
 
 const TRIVIA_KEYS = [
     "trivia_1", "trivia_2", "trivia_3", "trivia_4", "trivia_5", 
@@ -799,10 +769,4 @@ window.getChiccoRealTimeAdvice = async function() {
     }
 };
 
-window.forceChiccoUpdate = function() {
-    const bubble = document.getElementById('chicco-speech');
-    if (bubble && bubble.style.display === 'block') {
-        window.toggleChicco(); 
-        setTimeout(() => window.toggleChicco(), 50); 
-    }
-};
+// Fine data-logic.js

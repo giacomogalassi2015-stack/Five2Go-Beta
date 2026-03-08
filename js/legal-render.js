@@ -1,5 +1,3 @@
-console.log("✅ 3. ui-legal-render.js caricato (Localizzato & Fixato)");
-
 // === RENDER PAGINA LEGALE ===
 window.renderLegalPage = function() {
     const targetEl = document.getElementById('app-content');
