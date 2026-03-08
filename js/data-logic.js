@@ -707,6 +707,13 @@ const MAP_CHICCO_KEYS = [
     "chicco_map_5", "chicco_map_6", "chicco_map_7", "chicco_map_8"
 ];
 
+// ── Cache meteo in memoria (TTL 15 minuti) ────────────────────────
+// Evita fetch ripetuti ad ogni tap su Chicco nella stessa sessione.
+// In caso di errore la cache viene invalidata così al prossimo tap riprova.
+let _weatherCache   = null;
+let _weatherCacheTs = 0;
+const WEATHER_TTL_MS = 15 * 60 * 1000; // 15 minuti
+
 window.getChiccoRealTimeAdvice = async function() {
     try {
         if (!localStorage.getItem('chicco_intro_done')) {
@@ -719,9 +726,20 @@ window.getChiccoRealTimeAdvice = async function() {
             };
         }
 
-        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=44.135&longitude=9.683&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto&models=best_match");
-        const data = await response.json();
-        
+        // Usa la cache se disponibile e fresca (< 15 min)
+        const now = Date.now();
+        if (!_weatherCache || (now - _weatherCacheTs > WEATHER_TTL_MS)) {
+            const response = await fetch(
+                "https://api.open-meteo.com/v1/forecast" +
+                "?latitude=44.135&longitude=9.683" +
+                "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code" +
+                "&timezone=auto&models=best_match"
+            );
+            _weatherCache   = await response.json();
+            _weatherCacheTs = now;
+        }
+        const data = _weatherCache;
+
         const temp = Math.round(data.current.temperature_2m);
         const hum = Math.round(data.current.relative_humidity_2m);
         const wind = data.current.wind_speed_10m;
@@ -761,6 +779,8 @@ window.getChiccoRealTimeAdvice = async function() {
 
     } catch (error) {
         console.error("Errore Meteo:", error);
+        // Invalida la cache: al prossimo tap riprova il fetch
+        _weatherCache = null;
         return { 
             weather: "😴 ...", 
             advice: window.t('error') || "Ciao!", 

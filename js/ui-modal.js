@@ -109,38 +109,59 @@ window.openTechMap = function(safeObj) {
                     </div>
 
                     <div class="bg-white p-5 px-6 shadow-sm border-b border-slate-100">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">Dati Tecnici</h3>
-                        
-                        <div class="grid grid-cols-3 gap-y-6 gap-x-2">
-                            <div class="flex flex-col items-center justify-center text-center">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Dati Tecnici</h3>
+
+                        <!-- Riga 1: Distanza + Durata -->
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div class="flex flex-col items-center justify-center text-center bg-slate-50 rounded-2xl py-4 border border-slate-100">
                                 <span class="material-icons text-slate-300 text-lg mb-1">straighten</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${dist}<span class="text-[11px] text-slate-400 font-normal ml-0.5">km</span></div>
-                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Distanza</div>
+                                <div class="text-xl font-bold text-slate-700 leading-none">${dist}<span class="text-[11px] text-slate-400 font-normal ml-0.5">km</span></div>
+                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1.5">Distanza</div>
                             </div>
-                            <div class="flex flex-col items-center justify-center text-center border-l border-r border-slate-100">
+                            <div class="flex flex-col items-center justify-center text-center bg-slate-50 rounded-2xl py-4 border border-slate-100">
                                 <span class="material-icons text-slate-300 text-lg mb-1">schedule</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${dur}<span class="text-[11px] text-slate-400 font-normal ml-0.5">min</span></div>
-                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Durata</div>
+                                <div class="text-xl font-bold text-slate-700 leading-none">${dur}<span class="text-[11px] text-slate-400 font-normal ml-0.5">min</span></div>
+                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1.5">Durata</div>
                             </div>
-                            <div class="flex flex-col items-center justify-center text-center">
-                                <span class="material-icons text-red-300 text-lg mb-1">trending_up</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${d_plus}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[11px] uppercase font-bold text-red-400 mt-1">Dislivello +</div>
+                        </div>
+
+                        <!-- Riga 2: Dislivello + / − (coppia) -->
+                        <div class="rounded-2xl border border-slate-100 overflow-hidden mb-3">
+                            <div class="flex items-center gap-1.5 px-4 pt-3 pb-1">
+                                <span class="material-icons text-slate-300 text-sm">show_chart</span>
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Dislivello</span>
                             </div>
-                            <div class="flex flex-col items-center justify-center text-center mt-2">
-                                <span class="material-icons text-emerald-300 text-lg mb-1">trending_down</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${d_minus}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[11px] uppercase font-bold text-emerald-500 mt-1">Dislivello -</div>
+                            <div class="grid grid-cols-2 divide-x divide-slate-100">
+                                <div class="flex flex-col items-center justify-center text-center py-3">
+                                    <span class="material-icons text-red-300 text-lg mb-1">trending_up</span>
+                                    <div class="text-xl font-bold text-slate-700 leading-none">${d_plus}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                    <div class="text-[11px] uppercase font-bold text-red-400 mt-1.5">Salita</div>
+                                </div>
+                                <div class="flex flex-col items-center justify-center text-center py-3">
+                                    <span class="material-icons text-emerald-400 text-lg mb-1">trending_down</span>
+                                    <div class="text-xl font-bold text-slate-700 leading-none">${d_minus}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                    <div class="text-[11px] uppercase font-bold text-emerald-500 mt-1.5">Discesa</div>
+                                </div>
                             </div>
-                            <div class="flex flex-col items-center justify-center text-center border-l border-r border-slate-100 mt-2">
-                                <span class="material-icons text-slate-300 text-lg mb-1">terrain</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${alt_max}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Alt. Max</div>
+                        </div>
+
+                        <!-- Riga 3: Altitudine Max / Min (coppia) -->
+                        <div class="rounded-2xl border border-slate-100 overflow-hidden">
+                            <div class="flex items-center gap-1.5 px-4 pt-3 pb-1">
+                                <span class="material-icons text-slate-300 text-sm">terrain</span>
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Altitudine</span>
                             </div>
-                            <div class="flex flex-col items-center justify-center text-center mt-2">
-                                <span class="material-icons text-slate-300 text-lg mb-1">south</span>
-                                <div class="text-lg font-bold text-slate-700 leading-none">${alt_min}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
-                                <div class="text-[11px] uppercase font-bold text-slate-400 mt-1">Alt. Min</div>
+                            <div class="grid grid-cols-2 divide-x divide-slate-100">
+                                <div class="flex flex-col items-center justify-center text-center py-3">
+                                    <span class="material-icons text-slate-300 text-lg mb-1">keyboard_arrow_up</span>
+                                    <div class="text-xl font-bold text-slate-700 leading-none">${alt_max}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                    <div class="text-[11px] uppercase font-bold text-slate-400 mt-1.5">Massima</div>
+                                </div>
+                                <div class="flex flex-col items-center justify-center text-center py-3">
+                                    <span class="material-icons text-slate-300 text-lg mb-1">keyboard_arrow_down</span>
+                                    <div class="text-xl font-bold text-slate-700 leading-none">${alt_min}<span class="text-[11px] text-slate-400 font-normal ml-0.5">m</span></div>
+                                    <div class="text-[11px] uppercase font-bold text-slate-400 mt-1.5">Minima</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -235,8 +256,18 @@ window.closeModal = function() {
 
     // Ferma il GPS tracker della mappa sentieri se attivo
     if (window.GeoTracker) {
-        window.GeoTracker.stop('mappa');
+        window.GeoTracker.stop('sentieri');
         window.GeoTracker.stop('bus');
+    }
+
+    // Pulisce i marker GPS lasciati sulla mappa sentieri
+    if (window.userMarker && window.currentMap) {
+        try { window.currentMap.removeLayer(window.userMarker); } catch(e) {}
+        window.userMarker = null;
+    }
+    if (window.userAccuracyCircle && window.currentMap) {
+        try { window.currentMap.removeLayer(window.userAccuracyCircle); } catch(e) {}
+        window.userAccuracyCircle = null;
     }
 
     if (window.currentMap) { 

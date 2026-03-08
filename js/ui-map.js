@@ -1005,7 +1005,42 @@ window.mapToggleGPS = function(autoStart = false) {
 
     if (!navigator.geolocation) { _showMapToast('⚠️ GPS non supportato'); return; }
 
-    // ── Stato: ricerca in corso ───────────────────────────────────────────
+    if (autoStart) {
+        // ── Auto-start al caricamento mappa ──────────────────────────────
+        // Parte SOLO se il permesso è già stato concesso in una sessione precedente.
+        // In questo modo "Scopri" non mostra MAI il popup nativo né il modal branded.
+        // L'utente può sempre attivare il GPS toccando il pulsante dedicato.
+        if (navigator.permissions) {
+            navigator.permissions.query({ name: 'geolocation' }).then(perm => {
+                if (perm.state === 'granted') _doStartMapGPS();
+                // 'prompt' o 'denied' → silenzio totale
+            }).catch(() => { /* Safari / browser senza Permissions API → non fare nulla */ });
+        }
+        // Browser senza Permissions API → non avviare (evita popup inatteso)
+        return;
+    }
+
+    // ── Tap manuale sul pulsante GPS ──────────────────────────────────────
+    // Mostra il modal branded PRIMA del popup nativo del browser.
+    window._requestGeoPermission(
+        _doStartMapGPS,
+        () => {
+            if (btn)   { btn.classList.remove('gps-searching', 'gps-active'); }
+            if (icon)  { icon.textContent = 'my_location'; icon.classList.remove('spin-anim'); }
+            if (label) { label.textContent = 'GPS'; }
+        }
+    );
+};
+
+// _doStartMapGPS è definita FUORI da mapToggleGPS per evitare problemi
+// di hoisting con function declaration dentro arrow/function expression.
+function _doStartMapGPS() {
+    const map   = window._mapLeaflet;
+    const btn   = document.getElementById('map-gps-btn');
+    const icon  = document.getElementById('map-gps-icon');
+    const label = document.getElementById('map-gps-label');
+    if (!map) return;
+
     if (btn)   { btn.classList.add('gps-searching'); }
     if (icon)  { icon.textContent = 'sync'; icon.classList.add('spin-anim'); }
     if (label) { label.textContent = 'Cerco...'; }
@@ -1043,7 +1078,7 @@ window.mapToggleGPS = function(autoStart = false) {
         if (icon)  { icon.textContent = 'my_location'; icon.classList.remove('spin-anim'); }
         if (label) { label.textContent = 'Attivo'; }
     });
-};
+}
 
 window.mapToggleLegend = function() {
     const panel = document.getElementById('map-legend-panel');
