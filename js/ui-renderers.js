@@ -66,19 +66,19 @@ function getCandyBtn(icon, label, color, onclick) {
     const theme = colors[color] || colors['blue'];
 
     return `
-    <button class="flex flex-col items-center justify-center gap-1 group/btn active:scale-95 transition-all duration-200 min-w-[50px] cursor-pointer touch-manipulation" onclick="${onclick}">
+    <button class="flex flex-col items-center justify-center gap-1 group/btn active:scale-95 transition-all duration-200 min-w-[46px] cursor-pointer touch-manipulation" onclick="${onclick}">
         <div class="h-11 w-11 rounded-xl ${theme} shadow-sm flex items-center justify-center border">
-            <span class="material-icons text-lg">${icon}</span>
+            <span class="material-icons text-base">${icon}</span>
         </div>
-        ${label ? `<span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 group-hover/btn:text-slate-600 transition-colors">${label}</span>` : ''}
+        ${label ? `<span class="text-[10px] font-bold uppercase tracking-wide text-slate-400 group-hover/btn:text-slate-600 transition-colors">${label}</span>` : ''}
     </button>`;
 }
 function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml, heartOverlayHtml }) {
     if (image) {
         return `
-        <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col relative mb-4 group cursor-pointer hover:shadow-lg transition-all duration-300 active:scale-[0.98] active:shadow-sm touch-manipulation border border-slate-100/30"
+        <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col relative group cursor-pointer hover:shadow-lg transition-all duration-300 active:scale-[0.98] active:shadow-sm touch-manipulation border border-slate-100/30 master-card"
             data-card-id="${id}" onclick="${onClick}">
-            <div class="h-56 w-full relative overflow-hidden shrink-0">
+            <div class="master-card-img w-full relative overflow-hidden shrink-0">
                 <img src="${image}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" alt="${title}">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
                 ${label ? `<div class="absolute top-3 left-3 z-10">
@@ -86,11 +86,11 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
                 </div>` : ''}
                 ${heartOverlayHtml || ''}
                 <div class="absolute bottom-0 left-0 right-0 p-4 z-10">
-                    <h3 class="font-serif text-xl font-bold text-white leading-tight drop-shadow-sm mb-1">${title}</h3>
+                    <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-sm mb-1 line-clamp-2">${title}</h3>
                     ${subText ? `<p class="text-white/70 text-xs font-medium leading-relaxed line-clamp-2">${subText}</p>` : ''}
                 </div>
             </div>
-            <div class="px-4 py-3 flex items-center justify-end gap-3 bg-white shrink-0">
+            <div class="px-3 py-2.5 flex items-center justify-end gap-2 bg-white shrink-0">
                 ${buttonsHtml}
             </div>
         </div>`;
@@ -105,9 +105,9 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
         };
         const themeClass = bgMap[themeColor] || bgMap['blue'];
         return `
-        <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col relative mb-4 group cursor-pointer hover:shadow-lg transition-all duration-300 active:scale-[0.98] active:shadow-sm touch-manipulation border border-slate-100/30"
+        <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col relative group cursor-pointer hover:shadow-lg transition-all duration-300 active:scale-[0.98] active:shadow-sm touch-manipulation border border-slate-100/30 master-card"
             data-card-id="${id}" onclick="${onClick}">
-            <div class="h-44 w-full bg-gradient-to-br ${themeClass} relative overflow-hidden shrink-0">
+            <div class="h-36 w-full bg-gradient-to-br ${themeClass} relative overflow-hidden shrink-0">
                 <span class="material-icons absolute text-[8rem] opacity-10 -bottom-4 -right-4 transform rotate-[-10deg] select-none">${iconFallback}</span>
                 <span class="material-icons text-5xl absolute bottom-4 left-4 drop-shadow-sm opacity-90 z-10">${iconFallback}</span>
                 ${label ? `<div class="absolute top-3 left-3 z-10">
@@ -115,11 +115,11 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
                 </div>` : ''}
                 ${heartOverlayHtml || ''}
             </div>
-            <div class="px-4 pt-3 pb-1">
-                <h3 class="font-serif text-xl font-bold text-slate-800 leading-tight group-hover:text-primary transition-colors">${title}</h3>
+            <div class="px-4 pt-3 pb-1 min-w-0">
+                <h3 class="font-serif text-lg font-bold text-slate-800 leading-tight group-hover:text-primary transition-colors line-clamp-2">${title}</h3>
                 ${subText ? `<p class="text-xs text-slate-500 font-medium leading-relaxed mt-1 line-clamp-2">${subText}</p>` : ''}
             </div>
-            <div class="px-4 py-3 flex items-center justify-end gap-3 bg-white">
+            <div class="px-3 py-2.5 flex items-center justify-end gap-2 bg-white">
                 ${buttonsHtml}
             </div>
         </div>`;
@@ -141,16 +141,16 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
             <span class="material-icons text-4xl ${iconColor} drop-shadow-sm opacity-90 relative z-10">wine_bar</span>
         </div>
         ${heartOverlayHtml || ''}
-        <div class="flex-1 p-4 flex flex-col relative bg-white">
+        <div class="flex-1 p-4 flex flex-col relative bg-white min-w-0">
             <div class="mb-2 pr-8">
                 <span class="inline-block px-2 py-0.5 rounded border border-slate-100 bg-slate-50 text-[11px] font-bold uppercase tracking-widest text-slate-500 font-sans">
                     ${typeLabel}
                 </span>
             </div>
-            <h3 class="font-serif text-2xl font-bold text-slate-800 leading-snug mb-1 pr-2 group-hover:text-ct-terracotta transition-colors">${title}</h3>
-            <div class="flex items-center gap-1.5 mb-3">
-                <span class="material-icons text-[14px] text-slate-300">storefront</span>
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">${producer}</span>
+            <h3 class="font-serif text-lg font-bold text-slate-800 leading-snug mb-1 pr-2 group-hover:text-ct-terracotta transition-colors line-clamp-2">${title}</h3>
+            <div class="flex items-center gap-1.5 mb-3 min-w-0">
+                <span class="material-icons text-[14px] text-slate-300 shrink-0">storefront</span>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wide truncate">${producer}</span>
             </div>
            <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <div class="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-xl text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600 transition-colors">
@@ -385,20 +385,20 @@ window.sentieroRenderer = (s) => {
             ${window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem).replace('z-20', 'z-[401]') : ''}
             <div class="absolute inset-0 z-[300]"></div>
         </div>
-        <div class="p-5 flex-1 flex flex-col">
+        <div class="p-4 flex-1 flex flex-col min-w-0">
             <div class="flex items-center gap-2 mb-2">
                  <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 font-sans">
                     ⏱ ${durata} • 📏 ${dist}
                  </span>
             </div>
-            <h3 class="font-serif text-2xl font-bold text-slate-800 leading-tight mb-2">${nome}</h3>
+            <h3 class="font-serif text-xl font-bold text-slate-800 leading-tight mb-2 line-clamp-2">${nome}</h3>
         </div>
         
-        <div class="px-4 py-4 border-t border-slate-100 bg-slate-50/30 flex items-center gap-2.5">
-             <button onclick="window.openTechMap('${safeObj}')" class="flex-1 py-3 bg-ct-green text-white rounded-xl font-bold text-xs uppercase tracking-wide shadow-sm active:scale-[0.97] transition-all duration-150 touch-manipulation flex items-center justify-center gap-2">
+        <div class="px-3 py-3 border-t border-slate-100 bg-slate-50/30 flex items-center gap-2 flex-wrap">
+             <button onclick="window.openTechMap('${safeObj}')" class="flex-1 min-w-[80px] py-2.5 bg-ct-green text-white rounded-xl font-bold text-[11px] uppercase tracking-wide shadow-sm active:scale-[0.97] transition-all duration-150 touch-manipulation flex items-center justify-center gap-1.5">
                 <span class="material-icons text-sm">map</span> ${window.t('btn_map')}
              </button>
-             <button onclick="window.openModal('sentieroInfo', '${safeObj}')" class="flex-1 py-3 bg-ct-blue text-white rounded-xl font-bold text-xs uppercase tracking-wide shadow-sm active:scale-[0.97] transition-all duration-150 touch-manipulation flex items-center justify-center gap-2">
+             <button onclick="window.openModal('sentieroInfo', '${safeObj}')" class="flex-1 min-w-[80px] py-2.5 bg-ct-blue text-white rounded-xl font-bold text-[11px] uppercase tracking-wide shadow-sm active:scale-[0.97] transition-all duration-150 touch-manipulation flex items-center justify-center gap-1.5">
                 <span class="material-icons text-sm">visibility</span> ${window.t('btn_info')}
              </button>
              ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem)  : ''}

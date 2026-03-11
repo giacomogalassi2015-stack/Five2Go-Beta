@@ -204,29 +204,72 @@
             .smart-filter-bar-container button { background: rgba(255,255,255,0.98) !important; }
         }
 
-        /* ── Sticky tab bar: 100% opaca, full-bleed ──
-           - background opaco (#F4F1DE) copre tutto il contenuto sotto
-           - -mx-4 annulla il px-4 del genitore → copertura full-width
-           - pb usato al posto di mb perché il padding è coperto dal bg,
-             il margin no (ecco perché prima si vedevano le card sotto!)
-           - box-shadow morbida in basso per dare profondità senza gradient */
+        /* ── Sticky tab bar: rimosso sticky, ora è contenuto statico ──
+           I FAB flottanti sostituiscono lo sticky: zero bug visivi,
+           più spazio verticale, UX thumb-friendly */
         .nav-sticky-header {
-            background: #F4F1DE !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            margin-left: -16px;
-            margin-right: -16px;
-            padding-left: 16px;
-            padding-right: 16px;
-            box-shadow: 0 4px 12px -2px rgba(0,0,0,0.06);
+            background: #F4F1DE;
         }
 
-        /* ── Filter bar secondaria: stessa logica full-bleed + opaca ── */
+        /* ── Filter bar: anche questa ora è statica ── */
         .smart-filter-bar-container {
             background: #F4F1DE;
             padding-top: 4px;
             padding-bottom: 4px;
-            box-shadow: 0 3px 8px -2px rgba(0,0,0,0.05);
+        }
+
+        /* ── FAB flottanti (filtro + scroll-to-top) ──
+           Appaiono quando l'utente scrolla oltre il tab bar.
+           Posizionati a destra, sopra la bottom nav.
+           Pattern usato da Google Maps, Zalando, Deliveroo. */
+        .fab-scroll-actions {
+            position: fixed;
+            right: 16px;
+            bottom: 90px;
+            z-index: 45;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            pointer-events: none;
+            /* Transizione globale per tutto il gruppo */
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .fab-scroll-actions.fab-hidden {
+            opacity: 0;
+            transform: translateY(20px) scale(0.8);
+            pointer-events: none;
+        }
+        .fab-scroll-actions.fab-visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+        .fab-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.08);
+            transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .fab-btn:active {
+            transform: scale(0.88);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .fab-btn--top {
+            background: white;
+            color: #264653;
+        }
+        .fab-btn--filter {
+            background: #264653;
+            color: white;
         }
 
         /* ══════════════════════════════════════════════════════════
@@ -247,6 +290,19 @@
             /* dvh = dynamic viewport height, esclude la barra browser su mobile */
             min-height: calc(100dvh - 100px);
             padding: 0;
+            /* ── Gradiente unico su tutta la home ──
+               Un solo gradiente continuo dal trasparente in alto (la foto
+               respira) fino al nero denso in basso (testo e pill leggibili).
+               Elimina il "taglio" visivo tra hero e actions. */
+            background: linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(0,0,0,0.05) 25%,
+                rgba(0,0,0,0.30) 50%,
+                rgba(0,0,0,0.58) 70%,
+                rgba(0,0,0,0.75) 85%,
+                rgba(0,0,0,0.82) 100%
+            );
         }
 
         /* ── Hero central: contenuto centrato verticalmente ── */
@@ -258,13 +314,7 @@
             align-items: flex-start;
             padding: 0 28px 32px;
             gap: 0;
-            background: linear-gradient(
-                to top,
-                rgba(0,0,0,0.72) 0%,
-                rgba(0,0,0,0.42) 40%,
-                rgba(0,0,0,0.08) 70%,
-                transparent 100%
-            );
+            /* Gradiente rimosso — gestito dal padre .home-v2 */
         }
 
         /* Label "CINQUE TERRE" sopra il titolo */
@@ -316,7 +366,7 @@
             font-family: "Plus Jakarta Sans", sans-serif;
             font-size: 14px;
             font-weight: 500;
-            color: rgba(255,255,255,0.60);
+            color: rgba(255,255,255,0.80);
             line-height: 1.6;
             max-width: 300px;
             letter-spacing: 0.01em;
@@ -346,7 +396,7 @@
         }
         .home-search-icon {
             font-size: 20px;
-            color: rgba(255,255,255,0.45);
+            color: rgba(255,255,255,0.60);
             flex-shrink: 0;
             margin-right: 10px;
             pointer-events: none;
@@ -364,7 +414,7 @@
             min-width: 0;
         }
         .home-search-input::placeholder {
-            color: rgba(255,255,255,0.35);
+            color: rgba(255,255,255,0.50);
             font-weight: 500;
         }
         .home-search-clear {
@@ -390,7 +440,7 @@
             padding: 0 16px 28px;
             display: flex;
             gap: 10px;
-            background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.55) 60%, transparent 100%);
+            /* Gradiente rimosso — gestito dal padre .home-v2 */
         }
 
         .home-pill {
@@ -511,6 +561,49 @@
             from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
             to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
+
+        /* ══════════════════════════════════════════════════════════
+           MOBILE-FIRST CARD SIZING
+           Altezze immagine responsive in base al contesto:
+           - Full-width (ristoranti, spiagge, attrazioni): 200px
+           - Grid 2-col (prodotti): 140px — proporzionato alla larghezza
+           - line-clamp per titoli lunghi (es. cinese/tedesco)
+           ══════════════════════════════════════════════════════════ */
+
+        /* Default: altezza immagine per card a larghezza piena */
+        .master-card-img {
+            height: 200px;
+        }
+
+        /* Dentro griglia 2-col: immagine più bassa, proporzionata */
+        .grid-cols-2 .master-card-img {
+            height: 140px;
+        }
+
+        /* Dentro griglia 2-col: rimuovi margin-bottom (il gap del grid basta) */
+        .grid-cols-2 .master-card {
+            margin-bottom: 0;
+        }
+
+        /* Card a larghezza piena (fuori dal grid): mantieni spacing */
+        .master-card {
+            margin-bottom: 16px;
+        }
+
+        /* Su schermi >= 640px: immagini un pelo più generose */
+        @media (min-width: 640px) {
+            .master-card-img { height: 224px; }
+            .grid-cols-2 .master-card-img { height: 170px; }
+        }
+
+        /* Fallback per browser senza line-clamp nativo (raro, ma safety net) */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
     </style>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -562,12 +655,12 @@
 
     <div class="flex flex-1 justify-around items-center h-full">
         <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('home', this)">
-            <span class="material-icons text-[24px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-green group-[.active]:-translate-y-2">home</span>
-            <span class="nav-label font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-green nav-label absolute bottom-2 uppercase tracking-wide">Home</span>
+            <span class="material-icons text-[24px] text-slate-400 transition-all duration-300 group-[.active]:text-ct-green group-[.active]:-translate-y-2">home</span>
+            <span class="nav-label font-bold text-slate-400 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-green nav-label absolute bottom-2 uppercase tracking-wide">Home</span>
         </button>
         <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('cibo', this)">
-            <span class="material-icons text-[22px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-terracotta group-[.active]:-translate-y-2">restaurant</span>
-            <span class="nav-label font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-terracotta nav-label absolute bottom-2 uppercase tracking-wide">Cibo</span>
+            <span class="material-icons text-[22px] text-slate-400 transition-all duration-300 group-[.active]:text-ct-terracotta group-[.active]:-translate-y-2">restaurant</span>
+            <span class="nav-label font-bold text-slate-400 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-terracotta nav-label absolute bottom-2 uppercase tracking-wide">Cibo</span>
         </button>
     </div>
 
@@ -586,12 +679,12 @@
 
     <div class="flex flex-1 justify-around items-center h-full">
         <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('outdoor', this)">
-            <span class="material-icons text-[22px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-yellow group-[.active]:-translate-y-2">hiking</span>
-            <span class="nav-label font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-yellow nav-label absolute bottom-2 uppercase tracking-wide">Outdoor</span>
+            <span class="material-icons text-[22px] text-slate-400 transition-all duration-300 group-[.active]:text-ct-yellow group-[.active]:-translate-y-2">hiking</span>
+            <span class="nav-label font-bold text-slate-400 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-yellow nav-label absolute bottom-2 uppercase tracking-wide">Outdoor</span>
         </button>
         <button class="nav-item group flex flex-col items-center justify-center w-12 h-full transition-all relative" onclick="switchView('servizi', this)">
-            <span class="material-icons text-[22px] text-slate-300 transition-all duration-300 group-[.active]:text-ct-blue group-[.active]:-translate-y-2">grid_view</span>
-            <span class="nav-label font-bold text-slate-300 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-blue nav-label absolute bottom-2 uppercase tracking-wide">Servizi</span>
+            <span class="material-icons text-[22px] text-slate-400 transition-all duration-300 group-[.active]:text-ct-blue group-[.active]:-translate-y-2">grid_view</span>
+            <span class="nav-label font-bold text-slate-400 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-blue nav-label absolute bottom-2 uppercase tracking-wide">Servizi</span>
         </button>
     </div>
 

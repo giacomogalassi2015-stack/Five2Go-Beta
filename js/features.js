@@ -125,7 +125,7 @@ window.renderHeartBtn = function(wlItem) {
         <div class="h-11 w-11 rounded-xl ${wrapperClass} shadow-sm flex items-center justify-center border transition-colors duration-200">
             <span class="material-icons text-lg ${iconClass}">${iconName}</span>
         </div>
-        <span class="text-[11px] font-bold uppercase tracking-wider ${labelClass} transition-colors">Save</span>
+        <span class="text-[10px] font-bold uppercase tracking-wide ${labelClass} transition-colors">Save</span>
     </button>`;
 };
 
@@ -249,7 +249,7 @@ window.renderPlanBtn = function(itinItem) {
         <div class="h-11 w-11 rounded-xl ${wrapperClass} shadow-sm flex items-center justify-center border transition-colors duration-200">
             <span class="material-icons text-lg ${iconClass}">${iconName}</span>
         </div>
-        <span class="text-[11px] font-bold uppercase tracking-wider ${labelClass} transition-colors">Piano</span>
+        <span class="text-[10px] font-bold uppercase tracking-wide ${labelClass} transition-colors">Piano</span>
     </button>`;
 };
 

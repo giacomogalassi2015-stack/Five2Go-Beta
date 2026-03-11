@@ -100,6 +100,9 @@ window.switchView = async function(view, el) {
     const stickyFilters = document.querySelectorAll('.smart-filter-bar-container');
     stickyFilters.forEach(el => el.remove());
 
+    // Rimuovi i FAB flottanti della view precedente
+    if (window._destroyScrollFABs) window._destroyScrollFABs();
+
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     if (el) {
         el.classList.add('active'); 
@@ -197,6 +200,8 @@ function renderHome() {
           <span class="material-icons home-search-icon">search</span>
           <input id="global-search-input"
                  type="search"
+                 inputmode="search"
+                 enterkeyhint="search"
                  autocomplete="off"
                  spellcheck="false"
                  placeholder="${C.searchPlaceholder}"
@@ -257,7 +262,7 @@ window.renderSubMenu = function(options, defaultTable) {
     window.currentMenuOptions = options;
     
    let menuHtml = `
-    <div class="nav-sticky-header sticky top-0 z-30 pt-4 pb-4 transition-all relative">
+    <div class="nav-sticky-header pt-4 pb-4 transition-all relative" id="nav-tab-bar">
         <div class="nav-scroll-container flex gap-3 overflow-x-auto no-scrollbar items-center px-4 pt-2 pb-2 w-full" id="nav-tabs-container">
             ${options.map((opt, index) => {
                 const colorMap = {
@@ -291,6 +296,93 @@ window.renderSubMenu = function(options, defaultTable) {
     const defaultBtn = content.querySelector(`button[data-table="${defaultTable}"]`) || content.querySelector('.btn-pop-menu');
     if (defaultBtn) {
         loadTableData(defaultBtn.getAttribute('data-table'), defaultBtn);
+    }
+
+    // Attiva i FAB flottanti per questa view
+    window._initScrollFABs();
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+//  FAB FLOTTANTI — Scroll-to-top + Apri filtro
+//  Appaiono quando il tab bar esce dalla viewport (scroll giù).
+//  Scompaiono quando il tab bar è visibile (scroll su / tap "top").
+// ═══════════════════════════════════════════════════════════════════════
+window._initScrollFABs = function() {
+    // Cleanup precedente
+    window._destroyScrollFABs();
+
+    const appContent = document.getElementById('app-content');
+    const tabBar = document.getElementById('nav-tab-bar');
+    if (!appContent || !tabBar) return;
+
+    // Crea il contenitore FAB (iniettato nel body, fuori dal flusso scroll)
+    const fabWrap = document.createElement('div');
+    fabWrap.id = 'scroll-fabs';
+    fabWrap.className = 'fab-scroll-actions fab-hidden';
+    fabWrap.innerHTML = `
+        <button class="fab-btn fab-btn--filter" id="fab-filter-btn"
+            aria-label="${window.currentLang === 'it' ? 'Apri filtro' : 'Open filter'}"
+            title="${window.currentLang === 'it' ? 'Filtro' : 'Filter'}">
+            <span class="material-icons" style="font-size:20px;">tune</span>
+        </button>
+        <button class="fab-btn fab-btn--top" id="fab-top-btn"
+            aria-label="${window.currentLang === 'it' ? 'Torna su' : 'Back to top'}"
+            title="${window.currentLang === 'it' ? 'Torna su' : 'Back to top'}">
+            <span class="material-icons" style="font-size:20px;">keyboard_arrow_up</span>
+        </button>
+    `;
+    document.body.appendChild(fabWrap);
+
+    // ── Bottone "Torna su" ──
+    document.getElementById('fab-top-btn').addEventListener('click', () => {
+        appContent.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // ── Bottone "Filtro" — scrolla in cima E apre il pannello filtro ──
+    document.getElementById('fab-filter-btn').addEventListener('click', () => {
+        appContent.scrollTo({ top: 0, behavior: 'smooth' });
+        // Dopo che lo scroll arriva in cima, apri il filtro
+        setTimeout(() => {
+            const filterTrigger = document.querySelector('.smart-filter-bar-container button[id^="trigger-"]');
+            const filterPanel = document.querySelector('.smart-filter-bar-container div[id^="panel-"]');
+            if (filterTrigger && filterPanel && filterPanel.classList.contains('hidden')) {
+                filterTrigger.click();
+            }
+        }, 400);
+    });
+
+    // ── Scroll listener: mostra/nascondi FAB in base alla visibilità del tab bar ──
+    let fabVisible = false;
+    const SCROLL_THRESHOLD = 120; // px sotto il tab bar prima di mostrare i FAB
+
+    window._fabScrollHandler = () => {
+        const scrollTop = appContent.scrollTop;
+        const tabBarBottom = tabBar.offsetTop + tabBar.offsetHeight;
+        const shouldShow = scrollTop > (tabBarBottom + SCROLL_THRESHOLD);
+
+        if (shouldShow && !fabVisible) {
+            fabVisible = true;
+            fabWrap.classList.remove('fab-hidden');
+            fabWrap.classList.add('fab-visible');
+        } else if (!shouldShow && fabVisible) {
+            fabVisible = false;
+            fabWrap.classList.remove('fab-visible');
+            fabWrap.classList.add('fab-hidden');
+        }
+    };
+
+    appContent.addEventListener('scroll', window._fabScrollHandler, { passive: true });
+};
+
+window._destroyScrollFABs = function() {
+    // Rimuovi il DOM
+    const existing = document.getElementById('scroll-fabs');
+    if (existing) existing.remove();
+    // Rimuovi il listener
+    const appContent = document.getElementById('app-content');
+    if (appContent && window._fabScrollHandler) {
+        appContent.removeEventListener('scroll', window._fabScrollHandler);
+        window._fabScrollHandler = null;
     }
 };
 
@@ -368,7 +460,7 @@ window.loadTableData = async function(tableName, btnEl) {
     if (tableName === 'Vini') { renderHorizontalFilterView(data, 'Tipo', subContent, window.vinoRenderer); }
     else if (tableName === 'Spiagge') { renderHorizontalFilterView(data, 'Paesi', subContent, window.spiaggiaRenderer, 'lat_sp', 'long_sp'); }
     else if (tableName === 'Prodotti') {
-        let html = '<div class="grid grid-cols-2 gap-3 pb-24 animate-fade pt-2">'; 
+        let html = '<div class="grid grid-cols-2 gap-3.5 pb-24 animate-fade pt-2">'; 
         data.forEach(p => { html += window.prodottoRenderer(p); });
         subContent.innerHTML = html + '</div>';
     }
@@ -413,7 +505,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
     const hasNearMe  = !!(latKey && lonKey);
 
     container.innerHTML = `
-        <div class="smart-filter-bar-container sticky top-[76px] z-20 -mx-4 px-4 pb-3 relative">
+        <div class="smart-filter-bar-container -mx-4 px-4 pb-3 relative">
             <div class="flex items-center gap-2">
                 <button id="${triggerId}" class="flex-1 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl py-3 px-4 flex items-center justify-between transition-all active:scale-95" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">
                     <div class="flex items-center gap-2">
@@ -555,7 +647,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     const hasNearMe = !!(latKey && lonKey);
 
     container.innerHTML = `
-        <div class="smart-filter-bar-container sticky top-[76px] z-20 -mx-4 px-4 pb-3 relative">
+        <div class="smart-filter-bar-container -mx-4 px-4 pb-3 relative">
             <div class="flex items-center gap-2">
                 <button id="${triggerId}" class="flex-1 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl py-3 px-4 flex items-center justify-between transition-all active:scale-95" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">
                     <div class="flex items-center gap-2 overflow-hidden">
@@ -701,7 +793,7 @@ window.renderServicesGrid = async function() {
     let headerHtml = `
         <div class="px-2 mb-4 animate-pop text-center">
             <h1 class="text-3xl font-serif font-bold text-slate-800 mb-1 uppercase tracking-tight">${window.t('nav_services')}</h1>
-            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">Esplora & Viaggia</p>
+            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">${window.t('services_subtitle')}</p>
         </div>
     `;
 
@@ -719,14 +811,14 @@ window.renderServicesGrid = async function() {
             <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
             <div class="absolute inset-0 p-5 flex flex-col justify-between z-10">
                 <div class="flex items-center justify-between">
-                    <span class="bg-ct-yellow/90 backdrop-blur text-yellow-900 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">ATC · Navette</span>
+                    <span class="bg-ct-yellow/90 backdrop-blur text-yellow-900 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">${window.t('bus_badge')}</span>
                     <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border border-white/30">
                         <span class="material-icons text-xl text-white">directions_bus</span>
                     </div>
                 </div>
                 <div>
                     <h3 class="font-serif text-2xl font-bold text-white leading-none drop-shadow-md">${window.t('label_bus')}</h3>
-                    <p class="text-white/70 text-xs font-bold uppercase tracking-wider mt-1">Orari & Connessioni tra borghi</p>
+                    <p class="text-white/70 text-xs font-bold uppercase tracking-wider mt-1">${window.t('bus_connections_sub')}</p>
                 </div>
             </div>
         </div>
@@ -743,7 +835,7 @@ window.renderServicesGrid = async function() {
                     </div>
                     <div>
                         <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-md">${window.t('label_train')}</h3>
-                        <p class="text-red-100/80 text-[10px] font-bold uppercase tracking-wider mt-0.5">Trenitalia</p>
+                        <p class="text-red-100/80 text-[10px] font-bold uppercase tracking-wider mt-0.5">${window.t("trenitalia_sub")}</p>
                     </div>
                 </div>
             </div>
@@ -757,7 +849,7 @@ window.renderServicesGrid = async function() {
                     </div>
                     <div>
                         <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-md">${window.t('label_ferry')}</h3>
-                        <p class="text-teal-100/80 text-[10px] font-bold uppercase tracking-wider mt-0.5">Navigazione</p>
+                        <p class="text-teal-100/80 text-[10px] font-bold uppercase tracking-wider mt-0.5">${window.t("ferry_nav_sub")}</p>
                     </div>
                 </div>
             </div>
@@ -770,7 +862,7 @@ window.renderServicesGrid = async function() {
             </div>
             <div class="flex-1 min-w-0">
                 <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_num')}</h3>
-                <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">Emergenze & Numeri utili</p>
+                <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">${window.t('emergency_sub')}</p>
             </div>
             <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
@@ -781,7 +873,7 @@ window.renderServicesGrid = async function() {
             </div>
             <div class="flex-1 min-w-0">
                 <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_pharm')}</h3>
-                <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">Turni & Orari</p>
+                <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">${window.t('pharmacy_sub')}</p>
             </div>
             <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
@@ -1036,7 +1128,9 @@ window._positionResultsSheet = function() {
     if (!anchor || !sheet) return;
     const rect = anchor.getBoundingClientRect();
     const gap  = 8;
-    const viewH = window.innerHeight;
+    // VisualViewport API: usa l'altezza visibile reale (esclude tastiera mobile)
+    // Fallback a window.innerHeight per browser senza supporto
+    const viewH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 
     sheet.style.left  = rect.left + 'px';
     sheet.style.width = rect.width + 'px';
@@ -1044,14 +1138,23 @@ window._positionResultsSheet = function() {
     // Se l'anchor è nella metà inferiore dello schermo, apri verso l'alto
     if (rect.top > viewH * 0.4) {
         sheet.style.top    = 'auto';
-        sheet.style.bottom = (viewH - rect.top + gap) + 'px';
+        sheet.style.bottom = (window.innerHeight - rect.top + gap) + 'px';
         sheet.style.maxHeight = (rect.top - gap - 20) + 'px';
     } else {
         sheet.style.bottom   = 'auto';
         sheet.style.top      = (rect.bottom + gap) + 'px';
-        sheet.style.maxHeight = '58vh';
+        sheet.style.maxHeight = Math.min(viewH * 0.58, viewH - rect.bottom - gap - 20) + 'px';
     }
 };
+
+// ── VisualViewport listener: riposiziona i risultati quando la tastiera mobile si apre/chiude ──
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+        if (document.getElementById('search-results-sheet')) {
+            window._positionResultsSheet();
+        }
+    });
+}
 
 // ── Column projection: solo i campi utili alla ricerca ──────────────
 // Riduce il payload Supabase del 60-70% rispetto a select('*').
