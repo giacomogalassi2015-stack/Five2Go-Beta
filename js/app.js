@@ -1,6 +1,52 @@
 const content = document.getElementById('app-content');
 window.pendingMaps = []; 
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  HISTORY ROUTER — Back button support per Android e iOS
+//  Ogni switchView() fa un pushState. Il popstate ascolta il "back" e
+//  naviga alla view precedente, chiudendo modali aperti.
+//  Senza questo, il back button chiude l'intera app — pessimo per i turisti.
+// ═══════════════════════════════════════════════════════════════════════════
+window._historyNav = true; // flag per distinguere push da pop
+
+window._pushViewState = function(view) {
+    if (!window._historyNav) return; // skip durante popstate
+    history.pushState({ view: view }, '', '#/' + view);
+};
+
+window._pushModalState = function() {
+    history.pushState({ modal: true }, '');
+};
+
+window.addEventListener('popstate', function(e) {
+    const state = e.state;
+
+    // Se c'è un modale aperto, chiudilo e basta
+    const techModal = document.getElementById('tech-modal-overlay');
+    const reportModal = document.getElementById('report-modal-overlay');
+    const confirmModal = document.getElementById('f2g-confirm-overlay');
+    const genericModal = document.querySelector('.fixed.z-\\[100\\]');
+
+    if (techModal) { techModal.remove(); if (window.closeModal) window.closeModal(); return; }
+    if (reportModal) { reportModal.remove(); return; }
+    if (confirmModal) { confirmModal.remove(); return; }
+    if (genericModal) { genericModal.classList.add('opacity-0'); setTimeout(() => genericModal.remove(), 200); return; }
+
+    // Altrimenti naviga alla view salvata nello state
+    if (state && state.view) {
+        window._historyNav = false; // evita pushState ricorsivo
+        const navBtn = document.querySelector('.nav-item[onclick*="' + state.view + '"]');
+        switchView(state.view, navBtn);
+        window._historyNav = true;
+    } else {
+        // Nessuno state: siamo tornati alla home
+        window._historyNav = false;
+        const homeBtn = document.querySelector('.nav-item[onclick*="home"]');
+        switchView('home', homeBtn);
+        window._historyNav = true;
+    }
+});
+
 // --- VARIABILI GLOBALI PER LO SWIPE ---
 window.currentMenuOptions = []; // Salva l'elenco delle tab correnti (es. Prodotti, Vini...)
 window.currentActiveTable = null; // Salva la tabella attualmente visibile
@@ -63,6 +109,9 @@ window.switchView = async function(view, el) {
     // ---------------------------------------------
 
     window.currentViewName = view; 
+
+    // ── History push: registra la view per il back button ──
+    window._pushViewState(view);
 
     // Chiudi la ricerca se aperta
     if (typeof window._closeSearch === 'function') window._closeSearch();
@@ -401,6 +450,8 @@ window.loadTableData = async function(tableName, btnEl) {
     window.currentActiveTable = tableName;
     const subContent = document.getElementById('sub-content');
     if (!subContent) return;
+    // Haptic feedback on tab switch
+    if (window._haptic) window._haptic(5);
     // 2. GESTIONE VISIVA DEI BOTTONI (Cruciale per lo swipe)
     // Se la funzione è chiamata dallo swipe, btnEl è null, quindi lo cerchiamo noi.
     if (!btnEl) {
@@ -492,6 +543,65 @@ function getUniqueValues(allData, key, customOrder = []) {
     }
     if (!unique.includes('__ALL__')) unique.unshift('__ALL__');
     return unique;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  LAZY RENDERING — Rendering incrementale con IntersectionObserver
+//  Renderizza le prime BATCH_SIZE card subito, poi aggiunge le successive
+//  quando l'utente scrolla vicino al fondo (sentinel element).
+//  Evita il freeze del browser su liste con 50+ card.
+// ═══════════════════════════════════════════════════════════════════════════
+const LAZY_BATCH_SIZE = 10;
+
+function _lazyRenderCards(items, cardRenderer, listContainer, extraClass) {
+    if (!items || items.length === 0) {
+        listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`;
+        return;
+    }
+
+    if (extraClass) listContainer.className = extraClass;
+
+    // Prima batch: rendering immediato
+    let rendered = 0;
+    const firstBatch = items.slice(0, LAZY_BATCH_SIZE);
+    listContainer.innerHTML = firstBatch.map(item => cardRenderer(item)).join('');
+    rendered = firstBatch.length;
+
+    // Se tutti gli item stanno nella prima batch, fine
+    if (rendered >= items.length) {
+        setTimeout(() => { if (window.initPendingMaps) window.initPendingMaps(); }, 100);
+        return;
+    }
+
+    // Sentinel: elemento invisibile in fondo alla lista, osservato da IntersectionObserver
+    const sentinel = document.createElement('div');
+    sentinel.className = 'lazy-sentinel';
+    sentinel.style.cssText = 'height:1px;width:100%;';
+    listContainer.appendChild(sentinel);
+
+    const observer = new IntersectionObserver((entries) => {
+        if (!entries[0].isIntersecting) return;
+        if (rendered >= items.length) { observer.disconnect(); sentinel.remove(); return; }
+
+        const nextBatch = items.slice(rendered, rendered + LAZY_BATCH_SIZE);
+        const fragment = document.createDocumentFragment();
+        const temp = document.createElement('div');
+        temp.innerHTML = nextBatch.map(item => cardRenderer(item)).join('');
+        while (temp.firstChild) fragment.appendChild(temp.firstChild);
+
+        // Inserisci PRIMA del sentinel (così il sentinel resta in fondo)
+        listContainer.insertBefore(fragment, sentinel);
+        rendered += nextBatch.length;
+
+        if (rendered >= items.length) { observer.disconnect(); sentinel.remove(); }
+        setTimeout(() => { if (window.initPendingMaps) window.initPendingMaps(); }, 100);
+    }, {
+        root: document.getElementById('app-content'),
+        rootMargin: '0px 0px 300px 0px' // pre-carica 300px prima che l'utente arrivi
+    });
+
+    observer.observe(sentinel);
+    setTimeout(() => { if (window.initPendingMaps) window.initPendingMaps(); }, 100);
 }
 
 function renderHorizontalFilterView(allData, filterKey, container, cardRenderer, latKey, lonKey) {
@@ -624,9 +734,8 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
             const sorted = (hasNearMe && window.sortByDistance)
                 ? window.sortByDistance(items, latKey, lonKey)
                 : items;
-            if (filterKey === 'Prodotti') listContainer.className = "grid grid-cols-2 gap-3 pb-24 animate-fade";
-            listContainer.innerHTML = sorted.map(item => cardRenderer(item)).join('');
-            setTimeout(() => { if(window.initPendingMaps) window.initPendingMaps(); }, 100);
+            const extraClass = (filterKey === 'Prodotti') ? "grid grid-cols-2 gap-3 pb-24 animate-fade" : null;
+            _lazyRenderCards(sorted, cardRenderer, listContainer, extraClass);
         }
     }
     renderChips();
@@ -755,11 +864,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
         if (hasNearMe && window.sortByDistance) {
             filtered = window.sortByDistance(filtered, latKey, lonKey);
         }
-        if (filtered.length === 0) {
-            listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`;
-        } else {
-            listContainer.innerHTML = filtered.map(item => cardRenderer(item)).join('');
-        }
+        _lazyRenderCards(filtered, cardRenderer, listContainer);
     }
     renderControls();
     executeFilter(); 
@@ -770,6 +875,8 @@ window.toggleSmartFilter = function(panelId, triggerId) {
     const icon = document.querySelector(`#${triggerId} .material-icons:last-child`);
     
     if (!panel) return;
+    // Haptic micro-buzz sui filtri
+    if (window._haptic) window._haptic(5);
     
     const isHidden = panel.classList.contains('hidden');
     
@@ -1543,6 +1650,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     clearTimeout(netErrorTimer);
 
     window.currentViewName = 'home';
+    // ── History: imposta lo state iniziale (replaceState, non push) ──
+    history.replaceState({ view: 'home' }, '', '#/home');
     if (typeof setupHeaderElements === 'function') setupHeaderElements();
     if (typeof updateNavBar === 'function') updateNavBar();
     switchView('home');
@@ -1667,7 +1776,7 @@ window.userAccuracyCircle = null;
  */
 window._requestGeoPermission = async function(onGranted, onDenied) {
     if (!navigator.geolocation) {
-        _showGeoErrorModal("GPS non supportato", "Il tuo browser non supporta la geolocalizzazione. Prova ad aggiornarlo o usane uno diverso.");
+        _showGeoErrorModal(window.t('geo_unsupported_title') || "GPS non supportato", window.t('geo_unsupported_msg') || "Il tuo browser non supporta la geolocalizzazione.");
         if (onDenied) onDenied();
         return;
     }
@@ -1679,14 +1788,14 @@ window._requestGeoPermission = async function(onGranted, onDenied) {
             permState = perm.state;
             perm.onchange = () => {
                 if (perm.state === 'denied') {
-                    _showGeoErrorModal("Posizione bloccata", "Hai negato l'accesso alla posizione. Per riabilitarla vai nelle impostazioni del browser.");
+                    _showGeoErrorModal(window.t('geo_blocked_title') || "Posizione bloccata", window.t('geo_blocked_msg') || "Hai negato l'accesso alla posizione.");
                 }
             };
         } catch (e) { /* Permissions API non disponibile (es. Safari) — si mostra comunque il modal */ }
     }
 
     if (permState === 'denied') {
-        _showGeoErrorModal("Posizione bloccata", "Hai già negato l'accesso alla posizione. Per riabilitarla vai nelle impostazioni del browser e cerca i permessi per questo sito.");
+        _showGeoErrorModal(window.t('geo_blocked_title') || "Posizione bloccata", window.t('geo_blocked_msg') || "Hai già negato l'accesso alla posizione. Per riabilitarla vai nelle impostazioni del browser e cerca i permessi per questo sito.");
         if (onDenied) onDenied();
         return;
     }
@@ -1766,13 +1875,13 @@ function _showGeoRequestModal(onGranted, onDenied) {
 
             <!-- Testo -->
             <h2 style="text-align:center;font-family:'Roboto Slab',serif;font-size:1.3rem;font-weight:700;color:#264653;margin:0 0 10px;">
-                Dove sei?
+                ${window.t('geo_title')}
             </h2>
             <p style="text-align:center;font-size:0.88rem;color:#64748b;line-height:1.6;margin:0 0 8px;">
-                Per mostrarti la tua posizione sulla mappa e trovare le fermate più vicine, Five2Go ha bisogno di accedere alla tua posizione.
+                ${window.t('geo_desc')}
             </p>
             <p style="text-align:center;font-size:0.78rem;color:#94a3b8;line-height:1.5;margin:0 0 24px;">
-                🔒 La tua posizione viene usata solo in questa sessione e non viene mai salvata o condivisa.
+                ${window.t('geo_privacy') || '🔒'}
             </p>
 
             <!-- Info browser (visibile solo su Firefox/Chrome dove il popup è nella toolbar) -->
@@ -1782,7 +1891,7 @@ function _showGeoRequestModal(onGranted, onDenied) {
                 font-size:0.78rem;color:#606C38;font-weight:600;
                 text-align:center;line-height:1.5;
             ">
-                📍 Dopo aver toccato "Consenti", cerca la richiesta nella <strong>barra in alto del browser</strong> e approva da lì.
+                📍 ${window.t('geo_hint') || "Dopo aver toccato il pulsante, cerca la richiesta nella barra in alto del browser."}
             </div>
 
             <!-- Bottoni -->
@@ -1798,7 +1907,7 @@ function _showGeoRequestModal(onGranted, onDenied) {
                     font-family:'Plus Jakarta Sans',sans-serif;
                 " ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform='scale(1)'">
                     <span class="material-icons" style="vertical-align:middle;font-size:18px;margin-right:6px;">gps_fixed</span>
-                    Consenti posizione
+                    ${window.t('geo_confirm')}
                 </button>
                 <button id="geo-modal-cancel" style="
                     width:100%;padding:14px;border:2px solid #e2e8f0;border-radius:16px;
@@ -1807,7 +1916,7 @@ function _showGeoRequestModal(onGranted, onDenied) {
                     cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;
                     transition:border-color 0.15s,color 0.15s;
                 ">
-                    Non ora
+                    ${window.t('geo_cancel')}
                 </button>
             </div>
         </div>`;
@@ -1876,7 +1985,7 @@ function _showGeoErrorModal(title, message) {
                 background:#264653;color:white;font-size:0.9rem;font-weight:800;
                 letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;
                 font-family:'Plus Jakarta Sans',sans-serif;
-            ">Capito</button>
+            ">${window.t('geo_ok') || 'OK'}</button>
         </div>`;
 
     document.body.appendChild(overlay);

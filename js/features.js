@@ -22,6 +22,70 @@
 
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  0. HAPTIC FEEDBACK — Micro-vibrazione per azioni importanti
+//     navigator.vibrate() è supportato da tutti i browser Android moderni.
+//     Su iOS Safari non è supportato ma non lancia errori (safe to call).
+//     Il check evita crash su browser desktop senza API.
+// ─────────────────────────────────────────────────────────────────────────────
+window._haptic = function(ms) {
+    try { if (navigator.vibrate) navigator.vibrate(ms || 10); } catch(e) {}
+};
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  CONFIRM DIALOG — Bottom-sheet di conferma branded
+//  Sostituisce window.confirm() che è brutto, bloccante e non stilizzabile.
+//  Pattern: stile coerente con il report modal e il geo modal dell'app.
+//
+//  Uso:
+//    window._showConfirmDialog(titolo, messaggio, onConfirm)
+//    - titolo:    stringa H3 (es. "Sei sicuro?")
+//    - messaggio: stringa corpo (es. "Tutti i preferiti verranno rimossi.")
+//    - onConfirm: callback eseguita SOLO se l'utente tocca il bottone "Sì"
+// ─────────────────────────────────────────────────────────────────────────────
+window._showConfirmDialog = function(title, message, onConfirm) {
+    // Rimuovi eventuali dialog precedenti
+    const existing = document.getElementById('f2g-confirm-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'f2g-confirm-overlay';
+    overlay.className = 'fixed inset-0 z-[160] bg-slate-900/50 backdrop-blur-sm flex items-end justify-center p-0 animate-fade';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `
+    <div class="bg-white w-full max-w-md rounded-t-[1.5rem] shadow-2xl overflow-hidden" style="animation: bumpPanelIn 0.28s cubic-bezier(0.2,0.8,0.2,1) forwards;">
+        <div class="w-full flex justify-center pt-3 pb-1"><div class="w-10 h-1.5 bg-slate-200 rounded-full"></div></div>
+        <div class="px-6 pt-3 pb-6 text-center">
+            <!-- Icona warning -->
+            <div class="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-amber-100">
+                <span class="material-icons text-2xl text-amber-500">warning_amber</span>
+            </div>
+            <h3 class="font-bold text-slate-800 text-lg mb-2">${title}</h3>
+            <p class="text-sm text-slate-500 leading-relaxed mb-6">${message}</p>
+            <div class="flex gap-3">
+                <button id="f2g-confirm-no" class="flex-1 py-3 rounded-xl font-bold text-sm uppercase tracking-wide bg-slate-100 text-slate-600 active:scale-[0.97] transition-all touch-manipulation cursor-pointer">
+                    ${window.t('confirm_no') || 'Annulla'}
+                </button>
+                <button id="f2g-confirm-yes" class="flex-1 py-3 rounded-xl font-bold text-sm uppercase tracking-wide bg-rose-500 text-white shadow-md active:scale-[0.97] transition-all touch-manipulation cursor-pointer">
+                    ${window.t('confirm_yes') || 'Sì, svuota'}
+                </button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.appendChild(overlay);
+
+    // Event listeners (non onclick inline per evitare problemi con dati utente)
+    document.getElementById('f2g-confirm-no').addEventListener('click', () => overlay.remove());
+    document.getElementById('f2g-confirm-yes').addEventListener('click', () => {
+        overlay.remove();
+        if (onConfirm) onConfirm();
+    });
+};
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  1. WISHLIST MANAGER
 // ─────────────────────────────────────────────────────────────────────────────
 window.WL = {
@@ -177,6 +241,9 @@ window.toggleHeart = function(btn, encoded) {
     const added  = window.WL.toggle(item);   // true = appena aggiunto
     const isOverlay = btn.classList.contains('wl-heart-overlay');
 
+    // Haptic: buzz più lungo quando si aggiunge, breve quando si rimuove
+    window._haptic(added ? 12 : 6);
+
     const icon       = btn.querySelector('.material-icons');
 
     if (isOverlay) {
@@ -261,6 +328,8 @@ window.togglePlan = function(btn, encoded) {
     else        { window.ITINERARY.add(item); }
 
     const added  = !wasIn;
+    // Haptic feedback
+    window._haptic(added ? 12 : 6);
     const icon    = btn.querySelector('.material-icons');
     const wrapper = btn.querySelector('.h-11');
     const label   = btn.querySelector('span:last-child');
@@ -403,11 +472,17 @@ window.renderWishlist = function() {
     content.innerHTML = html;
 };
 
-// Helper: svuota wishlist e ricarica
+// Helper: svuota wishlist CON CONFERMA e ricarica
 window._clearWishlist = function() {
-    localStorage.removeItem(window.WL._key);
-    window.renderWishlist();
-    window._updateHomeBadges();
+    window._showConfirmDialog(
+        window.t('confirm_clear_title') || 'Sei sicuro?',
+        window.t('confirm_clear_wishlist') || 'Tutti i preferiti verranno rimossi.',
+        function() {
+            localStorage.removeItem(window.WL._key);
+            window.renderWishlist();
+            window._updateHomeBadges();
+        }
+    );
 };
 
 // Helper: rimuove singolo item con slide-out animation
@@ -575,9 +650,15 @@ window.renderItinerary = function() {
 };
 
 window._clearItinerary = function() {
-    window.ITINERARY.clear();
-    window.renderItinerary();
-    window._updateHomeBadges();
+    window._showConfirmDialog(
+        window.t('confirm_clear_title') || 'Sei sicuro?',
+        window.t('confirm_clear_itinerary') || 'Tutte le tappe verranno rimosse.',
+        function() {
+            window.ITINERARY.clear();
+            window.renderItinerary();
+            window._updateHomeBadges();
+        }
+    );
 };
 
 window._removeItinItem = function(id, btn) {
@@ -916,4 +997,195 @@ window.sortByDistance = function(items, latKey, lonKey) {
         const bDist = (isNaN(bLat) || isNaN(bLon)) ? 9999 : dist(uLat, uLng, bLat, bLon);
         return aDist - bDist;
     });
+};
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  10. SEGNALAZIONI — "Segnala un problema" su ogni card/modal
+//
+//  Tabella Supabase richiesta: "Segnalazioni"
+//  Colonne: id (bigint, identity), created_at (timestamptz, default now()),
+//           item_type (text), item_id (text), item_name (text),
+//           report_type (text), note (text), lang (text)
+//
+//  RLS: abilitare e creare SOLO una policy INSERT per il ruolo anon.
+//  Nessuna policy SELECT/UPDATE/DELETE → i turisti non possono leggere/cancellare.
+//
+//  SQL da eseguire su Supabase Dashboard → SQL Editor:
+//  ──────────────────────────────────────────────────
+//  CREATE TABLE IF NOT EXISTS "Segnalazioni" (
+//    id bigint generated always as identity primary key,
+//    created_at timestamptz default now(),
+//    item_type text not null,
+//    item_id text,
+//    item_name text,
+//    report_type text not null,
+//    note text default '',
+//    lang text default 'it'
+//  );
+//  ALTER TABLE "Segnalazioni" ENABLE ROW LEVEL SECURITY;
+//  CREATE POLICY "anon_can_insert" ON "Segnalazioni"
+//    FOR INSERT TO anon WITH CHECK (true);
+//  ──────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Genera il bottoncino "Segnala" da inserire nelle card o nei modali.
+ * @param {string} itemType  — tipo card: 'ristorante', 'spiaggia', 'sentiero', 'vino', 'attrazione', 'prodotto'
+ * @param {string} itemId    — id univoco dell'item
+ * @param {string} itemName  — nome visibile dell'item
+ */
+window.renderReportBtn = function(itemType, itemId, itemName) {
+    const safeName = (itemName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return `<button
+        class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide
+               text-slate-400 bg-slate-50 border border-slate-100
+               active:scale-95 transition-all touch-manipulation cursor-pointer"
+        onclick="event.stopPropagation(); window._openReportModal('${itemType}', '${itemId || ''}', '${safeName}')"
+        aria-label="${window.t('report_btn')}">
+        <span class="material-icons text-xs">flag</span>
+        ${window.t('report_btn')}
+    </button>`;
+};
+
+/**
+ * Apre un bottom-sheet leggero per la segnalazione.
+ */
+window._openReportModal = function(itemType, itemId, itemName) {
+    window._haptic(8);
+
+    // Rimuovi eventuali report modal precedenti
+    const existing = document.getElementById('report-modal-overlay');
+    if (existing) existing.remove();
+
+    const T = {
+        title: window.t('report_title'),
+        opts: [
+            { value: 'closed',  label: window.t('report_closed'),  icon: 'block' },
+            { value: 'wrong',   label: window.t('report_wrong'),   icon: 'edit_note' },
+            { value: 'blocked', label: window.t('report_blocked'), icon: 'warning' },
+            { value: 'other',   label: window.t('report_other'),   icon: 'more_horiz' }
+        ],
+        placeholder: window.t('report_note_placeholder'),
+        send: window.t('report_send')
+    };
+
+    const overlay = document.createElement('div');
+    overlay.id = 'report-modal-overlay';
+    overlay.className = 'fixed inset-0 z-[150] bg-slate-900/50 backdrop-blur-sm flex items-end justify-center p-0 animate-fade';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `
+    <div class="bg-white w-full max-w-md rounded-t-[1.5rem] shadow-2xl overflow-hidden" id="report-sheet">
+        <div class="w-full flex justify-center pt-3 pb-1"><div class="w-10 h-1.5 bg-slate-200 rounded-full"></div></div>
+        <div class="px-5 pt-2 pb-5">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="material-icons text-slate-400 text-lg">flag</span>
+                <h3 class="font-bold text-slate-800 text-base">${T.title}</h3>
+            </div>
+            ${itemName ? `<p class="text-xs text-slate-400 font-medium mb-4 truncate">${itemName}</p>` : '<div class="mb-3"></div>'}
+
+            <div class="flex flex-col gap-2 mb-4" id="report-options">
+                ${T.opts.map(o => `
+                    <button class="report-opt flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50 text-left
+                                   active:scale-[0.98] transition-all touch-manipulation cursor-pointer"
+                            data-value="${o.value}" onclick="window._selectReportOpt(this)">
+                        <span class="material-icons text-slate-400 text-lg">${o.icon}</span>
+                        <span class="text-sm font-medium text-slate-700">${o.label}</span>
+                    </button>
+                `).join('')}
+            </div>
+
+            <textarea id="report-note" rows="2" maxlength="500"
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 bg-slate-50 resize-none
+                       focus:outline-none focus:border-ct-blue focus:ring-1 focus:ring-ct-blue/30 mb-4"
+                placeholder="${T.placeholder}"></textarea>
+
+            <button id="report-send-btn"
+                class="w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide
+                       bg-slate-200 text-slate-400 cursor-not-allowed transition-all"
+                disabled
+                onclick="window._submitReport('${itemType}', '${itemId || ''}', '${(itemName || '').replace(/'/g, "\\'")}')">
+                ${T.send}
+            </button>
+        </div>
+    </div>`;
+
+    document.body.appendChild(overlay);
+};
+
+window._selectedReportType = null;
+
+window._selectReportOpt = function(btn) {
+    window._haptic(5);
+    // Reset all
+    document.querySelectorAll('.report-opt').forEach(b => {
+        b.classList.remove('border-ct-blue', 'bg-ct-blue-light');
+        b.classList.add('border-slate-100', 'bg-slate-50');
+    });
+    // Activate clicked
+    btn.classList.remove('border-slate-100', 'bg-slate-50');
+    btn.classList.add('border-ct-blue', 'bg-ct-blue-light');
+    window._selectedReportType = btn.dataset.value;
+
+    // Enable send button
+    const sendBtn = document.getElementById('report-send-btn');
+    if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.className = 'w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide bg-ct-blue text-white shadow-md active:scale-[0.97] transition-all cursor-pointer touch-manipulation';
+    }
+};
+
+window._submitReport = async function(itemType, itemId, itemName) {
+    const note = (document.getElementById('report-note')?.value || '').trim();
+    const reportType = window._selectedReportType;
+    if (!reportType) return;
+
+    const sendBtn = document.getElementById('report-send-btn');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<span class="material-icons text-sm spin">sync</span>';
+    }
+
+    try {
+        const { error } = await window.supabaseClient
+            .from('Segnalazioni')
+            .insert({
+                item_type: itemType,
+                item_id: String(itemId || ''),
+                item_name: itemName || '',
+                report_type: reportType,
+                note: note,
+                lang: window.currentLang || 'it'
+            });
+
+        if (error) throw error;
+
+        window._haptic(15);
+
+        // Success UI
+        const sheet = document.getElementById('report-sheet');
+        if (sheet) {
+            sheet.innerHTML = `
+            <div class="p-8 text-center">
+                <div class="w-16 h-16 bg-ct-green/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="material-icons text-3xl text-ct-green">check_circle</span>
+                </div>
+                <h3 class="font-bold text-slate-800 text-lg mb-1">${window.t('report_thanks')}</h3>
+                <p class="text-sm text-slate-400">${window.t('report_thanks_sub')}</p>
+            </div>`;
+        }
+        setTimeout(() => {
+            const overlay = document.getElementById('report-modal-overlay');
+            if (overlay) { overlay.classList.add('opacity-0'); setTimeout(() => overlay.remove(), 200); }
+        }, 1800);
+
+    } catch (err) {
+        console.error('[Report] Insert failed:', err);
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = window.t('report_error');
+            sendBtn.className = 'w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide bg-rose-500 text-white shadow-md cursor-pointer';
+        }
+    }
 };

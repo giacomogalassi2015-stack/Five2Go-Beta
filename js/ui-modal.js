@@ -55,6 +55,30 @@ window.openModal = async function(type, payload) {
     
     if (!content || !content.html) { modal.remove(); return; }
 
+    // ── Report button: estraiamo il nome dell'item per la segnalazione ──
+    // Skip per modali non-content (transport, legal, ecc.)
+    let reportBtnHtml = '';
+    const reportableTypes = ['ristorante','restaurant','product','Vini','wine','attrazione','Attrazioni','Spiagge','sentieroInfo'];
+    if (reportableTypes.includes(type) && window.renderReportBtn) {
+        let itemName = '';
+        let itemId = '';
+        try {
+            if (item) {
+                // Vini, Attrazioni: item è l'oggetto dal DB
+                itemName = window.dbCol(item, 'Nome') || window.dbCol(item, 'Attrazioni') || '';
+                itemId = String(item.id || item.ID || item.POI_ID || '');
+            } else if (payload && typeof payload === 'string' && (payload.startsWith('%') || payload.startsWith('{'))) {
+                // Ristoranti, Spiagge, Prodotti, Sentieri: payload è JSON encoded
+                const parsed = JSON.parse(decodeURIComponent(payload));
+                itemName = window.dbCol(parsed, 'Nome') || window.dbCol(parsed, 'Prodotti') || parsed.nome || '';
+                itemId = String(parsed.id || parsed.poi_id || '');
+            } else {
+                itemId = String(payload || '');
+            }
+        } catch(e) {}
+        reportBtnHtml = `<div class="px-5 pb-4 flex justify-start">${window.renderReportBtn(type, itemId, itemName)}</div>`;
+    }
+
     // Content Container: bottom-sheet mobile, centered card desktop
     const modalClass = content.class || 'modal-sheet bg-white w-full max-w-md rounded-t-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden relative overflow-y-auto' +
         ' ' + 'max-h-[95vh] max-h-[95dvh]';
@@ -69,6 +93,7 @@ window.openModal = async function(type, payload) {
             <span class="material-icons text-xl">close</span>
         </button>
         ${content.html}
+        ${reportBtnHtml}
     </div>`;
 
     if (content.onRender && typeof content.onRender === 'function') {

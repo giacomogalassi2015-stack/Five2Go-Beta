@@ -6,10 +6,10 @@ window.getModalContent = function(type, payload, item) {
     // --- RISTORANTE ---
    if (type === 'ristorante' || type === 'restaurant') {
     const item = JSON.parse(decodeURIComponent(payload));
-    const nome = window.dbCol(item, 'Nome');
-    const nomeIT = window.valIT(item, 'Nome'); 
-    const indirizzo = window.dbCol(item, 'Paesi') || ''; 
-    const desc = window.dbCol(item, 'Descrizioni') || window.t('desc_missing'); 
+    const nome = window.escapeHtml(window.dbCol(item, 'Nome'));
+    const nomeIT = window.valIT(item, 'Nome');  // non-escaped: usato per URL immagine
+    const indirizzo = window.escapeHtml(window.dbCol(item, 'Paesi') || ''); 
+    const desc = window.escapeHtml(window.dbCol(item, 'Descrizioni') || window.t('desc_missing')); 
     
     const imgUrl = window.getSmartUrl(nomeIT, '', 600);
 
@@ -29,10 +29,10 @@ window.getModalContent = function(type, payload, item) {
     // --- PRODOTTI ---
     else if (type === 'product') {
         const p = JSON.parse(decodeURIComponent(payload));
-        const nome = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
+        const nome = window.escapeHtml(window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome'));
         const nomeIT = window.valIT(p, 'Prodotti') || window.valIT(p, 'Nome');
-        const desc = window.dbCol(p, 'Descrizione');   
-        const ideale = window.dbCol(p, 'Ideale per'); 
+        const desc = window.escapeHtml(window.dbCol(p, 'Descrizione'));   
+        const ideale = window.escapeHtml(window.dbCol(p, 'Ideale per')); 
         const fotoKey = p.Prodotti_foto || nomeIT;
         const bigImg = window.getSmartUrl(fotoKey, '', 600);
 
@@ -53,14 +53,15 @@ window.getModalContent = function(type, payload, item) {
     // --- VINI ---
     else if (type === 'Vini' || type === 'wine') {
         if (!item) { return { html: '', class: '' }; }
-        const nome = window.dbCol(item, 'Nome');
+        const esc = window.escapeHtml || (s => s);
+        const nome = esc(window.dbCol(item, 'Nome'));
         const tipoLabel = window.t('wine_red'); // Fallback
-        const produttore = window.dbCol(item, 'Produttore');
-        const uve = window.dbCol(item, 'Uve');
-        const gradi = window.dbCol(item, 'Gradi');
-        const abbinamenti = window.dbCol(item, 'Abbinamenti');
-        const desc = window.dbCol(item, 'Descrizione');
-        const foto = window.dbCol(item, 'Foto');
+        const produttore = esc(window.dbCol(item, 'Produttore'));
+        const uve = esc(window.dbCol(item, 'Uve'));
+        const gradi = esc(window.dbCol(item, 'Gradi'));
+        const abbinamenti = esc(window.dbCol(item, 'Abbinamenti'));
+        const desc = esc(window.dbCol(item, 'Descrizione'));
+        const foto = window.dbCol(item, 'Foto');  // URL, non escapare
 
         // Logic color based on IT
         const tipoIT = String(window.valIT(item, 'Tipo')).toLowerCase();
@@ -172,14 +173,14 @@ window.getModalContent = function(type, payload, item) {
     else if (type === 'sentieroInfo') {
         let item = {};
         try { item = JSON.parse(decodeURIComponent(payload)); } catch(e) {}
-        
-        const nome = item.Nome || item.Titolo || 'Dettagli Sentiero';
-        const desc = window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione') || 'Descrizione non disponibile.';
+        const esc = window.escapeHtml || (s => s);
+        const nome = esc(item.Nome || item.Titolo || 'Dettagli Sentiero');
+        const desc = esc(window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione') || 'Descrizione non disponibile.');
         
         // Dati tecnici connessi al database
-        const dist = item.distanza_km ? item.distanza_km + ' km' : (item.Distanza || '--');
-        const dur = item.durata_minuti ? item.durata_minuti + ' min' : (item.Durata || '--');
-        const diff = item.Tag || item.Difficolta || 'Medio';
+        const dist = esc(item.distanza_km ? item.distanza_km + ' km' : (item.Distanza || '--'));
+        const dur = esc(item.durata_minuti ? item.durata_minuti + ' min' : (item.Durata || '--'));
+        const diff = esc(item.Tag || item.Difficolta || 'Medio');
         
         // Colore badge difficoltà
         let diffColor = 'text-yellow-600 bg-yellow-50 border-yellow-100';
@@ -255,12 +256,12 @@ window.getModalContent = function(type, payload, item) {
         let beachItem = {};
         try { beachItem = JSON.parse(decodeURIComponent(payload)); } catch(e) { if(item) beachItem = item; }
         if (!beachItem || Object.keys(beachItem).length === 0) { return { html: `<div class="p-8 text-center text-slate-500">Dati non trovati</div>`, class: '' }; }
-
-        const nome = window.dbCol(beachItem, 'Nome') || 'Spiaggia';
+        const esc = window.escapeHtml || (s => s);
+        const nome = esc(window.dbCol(beachItem, 'Nome') || 'Spiaggia');
         const nomeIT = window.valIT(beachItem, 'Nome') || nome;
-        const tipo = window.dbCol(beachItem, 'Tipo');
-        const paesi = window.dbCol(beachItem, 'Paesi');
-        const desc = window.dbCol(beachItem, 'Descrizione');
+        const tipo = esc(window.dbCol(beachItem, 'Tipo'));
+        const paesi = esc(window.dbCol(beachItem, 'Paesi'));
+        const desc = esc(window.dbCol(beachItem, 'Descrizione'));
         const imgUrl = window.getSmartUrl(nomeIT, '', 600);
         
         contentHtml = `
@@ -282,10 +283,11 @@ window.getModalContent = function(type, payload, item) {
     // --- ATTRAZIONI ---
     else if (type === 'Attrazioni' || type === 'attrazione') {
         if (!item) { return { html: '', class: '' }; }
-        const titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
+        const esc = window.escapeHtml || (s => s);
+        const titolo = esc(window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo'));
         const titoloIT = window.valIT(item, 'Attrazioni') || window.valIT(item, 'Titolo'); 
-        const curiosita = window.dbCol(item, 'Curiosita');
-        const desc = window.dbCol(item, 'Descrizione');
+        const curiosita = esc(window.dbCol(item, 'Curiosita'));
+        const desc = esc(window.dbCol(item, 'Descrizione'));
         const img = window.getSmartUrl(titoloIT, '', 600); 
 
         contentHtml = `

@@ -11,6 +11,43 @@ window.appCache = {};
 const CLOUDINARY_CLOUD_NAME = 'dkg0jfady';
 const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/`;
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  ESCAPE HTML — Protezione XSS
+//  Sanitizza qualsiasi stringa proveniente dal DB prima di inserirla in innerHTML.
+//  Converte i 5 caratteri pericolosi in entità HTML: & < > " '
+//  Usata dai renderer (ui-renderers.js, ui-modal-contents.js) su tutti i campi
+//  testuali dal DB: nomi, descrizioni, indirizzi, note.
+//
+//  NOTA: NON usare su valori che devono essere interpretati come HTML
+//  (es. link già formattati). In quei casi sanitizzare manualmente.
+// ─────────────────────────────────────────────────────────────────────────────
+window.escapeHtml = function(str) {
+    if (str == null) return '';
+    if (typeof str !== 'string') str = String(str);
+    return str
+        .replace(/&/g,  '&amp;')
+        .replace(/</g,  '&lt;')
+        .replace(/>/g,  '&gt;')
+        .replace(/"/g,  '&quot;')
+        .replace(/'/g,  '&#39;');
+};
+
+/**
+ * Wrapper sicuro per dbCol: estrae il campo multilingua E lo sanitizza per HTML.
+ * Da usare al posto di dbCol() in tutti i template HTML.
+ * Per contesti non-HTML (URL, attributi data-*, confronti logici) continuare a usare dbCol().
+ */
+window.safeCol = function(item, field) {
+    return window.escapeHtml(window.dbCol(item, field));
+};
+
+/**
+ * Wrapper sicuro per valIT: estrae il valore italiano E lo sanitizza per HTML.
+ */
+window.safeValIT = function(item, field) {
+    return window.escapeHtml(window.valIT(item, field));
+};
+
 window.currentLang = localStorage.getItem('app_lang') || 'it';
 window.currentViewName = 'home';
 
@@ -93,6 +130,14 @@ const UI_TEXT = {
         chart_label: "Grafico", close_label: "Chiudi",
         trenitalia_sub: "Trenitalia", ferry_nav_sub: "Navigazione",
         bus_badge: "ATC · Navette",
+        // ── Segnalazioni ──
+        report_btn: "Segnala", report_title: "Segnala un problema",
+        report_closed: "Chiuso / Non esiste più", report_wrong: "Informazione errata",
+        report_blocked: "Sentiero bloccato / Inaccessibile", report_other: "Altro",
+        report_note_placeholder: "Descrivi brevemente il problema (opzionale)...",
+        report_send: "Invia segnalazione", report_thanks: "Grazie per la segnalazione!",
+        report_thanks_sub: "Il team verificherà il prima possibile.",
+        report_error: "Errore nell'invio. Riprova più tardi.",
         welcome_app_name: "5 Terre Guide", welcome_desc: "La tua guida essenziale per esplorare le Cinque Terre.",
         weather_sunny: "Sereno", weather_cloudy: "Nuvoloso", weather_fog: "Foschia", 
         weather_rain: "Pioggia", weather_storm: "Temporale", weather_snow: "Neve",
@@ -135,7 +180,13 @@ const UI_TEXT = {
             chicco_map_5: "🚶 Corniglia è l'unico borgo senza porto. Ma ha la terrazza più alta... e il miglior gelato al limone.",
             chicco_map_6: "⚓ Manarola di sera si svuota dai turisti. Resta — è il momento più bello per esplorare i vicoli.",
             chicco_map_7: "🍸 Monterosso ha la spiaggia più grande. I bar sul lungomare offrono spritz con vista sulla torre medievale.",
-            chicco_map_8: "🐟 Il giovedì a Riomaggiore c'è il mercatino locale. Acciughe, pesto fresco e limoncino artigianale."
+            chicco_map_8: "🐟 Il giovedì a Riomaggiore c'è il mercatino locale. Acciughe, pesto fresco e limoncino artigianale.",
+        aria_add_fav: "Aggiungi ai preferiti", aria_remove_fav: "Rimuovi dai preferiti",
+        aria_add_plan: "Aggiungi all'itinerario", aria_remove_plan: "Rimuovi dall'itinerario",
+        toast_storage_full: "Memoria piena: impossibile salvare. Prova a svuotare i preferiti meno usati.",
+        confirm_clear_title: "Sei sicuro?", confirm_clear_wishlist: "Tutti i tuoi preferiti verranno rimossi.",
+        confirm_clear_itinerary: "Tutte le tappe verranno rimosse.", confirm_yes: "Sì, svuota", confirm_no: "Annulla",
+        geo_title: "Dove sei?", geo_desc: "Per mostrarti la tua posizione e trovare i posti più vicini, Five2Go ha bisogno di accedere alla posizione.", geo_privacy: "🔒 La tua posizione viene usata solo in questa sessione e non viene mai salvata.", geo_confirm: "Consenti posizione", geo_cancel: "Non ora", geo_blocked_title: "Posizione bloccata", geo_blocked_msg: "Hai negato l'accesso alla posizione. Per riabilitarla vai nelle impostazioni del browser.", geo_ok: "Capito"
     },
     en: {
         loading: "Loading...", error: "Error", search_placeholder: "🔍 Search restaurants, wines, trails...", no_results: "No results found.",
@@ -200,6 +251,13 @@ const UI_TEXT = {
         chart_label: "Chart", close_label: "Close",
         trenitalia_sub: "Trenitalia", ferry_nav_sub: "Navigation",
         bus_badge: "ATC · Shuttle",
+        report_btn: "Report", report_title: "Report a problem",
+        report_closed: "Closed / No longer exists", report_wrong: "Wrong information",
+        report_blocked: "Trail blocked / Inaccessible", report_other: "Other",
+        report_note_placeholder: "Briefly describe the issue (optional)...",
+        report_send: "Send report", report_thanks: "Thanks for reporting!",
+        report_thanks_sub: "The team will check it as soon as possible.",
+        report_error: "Sending failed. Please try later.",
         welcome_app_name: "5 Terre Guide", welcome_desc: "Your essential guide to exploring Cinque Terre.",
         weather_sunny: "Sunny", weather_cloudy: "Cloudy", weather_fog: "Foggy", 
         weather_rain: "Rain", weather_storm: "Storm", weather_snow: "Snow",
@@ -242,7 +300,13 @@ const UI_TEXT = {
             chicco_map_5: "🚶 Corniglia is the only village without a harbour. But it has the highest terrace — and the best lemon gelato.",
             chicco_map_6: "⚓ Manarola in the evening empties of tourists. Stay — it's the best time to explore the alleys.",
             chicco_map_7: "🍸 Monterosso has the biggest beach. The bars along the promenade serve spritz with a view of the medieval tower.",
-            chicco_map_8: "🐟 On Thursdays in Riomaggiore there's a local market. Anchovies, fresh pesto and artisan limoncino."
+            chicco_map_8: "🐟 On Thursdays in Riomaggiore there's a local market. Anchovies, fresh pesto and artisan limoncino.",
+        aria_add_fav: "Add to favourites", aria_remove_fav: "Remove from favourites",
+        aria_add_plan: "Add to itinerary", aria_remove_plan: "Remove from itinerary",
+        toast_storage_full: "Storage full: cannot save. Try clearing less-used favourites.",
+        confirm_clear_title: "Are you sure?", confirm_clear_wishlist: "All your favourites will be removed.",
+        confirm_clear_itinerary: "All stops will be removed.", confirm_yes: "Yes, clear", confirm_no: "Cancel",
+        geo_title: "Where are you?", geo_desc: "To show your position on the map and find the nearest stops, Five2Go needs access to your location.", geo_privacy: "🔒 Your location is used only in this session and is never saved or shared.", geo_confirm: "Allow location", geo_cancel: "Not now", geo_blocked_title: "Location blocked", geo_blocked_msg: "You denied location access. To re-enable it, go to your browser settings.", geo_ok: "Got it"
     },
     fr: {
         loading: "Chargement...", error: "Erreur", search_placeholder: "🔍 Cherchez restaurants, vins, randonnées...", no_results: "Aucun résultat.",
@@ -305,6 +369,13 @@ const UI_TEXT = {
         chart_label: "Graphique", close_label: "Fermer",
         trenitalia_sub: "Trenitalia", ferry_nav_sub: "Navigation",
         bus_badge: "ATC · Navettes",
+        report_btn: "Signaler", report_title: "Signaler un problème",
+        report_closed: "Fermé / N'existe plus", report_wrong: "Information incorrecte",
+        report_blocked: "Sentier bloqué / Inaccessible", report_other: "Autre",
+        report_note_placeholder: "Décrivez brièvement le problème (facultatif)...",
+        report_send: "Envoyer le signalement", report_thanks: "Merci pour votre signalement !",
+        report_thanks_sub: "L'équipe vérifiera dès que possible.",
+        report_error: "Erreur d'envoi. Réessayez plus tard.",
         welcome_app_name: "Guide 5 Terres", welcome_desc: "Votre guide essentiel pour explorer les Cinque Terre.",
         weather_sunny: "Ensoleillé", weather_cloudy: "Nuageux", weather_fog: "Brume",
         weather_rain: "Pluie", weather_storm: "Orage", weather_snow: "Neige",
@@ -347,7 +418,13 @@ const UI_TEXT = {
             chicco_map_5: "🚶 Corniglia est le seul village sans port. Mais il a la terrasse la plus haute et la meilleure glace au citron.",
             chicco_map_6: "⚓ Manarola le soir se vide des touristes. Restez — c'est le meilleur moment pour explorer les ruelles.",
             chicco_map_7: "🍸 Monterosso a la plus grande plage. Les bars servent des spritz avec vue sur la tour médiévale.",
-            chicco_map_8: "🐟 Le jeudi à Riomaggiore il y a un marché local. Anchois, pesto frais et limoncino artisanal."
+            chicco_map_8: "🐟 Le jeudi à Riomaggiore il y a un marché local. Anchois, pesto frais et limoncino artisanal.",
+        aria_add_fav: "Ajouter aux favoris", aria_remove_fav: "Retirer des favoris",
+        aria_add_plan: "Ajouter à l'itinéraire", aria_remove_plan: "Retirer de l'itinéraire",
+        toast_storage_full: "Mémoire pleine : impossible de sauvegarder.",
+        confirm_clear_title: "Êtes-vous sûr ?", confirm_clear_wishlist: "Tous vos favoris seront supprimés.",
+        confirm_clear_itinerary: "Toutes les étapes seront supprimées.", confirm_yes: "Oui, effacer", confirm_no: "Annuler",
+        geo_title: "Où êtes-vous ?", geo_desc: "Pour afficher votre position et trouver les arrêts les plus proches.", geo_confirm: "Autoriser la position", geo_cancel: "Pas maintenant", geo_blocked_title: "Position bloquée", geo_blocked_msg: "Accès refusé. Réactivez dans les paramètres du navigateur.", geo_ok: "Compris"
     },
 
     de: {
@@ -411,6 +488,13 @@ const UI_TEXT = {
         chart_label: "Diagramm", close_label: "Schließen",
         trenitalia_sub: "Trenitalia", ferry_nav_sub: "Schifffahrt",
         bus_badge: "ATC · Shuttles",
+        report_btn: "Melden", report_title: "Problem melden",
+        report_closed: "Geschlossen / Existiert nicht mehr", report_wrong: "Falsche Information",
+        report_blocked: "Weg gesperrt / Unzugänglich", report_other: "Sonstiges",
+        report_note_placeholder: "Beschreiben Sie das Problem kurz (optional)...",
+        report_send: "Meldung senden", report_thanks: "Danke für Ihre Meldung!",
+        report_thanks_sub: "Das Team wird es so schnell wie möglich prüfen.",
+        report_error: "Sendefehler. Bitte später erneut versuchen.",
         welcome_app_name: "5 Terre Guide", welcome_desc: "Ihr essenzieller Führer für die Cinque Terre.",
         weather_sunny: "Sonnig", weather_cloudy: "Bewölkt", weather_fog: "Nebel",
         weather_rain: "Regen", weather_storm: "Gewitter", weather_snow: "Schnee",
@@ -453,7 +537,13 @@ const UI_TEXT = {
             chicco_map_5: "🚶 Corniglia ist das einzige Dorf ohne Hafen. Aber es hat die höchste Terrasse... und das beste Zitroneneeis.",
             chicco_map_6: "⚓ Manarola am Abend leert sich von Touristen. Bleib — es ist die schönste Zeit, die Gassen zu erkunden.",
             chicco_map_7: "🍸 Monterosso hat den größten Strand. Die Bars an der Promenade servieren Spritz mit Blick auf den mittelalterlichen Turm.",
-            chicco_map_8: "🐟 Donnerstags in Riomaggiore gibt es einen lokalen Markt. Sardellen, frisches Pesto und handgemachten Limoncino."
+            chicco_map_8: "🐟 Donnerstags in Riomaggiore gibt es einen lokalen Markt. Sardellen, frisches Pesto und handgemachten Limoncino.",
+        aria_add_fav: "Zu Favoriten hinzufügen", aria_remove_fav: "Aus Favoriten entfernen",
+        aria_add_plan: "Zur Route hinzufügen", aria_remove_plan: "Aus Route entfernen",
+        toast_storage_full: "Speicher voll: Speichern nicht möglich.",
+        confirm_clear_title: "Bist du sicher?", confirm_clear_wishlist: "Alle Favoriten werden entfernt.",
+        confirm_clear_itinerary: "Alle Stopps werden entfernt.", confirm_yes: "Ja, löschen", confirm_no: "Abbrechen",
+        geo_title: "Wo bist du?", geo_desc: "Um deine Position auf der Karte zu zeigen und die nächsten Haltestellen zu finden.", geo_confirm: "Standort erlauben", geo_cancel: "Nicht jetzt", geo_blocked_title: "Standort blockiert", geo_blocked_msg: "Zugriff verweigert. In den Browsereinstellungen aktivieren.", geo_ok: "Verstanden"
     },
 
     es: {
@@ -517,6 +607,13 @@ const UI_TEXT = {
         chart_label: "Gráfico", close_label: "Cerrar",
         trenitalia_sub: "Trenitalia", ferry_nav_sub: "Navegación",
         bus_badge: "ATC · Lanzadera",
+        report_btn: "Reportar", report_title: "Reportar un problema",
+        report_closed: "Cerrado / Ya no existe", report_wrong: "Información incorrecta",
+        report_blocked: "Sendero bloqueado / Inaccesible", report_other: "Otro",
+        report_note_placeholder: "Describe brevemente el problema (opcional)...",
+        report_send: "Enviar reporte", report_thanks: "¡Gracias por reportar!",
+        report_thanks_sub: "El equipo lo revisará lo antes posible.",
+        report_error: "Error al enviar. Inténtalo más tarde.",
         welcome_app_name: "Guía 5 Terre", welcome_desc: "Tu guía esencial para explorar las Cinque Terre.",
         weather_sunny: "Soleado", weather_cloudy: "Nublado", weather_fog: "Niebla",
         weather_rain: "Lluvia", weather_storm: "Tormenta", weather_snow: "Nieve",
@@ -559,7 +656,13 @@ const UI_TEXT = {
             chicco_map_5: "🚶 Corniglia es el único pueblo sin puerto. Pero tiene la terraza más alta y el mejor helado de limón.",
             chicco_map_6: "⚓ Manarola por la noche se vacía de turistas. Quédate — es el mejor momento para explorar los callejones.",
             chicco_map_7: "🍸 Monterosso tiene la playa más grande. Los bares sirven spritz con vista a la torre medieval.",
-            chicco_map_8: "🐟 Los jueves en Riomaggiore hay un mercadillo local. Anchoas, pesto fresco y limoncino artesanal."
+            chicco_map_8: "🐟 Los jueves en Riomaggiore hay un mercadillo local. Anchoas, pesto fresco y limoncino artesanal.",
+        aria_add_fav: "Añadir a favoritos", aria_remove_fav: "Quitar de favoritos",
+        aria_add_plan: "Añadir al itinerario", aria_remove_plan: "Quitar del itinerario",
+        toast_storage_full: "Almacenamiento lleno: no se puede guardar.",
+        confirm_clear_title: "¿Estás seguro?", confirm_clear_wishlist: "Todos tus favoritos serán eliminados.",
+        confirm_clear_itinerary: "Todas las paradas serán eliminadas.", confirm_yes: "Sí, limpiar", confirm_no: "Cancelar",
+        geo_title: "¿Dónde estás?", geo_desc: "Para mostrarte tu posición en el mapa y encontrar las paradas más cercanas.", geo_confirm: "Permitir ubicación", geo_cancel: "Ahora no", geo_blocked_title: "Ubicación bloqueada", geo_blocked_msg: "Acceso denegado. Actívalo en los ajustes del navegador.", geo_ok: "Entendido"
     },
 
     zh: {
@@ -623,6 +726,13 @@ const UI_TEXT = {
         chart_label: "图表", close_label: "关闭",
         trenitalia_sub: "Trenitalia", ferry_nav_sub: "航运",
         bus_badge: "ATC · 班车",
+        report_btn: "报告", report_title: "报告问题",
+        report_closed: "已关闭/不存在", report_wrong: "信息有误",
+        report_blocked: "步道封闭/无法通行", report_other: "其他",
+        report_note_placeholder: "简要描述问题（可选）...",
+        report_send: "发送报告", report_thanks: "感谢您的反馈！",
+        report_thanks_sub: "团队将尽快核实。",
+        report_error: "发送失败，请稍后重试。",
         welcome_app_name: "五渔村指南", welcome_desc: "探索五渔村的必备指南。",
         weather_sunny: "晴", weather_cloudy: "多云", weather_fog: "雾",
         weather_rain: "雨", weather_storm: "暴风雨", weather_snow: "雪",
@@ -665,7 +775,13 @@ const UI_TEXT = {
             chicco_map_5: "🚶 科尔尼利亚是唯一没有港口的村庄，拥有最高的露台和最好吃的柠檬冰淇淋。",
             chicco_map_6: "⚓ 马纳罗拉傍晚游客散去，那才是探索小巷最美的时刻。",
             chicco_map_7: "🍸 蒙泰罗索有最大的海滩，海滨酒吧供应Spritz，可欣赏中世纪塔楼。",
-            chicco_map_8: "🐟 每逢周四，里奥马焦雷有本地集市：鳀鱼、新鲜罗勒酱和手工柠檬酒。"
+            chicco_map_8: "🐟 每逢周四，里奥马焦雷有本地集市：鳀鱼、新鲜罗勒酱和手工柠檬酒。",
+        aria_add_fav: "添加到收藏", aria_remove_fav: "从收藏中移除",
+        aria_add_plan: "添加到行程", aria_remove_plan: "从行程中移除",
+        toast_storage_full: "存储空间已满：无法保存。请尝试清除不常用的收藏。",
+        confirm_clear_title: "确定吗？", confirm_clear_wishlist: "所有收藏将被移除。",
+        confirm_clear_itinerary: "所有站点将被移除。", confirm_yes: "是，清空", confirm_no: "取消",
+        geo_title: "你在哪里？", geo_desc: "为了在地图上显示你的位置并找到最近的站点。", geo_confirm: "允许定位", geo_cancel: "暂不", geo_blocked_title: "位置被阻止", geo_blocked_msg: "访问被拒绝。请在浏览器设置中启用。", geo_ok: "知道了"
     }
 };
 

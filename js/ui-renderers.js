@@ -74,20 +74,27 @@ function getCandyBtn(icon, label, color, onclick) {
     </button>`;
 }
 function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml, heartOverlayHtml }) {
+    // XSS protection: sanitizza testi utente prima dell'inserimento in HTML
+    const esc = window.escapeHtml || (s => s);
+    const _title   = esc(title);
+    const _subText = esc(subText);
+    const _label   = esc(label);
+    const _alt     = esc(title);
+
     if (image) {
         return `
         <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col relative group cursor-pointer hover:shadow-lg transition-all duration-300 active:scale-[0.98] active:shadow-sm touch-manipulation border border-slate-100/30 master-card"
             data-card-id="${id}" onclick="${onClick}">
             <div class="master-card-img w-full relative overflow-hidden shrink-0">
-                <img src="${image}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" alt="${title}">
+                <img src="${image}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" alt="${_alt}">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
-                ${label ? `<div class="absolute top-3 left-3 z-10">
-                    <span class="inline-flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white/90 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border border-white/15">${label}</span>
+                ${_label ? `<div class="absolute top-3 left-3 z-10">
+                    <span class="inline-flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white/90 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border border-white/15">${_label}</span>
                 </div>` : ''}
                 ${heartOverlayHtml || ''}
                 <div class="absolute bottom-0 left-0 right-0 p-4 z-10">
-                    <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-sm mb-1 line-clamp-2">${title}</h3>
-                    ${subText ? `<p class="text-white/70 text-xs font-medium leading-relaxed line-clamp-2">${subText}</p>` : ''}
+                    <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-sm mb-1 line-clamp-2">${_title}</h3>
+                    ${_subText ? `<p class="text-white/70 text-xs font-medium leading-relaxed line-clamp-2">${_subText}</p>` : ''}
                 </div>
             </div>
             <div class="px-3 py-2.5 flex items-center justify-end gap-2 bg-white shrink-0">
@@ -110,14 +117,14 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
             <div class="h-36 w-full bg-gradient-to-br ${themeClass} relative overflow-hidden shrink-0">
                 <span class="material-icons absolute text-[8rem] opacity-10 -bottom-4 -right-4 transform rotate-[-10deg] select-none">${iconFallback}</span>
                 <span class="material-icons text-5xl absolute bottom-4 left-4 drop-shadow-sm opacity-90 z-10">${iconFallback}</span>
-                ${label ? `<div class="absolute top-3 left-3 z-10">
-                    <span class="inline-flex items-center gap-1 bg-white/60 backdrop-blur-sm text-slate-700 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">${label}</span>
+                ${_label ? `<div class="absolute top-3 left-3 z-10">
+                    <span class="inline-flex items-center gap-1 bg-white/60 backdrop-blur-sm text-slate-700 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">${_label}</span>
                 </div>` : ''}
                 ${heartOverlayHtml || ''}
             </div>
             <div class="px-4 pt-3 pb-1 min-w-0">
-                <h3 class="font-serif text-lg font-bold text-slate-800 leading-tight group-hover:text-primary transition-colors line-clamp-2">${title}</h3>
-                ${subText ? `<p class="text-xs text-slate-500 font-medium leading-relaxed mt-1 line-clamp-2">${subText}</p>` : ''}
+                <h3 class="font-serif text-lg font-bold text-slate-800 leading-tight group-hover:text-primary transition-colors line-clamp-2">${_title}</h3>
+                ${_subText ? `<p class="text-xs text-slate-500 font-medium leading-relaxed mt-1 line-clamp-2">${_subText}</p>` : ''}
             </div>
             <div class="px-3 py-2.5 flex items-center justify-end gap-2 bg-white">
                 ${buttonsHtml}
@@ -127,6 +134,12 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
 }
 
 function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, themeColor, buttonsHtml, heartOverlayHtml }) {
+    // XSS protection
+    const esc = window.escapeHtml || (s => s);
+    const _title    = esc(title);
+    const _type     = esc(typeLabel);
+    const _producer = esc(producer);
+    const _grapes   = esc(grapes);
     const colors = {
         'yellow': 'bg-[#E9C46A] text-yellow-900', 
         'red':    'bg-[#9B2226] text-red-100',     
@@ -144,13 +157,13 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
         <div class="flex-1 p-4 flex flex-col relative bg-white min-w-0">
             <div class="mb-2 pr-8">
                 <span class="inline-block px-2 py-0.5 rounded border border-slate-100 bg-slate-50 text-[11px] font-bold uppercase tracking-widest text-slate-500 font-sans">
-                    ${typeLabel}
+                    ${_type}
                 </span>
             </div>
-            <h3 class="font-serif text-lg font-bold text-slate-800 leading-snug mb-1 pr-2 group-hover:text-ct-terracotta transition-colors line-clamp-2">${title}</h3>
+            <h3 class="font-serif text-lg font-bold text-slate-800 leading-snug mb-1 pr-2 group-hover:text-ct-terracotta transition-colors line-clamp-2">${_title}</h3>
             <div class="flex items-center gap-1.5 mb-3 min-w-0">
                 <span class="material-icons text-[14px] text-slate-300 shrink-0">storefront</span>
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wide truncate">${producer}</span>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wide truncate">${_producer}</span>
             </div>
            <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <div class="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-xl text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600 transition-colors">
@@ -164,6 +177,10 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
 }
 
 function renderUtilityCard({ id, icon, title, subtitle, phone, color }) {
+    // XSS protection
+    const esc = window.escapeHtml || (s => s);
+    const _title    = esc(title);
+    const _subtitle = esc(subtitle);
     const iconColors = {
         'green': 'bg-green-100 text-green-700', 'blue': 'bg-blue-100 text-blue-700',
         'purple': 'bg-purple-100 text-purple-700', 'red': 'bg-red-100 text-red-700'
@@ -176,8 +193,8 @@ function renderUtilityCard({ id, icon, title, subtitle, phone, color }) {
             <span class="material-icons text-2xl">${icon}</span>
         </div>
         <div class="flex-1 min-w-0">
-            <h3 class="font-bold text-slate-800 text-sm truncate">${title}</h3>
-            <p class="text-[11px] font-bold uppercase text-slate-400 tracking-wide truncate">${subtitle}</p>
+            <h3 class="font-bold text-slate-800 text-sm truncate">${_title}</h3>
+            <p class="text-[11px] font-bold uppercase text-slate-400 tracking-wide truncate">${_subtitle}</p>
         </div>
         ${phone ? `<button onclick="window.location.href='tel:${phone}'" class="ml-3 w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 active:bg-slate-100 active:scale-95 transition-all touch-manipulation cursor-pointer"><span class="material-icons text-xl">call</span></button>` : ''}
     </div>`;

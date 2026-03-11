@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Five2Go</title>
 
     <!-- PWA Manifest + meta cross-browser -->
@@ -64,7 +64,10 @@
             position: fixed;
             background-color: #F4F1DE;
             color: #264653;
-            touch-action: none;
+            /* touch-action:manipulation consente pinch-zoom (accessibilità)
+               ma previene il double-tap zoom che causa delay e problemi UX.
+               Era touch-action:none che bloccava TUTTO → violazione WCAG 2.1 SC 1.4.4 */
+            touch-action: manipulation;
             /* Fix scroll rimbalzante su Firefox Android */
             overscroll-behavior: none;
             /* Rimuove il flash grigio al tap su Android Chrome */
