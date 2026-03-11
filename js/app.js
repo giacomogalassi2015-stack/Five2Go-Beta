@@ -71,11 +71,23 @@ window.switchView = async function(view, el) {
     if (mascot) mascot.remove();
 
     if (view === 'home') {
-        body.style.backgroundColor = '#1a1a1a'; 
-        body.classList.add('is-home'); 
+        body.style.backgroundColor   = '#0d1f18';
+        body.classList.add('is-home');
         if (centerBtnWrapper) centerBtnWrapper.classList.remove('hidden-bump');
+        // Sfondo fotografico: immagine Cloudinary sul body (position:fixed).
+        // Copre tutta la viewport; #app-content è trasparente e scrolla sopra.
+        // Cambia 'Manarola' con il nome esatto del tuo asset Cloudinary.
+        if (window.getSmartUrl) {
+            const _bgUrl = window.getSmartUrl('Manarola', '', 900);
+            body.style.backgroundImage    = `url('${_bgUrl}')`;
+            body.style.backgroundSize     = 'cover';
+            body.style.backgroundPosition = 'center 40%';
+        }
     } else {
-        body.style.backgroundColor = '#F4F1DE'; 
+        body.style.backgroundColor    = '#F4F1DE';
+        body.style.backgroundImage    = '';
+        body.style.backgroundSize     = '';
+        body.style.backgroundPosition = '';
         body.classList.remove('is-home');
         if (centerBtnWrapper) centerBtnWrapper.classList.add('hidden-bump');
     }
@@ -117,6 +129,23 @@ window.switchView = async function(view, el) {
         }
         else if (view === 'mappa') await window.renderMappaInterattiva();
         else if (view === 'servizi') await renderServicesGrid();
+        // ← AGGIUNGI QUESTI 4 BLOCCHI DOPO "else if (view === 'servizi')"
+        else if (view === 'wishlist') {
+        document.body.style.backgroundColor = '#F4F1DE';
+        document.body.classList.remove('is-home');
+        window.renderWishlist();
+        }
+        else if (view === 'itinerary') {
+        document.body.style.backgroundColor = '#F4F1DE';
+        document.body.classList.remove('is-home');
+        window.renderItinerary();
+        }
+        else if (view === 'ct_card') {
+        document.body.style.backgroundColor = '#F4F1DE';
+        document.body.classList.remove('is-home');
+        window.renderCinqueTerreCard();
+        }
+
         else if (view === 'mappe_monumenti') renderSubMenu([{ label: window.t('menu_map'), table: "Mappe" }], 'Mappe');
     } catch (err) {
         console.error(err);
@@ -126,113 +155,69 @@ window.switchView = async function(view, el) {
 
 // 1. RENDER HOME
 function renderHome() {
-    const bgImage = "https://res.cloudinary.com/dkg0jfady/image/upload/v1770756918/Manarola.png";
-    document.body.classList.add('is-home');
+  const content = document.getElementById('app-content');
+  if (!content) return;
 
-    // Renderizza il contenuto principale della Home
-    content.innerHTML = `
-    <div class="fixed inset-0 z-0 overflow-hidden">
-        <img src="${bgImage}" class="w-full h-full object-cover animate-fade" alt="Cinque Terre" style="animation-duration: 2s;">
-        <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/90"></div>
-    </div>
+  const lang = window.currentLang || 'it';
 
-    <!-- Overlay scuro dietro i risultati (chiude al tap) -->
-    <div id="search-backdrop"
-        class="hidden fixed inset-0 z-[45] bg-black/40"
-        onclick="window._closeSearch()"></div>
+  const copy = {
+    it: { locationLabel: 'Cinque Terre', tagline: 'Scopri, salva, esplora.<br>Anche senza connessione.', wishlistLabel: 'Preferiti',  itinLabel: 'Itinerario', mapLabel: 'Mappa'  },
+    en: { locationLabel: 'Cinque Terre', tagline: 'Discover, save, explore.<br>Even without connection.', wishlistLabel: 'Favourites', itinLabel: 'Itinerary',  mapLabel: 'Map'    },
+    fr: { locationLabel: 'Cinque Terre', tagline: 'Découvrez, sauvegardez, explorez.<br>Même hors ligne.', wishlistLabel: 'Favoris',    itinLabel: 'Itinéraire', mapLabel: 'Carte'  },
+    de: { locationLabel: 'Cinque Terre', tagline: 'Entdecken, speichern, erkunden.<br>Auch offline.', wishlistLabel: 'Favoriten',  itinLabel: 'Route',      mapLabel: 'Karte'  },
+    es: { locationLabel: 'Cinque Terre', tagline: 'Descubre, guarda, explora.<br>También sin conexión.', wishlistLabel: 'Favoritos', itinLabel: 'Itinerario', mapLabel: 'Mapa'   },
+    zh: { locationLabel: '五渔村',        tagline: '发现、保存、探索。<br>即使离线也可用。',           wishlistLabel: '收藏',       itinLabel: '行程',        mapLabel: '地图'    }
+  };
 
-    <div class="relative z-[46] flex flex-col items-center justify-end pb-24 px-6 text-center animate-pop" style="height:85vh;height:85dvh;">
-        <h1 class="text-5xl font-serif font-bold text-white mb-2 drop-shadow-xl tracking-tight">Five2Go</h1>
-        <p class="text-white/80 text-sm font-medium mb-6 max-w-xs mx-auto leading-relaxed drop-shadow-md">La tua guida essenziale per vivere la magia delle Cinque Terre.</p>
+  const C       = copy[lang] || copy.en;
+  const wlCount = window.WL        ? window.WL.get().length        : 0;
+  const itCount = window.ITINERARY ? window.ITINERARY.get().length : 0;
 
-        <!-- ── SEARCH — input only; results sheet vive nel body (z-index indipendente) ── -->
-        <div class="w-full max-w-sm mb-5">
-            <div class="relative" id="global-search-anchor">
-                <span class="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-white/70 text-lg pointer-events-none">search</span>
-                <input id="global-search-input"
-                    type="search"
-                    autocomplete="off"
-                    autocorrect="off"
-                    spellcheck="false"
-                    placeholder="${window.t('search_placeholder') || 'Cerca ristoranti, vini, spiagge...'}"
-                    class="w-full bg-white/15 backdrop-blur-xl border border-white/30 rounded-2xl pl-11 pr-12 py-3 text-sm font-semibold text-white placeholder-white/55 outline-none focus:bg-white/25 focus:border-white/60 focus:placeholder-white/70 transition-all"
-                    onfocus="window._positionResultsSheet();"
-                    oninput="window._searchDebounced(this.value)">
-                <button id="search-clear-btn"
-                    class="hidden absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 bg-transparent flex items-center justify-center active:scale-90 transition-transform touch-manipulation"
-                    onclick="window._closeSearch()">
-                    <span class="material-icons text-white text-sm leading-none">close</span>
-                </button>
-            </div>
+  content.innerHTML = `
+    <div class="home-v2">
+
+      <!-- HERO: location label + titolo + tagline ancorati in basso -->
+      <div class="home-hero-central">
+        <div class="home-location-label">
+          <span class="home-location-dot"></span>
+          ${C.locationLabel}
         </div>
+        <h1 class="home-title">
+          <em class="home-title-five">Five</em><span class="home-title-2go">2Go</span>
+        </h1>
+        <p class="home-tagline">${C.tagline}</p>
+      </div>
 
-        <div id="home-below-search" class="w-full max-w-sm transition-all duration-200">
-            <div class="mb-4">
-                <button class="w-full bg-ct-terracotta text-white rounded-2xl py-4 shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 group" onclick="switchView('mappa')">
-                    <span class="text-sm font-bold uppercase tracking-widest">${window.t('btn_discover')}</span>
-                    <span class="material-icons group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                </button>
-            </div>
+      <!-- BOTTOM ACTIONS: 3 pill glass buttons -->
+      <div class="home-actions">
+        <button class="home-pill home-pill--heart" onclick="window.switchView('wishlist')">
+          <span class="material-icons home-pill-icon">favorite</span>
+          <span class="home-pill-label">${C.wishlistLabel}</span>
+          <span class="home-pill-badge" data-home-badge="wishlist" style="${wlCount > 0 ? '' : 'display:none'}">${wlCount}</span>
+        </button>
+        <button class="home-pill home-pill--itin" onclick="window.switchView('itinerary')">
+          <span class="material-icons home-pill-icon">map</span>
+          <span class="home-pill-label">${C.itinLabel}</span>
+          <span class="home-pill-badge" data-home-badge="itinerary" style="${itCount > 0 ? '' : 'display:none'}">${itCount}</span>
+        </button>
+        <button class="home-pill home-pill--map" onclick="window.switchView('mappa')">
+          <span class="material-icons home-pill-icon">explore</span>
+          <span class="home-pill-label">${C.mapLabel}</span>
+        </button>
+      </div>
 
-            <div class="grid grid-cols-3 gap-3">
-                ${window.AVAILABLE_LANGS.map(l => {
-                    const isActive = l.code === window.currentLang;
-                    const activeClass = isActive 
-                        ? "bg-white text-slate-800 border-white shadow-xl scale-105 z-10 ring-2 ring-white/50" 
-                        : "bg-white/10 text-white border-white/20 hover:border-white/50 active:bg-white/20";
-                    
-                    return `
-                    <button class="${activeClass} backdrop-blur-md border rounded-2xl py-3 flex flex-col items-center justify-center transition-all active:scale-95" onclick="changeLanguage('${l.code}')">
-                        <span class="text-2xl mb-1 drop-shadow-md">${l.flag}</span>
-                        <span class="text-[11px] font-bold uppercase tracking-widest opacity-80">${l.label}</span>
-                    </button>
-                    `;
-                }).join('')}
-            </div>
-        </div>
     </div>`;
 
-    // --- LOGICA MASCOTTE FIXATA ---
-    // Rimuoviamo eventuali duplicati
-    const oldMascot = document.getElementById('mascot-container');
-    if (oldMascot) oldMascot.remove();
-
-    const chiccoStaticUrl = "https://res.cloudinary.com/dkg0jfady/image/upload/v1770579869/chicco_wxxwbm.png";
-    const chiccoLottieUrl = "https://res.cloudinary.com/dkg0jfady/raw/upload/v1770754341/chicco.json"; 
-
-    const mascotHTML = `
-    <div id="mascot-container" class="fixed bottom-[90px] right-4 z-[60] flex flex-col items-end pointer-events-none transition-all duration-300">
-        
-        <div id="chicco-bubble" class="hidden animate-fade bg-white p-4 rounded-t-2xl rounded-bl-2xl shadow-xl mb-2 max-w-[200px] text-sm text-slate-700 border-2 border-ct-terracotta pointer-events-auto">
-            <span id="chicco-text">Ciao!</span>
-        </div>
-        
-        <div onclick="window.toggleChicco()" class="cursor-pointer transition-transform active:scale-90 pointer-events-auto relative w-[22vw] max-w-[110px] min-w-[75px] aspect-square">
-            <img id="chicco-static" src="${chiccoStaticUrl}" class="w-full h-full object-contain drop-shadow-lg absolute bottom-0 right-0 hover:scale-105 transition-transform" alt="Chicco">
-            <lottie-player id="chicco-anim" src="${chiccoLottieUrl}" background="transparent" speed="1" class="w-[120%] h-[120%] hidden absolute -bottom-2 -right-2" loop></lottie-player>
-        </div>
-    </div>`;
-
-    // FIX IMPORTANTE: Inseriamo Chicco nel BODY, non nel content.
-    // Questo lo rende indipendente dallo scroll di #app-content.
-    document.body.insertAdjacentHTML('beforeend', mascotHTML);
-
-    if (!document.querySelector('script[src*="lottie-player"]')) {
-        const script = document.createElement('script');
-        script.src = "https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js";
-        document.head.appendChild(script);
-    }
-    
-    if (!localStorage.getItem('chicco_intro_done')) {
-        window.chiccoAutoOpenTimer = setTimeout(() => {
-            const isChatOpen = document.getElementById('chicco-bubble');
-            if (isChatOpen && isChatOpen.style.display !== 'block') {
-                window.toggleChicco();
-                localStorage.setItem('chicco_intro_done', 'true');
-            }
-        }, 5000);
-    }
+  // Mascotte (se presente)
+  const mascotHTML = window._getMascotHTML ? window._getMascotHTML() : '';
+  if (mascotHTML) {
+    const mascotEl = document.createElement('div');
+    mascotEl.id = 'mascot-container';
+    mascotEl.innerHTML = mascotHTML;
+    document.body.appendChild(mascotEl);
+  }
 }
+
 
 // 1. Modifica renderSubMenu per salvare le opzioni
 window.renderSubMenu = function(options, defaultTable) {
@@ -314,10 +299,11 @@ window.loadTableData = async function(tableName, btnEl) {
 
     // 4. LOGICA DI CARICAMENTO DATI (Invariata)
     if (!window.appCache[tableName]) {
-        subContent.innerHTML = `<div class="py-20 flex flex-col items-center justify-center gap-4">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-ct-terracotta"></div>
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">${window.t('loading')}</p>
-        </div>`;
+        subContent.innerHTML = window.renderSkeletonList
+            ? window.renderSkeletonList(tableName)
+            : `<div class="py-20 flex flex-col items-center justify-center gap-4">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-ct-terracotta"></div>
+               </div>`;
     }
     
     if (tableName === 'Mappe') {
@@ -342,7 +328,7 @@ window.loadTableData = async function(tableName, btnEl) {
 
     // Rendering specifico per tipo
     if (tableName === 'Vini') { renderHorizontalFilterView(data, 'Tipo', subContent, window.vinoRenderer); }
-    else if (tableName === 'Spiagge') { renderHorizontalFilterView(data, 'Paesi', subContent, window.spiaggiaRenderer); }
+    else if (tableName === 'Spiagge') { renderHorizontalFilterView(data, 'Paesi', subContent, window.spiaggiaRenderer, 'lat_sp', 'long_sp'); }
     else if (tableName === 'Prodotti') {
         let html = '<div class="grid grid-cols-2 gap-3 pb-24 animate-fade pt-2">'; 
         data.forEach(p => { html += window.prodottoRenderer(p); });
@@ -378,22 +364,36 @@ function getUniqueValues(allData, key, customOrder = []) {
     return unique;
 }
 
-function renderHorizontalFilterView(allData, filterKey, container, cardRenderer) {
+function renderHorizontalFilterView(allData, filterKey, container, cardRenderer, latKey, lonKey) {
     const tags = getUniqueValues(allData, filterKey, ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso"]);
-    const filterId = `filter-${Math.random().toString(36).substr(2, 9)}`;
-    const triggerId = `trigger-${filterId}`;
-    const panelId = `panel-${filterId}`;
-    const labelAll = window.t('label_all');
+    const filterId   = `filter-${Math.random().toString(36).substr(2, 9)}`;
+    const triggerId  = `trigger-${filterId}`;
+    const panelId    = `panel-${filterId}`;
+    const nearMeId   = `nearbyme-${filterId}`;
+    const labelAll   = window.t('label_all');
+    // Near Me è disponibile solo se la tabella ha campi lat/lon noti
+    const hasNearMe  = !!(latKey && lonKey);
 
     container.innerHTML = `
         <div class="smart-filter-bar-container sticky top-[85px] z-20 -mx-4 px-4 mb-4">
-            <button id="${triggerId}" class="w-full bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl py-3 px-4 flex items-center justify-between transition-all active:scale-95" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons text-ct-terracotta text-sm">tune</span>
-                    <span id="filter-label-${filterId}" class="text-sm font-bold text-slate-700">${labelAll}</span>
-                </div>
-                <span class="material-icons text-slate-400 text-sm transition-transform duration-300" id="icon-${filterId}">expand_more</span>
-            </button>
+            <div class="flex items-center gap-2">
+                <button id="${triggerId}" class="flex-1 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl py-3 px-4 flex items-center justify-between transition-all active:scale-95" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons text-ct-terracotta text-sm">tune</span>
+                        <span id="filter-label-${filterId}" class="text-sm font-bold text-slate-700">${labelAll}</span>
+                    </div>
+                    <span class="material-icons text-slate-400 text-sm transition-transform duration-300" id="icon-${filterId}">expand_more</span>
+                </button>
+                ${hasNearMe ? `
+                <button id="${nearMeId}"
+                    class="near-me-btn ${window._nearMeEnabled ? 'active-near-me' : ''}"
+                    title="${window.currentLang === 'it' ? 'Ordina per distanza' : 'Sort by distance'}"
+                    aria-label="${window.currentLang === 'it' ? 'Vicino a me' : 'Near me'}"
+                    aria-pressed="${window._nearMeEnabled}"
+                    onclick="window.toggleNearMe('${nearMeId}', function(){ window.applySingleSmartFilter('${'__ALL__'}', '${filterId}', false); })">
+                    <span class="material-icons text-sm">near_me</span>
+                </button>` : ''}
+            </div>
             <div id="${panelId}" class="hidden overflow-hidden transition-all duration-300 bg-ct-sand/95 backdrop-blur-md rounded-b-xl border-x border-b border-stone-200/50 shadow-md">
                 <div class="p-3 overflow-x-auto no-scrollbar flex gap-2" id="chips-${filterId}"></div>
             </div>
@@ -490,8 +490,12 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer)
         if (!items || items.length === 0) { 
             listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`; 
         } else {
+            // Ordina per distanza se Near Me è attivo e la tabella ha lat/lon
+            const sorted = (hasNearMe && window.sortByDistance)
+                ? window.sortByDistance(items, latKey, lonKey)
+                : items;
             if (filterKey === 'Prodotti') listContainer.className = "grid grid-cols-2 gap-3 pb-24 animate-fade";
-            listContainer.innerHTML = items.map(item => cardRenderer(item)).join('');
+            listContainer.innerHTML = sorted.map(item => cardRenderer(item)).join('');
             setTimeout(() => { if(window.initPendingMaps) window.initPendingMaps(); }, 100);
         }
     }
@@ -1303,6 +1307,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (typeof setupHeaderElements === 'function') setupHeaderElements();
     if (typeof updateNavBar === 'function') updateNavBar();
     switchView('home');
+    window._initPullToRefresh();
 });
 
 // 1. Inizio tocco
@@ -1732,6 +1737,160 @@ window.toggleChicco = async function() {
     } else {
         bubble.style.display = 'none'; if (lottieAnim) { lottieAnim.stop(); lottieAnim.style.display = 'none'; } if (staticImg) staticImg.style.display = 'block';
     }
+};
+
+// ── BUMP LANG PANEL ──────────────────────────────────────────────
+window._toggleBumpLangPanel = function() {
+    if (document.getElementById('bump-lang-panel')) {
+        window._closeBumpLangPanel();
+        return;
+    }
+    const panel = document.createElement('div');
+    panel.id = 'bump-lang-panel';
+    window.AVAILABLE_LANGS.forEach(function(l, i) {
+        var isFirst  = i === 0;
+        var isLast   = i === window.AVAILABLE_LANGS.length - 1;
+        var isActive = l.code === window.currentLang;
+        var btn = document.createElement('button');
+        btn.style.cssText = 'width:100%;display:flex;align-items:center;gap:14px;'
+            + 'padding:13px 20px;text-align:left;border:none;cursor:pointer;'
+            + 'background:' + (isActive ? '#F4F1DE' : 'transparent') + ';'
+            + '-webkit-tap-highlight-color:transparent;'
+            + (isFirst ? 'border-radius:20px 20px 4px 4px;' : isLast ? 'border-radius:4px 4px 20px 20px;' : '');
+        btn.addEventListener('mouseenter', function() { this.style.background = isActive ? '#F4F1DE' : '#f8fafc'; });
+        btn.addEventListener('mouseleave', function() { this.style.background = isActive ? '#F4F1DE' : 'transparent'; });
+        btn.addEventListener('click', (function(code) { return function() { changeLanguage(code); window._closeBumpLangPanel(); }; })(l.code));
+        var flagSpan = document.createElement('span');
+        flagSpan.style.cssText = 'font-size:1.4rem;line-height:1;flex-shrink:0;';
+        flagSpan.textContent = l.flag;
+        var labelSpan = document.createElement('span');
+        labelSpan.style.cssText = 'font-size:0.85rem;font-weight:700;color:#264653;flex:1;';
+        labelSpan.textContent = l.label;
+        btn.appendChild(flagSpan);
+        btn.appendChild(labelSpan);
+        if (isActive) {
+            var check = document.createElement('span');
+            check.className = 'material-icons';
+            check.style.cssText = 'color:#606C38;font-size:18px;flex-shrink:0;';
+            check.textContent = 'check_circle';
+            btn.appendChild(check);
+        }
+        panel.appendChild(btn);
+    });
+    document.body.appendChild(panel);
+
+    var backdrop = document.createElement('div');
+    backdrop.id = 'bump-lang-backdrop';
+    backdrop.style.cssText = 'position:fixed;inset:0;z-index:9001;';
+    backdrop.onclick = function() { window._closeBumpLangPanel(); };
+    document.body.appendChild(backdrop);
+
+    var trigger = document.getElementById('bump-lang-trigger');
+    if (trigger) trigger.setAttribute('aria-expanded', 'true');
+};
+
+window._closeBumpLangPanel = function() {
+    var panel    = document.getElementById('bump-lang-panel');
+    var backdrop = document.getElementById('bump-lang-backdrop');
+    if (panel) {
+        panel.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
+        panel.style.opacity    = '0';
+        panel.style.transform  = 'translateX(-50%) translateY(8px) scale(0.96)';
+        setTimeout(function() { if (panel.parentNode) panel.parentNode.removeChild(panel); }, 190);
+    }
+    if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+    var trigger = document.getElementById('bump-lang-trigger');
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+};
+
+// ── PULL-TO-REFRESH ──────────────────────────────────────────────
+window._initPullToRefresh = function() {
+    var container = document.getElementById('app-content');
+    if (!container || container._ptrAttached) return;
+    container._ptrAttached = true;
+
+    if (!document.getElementById('ptr-indicator')) {
+        var ptrEl = document.createElement('div');
+        ptrEl.id = 'ptr-indicator';
+        ptrEl.setAttribute('aria-hidden', 'true');
+        ptrEl.style.cssText = [
+            'position:fixed','top:0','left:0','right:0',
+            'height:0','overflow:hidden','z-index:9001',
+            'display:flex','align-items:center','justify-content:center',
+            'background:rgba(244,241,222,0.96)',
+            'backdrop-filter:blur(8px)','-webkit-backdrop-filter:blur(8px)',
+            'transition:height 0.18s cubic-bezier(0.2,0.8,0.2,1)',
+            'pointer-events:none',
+            'border-bottom:1px solid rgba(38,70,83,0.08)'
+        ].join(';');
+        ptrEl.innerHTML = '<div id="ptr-inner" style="opacity:0;transition:opacity 0.2s;display:flex;align-items:center;gap:8px;">'
+            + '<span id="ptr-icon" class="material-icons" style="color:#264653;font-size:20px;transition:transform 0.3s ease;">arrow_downward</span>'
+            + '<span id="ptr-label" style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#264653;"></span>'
+            + '</div>';
+        document.body.appendChild(ptrEl);
+    }
+
+    var THRESHOLD = 65;
+    var MAX_PULL  = 100;
+    var startY   = 0;
+    var pulling  = false;
+    var released = false;
+
+    function ptrReset() {
+        var el    = document.getElementById('ptr-indicator');
+        var inner = document.getElementById('ptr-inner');
+        var icon  = document.getElementById('ptr-icon');
+        if (el)    el.style.height = '0';
+        if (inner) inner.style.opacity = '0';
+        if (icon)  { icon.style.transform = ''; icon.textContent = 'arrow_downward'; icon.classList.remove('spin'); }
+        pulling = false; released = false;
+    }
+
+    container.addEventListener('touchstart', function(e) {
+        if (!released && container.scrollTop <= 0) { startY = e.touches[0].clientY; pulling = true; }
+    }, { passive: true });
+
+    container.addEventListener('touchmove', function(e) {
+        if (!pulling || released) return;
+        var dy = Math.max(0, e.touches[0].clientY - startY);
+        if (dy <= 0 || container.scrollTop > 0) return;
+        var el    = document.getElementById('ptr-indicator');
+        var inner = document.getElementById('ptr-inner');
+        var icon  = document.getElementById('ptr-icon');
+        var label = document.getElementById('ptr-label');
+        if (!el) return;
+        el.style.height = Math.min(dy * 0.55, 56) + 'px';
+        if (inner) inner.style.opacity = String(Math.min((dy / MAX_PULL) * 2, 1));
+        if (icon)  icon.style.transform = 'rotate(' + Math.min((dy / THRESHOLD) * 180, 180) + 'deg)';
+        if (label) label.textContent = dy >= THRESHOLD
+            ? (window.t ? (window.t('ptr_release') || 'Rilascia per aggiornare') : 'Rilascia per aggiornare')
+            : (window.t ? (window.t('ptr_pull')    || 'Tira per aggiornare')    : 'Tira per aggiornare');
+    }, { passive: true });
+
+    container.addEventListener('touchend', function(e) {
+        if (!pulling || released) return;
+        var dy = Math.max(0, e.changedTouches[0].clientY - startY);
+        pulling = false;
+        if (dy >= THRESHOLD) {
+            released = true;
+            var icon  = document.getElementById('ptr-icon');
+            var label = document.getElementById('ptr-label');
+            if (icon)  { icon.textContent = 'refresh'; icon.classList.add('spin'); icon.style.transform = ''; }
+            if (label) label.textContent = window.t ? (window.t('ptr_loading') || 'Aggiornamento...') : 'Aggiornamento...';
+            setTimeout(function() {
+                var table = window.currentActiveTable;
+                if (table && table !== 'Mappe' && window.appCache) {
+                    delete window.appCache[table];
+                    if (typeof loadTableData === 'function') loadTableData(table, null);
+                } else if (window.currentViewName === 'servizi' && window.renderServicesGrid) {
+                    window.renderServicesGrid();
+                }
+                setTimeout(ptrReset, 600);
+            }, 700);
+        } else {
+            ptrReset();
+        }
+    }, { passive: true });
 };
 
 window.initBusMap = function(fermate) {

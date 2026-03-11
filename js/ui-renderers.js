@@ -1,3 +1,57 @@
+// ════════════════════════════════════════════════════
+//  SKELETON LOADERS
+// ════════════════════════════════════════════════════
+window.renderSkeletonList = function(tableName) {
+    if (tableName === 'Vini') {
+        return Array(4).fill(0).map(() => `
+        <div class="flex bg-white rounded-2xl border border-slate-100 overflow-hidden min-h-[140px] mb-3 animate-pulse">
+            <div class="w-24 bg-slate-200 shrink-0"></div>
+            <div class="flex-1 p-4 flex flex-col gap-3 justify-center">
+                <div class="h-3 bg-slate-200 rounded-full w-1/4"></div>
+                <div class="h-5 bg-slate-200 rounded-full w-3/4"></div>
+                <div class="h-3 bg-slate-200 rounded-full w-1/2"></div>
+                <div class="mt-auto pt-3 border-t border-slate-100 flex justify-end">
+                    <div class="h-7 w-24 bg-slate-200 rounded-xl"></div>
+                </div>
+            </div>
+        </div>`).join('');
+    }
+    if (tableName === 'Farmacie' || tableName === 'Numeri_utili') {
+        return '<div class="flex flex-col gap-2">' + Array(6).fill(0).map(() => `
+        <div class="flex items-center p-4 bg-white rounded-2xl border border-slate-100 animate-pulse">
+            <div class="w-12 h-12 rounded-xl bg-slate-200 shrink-0 mr-4"></div>
+            <div class="flex-1 space-y-2">
+                <div class="h-4 bg-slate-200 rounded-full w-2/3"></div>
+                <div class="h-3 bg-slate-200 rounded-full w-1/3"></div>
+            </div>
+            <div class="w-11 h-11 rounded-full bg-slate-100 ml-3 shrink-0"></div>
+        </div>`).join('') + '</div>';
+    }
+    if (tableName === 'Prodotti') {
+        return '<div class="grid grid-cols-2 gap-3">' + Array(6).fill(0).map(() => `
+        <div class="bg-white rounded-2xl overflow-hidden animate-pulse">
+            <div class="h-40 bg-slate-200"></div>
+            <div class="p-3 space-y-2">
+                <div class="h-4 bg-slate-200 rounded-full w-3/4"></div>
+                <div class="h-3 bg-slate-200 rounded-full w-1/2"></div>
+            </div>
+        </div>`).join('') + '</div>';
+    }
+    return Array(3).fill(0).map(() => `
+    <div class="bg-white rounded-2xl overflow-hidden mb-4 animate-pulse">
+        <div class="h-52 bg-slate-200 w-full relative">
+            <div class="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+                <div class="h-3 bg-slate-300/60 rounded-full w-1/4"></div>
+                <div class="h-5 bg-slate-300/60 rounded-full w-3/5"></div>
+            </div>
+        </div>
+        <div class="px-4 py-3 flex gap-2 justify-end">
+            <div class="h-10 w-24 bg-slate-100 rounded-xl"></div>
+            <div class="h-10 w-20 bg-slate-100 rounded-xl"></div>
+        </div>
+    </div>`).join('');
+};
+
 /** HELPER: CANDY BTN (Per le altre card standard) */
 function getCandyBtn(icon, label, color, onclick) {
     // Colori pastello/soft meno vibranti
@@ -19,51 +73,60 @@ function getCandyBtn(icon, label, color, onclick) {
         ${label ? `<span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 group-hover/btn:text-slate-600 transition-colors">${label}</span>` : ''}
     </button>`;
 }
-// MODIFICA 4: Ridotto mb-6 a mb-4 per avvicinare le schede (Prossimità)
-function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml }) {
-    let headerHtml = '';
+function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml, heartOverlayHtml }) {
     if (image) {
-        headerHtml = `
-            <div class="h-48 w-full relative overflow-hidden group-hover:opacity-90 transition-opacity">
+        return `
+        <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col relative mb-4 group cursor-pointer hover:shadow-lg transition-all duration-300 active:scale-[0.98] active:shadow-sm touch-manipulation border border-slate-100/30"
+            data-card-id="${id}" onclick="${onClick}">
+            <div class="h-56 w-full relative overflow-hidden shrink-0">
                 <img src="${image}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" alt="${title}">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-            </div>`;
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
+                ${label ? `<div class="absolute top-3 left-3 z-10">
+                    <span class="inline-flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white/90 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border border-white/15">${label}</span>
+                </div>` : ''}
+                ${heartOverlayHtml || ''}
+                <div class="absolute bottom-0 left-0 right-0 p-4 z-10">
+                    <h3 class="font-serif text-xl font-bold text-white leading-tight drop-shadow-sm mb-1">${title}</h3>
+                    ${subText ? `<p class="text-white/70 text-xs font-medium leading-relaxed line-clamp-2">${subText}</p>` : ''}
+                </div>
+            </div>
+            <div class="px-4 py-3 flex items-center justify-end gap-3 bg-white shrink-0">
+                ${buttonsHtml}
+            </div>
+        </div>`;
     } else {
         const bgMap = {
-            'orange': 'bg-orange-50 text-ct-terracotta',
-            'blue':   'bg-cyan-50 text-ct-blue',
-            'green':  'bg-lime-50 text-ct-green',
-            'yellow': 'bg-yellow-50 text-yellow-600',
-            'purple': 'bg-slate-100 text-slate-500',
-            'red':    'bg-red-50 text-red-500'
+            'orange': 'from-orange-100 to-orange-50 text-ct-terracotta',
+            'blue':   'from-cyan-100 to-cyan-50 text-ct-blue',
+            'green':  'from-lime-100 to-lime-50 text-ct-green',
+            'yellow': 'from-yellow-100 to-yellow-50 text-yellow-600',
+            'purple': 'from-slate-100 to-slate-50 text-slate-500',
+            'red':    'from-red-100 to-red-50 text-red-500'
         };
         const themeClass = bgMap[themeColor] || bgMap['blue'];
-        headerHtml = `
-            <div class="h-40 w-full ${themeClass} flex items-center justify-center relative overflow-hidden">
-                <span class="material-icons text-9xl opacity-10 absolute transform -rotate-12 scale-150">${iconFallback}</span>
-                <span class="material-icons text-5xl relative z-10 drop-shadow-sm">${iconFallback}</span>
-            </div>`;
+        return `
+        <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col relative mb-4 group cursor-pointer hover:shadow-lg transition-all duration-300 active:scale-[0.98] active:shadow-sm touch-manipulation border border-slate-100/30"
+            data-card-id="${id}" onclick="${onClick}">
+            <div class="h-44 w-full bg-gradient-to-br ${themeClass} relative overflow-hidden shrink-0">
+                <span class="material-icons absolute text-[8rem] opacity-10 -bottom-4 -right-4 transform rotate-[-10deg] select-none">${iconFallback}</span>
+                <span class="material-icons text-5xl absolute bottom-4 left-4 drop-shadow-sm opacity-90 z-10">${iconFallback}</span>
+                ${label ? `<div class="absolute top-3 left-3 z-10">
+                    <span class="inline-flex items-center gap-1 bg-white/60 backdrop-blur-sm text-slate-700 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">${label}</span>
+                </div>` : ''}
+                ${heartOverlayHtml || ''}
+            </div>
+            <div class="px-4 pt-3 pb-1">
+                <h3 class="font-serif text-xl font-bold text-slate-800 leading-tight group-hover:text-primary transition-colors">${title}</h3>
+                ${subText ? `<p class="text-xs text-slate-500 font-medium leading-relaxed mt-1 line-clamp-2">${subText}</p>` : ''}
+            </div>
+            <div class="px-4 py-3 flex items-center justify-end gap-3 bg-white">
+                ${buttonsHtml}
+            </div>
+        </div>`;
     }
-
-    return `
-    <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group cursor-pointer touch-manipulation border border-slate-100/50 hover:shadow-lg transition-all duration-300 active:scale-[0.98] active:shadow-sm" data-card-id="${id}" onclick="${onClick}">
-        ${headerHtml}
-        <div class="p-5 flex-1 flex flex-col justify-start">
-            ${label ? `
-            <div class="flex items-center gap-2 mb-2">
-                <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 font-sans">${label}</span>
-                <div class="h-px bg-slate-100 flex-1"></div>
-            </div>` : ''}
-            <h3 class="font-serif text-2xl font-bold text-slate-800 leading-tight mb-2 group-hover:text-primary transition-colors">${title}</h3>
-            ${subText ? `<p class="text-sm text-slate-500 font-medium leading-relaxed line-clamp-2">${subText}</p>` : ''}
-        </div>
-        <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-4 backdrop-blur-sm">
-            ${buttonsHtml}
-        </div>
-    </div>`;
 }
 
-function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, themeColor }) {
+function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, themeColor, buttonsHtml, heartOverlayHtml }) {
     const colors = {
         'yellow': 'bg-[#E9C46A] text-yellow-900', 
         'red':    'bg-[#9B2226] text-red-100',     
@@ -72,14 +135,14 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
     const themeClass = colors[themeColor] || colors['red'];
     const iconColor = themeColor === 'yellow' ? 'text-yellow-800' : 'text-white';
 
-    // MODIFICA 4: Ridotto mb-5 a mb-3
     return `
-    <div class="flex bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-h-[140px] cursor-pointer touch-manipulation active:scale-[0.98] active:shadow-sm transition-all duration-150 mb-3 group" data-card-id="${id}" onclick="${onClick}">
+    <div class="flex bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-h-[140px] cursor-pointer touch-manipulation active:scale-[0.98] active:shadow-sm transition-all duration-150 mb-3 group relative" data-card-id="${id}" onclick="${onClick}">
         <div class="w-24 ${themeClass} flex items-center justify-center relative overflow-hidden shrink-0">
             <span class="material-icons text-4xl ${iconColor} drop-shadow-sm opacity-90 relative z-10">wine_bar</span>
         </div>
+        ${heartOverlayHtml || ''}
         <div class="flex-1 p-4 flex flex-col relative bg-white">
-            <div class="mb-2">
+            <div class="mb-2 pr-8">
                 <span class="inline-block px-2 py-0.5 rounded border border-slate-100 bg-slate-50 text-[11px] font-bold uppercase tracking-widest text-slate-500 font-sans">
                     ${typeLabel}
                 </span>
@@ -89,11 +152,12 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
                 <span class="material-icons text-[14px] text-slate-300">storefront</span>
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">${producer}</span>
             </div>
-           <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-end">
+           <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <div class="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-xl text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600 transition-colors">
                     <span class="text-[11px] font-bold uppercase">${window.t('btn_details')}</span>
                     <span class="material-icons text-xs">arrow_forward</span>
                 </div>
+                ${buttonsHtml || ''}
             </div>
         </div>
     </div>`;
@@ -131,6 +195,10 @@ window.ristoranteRenderer = (r) => {
     const numero = r.Numero || r.Telefono;
     const imgUrl = nomeIT ? window.getSmartUrl(nomeIT, '', 600) : null;
 
+    // Oggetti per wishlist e itinerario
+    const wlItem = { wl_id: String(r.id || nomeIT), wl_type: 'ristorante', wl_name: nome, wl_sub: paesi, wl_modal_type: 'ristorante', wl_modal_payload: safeObj };
+    const itinItem = { itin_id: String(r.id || nomeIT), itin_type: 'ristorante', itin_name: nome, itin_sub: paesi, itin_modal_type: 'ristorante', itin_modal_payload: safeObj };
+
     return renderMasterCard({
         id: r.id,
         onClick: `openModal('ristorante', '${safeObj}')`,
@@ -140,10 +208,12 @@ window.ristoranteRenderer = (r) => {
         image: imgUrl,
         iconFallback: 'restaurant',
         themeColor: 'yellow',
+        heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
             ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('ristorante', '${safeObj}')`)}
             ${getCandyBtn('map', window.t('btn_map'), 'green', `event.stopPropagation(); window.open('${mapLink}', '_blank')`)}
             ${numero ? getCandyBtn('call', 'Tel', 'green', `event.stopPropagation(); window.location.href='tel:${numero}'`) : ''}
+            ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem) : ''}
         `
     });
 };
@@ -164,6 +234,10 @@ window.attrazioniRenderer = function(item) {
     else if (labelRaw.includes('panoram') || labelRaw.includes('natur')) { catLabel = window.t('cat_panorama'); themeColor = 'green'; iconFallback = 'landscape'; }
     else if (labelRaw.includes('stori') || labelRaw.includes('castell')) { catLabel = window.t('cat_history'); themeColor = 'orange'; iconFallback = 'castle'; }
 
+    // Oggetti per wishlist e itinerario
+    const wlItem   = { wl_id: String(safeId), wl_type: 'attrazione', wl_name: titolo, wl_sub: paese, wl_modal_type: 'attrazione', wl_modal_payload: String(safeId) };
+    const itinItem = { itin_id: String(safeId), itin_type: 'attrazione', itin_name: titolo, itin_sub: paese, itin_modal_type: 'attrazione', itin_modal_payload: String(safeId) };
+
   return renderMasterCard({
         id: safeId,
         onClick: `openModal('attrazione', '${safeId}')`,
@@ -173,9 +247,11 @@ window.attrazioniRenderer = function(item) {
         image: imgUrl,
         iconFallback: iconFallback,
         themeColor: themeColor,
+        heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
             ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('attrazione', '${safeId}')`)}
             ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
+            ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem)  : ''}
         `
     });
 };
@@ -189,6 +265,10 @@ window.spiaggiaRenderer = function(item) {
     const lat = item.lat_sp; const lon = item.long_sp;
     const imgUrl = nomeIT ? window.getSmartUrl(nomeIT, '', 600) : null;
 
+    // Oggetti per wishlist e itinerario
+    const wlItem   = { wl_id: String(item.id), wl_type: 'spiaggia', wl_name: nome, wl_sub: paesi, wl_modal_type: 'Spiagge', wl_modal_payload: safeObj };
+    const itinItem = { itin_id: String(item.id), itin_type: 'spiaggia', itin_name: nome, itin_sub: paesi, itin_modal_type: 'Spiagge', itin_modal_payload: safeObj };
+
     return renderMasterCard({
         id: item.id,
         onClick: `openModal('Spiagge', '${safeObj}')`,
@@ -198,19 +278,29 @@ window.spiaggiaRenderer = function(item) {
         image: imgUrl,
         iconFallback: 'waves',
         themeColor: 'blue',
+        heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
             ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('Spiagge', '${safeObj}')`)}
             ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
+            ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem)  : ''}
         `
     });
 };
 
 window.prodottoRenderer = (p) => {
-    const titolo = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
-    const titoloIT = window.valIT(p, 'Prodotti') || window.valIT(p, 'Nome');
-    const fotoKey = p.Prodotti_foto || titoloIT; 
-    const imgUrl = window.getSmartUrl(fotoKey, '', 600);
-    const safeObj = encodeURIComponent(JSON.stringify(p)).replace(/'/g, "%27");
+    const titolo   = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
+    const titoloIT = window.valIT(p, 'Prodotti')  || window.valIT(p, 'Nome');
+    const fotoKey  = p.Prodotti_foto || titoloIT;
+    const imgUrl   = window.getSmartUrl(fotoKey, '', 600);
+    const safeObj  = encodeURIComponent(JSON.stringify(p)).replace(/'/g, "%27");
+
+    // FIX: p.id era undefined su tutti i prodotti → tutti condividevano
+    // wl_id:"undefined" e il toggle appariva attivo su tutte le card.
+    // titoloIT è unico per prodotto nel DB e funziona come fallback affidabile.
+    const itemId = String(p.id != null ? p.id : (titoloIT || fotoKey || titolo || Math.random()));
+
+    const wlItem   = { wl_id: itemId, wl_type: 'prodotto', wl_name: titolo, wl_sub: 'Prodotto locale', wl_modal_type: 'product', wl_modal_payload: safeObj };
+    const itinItem = { itin_id: itemId, itin_type: 'prodotto', itin_name: titolo, itin_sub: 'Prodotto locale', itin_modal_type: 'product', itin_modal_payload: safeObj };
 
     return renderMasterCard({
         id: p.id,
@@ -221,9 +311,11 @@ window.prodottoRenderer = (p) => {
         image: imgUrl,
         iconFallback: 'restaurant',
         themeColor: 'orange',
+        heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
             <div class="text-xs font-bold text-slate-300 uppercase tracking-widest mr-auto mt-2">${window.t('btn_details')}</div>
             ${getCandyBtn('chevron_right', '', 'blue', `event.stopPropagation(); openModal('product', '${safeObj}')`)}
+            ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem)  : ''}
         `
     });
 };
@@ -247,6 +339,10 @@ window.vinoRenderer = function(item) {
         themeColor = 'orange'; 
         tipoLabel = window.t('wine_passito'); 
     }
+
+    // Oggetti per wishlist e itinerario
+    const wlItem   = { wl_id: String(safeId), wl_type: 'vino', wl_name: nome, wl_sub: cantina, wl_modal_type: 'Vini', wl_modal_payload: String(safeId) };
+    const itinItem = { itin_id: String(safeId), itin_type: 'vino', itin_name: nome, itin_sub: cantina, itin_modal_type: 'Vini', itin_modal_payload: String(safeId) };
     
     return renderWineCard({
         id: safeId,
@@ -255,7 +351,11 @@ window.vinoRenderer = function(item) {
         title: nome,
         producer: cantina,
         grapes: uve,
-        themeColor: themeColor
+        themeColor: themeColor,
+        heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem, 'light') : '',
+        buttonsHtml: `
+            ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem) : ''}
+        `
     });
 };
 
@@ -271,13 +371,18 @@ window.sentieroRenderer = (s) => {
         window.pendingMaps.push({ id: uniqueId, gpx: s.gpx_url, startLabel: s.nome_partenza, endLabel: s.nome_arrivo }); 
     }
 
-    // FIX 2: Rimosso onclick duplicato nel div interno "absolute inset-0"
+    // Oggetti per wishlist e itinerario
+    const sId      = String(s.poi_id || s.id || uniqueId);
+    const wlItem   = { wl_id: sId, wl_type: 'sentiero', wl_name: nome, wl_sub: durata + ' · ' + dist, wl_modal_type: 'sentieroInfo', wl_modal_payload: safeObj };
+    const itinItem = { itin_id: sId, itin_type: 'sentiero', itin_name: nome, itin_sub: durata + ' · ' + dist, itin_modal_type: 'sentieroInfo', itin_modal_payload: safeObj };
+
     return `
     <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group border border-slate-100/50 hover:shadow-lg transition-all">
         <div id="${uniqueId}" class="h-48 w-full bg-slate-100 relative border-b border-slate-100 cursor-pointer" onclick="window.openTechMap('${safeObj}')">
             <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[11px] font-bold text-ct-green shadow-sm z-[400] font-sans tracking-widest uppercase">
                 🥾 Outdoor
             </div>
+            ${window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem).replace('z-20', 'z-[401]') : ''}
             <div class="absolute inset-0 z-[300]"></div>
         </div>
         <div class="p-5 flex-1 flex flex-col">
@@ -296,6 +401,7 @@ window.sentieroRenderer = (s) => {
              <button onclick="window.openModal('sentieroInfo', '${safeObj}')" class="flex-1 py-3 bg-ct-blue text-white rounded-xl font-bold text-xs uppercase tracking-wide shadow-sm active:scale-[0.97] transition-all duration-150 touch-manipulation flex items-center justify-center gap-2">
                 <span class="material-icons text-sm">visibility</span> ${window.t('btn_info')}
              </button>
+             ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem)  : ''}
         </div>
     </div>`;
 };

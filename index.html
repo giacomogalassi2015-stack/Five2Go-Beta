@@ -18,7 +18,7 @@
 
     <!-- Material Icons only – Phosphor and Font Awesome removed -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,900;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -105,12 +105,39 @@
             opacity: 0; pointer-events: none;
         }
         .nav-center-btn {
-            width: 44px; height: 44px; border-radius: 50%;
-            background: rgba(255,255,255,0.92);
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(255,255,255,0.95);
             display: flex; align-items: center; justify-content: center;
-            border: 2px solid rgba(255,255,255,0.5);
-            pointer-events: none;
+            border: 2.5px solid rgba(255,255,255,0.6);
+            pointer-events: auto;
+            cursor: pointer;
             user-select: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .nav-center-btn:active {
+            transform: scale(0.88);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        #bump-lang-panel {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9002;
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 -4px 32px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.04);
+            overflow: hidden;
+            min-width: 200px;
+            animation: bumpPanelIn 0.28s cubic-bezier(0.2,0.8,0.2,1) forwards;
+        }
+        @keyframes bumpPanelIn {
+            from { opacity:0; transform:translateX(-50%) translateY(12px) scale(0.94); }
+            to   { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
         }
 
         /* Search results sheet scrollbar */
@@ -176,6 +203,194 @@
             #search-results-sheet { background: #ffffff !important; }
             .smart-filter-bar-container button { background: rgba(255,255,255,0.98) !important; }
         }
+
+        /* ══════════════════════════════════════════════════════════
+           HOME V2 — Landing Page
+           Layout moderno: flex-col fullscreen con gradiente immersivo.
+             body (position:fixed) → immagine di sfondo
+             #app-content → trasparente, scroll interno
+             .home-v2 → flex-col, occupa l'intera altezza viewport
+               ├── .home-hero-central → titolo centrato (flex-1)
+               └── .home-actions   → 3 pill glass in basso
+           ══════════════════════════════════════════════════════════ */
+
+        .home-v2 {
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 120px);
+            padding: 0;
+        }
+
+        /* ── Hero central: contenuto centrato verticalmente ── */
+        .home-hero-central {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-start;
+            padding: 0 28px 32px;
+            gap: 0;
+            background: linear-gradient(
+                to top,
+                rgba(0,0,0,0.72) 0%,
+                rgba(0,0,0,0.42) 40%,
+                rgba(0,0,0,0.08) 70%,
+                transparent 100%
+            );
+        }
+
+        /* Label "CINQUE TERRE" sopra il titolo */
+        .home-location-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: "Plus Jakarta Sans", sans-serif;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: #E9C46A;
+            margin-bottom: 12px;
+            text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+        }
+        .home-location-dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: #E9C46A;
+            box-shadow: 0 0 8px rgba(233,196,106,0.6);
+            flex-shrink: 0;
+        }
+
+        /* Titolo principale: "Five" + "2Go" sulla stessa riga */
+        .home-title {
+            font-family: "Playfair Display", "Roboto Slab", serif;
+            font-size: clamp(3.6rem, 15vw, 5rem);
+            font-weight: 900;
+            line-height: 0.92;
+            letter-spacing: -0.03em;
+            margin: 0 0 14px 0;
+        }
+        /* "Five" — corsivo dorato */
+        .home-title-five {
+            font-style: italic;
+            color: #E9C46A;
+            text-shadow: 0 2px 20px rgba(233,196,106,0.35), 0 4px 30px rgba(0,0,0,0.45);
+        }
+        /* "2Go" — bianco solido */
+        .home-title-2go {
+            font-style: normal;
+            color: #ffffff;
+            text-shadow: 0 4px 30px rgba(0,0,0,0.45);
+        }
+
+        /* Sottotitolo / tagline */
+        .home-tagline {
+            font-family: "Plus Jakarta Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.60);
+            line-height: 1.6;
+            max-width: 300px;
+            letter-spacing: 0.01em;
+        }
+
+        /* ── Actions: 3 pill glass in basso ── */
+        .home-actions {
+            padding: 0 16px 28px;
+            display: flex;
+            gap: 10px;
+            background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.55) 60%, transparent 100%);
+        }
+
+        .home-pill {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 10px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.22);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            cursor: pointer;
+            transition: background 0.20s ease, transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.20s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.15);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .home-pill:active {
+            transform: scale(0.93);
+            background: rgba(255,255,255,0.22);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.20);
+        }
+        .home-pill--heart .home-pill-icon { color: #fb7185 !important; }
+        .home-pill--itin  .home-pill-icon { color: #fbbf24 !important; }
+        .home-pill--map   .home-pill-icon { color: #5eead4 !important; }
+        .home-pill-icon {
+            font-size: 18px !important;
+            color: rgba(255,255,255,0.90);
+            flex-shrink: 0;
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.30));
+        }
+        .home-pill-label {
+            font-family: "Plus Jakarta Sans", sans-serif;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: rgba(255,255,255,0.88);
+            white-space: nowrap;
+        }
+        .home-pill-badge {
+            position: absolute;
+            top: -5px; right: -2px;
+            background: #E76F51;
+            color: #fff;
+            font-family: "Plus Jakarta Sans", sans-serif;
+            font-size: 9px;
+            font-weight: 900;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            line-height: 1;
+            box-shadow: 0 2px 8px rgba(231,111,81,0.60);
+            border: 1.5px solid rgba(255,255,255,0.30);
+        }
+
+        /* ── Alias retrocompatibilità ── */
+        .home-quick-row     { display: none !important; }
+        .home-section-label { display: none !important; }
+        .home-grid          { display: none !important; }
+        [data-home-badge]   { }
+
+        /* ── Near Me button nella filter bar ── */
+        .near-me-btn {
+            flex-shrink: 0;
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+            color: #94a3b8;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .near-me-btn.active-near-me {
+            background: #2A9D8F;
+            border-color: #2A9D8F;
+            color: white;
+        }
     </style>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -236,11 +451,16 @@
         </button>
     </div>
 
-    <div class="relative w-12 h-full flex justify-center z-50 pointer-events-none">
+    <div class="relative w-12 h-full flex justify-center z-50">
         <div id="center-lang-btn-wrapper" class="nav-center-bump">
-            <div class="nav-center-btn">
+            <button class="nav-center-btn"
+                onclick="window._toggleBumpLangPanel()"
+                aria-label="Cambia lingua"
+                aria-haspopup="true"
+                aria-expanded="false"
+                id="bump-lang-trigger">
                 <span id="nav-lang-flag" class="text-2xl filter drop-shadow-sm leading-none pt-0.5">🇮🇹</span>
-            </div>
+            </button>
         </div>
     </div>
 
@@ -263,6 +483,7 @@
 <script src="js/ui-modal-contents.js"></script>
 <script src="js/ui-modal.js"></script>
 <script src="js/ui-map.js"></script>
+<script src="js/features.js"></script>
 <script src="js/app.js"></script>
 
 <a href="#" id="ghost-cookie-btn" class="lb-cs-settings-link hidden"></a>
