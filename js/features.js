@@ -35,39 +35,30 @@ window._haptic = function(ms) {
 // ─────────────────────────────────────────────────────────────────────────────
 //  CONFIRM DIALOG — Bottom-sheet di conferma branded
 //  Sostituisce window.confirm() che è brutto, bloccante e non stilizzabile.
-//  Pattern: stile coerente con il report modal e il geo modal dell'app.
-//
-//  Uso:
-//    window._showConfirmDialog(titolo, messaggio, onConfirm)
-//    - titolo:    stringa H3 (es. "Sei sicuro?")
-//    - messaggio: stringa corpo (es. "Tutti i preferiti verranno rimossi.")
-//    - onConfirm: callback eseguita SOLO se l'utente tocca il bottone "Sì"
+//  Uso: window._showConfirmDialog(titolo, messaggio, onConfirm)
 // ─────────────────────────────────────────────────────────────────────────────
 window._showConfirmDialog = function(title, message, onConfirm) {
-    // Rimuovi eventuali dialog precedenti
     const existing = document.getElementById('f2g-confirm-overlay');
     if (existing) existing.remove();
 
     const overlay = document.createElement('div');
     overlay.id = 'f2g-confirm-overlay';
-    overlay.className = 'fixed inset-0 z-[160] bg-slate-900/50 backdrop-blur-sm flex items-end justify-center p-0 animate-fade';
+    overlay.style.cssText = 'position:fixed;inset:0;width:100%;height:100dvh;height:100vh;z-index:9500;background:rgba(15,23,42,0.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
     overlay.innerHTML = `
-    <div class="bg-white w-full max-w-md rounded-t-[1.5rem] shadow-2xl overflow-hidden" style="animation: bumpPanelIn 0.28s cubic-bezier(0.2,0.8,0.2,1) forwards;">
-        <div class="w-full flex justify-center pt-3 pb-1"><div class="w-10 h-1.5 bg-slate-200 rounded-full"></div></div>
-        <div class="px-6 pt-3 pb-6 text-center">
-            <!-- Icona warning -->
-            <div class="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-amber-100">
-                <span class="material-icons text-2xl text-amber-500">warning_amber</span>
+    <div style="background:#fff;width:100%;max-width:360px;margin:auto;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.2);overflow:hidden;animation:bumpPanelIn 0.28s cubic-bezier(0.2,0.8,0.2,1) forwards;">
+        <div style="padding:28px 24px 24px;text-align:center;">
+            <div style="width:56px;height:56px;background:#FFFBEB;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:2px solid #FDE68A;">
+                <span class="material-icons" style="font-size:24px;color:#F59E0B;">warning_amber</span>
             </div>
-            <h3 class="font-bold text-slate-800 text-lg mb-2">${title}</h3>
-            <p class="text-sm text-slate-500 leading-relaxed mb-6">${message}</p>
-            <div class="flex gap-3">
-                <button id="f2g-confirm-no" class="flex-1 py-3 rounded-xl font-bold text-sm uppercase tracking-wide bg-slate-100 text-slate-600 active:scale-[0.97] transition-all touch-manipulation cursor-pointer">
+            <h3 style="font-weight:700;color:#1e293b;font-size:1.12rem;margin:0 0 8px;font-family:'Plus Jakarta Sans',sans-serif;">${title}</h3>
+            <p style="font-size:0.875rem;color:#64748b;line-height:1.6;margin:0 0 24px;">${message}</p>
+            <div style="display:flex;gap:12px;">
+                <button id="f2g-confirm-no" style="flex:1;padding:12px;border-radius:12px;font-weight:700;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;background:#f1f5f9;color:#475569;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:transform 0.15s;" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform='scale(1)'">
                     ${window.t('confirm_no') || 'Annulla'}
                 </button>
-                <button id="f2g-confirm-yes" class="flex-1 py-3 rounded-xl font-bold text-sm uppercase tracking-wide bg-rose-500 text-white shadow-md active:scale-[0.97] transition-all touch-manipulation cursor-pointer">
+                <button id="f2g-confirm-yes" style="flex:1;padding:12px;border-radius:12px;font-weight:700;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;background:#f43f5e;color:#fff;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(244,63,94,0.35);font-family:'Plus Jakarta Sans',sans-serif;transition:transform 0.15s;" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform='scale(1)'">
                     ${window.t('confirm_yes') || 'Sì, svuota'}
                 </button>
             </div>
@@ -75,13 +66,28 @@ window._showConfirmDialog = function(title, message, onConfirm) {
     </div>`;
 
     document.body.appendChild(overlay);
-
-    // Event listeners (non onclick inline per evitare problemi con dati utente)
     document.getElementById('f2g-confirm-no').addEventListener('click', () => overlay.remove());
     document.getElementById('f2g-confirm-yes').addEventListener('click', () => {
         overlay.remove();
         if (onConfirm) onConfirm();
     });
+};
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  STORAGE TOAST — Feedback visivo se localStorage è pieno
+// ─────────────────────────────────────────────────────────────────────────────
+window._showStorageToast = function() {
+    // Evita toast multipli ravvicinati
+    if (document.getElementById('storage-full-toast')) return;
+    const toast = document.createElement('div');
+    toast.id = 'storage-full-toast';
+    toast.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:9999;background:#1e293b;color:#fff;padding:12px 20px;border-radius:14px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.25);display:flex;align-items:center;gap:8px;max-width:92vw;opacity:0;transition:opacity 0.3s;';
+    toast.innerHTML = `<span class="material-icons text-amber-400 text-base">warning</span> ${window.t('storage_full')}`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = '1'; });
+    setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+    setTimeout(() => toast.remove(), 4000);
 };
 
 
@@ -97,10 +103,13 @@ window.WL = {
         catch { return []; }
     },
 
-    /** Persiste l'array */
+    /** Persiste l'array — con feedback toast se la quota è esaurita */
     _save(arr) {
         try { localStorage.setItem(this._key, JSON.stringify(arr)); }
-        catch (e) { console.warn('[WL] localStorage write failed:', e); }
+        catch (e) {
+            console.warn('[WL] localStorage write failed:', e);
+            window._showStorageToast && window._showStorageToast();
+        }
     },
 
     /** Aggiunge un item se non già presente */
@@ -136,7 +145,10 @@ window.ITINERARY = {
 
     _save(arr) {
         try { localStorage.setItem(this._key, JSON.stringify(arr)); }
-        catch (e) { console.warn('[ITINERARY] localStorage write failed:', e); }
+        catch (e) {
+            console.warn('[ITINERARY] localStorage write failed:', e);
+            window._showStorageToast && window._showStorageToast();
+        }
     },
 
     /** Aggiunge se non già presente. Ritorna true se aggiunto. */
@@ -179,7 +191,7 @@ window.renderHeartBtn = function(wlItem) {
     const wrapperClass = isActive ? 'bg-rose-50 border-rose-100' : 'bg-slate-50 border-slate-200';
     const labelClass  = isActive ? 'text-rose-400'  : 'text-slate-400';
     const iconName    = isActive ? 'favorite' : 'favorite_border';
-    const ariaLabel   = isActive ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti';
+    const ariaLabel   = isActive ? window.t('aria_fav_remove') : window.t('aria_fav_add');
 
     return `<button
         class="flex flex-col items-center justify-center gap-1 group/btn active:scale-95 transition-all duration-200 min-w-[50px] cursor-pointer touch-manipulation wl-heart-btn${isActive ? ' wl-active' : ''}"
@@ -218,7 +230,7 @@ window.renderHeartBtnOverlay = function(wlItem, theme) {
         bgClass   = 'bg-black/25 backdrop-blur-sm';
     }
 
-    const ariaLabel = isActive ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti';
+    const ariaLabel = isActive ? window.t('aria_fav_remove') : window.t('aria_fav_add');
 
     return `<button
         class="wl-heart-btn wl-heart-overlay absolute top-3 right-3 z-20 w-9 h-9 rounded-full ${bgClass} flex items-center justify-center shadow-md border border-white/20 active:scale-90 transition-all duration-200 cursor-pointer touch-manipulation${isActive ? ' wl-active' : ''}"
@@ -472,7 +484,7 @@ window.renderWishlist = function() {
     content.innerHTML = html;
 };
 
-// Helper: svuota wishlist CON CONFERMA e ricarica
+// Helper: svuota wishlist CON CONFERMA
 window._clearWishlist = function() {
     window._showConfirmDialog(
         window.t('confirm_clear_title') || 'Sei sicuro?',
@@ -649,6 +661,7 @@ window.renderItinerary = function() {
     content.innerHTML = html;
 };
 
+// Helper: svuota itinerario CON CONFERMA
 window._clearItinerary = function() {
     window._showConfirmDialog(
         window.t('confirm_clear_title') || 'Sei sicuro?',
@@ -1141,6 +1154,30 @@ window._submitReport = async function(itemType, itemId, itemName) {
     const reportType = window._selectedReportType;
     if (!reportType) return;
 
+    // ── Rate limiting lato client: max 3 segnalazioni al minuto ──
+    const RL_KEY = 'f2g_report_timestamps';
+    const RL_MAX = 3;
+    const RL_WINDOW_MS = 60000; // 1 minuto
+    const now = Date.now();
+    let timestamps = [];
+    try { timestamps = JSON.parse(sessionStorage.getItem(RL_KEY) || '[]'); } catch {}
+    // Rimuovi timestamp scaduti
+    timestamps = timestamps.filter(ts => now - ts < RL_WINDOW_MS);
+    if (timestamps.length >= RL_MAX) {
+        const sendBtn = document.getElementById('report-send-btn');
+        if (sendBtn) {
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = window.t('report_rate_limit');
+            sendBtn.className = 'w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide bg-amber-500 text-white shadow-md cursor-not-allowed';
+            setTimeout(() => {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = window.t('report_send');
+                sendBtn.className = 'w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide bg-ct-blue text-white shadow-md active:scale-[0.97] transition-all cursor-pointer touch-manipulation';
+            }, 15000);
+        }
+        return;
+    }
+
     const sendBtn = document.getElementById('report-send-btn');
     if (sendBtn) {
         sendBtn.disabled = true;
@@ -1160,6 +1197,10 @@ window._submitReport = async function(itemType, itemId, itemName) {
             });
 
         if (error) throw error;
+
+        // Salva timestamp di questa segnalazione riuscita
+        timestamps.push(now);
+        try { sessionStorage.setItem(RL_KEY, JSON.stringify(timestamps)); } catch {}
 
         window._haptic(15);
 

@@ -13,13 +13,8 @@ const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  ESCAPE HTML — Protezione XSS
-//  Sanitizza qualsiasi stringa proveniente dal DB prima di inserirla in innerHTML.
-//  Converte i 5 caratteri pericolosi in entità HTML: & < > " '
-//  Usata dai renderer (ui-renderers.js, ui-modal-contents.js) su tutti i campi
-//  testuali dal DB: nomi, descrizioni, indirizzi, note.
-//
-//  NOTA: NON usare su valori che devono essere interpretati come HTML
-//  (es. link già formattati). In quei casi sanitizzare manualmente.
+//  Sanitizza stringhe prima di inserirle in innerHTML.
+//  Converte i 5 caratteri pericolosi (&<>"') in entità HTML.
 // ─────────────────────────────────────────────────────────────────────────────
 window.escapeHtml = function(str) {
     if (str == null) return '';
@@ -32,18 +27,12 @@ window.escapeHtml = function(str) {
         .replace(/'/g,  '&#39;');
 };
 
-/**
- * Wrapper sicuro per dbCol: estrae il campo multilingua E lo sanitizza per HTML.
- * Da usare al posto di dbCol() in tutti i template HTML.
- * Per contesti non-HTML (URL, attributi data-*, confronti logici) continuare a usare dbCol().
- */
+/** Wrapper: dbCol + escapeHtml. Per template HTML. */
 window.safeCol = function(item, field) {
     return window.escapeHtml(window.dbCol(item, field));
 };
 
-/**
- * Wrapper sicuro per valIT: estrae il valore italiano E lo sanitizza per HTML.
- */
+/** Wrapper: valIT + escapeHtml. Per template HTML. */
 window.safeValIT = function(item, field) {
     return window.escapeHtml(window.valIT(item, field));
 };
@@ -181,12 +170,20 @@ const UI_TEXT = {
             chicco_map_6: "⚓ Manarola di sera si svuota dai turisti. Resta — è il momento più bello per esplorare i vicoli.",
             chicco_map_7: "🍸 Monterosso ha la spiaggia più grande. I bar sul lungomare offrono spritz con vista sulla torre medievale.",
             chicco_map_8: "🐟 Il giovedì a Riomaggiore c'è il mercatino locale. Acciughe, pesto fresco e limoncino artigianale.",
-        aria_add_fav: "Aggiungi ai preferiti", aria_remove_fav: "Rimuovi dai preferiti",
-        aria_add_plan: "Aggiungi all'itinerario", aria_remove_plan: "Rimuovi dall'itinerario",
-        toast_storage_full: "Memoria piena: impossibile salvare. Prova a svuotare i preferiti meno usati.",
+        // ── Conferma svuota ──
         confirm_clear_title: "Sei sicuro?", confirm_clear_wishlist: "Tutti i tuoi preferiti verranno rimossi.",
         confirm_clear_itinerary: "Tutte le tappe verranno rimosse.", confirm_yes: "Sì, svuota", confirm_no: "Annulla",
-        geo_title: "Dove sei?", geo_desc: "Per mostrarti la tua posizione e trovare i posti più vicini, Five2Go ha bisogno di accedere alla posizione.", geo_privacy: "🔒 La tua posizione viene usata solo in questa sessione e non viene mai salvata.", geo_confirm: "Consenti posizione", geo_cancel: "Non ora", geo_blocked_title: "Posizione bloccata", geo_blocked_msg: "Hai negato l'accesso alla posizione. Per riabilitarla vai nelle impostazioni del browser.", geo_ok: "Capito"
+        // ── Geo modal ──
+        geo_title: "Dove sei?", geo_desc: "Per mostrarti la tua posizione e trovare i posti più vicini, Five2Go ha bisogno di accedere alla posizione.",
+        geo_privacy: "🔒 La tua posizione viene usata solo in questa sessione e non viene mai salvata.",
+        geo_hint: "Dopo aver toccato «Consenti», cerca la richiesta nella barra in alto del browser e approva.",
+        geo_confirm: "Consenti posizione", geo_cancel: "Non ora",
+        geo_blocked_title: "Posizione bloccata", geo_blocked_msg: "Hai negato l'accesso. Per riabilitarla vai nelle impostazioni del browser.",
+        geo_unsupported: "Il tuo browser non supporta la geolocalizzazione.", geo_ok: "Capito",
+        // ── Accessibility & Storage ──
+        aria_fav_remove: "Rimuovi dai preferiti", aria_fav_add: "Aggiungi ai preferiti",
+        storage_full: "Memoria piena, impossibile salvare. Prova a rimuovere qualche preferito.",
+        report_rate_limit: "Troppe segnalazioni. Attendi un minuto."
     },
     en: {
         loading: "Loading...", error: "Error", search_placeholder: "🔍 Search restaurants, wines, trails...", no_results: "No results found.",
@@ -301,12 +298,17 @@ const UI_TEXT = {
             chicco_map_6: "⚓ Manarola in the evening empties of tourists. Stay — it's the best time to explore the alleys.",
             chicco_map_7: "🍸 Monterosso has the biggest beach. The bars along the promenade serve spritz with a view of the medieval tower.",
             chicco_map_8: "🐟 On Thursdays in Riomaggiore there's a local market. Anchovies, fresh pesto and artisan limoncino.",
-        aria_add_fav: "Add to favourites", aria_remove_fav: "Remove from favourites",
-        aria_add_plan: "Add to itinerary", aria_remove_plan: "Remove from itinerary",
-        toast_storage_full: "Storage full: cannot save. Try clearing less-used favourites.",
         confirm_clear_title: "Are you sure?", confirm_clear_wishlist: "All your favourites will be removed.",
         confirm_clear_itinerary: "All stops will be removed.", confirm_yes: "Yes, clear", confirm_no: "Cancel",
-        geo_title: "Where are you?", geo_desc: "To show your position on the map and find the nearest stops, Five2Go needs access to your location.", geo_privacy: "🔒 Your location is used only in this session and is never saved or shared.", geo_confirm: "Allow location", geo_cancel: "Not now", geo_blocked_title: "Location blocked", geo_blocked_msg: "You denied location access. To re-enable it, go to your browser settings.", geo_ok: "Got it"
+        geo_title: "Where are you?", geo_desc: "To show your position and find the nearest places, Five2Go needs your location.",
+        geo_privacy: "🔒 Your location is used only now and is never saved or shared.",
+        geo_hint: "After tapping «Allow», look for the request in the browser bar above and approve.",
+        geo_confirm: "Allow location", geo_cancel: "Not now",
+        geo_blocked_title: "Location blocked", geo_blocked_msg: "You denied location access. Re-enable in browser settings.",
+        geo_unsupported: "Your browser doesn't support geolocation.", geo_ok: "Got it",
+        aria_fav_remove: "Remove from favourites", aria_fav_add: "Add to favourites",
+        storage_full: "Storage full, unable to save. Try removing some favourites.",
+        report_rate_limit: "Too many reports. Please wait a minute."
     },
     fr: {
         loading: "Chargement...", error: "Erreur", search_placeholder: "🔍 Cherchez restaurants, vins, randonnées...", no_results: "Aucun résultat.",
@@ -419,12 +421,17 @@ const UI_TEXT = {
             chicco_map_6: "⚓ Manarola le soir se vide des touristes. Restez — c'est le meilleur moment pour explorer les ruelles.",
             chicco_map_7: "🍸 Monterosso a la plus grande plage. Les bars servent des spritz avec vue sur la tour médiévale.",
             chicco_map_8: "🐟 Le jeudi à Riomaggiore il y a un marché local. Anchois, pesto frais et limoncino artisanal.",
-        aria_add_fav: "Ajouter aux favoris", aria_remove_fav: "Retirer des favoris",
-        aria_add_plan: "Ajouter à l'itinéraire", aria_remove_plan: "Retirer de l'itinéraire",
-        toast_storage_full: "Mémoire pleine : impossible de sauvegarder.",
         confirm_clear_title: "Êtes-vous sûr ?", confirm_clear_wishlist: "Tous vos favoris seront supprimés.",
-        confirm_clear_itinerary: "Toutes les étapes seront supprimées.", confirm_yes: "Oui, effacer", confirm_no: "Annuler",
-        geo_title: "Où êtes-vous ?", geo_desc: "Pour afficher votre position et trouver les arrêts les plus proches.", geo_confirm: "Autoriser la position", geo_cancel: "Pas maintenant", geo_blocked_title: "Position bloquée", geo_blocked_msg: "Accès refusé. Réactivez dans les paramètres du navigateur.", geo_ok: "Compris"
+        confirm_clear_itinerary: "Toutes les étapes seront supprimées.", confirm_yes: "Oui, vider", confirm_no: "Annuler",
+        geo_title: "Où êtes-vous ?", geo_desc: "Pour afficher votre position et trouver les arrêts les plus proches.",
+        geo_privacy: "🔒 Votre position n'est utilisée que maintenant et n'est jamais enregistrée.",
+        geo_hint: "Après avoir appuyé sur «Autoriser», cherchez la demande dans la barre du navigateur.",
+        geo_confirm: "Autoriser la position", geo_cancel: "Pas maintenant",
+        geo_blocked_title: "Position bloquée", geo_blocked_msg: "Accès refusé. Réactivez dans les paramètres du navigateur.",
+        geo_unsupported: "Votre navigateur ne supporte pas la géolocalisation.", geo_ok: "Compris",
+        aria_fav_remove: "Retirer des favoris", aria_fav_add: "Ajouter aux favoris",
+        storage_full: "Mémoire pleine, impossible de sauvegarder. Essayez de retirer des favoris.",
+        report_rate_limit: "Trop de signalements. Patientez une minute."
     },
 
     de: {
@@ -538,12 +545,17 @@ const UI_TEXT = {
             chicco_map_6: "⚓ Manarola am Abend leert sich von Touristen. Bleib — es ist die schönste Zeit, die Gassen zu erkunden.",
             chicco_map_7: "🍸 Monterosso hat den größten Strand. Die Bars an der Promenade servieren Spritz mit Blick auf den mittelalterlichen Turm.",
             chicco_map_8: "🐟 Donnerstags in Riomaggiore gibt es einen lokalen Markt. Sardellen, frisches Pesto und handgemachten Limoncino.",
-        aria_add_fav: "Zu Favoriten hinzufügen", aria_remove_fav: "Aus Favoriten entfernen",
-        aria_add_plan: "Zur Route hinzufügen", aria_remove_plan: "Aus Route entfernen",
-        toast_storage_full: "Speicher voll: Speichern nicht möglich.",
         confirm_clear_title: "Bist du sicher?", confirm_clear_wishlist: "Alle Favoriten werden entfernt.",
         confirm_clear_itinerary: "Alle Stopps werden entfernt.", confirm_yes: "Ja, löschen", confirm_no: "Abbrechen",
-        geo_title: "Wo bist du?", geo_desc: "Um deine Position auf der Karte zu zeigen und die nächsten Haltestellen zu finden.", geo_confirm: "Standort erlauben", geo_cancel: "Nicht jetzt", geo_blocked_title: "Standort blockiert", geo_blocked_msg: "Zugriff verweigert. In den Browsereinstellungen aktivieren.", geo_ok: "Verstanden"
+        geo_title: "Wo bist du?", geo_desc: "Um deine Position anzuzeigen und die nächsten Orte zu finden.",
+        geo_privacy: "🔒 Dein Standort wird nur jetzt verwendet und niemals gespeichert.",
+        geo_hint: "Tippe auf «Erlauben» und bestätige dann in der Browserleiste oben.",
+        geo_confirm: "Standort erlauben", geo_cancel: "Nicht jetzt",
+        geo_blocked_title: "Standort blockiert", geo_blocked_msg: "Zugriff verweigert. In den Browsereinstellungen aktivieren.",
+        geo_unsupported: "Dein Browser unterstützt keine Geolokalisierung.", geo_ok: "Verstanden",
+        aria_fav_remove: "Aus Favoriten entfernen", aria_fav_add: "Zu Favoriten hinzufügen",
+        storage_full: "Speicher voll, Speichern nicht möglich. Entferne einige Favoriten.",
+        report_rate_limit: "Zu viele Meldungen. Bitte eine Minute warten."
     },
 
     es: {
@@ -657,12 +669,17 @@ const UI_TEXT = {
             chicco_map_6: "⚓ Manarola por la noche se vacía de turistas. Quédate — es el mejor momento para explorar los callejones.",
             chicco_map_7: "🍸 Monterosso tiene la playa más grande. Los bares sirven spritz con vista a la torre medieval.",
             chicco_map_8: "🐟 Los jueves en Riomaggiore hay un mercadillo local. Anchoas, pesto fresco y limoncino artesanal.",
-        aria_add_fav: "Añadir a favoritos", aria_remove_fav: "Quitar de favoritos",
-        aria_add_plan: "Añadir al itinerario", aria_remove_plan: "Quitar del itinerario",
-        toast_storage_full: "Almacenamiento lleno: no se puede guardar.",
         confirm_clear_title: "¿Estás seguro?", confirm_clear_wishlist: "Todos tus favoritos serán eliminados.",
         confirm_clear_itinerary: "Todas las paradas serán eliminadas.", confirm_yes: "Sí, limpiar", confirm_no: "Cancelar",
-        geo_title: "¿Dónde estás?", geo_desc: "Para mostrarte tu posición en el mapa y encontrar las paradas más cercanas.", geo_confirm: "Permitir ubicación", geo_cancel: "Ahora no", geo_blocked_title: "Ubicación bloqueada", geo_blocked_msg: "Acceso denegado. Actívalo en los ajustes del navegador.", geo_ok: "Entendido"
+        geo_title: "¿Dónde estás?", geo_desc: "Para mostrarte tu posición y encontrar los lugares más cercanos.",
+        geo_privacy: "🔒 Tu ubicación se usa solo ahora y nunca se guarda ni comparte.",
+        geo_hint: "Tras pulsar «Permitir», busca la solicitud en la barra del navegador.",
+        geo_confirm: "Permitir ubicación", geo_cancel: "Ahora no",
+        geo_blocked_title: "Ubicación bloqueada", geo_blocked_msg: "Acceso denegado. Actívalo en los ajustes del navegador.",
+        geo_unsupported: "Tu navegador no soporta geolocalización.", geo_ok: "Entendido",
+        aria_fav_remove: "Quitar de favoritos", aria_fav_add: "Añadir a favoritos",
+        storage_full: "Memoria llena, no se puede guardar. Intenta eliminar algunos favoritos.",
+        report_rate_limit: "Demasiados reportes. Espera un minuto."
     },
 
     zh: {
@@ -776,12 +793,17 @@ const UI_TEXT = {
             chicco_map_6: "⚓ 马纳罗拉傍晚游客散去，那才是探索小巷最美的时刻。",
             chicco_map_7: "🍸 蒙泰罗索有最大的海滩，海滨酒吧供应Spritz，可欣赏中世纪塔楼。",
             chicco_map_8: "🐟 每逢周四，里奥马焦雷有本地集市：鳀鱼、新鲜罗勒酱和手工柠檬酒。",
-        aria_add_fav: "添加到收藏", aria_remove_fav: "从收藏中移除",
-        aria_add_plan: "添加到行程", aria_remove_plan: "从行程中移除",
-        toast_storage_full: "存储空间已满：无法保存。请尝试清除不常用的收藏。",
         confirm_clear_title: "确定吗？", confirm_clear_wishlist: "所有收藏将被移除。",
         confirm_clear_itinerary: "所有站点将被移除。", confirm_yes: "是，清空", confirm_no: "取消",
-        geo_title: "你在哪里？", geo_desc: "为了在地图上显示你的位置并找到最近的站点。", geo_confirm: "允许定位", geo_cancel: "暂不", geo_blocked_title: "位置被阻止", geo_blocked_msg: "访问被拒绝。请在浏览器设置中启用。", geo_ok: "知道了"
+        geo_title: "你在哪里？", geo_desc: "为了在地图上显示你的位置并找到最近的站点。",
+        geo_privacy: "🔒 你的位置仅在此次使用，不会被保存或分享。",
+        geo_hint: "点击«允许»后，请在浏览器顶部栏确认请求。",
+        geo_confirm: "允许定位", geo_cancel: "暂不",
+        geo_blocked_title: "位置被阻止", geo_blocked_msg: "访问被拒绝。请在浏览器设置中启用。",
+        geo_unsupported: "你的浏览器不支持地理定位。", geo_ok: "知道了",
+        aria_fav_remove: "从收藏中移除", aria_fav_add: "添加到收藏",
+        storage_full: "存储空间已满，无法保存。请尝试移除一些收藏。",
+        report_rate_limit: "报告过多，请等待一分钟。"
     }
 };
 

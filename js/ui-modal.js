@@ -1,45 +1,99 @@
+// ── CSS Keyframes per animazioni modale (iniettate una volta sola) ────────
+try {
+    if (!document.getElementById('f2g-modal-styles')) {
+        const _s = document.createElement('style');
+        _s.id = 'f2g-modal-styles';
+        _s.textContent = '@keyframes modalSheetUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:translateY(0)}}@keyframes modalSheetDown{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(100%)}}@keyframes modalBackdropOut{from{opacity:1}to{opacity:0}}.modal-sheet-enter{animation:modalSheetUp .3s cubic-bezier(.2,.8,.2,1) both}.modal-sheet-exit{animation:modalSheetDown .25s ease-in both}.modal-backdrop-exit{animation:modalBackdropOut .2s ease-in both}.modal-grab-handle{width:40px;height:6px;background:#cbd5e1;border-radius:9999px;transition:background .2s,width .2s}.modal-grab-handle.dragging{width:56px;background:#94a3b8}';
+        document.head.appendChild(_s);
+    }
+} catch(e) { /* CSP o browser vecchio — le animazioni degradano graziosamente */ }
+
+// ── Helper: dismiss animato riusabile (esposto per popstate in app.js) ───
+window._dismissModal = function(overlay) {
+    if (!overlay || overlay._dismissing) return;
+    overlay._dismissing = true;
+    const sheet = overlay.querySelector('.modal-sheet');
+    if (sheet) { sheet.classList.add('modal-sheet-exit'); }
+    overlay.classList.add('modal-backdrop-exit');
+    const cleanup = () => { try { overlay.remove(); } catch(e){} };
+    overlay.addEventListener('animationend', cleanup, { once: true });
+    setTimeout(cleanup, 400); // fallback sicurezza
+};
+
 window.openModal = async function(type, payload) {
+    // ── History: pusha stato modale per il back button ──
+    if (window._pushModalState) window._pushModalState();
+
     const modal = document.createElement('div');
     // Bottom-sheet su mobile (items-end), centrato su desktop (md:items-center)
     modal.className = 'fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-fade';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
     document.body.appendChild(modal);
 
+    // ── Chiudi con Escape (accessibilità) ──
+    const _onEscape = (e) => { if (e.key === 'Escape') { window._dismissModal(modal); document.removeEventListener('keydown', _onEscape); } };
+    document.addEventListener('keydown', _onEscape);
+    // Cleanup: quando l'overlay viene rimosso, rimuovi il listener
+    const _escObs = new MutationObserver(() => { if (!modal.parentNode) { document.removeEventListener('keydown', _onEscape); _escObs.disconnect(); } });
+    try { _escObs.observe(document.body, { childList: true }); } catch(e) {}
+
+    // ── Backdrop dismiss: solo tap diretto, protetto da drag accidentali ──
+    let _bgTouchMoved = false;
+    modal.addEventListener('touchstart', () => { _bgTouchMoved = false; }, { passive: true });
+    modal.addEventListener('touchmove',  () => { _bgTouchMoved = true; },  { passive: true });
     modal.onclick = (e) => { 
-        if(e.target === modal) {
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.remove(), 200);
+        if(e.target === modal && !_bgTouchMoved) {
+            window._dismissModal(modal);
         }
     };
 
-    // ── Swipe-down gesture to close ──
-    let _swipeStartY = 0, _swipeStartX = 0;
+    // ── Smart swipe-down: chiude SOLO quando lo scroll è in cima ──
+    // Risolve il conflitto scroll-contenuto vs dismiss-gesto
+    let _swipeStartY = 0, _swipeStartX = 0, _swipeActive = false, _swipeStartedAtTop = false;
     modal.addEventListener('touchstart', e => {
         _swipeStartY = e.touches[0].clientY;
         _swipeStartX = e.touches[0].clientX;
+        const inner = modal.querySelector('.modal-sheet');
+        _swipeStartedAtTop = inner ? inner.scrollTop <= 5 : true;
+        _swipeActive = false;
     }, { passive: true });
     modal.addEventListener('touchmove', e => {
+        if (!_swipeStartedAtTop) return; // scroll normale, non interferire
         const dy = e.touches[0].clientY - _swipeStartY;
         const dx = e.touches[0].clientX - _swipeStartX;
-        if (dy > 0 && Math.abs(dy) > Math.abs(dx)) {
+        // Attiva solo se gesto chiaramente verso il basso
+        if (!_swipeActive && dy > 10 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+            _swipeActive = true;
+        }
+        if (_swipeActive) {
             const inner = modal.querySelector('.modal-sheet');
             if (inner) {
-                inner.style.transform = `translateY(${Math.min(dy * 0.45, 70)}px)`;
-                inner.style.opacity   = String(Math.max(0.55, 1 - dy / 280));
+                inner.style.transform = `translateY(${Math.min(dy * 0.5, 100)}px)`;
+                inner.style.opacity   = String(Math.max(0.4, 1 - dy / 300));
                 inner.style.transition = 'none';
             }
         }
     }, { passive: true });
     modal.addEventListener('touchend', e => {
+        if (!_swipeActive) return;
+        _swipeActive = false;
         const dy = e.changedTouches[0].clientY - _swipeStartY;
         const inner = modal.querySelector('.modal-sheet');
-        if (dy > 90) {
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.remove(), 180);
+        if (dy > 100) {
+            // Dismiss con animazione fluida
+            if (inner) {
+                inner.style.transition = 'transform 0.25s ease-in, opacity 0.2s ease-in';
+                inner.style.transform  = 'translateY(100%)';
+                inner.style.opacity    = '0';
+            }
+            setTimeout(() => modal.remove(), 280);
         } else if (inner) {
+            // Snap back
             inner.style.transition = 'transform 0.3s cubic-bezier(0.2,0.8,0.2,1), opacity 0.3s ease';
             inner.style.transform  = '';
             inner.style.opacity    = '';
-            setTimeout(() => { inner.style.transition = ''; }, 320);
+            setTimeout(() => { inner.style.transition = ''; }, 350);
         }
     }, { passive: true });
 
@@ -80,16 +134,20 @@ window.openModal = async function(type, payload) {
     }
 
     // Content Container: bottom-sheet mobile, centered card desktop
-    const modalClass = content.class || 'modal-sheet bg-white w-full max-w-md rounded-t-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden relative overflow-y-auto' +
+    // Garantiamo che modal-sheet sia sempre presente (serve per lo swipe-down)
+    let modalClass = content.class || 'modal-sheet bg-white w-full max-w-md rounded-t-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden relative overflow-y-auto' +
         ' ' + 'max-h-[95vh] max-h-[95dvh]';
+    if (!modalClass.includes('modal-sheet')) modalClass = 'modal-sheet ' + modalClass;
+
+    const _closeLabel = (window.t ? window.t('close_label') : 'Close');
     
     modal.innerHTML = `
-    <div class="${modalClass} transform transition-all scale-100">
-        <!-- Grab handle: suggerisce swipe-down per chiudere -->
-        <div class="w-full flex justify-center pt-3 pb-1 md:hidden sticky top-0 z-30 bg-white">
-            <div class="w-10 h-1.5 bg-slate-200 rounded-full"></div>
+    <div class="${modalClass} modal-sheet-enter transform transition-all scale-100">
+        <!-- Grab handle: zona swipe-down + indicatore visivo -->
+        <div class="w-full flex justify-center pt-3 pb-1 md:hidden sticky top-0 z-30 bg-white cursor-grab" aria-hidden="true">
+            <div class="modal-grab-handle"></div>
         </div>
-        <button class="absolute top-3 right-4 z-20 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-800 shadow-sm active:scale-90 transition-transform" onclick="this.closest('.fixed').remove()" aria-label="Close">
+        <button class="absolute top-3 right-4 z-20 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-800 shadow-sm active:scale-90 transition-transform cursor-pointer touch-manipulation" onclick="this.closest('.fixed').remove()" aria-label="${_closeLabel}">
             <span class="material-icons text-xl">close</span>
         </button>
         ${content.html}
@@ -121,7 +179,8 @@ window.openTechMap = function(safeObj) {
             <div class="tech-container bg-slate-50 w-full h-full md:max-w-xl md:h-[90vh] md:rounded-[2rem] flex flex-col relative overflow-hidden shadow-2xl">
                 
                 <div class="relative w-full h-[45vh] min-h-[300px] shrink-0 z-0">
-                    <button onclick="closeModal()" class="absolute top-4 right-4 z-[400] w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-800 shadow-sm active:scale-90 transition-transform">
+                    <button onclick="closeModal()" class="absolute top-4 right-4 z-[400] w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-800 shadow-sm active:scale-90 transition-transform"
+                            aria-label="${window.t ? window.t('close_label') : 'Close'}">
                         <span class="material-icons text-xl">close</span>
                     </button>
                     <div class="absolute top-4 left-4 z-[400] bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl shadow-sm text-xs font-bold text-slate-700 flex items-center gap-1">
@@ -216,6 +275,8 @@ window.openTechMap = function(safeObj) {
         let modalOverlay = document.createElement('div');
         modalOverlay.id = 'tech-modal-overlay';
         modalOverlay.className = 'fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-0 md:p-6 animate-fade';
+        modalOverlay.setAttribute('role', 'dialog');
+        modalOverlay.setAttribute('aria-modal', 'true');
         // h-[45vh] nella mappa interna usa inline style per supportare dvh con fallback vh
         modalOverlay.querySelector && setTimeout(() => {
             const mapSection = modalOverlay.querySelector('.relative.w-full.shrink-0');

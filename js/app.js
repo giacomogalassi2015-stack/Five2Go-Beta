@@ -3,48 +3,49 @@ window.pendingMaps = [];
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  HISTORY ROUTER — Back button support per Android e iOS
-//  Ogni switchView() fa un pushState. Il popstate ascolta il "back" e
-//  naviga alla view precedente, chiudendo modali aperti.
-//  Senza questo, il back button chiude l'intera app — pessimo per i turisti.
+//  Ogni switchView() pusha uno state. Il popstate chiude modali aperti
+//  o naviga alla view precedente. Senza questo il back chiude l'app.
 // ═══════════════════════════════════════════════════════════════════════════
-window._historyNav = true; // flag per distinguere push da pop
+window._historyNav = true; // false durante popstate per evitare push ricorsivi
 
+/** Pusha uno state per una view (chiamato da switchView) */
 window._pushViewState = function(view) {
-    if (!window._historyNav) return; // skip durante popstate
+    if (!window._historyNav) return;
     history.pushState({ view: view }, '', '#/' + view);
 };
 
+/** Pusha uno state "modale" (chiamato da openModal) */
 window._pushModalState = function() {
+    if (!window._historyNav) return;
     history.pushState({ modal: true }, '');
 };
 
 window.addEventListener('popstate', function(e) {
     const state = e.state;
 
-    // Se c'è un modale aperto, chiudilo e basta
-    const techModal = document.getElementById('tech-modal-overlay');
-    const reportModal = document.getElementById('report-modal-overlay');
+    // 1. Se c'è un modale aperto, chiudilo e basta
+    const techModal    = document.getElementById('tech-modal-overlay');
+    const reportModal  = document.getElementById('report-modal-overlay');
     const confirmModal = document.getElementById('f2g-confirm-overlay');
+    const geoModal     = document.getElementById('geo-modal-overlay');
     const genericModal = document.querySelector('.fixed.z-\\[100\\]');
 
-    if (techModal) { techModal.remove(); if (window.closeModal) window.closeModal(); return; }
-    if (reportModal) { reportModal.remove(); return; }
+    if (techModal)    { if (window.closeModal) window.closeModal(); else techModal.remove(); return; }
+    if (reportModal)  { reportModal.remove(); return; }
     if (confirmModal) { confirmModal.remove(); return; }
-    if (genericModal) { genericModal.classList.add('opacity-0'); setTimeout(() => genericModal.remove(), 200); return; }
+    if (geoModal)     { geoModal.remove(); return; }
+    if (genericModal) { if (window._dismissModal) window._dismissModal(genericModal); else { genericModal.classList.add('opacity-0'); setTimeout(() => genericModal.remove(), 200); } return; }
 
-    // Altrimenti naviga alla view salvata nello state
+    // 2. Altrimenti naviga alla view precedente
+    window._historyNav = false;
     if (state && state.view) {
-        window._historyNav = false; // evita pushState ricorsivo
         const navBtn = document.querySelector('.nav-item[onclick*="' + state.view + '"]');
         switchView(state.view, navBtn);
-        window._historyNav = true;
     } else {
-        // Nessuno state: siamo tornati alla home
-        window._historyNav = false;
         const homeBtn = document.querySelector('.nav-item[onclick*="home"]');
         switchView('home', homeBtn);
-        window._historyNav = true;
     }
+    window._historyNav = true;
 });
 
 // --- VARIABILI GLOBALI PER LO SWIPE ---
@@ -110,7 +111,7 @@ window.switchView = async function(view, el) {
 
     window.currentViewName = view; 
 
-    // ── History push: registra la view per il back button ──
+    // ── History: pusha lo state per il back button ──
     window._pushViewState(view);
 
     // Chiudi la ricerca se aperta
@@ -545,65 +546,6 @@ function getUniqueValues(allData, key, customOrder = []) {
     return unique;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  LAZY RENDERING — Rendering incrementale con IntersectionObserver
-//  Renderizza le prime BATCH_SIZE card subito, poi aggiunge le successive
-//  quando l'utente scrolla vicino al fondo (sentinel element).
-//  Evita il freeze del browser su liste con 50+ card.
-// ═══════════════════════════════════════════════════════════════════════════
-const LAZY_BATCH_SIZE = 10;
-
-function _lazyRenderCards(items, cardRenderer, listContainer, extraClass) {
-    if (!items || items.length === 0) {
-        listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`;
-        return;
-    }
-
-    if (extraClass) listContainer.className = extraClass;
-
-    // Prima batch: rendering immediato
-    let rendered = 0;
-    const firstBatch = items.slice(0, LAZY_BATCH_SIZE);
-    listContainer.innerHTML = firstBatch.map(item => cardRenderer(item)).join('');
-    rendered = firstBatch.length;
-
-    // Se tutti gli item stanno nella prima batch, fine
-    if (rendered >= items.length) {
-        setTimeout(() => { if (window.initPendingMaps) window.initPendingMaps(); }, 100);
-        return;
-    }
-
-    // Sentinel: elemento invisibile in fondo alla lista, osservato da IntersectionObserver
-    const sentinel = document.createElement('div');
-    sentinel.className = 'lazy-sentinel';
-    sentinel.style.cssText = 'height:1px;width:100%;';
-    listContainer.appendChild(sentinel);
-
-    const observer = new IntersectionObserver((entries) => {
-        if (!entries[0].isIntersecting) return;
-        if (rendered >= items.length) { observer.disconnect(); sentinel.remove(); return; }
-
-        const nextBatch = items.slice(rendered, rendered + LAZY_BATCH_SIZE);
-        const fragment = document.createDocumentFragment();
-        const temp = document.createElement('div');
-        temp.innerHTML = nextBatch.map(item => cardRenderer(item)).join('');
-        while (temp.firstChild) fragment.appendChild(temp.firstChild);
-
-        // Inserisci PRIMA del sentinel (così il sentinel resta in fondo)
-        listContainer.insertBefore(fragment, sentinel);
-        rendered += nextBatch.length;
-
-        if (rendered >= items.length) { observer.disconnect(); sentinel.remove(); }
-        setTimeout(() => { if (window.initPendingMaps) window.initPendingMaps(); }, 100);
-    }, {
-        root: document.getElementById('app-content'),
-        rootMargin: '0px 0px 300px 0px' // pre-carica 300px prima che l'utente arrivi
-    });
-
-    observer.observe(sentinel);
-    setTimeout(() => { if (window.initPendingMaps) window.initPendingMaps(); }, 100);
-}
-
 function renderHorizontalFilterView(allData, filterKey, container, cardRenderer, latKey, lonKey) {
     const tags = getUniqueValues(allData, filterKey, ["Tutti", "Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso"]);
     const filterId   = `filter-${Math.random().toString(36).substr(2, 9)}`;
@@ -726,17 +668,67 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
         if (dynList) dynList.parentNode.insertBefore(strip, dynList);
     }
 
+    // ── Render incrementale: prime BATCH_SIZE card subito, il resto via IntersectionObserver ──
+    const BATCH_SIZE = 10;
+    let _incrementalObs = null; // riferimento all'observer per cleanup
+
     function updateList(items) {
+        // Pulisci eventuale observer precedente
+        if (_incrementalObs) { _incrementalObs.disconnect(); _incrementalObs = null; }
+
         if (!items || items.length === 0) { 
             listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`; 
-        } else {
-            // Ordina per distanza se Near Me è attivo e la tabella ha lat/lon
-            const sorted = (hasNearMe && window.sortByDistance)
-                ? window.sortByDistance(items, latKey, lonKey)
-                : items;
-            const extraClass = (filterKey === 'Prodotti') ? "grid grid-cols-2 gap-3 pb-24 animate-fade" : null;
-            _lazyRenderCards(sorted, cardRenderer, listContainer, extraClass);
+            return;
         }
+
+        // Ordina per distanza se Near Me è attivo e la tabella ha lat/lon
+        const sorted = (hasNearMe && window.sortByDistance)
+            ? window.sortByDistance(items, latKey, lonKey)
+            : items;
+
+        if (filterKey === 'Prodotti') listContainer.className = "grid grid-cols-2 gap-3 pb-24 animate-fade";
+
+        // Se pochi elementi, renderizza tutto subito (no overhead observer)
+        if (sorted.length <= BATCH_SIZE) {
+            listContainer.innerHTML = sorted.map(item => cardRenderer(item)).join('');
+            setTimeout(() => { if(window.initPendingMaps) window.initPendingMaps(); }, 100);
+            return;
+        }
+
+        // Render primo batch
+        let rendered = BATCH_SIZE;
+        listContainer.innerHTML = sorted.slice(0, BATCH_SIZE).map(item => cardRenderer(item)).join('');
+
+        // Sentinel per IntersectionObserver (infinite scroll leggero)
+        const sentinel = document.createElement('div');
+        sentinel.className = 'incremental-sentinel';
+        sentinel.style.height = '1px';
+        listContainer.appendChild(sentinel);
+
+        _incrementalObs = new IntersectionObserver((entries) => {
+            if (!entries[0].isIntersecting || rendered >= sorted.length) return;
+            const nextBatch = sorted.slice(rendered, rendered + BATCH_SIZE);
+            rendered += nextBatch.length;
+
+            // Inserisci le nuove card prima del sentinel
+            const fragment = document.createRange().createContextualFragment(
+                nextBatch.map(item => cardRenderer(item)).join('')
+            );
+            listContainer.insertBefore(fragment, sentinel);
+
+            // Mappe pendenti per i sentieri appena aggiunti
+            setTimeout(() => { if(window.initPendingMaps) window.initPendingMaps(); }, 50);
+
+            // Rimuovi sentinel se tutto è stato renderizzato
+            if (rendered >= sorted.length) {
+                _incrementalObs.disconnect();
+                _incrementalObs = null;
+                sentinel.remove();
+            }
+        }, { root: null, rootMargin: '300px' });
+
+        _incrementalObs.observe(sentinel);
+        setTimeout(() => { if(window.initPendingMaps) window.initPendingMaps(); }, 100);
     }
     renderChips();
     window.applySingleSmartFilter('__ALL__', filterId); 
@@ -852,7 +844,14 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
         }).join('');
     }
 
+    // ── Render incrementale per double filter ──
+    const DBL_BATCH = 10;
+    let _dblIncrObs = null;
+
     function executeFilter() {
+        // Pulisci observer precedente
+        if (_dblIncrObs) { _dblIncrObs.disconnect(); _dblIncrObs = null; }
+
         let filtered = allData.filter(item => {
             const val1 = window.dbCol(item, filtersConfig.primary.key) || '';
             const val2 = window.dbCol(item, filtersConfig.secondary.key) || '';
@@ -864,7 +863,43 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
         if (hasNearMe && window.sortByDistance) {
             filtered = window.sortByDistance(filtered, latKey, lonKey);
         }
-        _lazyRenderCards(filtered, cardRenderer, listContainer);
+        if (filtered.length === 0) {
+            listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`;
+            return;
+        }
+
+        // Pochi elementi: render tutto subito
+        if (filtered.length <= DBL_BATCH) {
+            listContainer.innerHTML = filtered.map(item => cardRenderer(item)).join('');
+            return;
+        }
+
+        // Render primo batch + sentinel
+        let rendered = DBL_BATCH;
+        const allFiltered = filtered; // cattura per closure observer
+        listContainer.innerHTML = allFiltered.slice(0, DBL_BATCH).map(item => cardRenderer(item)).join('');
+
+        const sentinel = document.createElement('div');
+        sentinel.className = 'incremental-sentinel';
+        sentinel.style.height = '1px';
+        listContainer.appendChild(sentinel);
+
+        _dblIncrObs = new IntersectionObserver((entries) => {
+            if (!entries[0].isIntersecting || rendered >= allFiltered.length) return;
+            const nextBatch = allFiltered.slice(rendered, rendered + DBL_BATCH);
+            rendered += nextBatch.length;
+            const fragment = document.createRange().createContextualFragment(
+                nextBatch.map(item => cardRenderer(item)).join('')
+            );
+            listContainer.insertBefore(fragment, sentinel);
+            if (rendered >= allFiltered.length) {
+                _dblIncrObs.disconnect();
+                _dblIncrObs = null;
+                sentinel.remove();
+            }
+        }, { root: null, rootMargin: '300px' });
+
+        _dblIncrObs.observe(sentinel);
     }
     renderControls();
     executeFilter(); 
@@ -1410,6 +1445,22 @@ window._closeSearch = function() {
     if (input)    { input.value = ''; input.blur(); }
     if (clearBtn) clearBtn.classList.add('hidden');
     _hideSearchResults();
+    // Reset zoom in caso iOS/Chrome lo avesse ingrandito
+    window._resetMobileZoom();
+};
+
+// ── Reset zoom mobile dopo blur ──────────────────────────────────────────
+// iOS Safari e Chrome Android fanno auto-zoom sugli input < 16px.
+// Anche con font-size:16px, in alcuni casi lo zoom resta "incastrato" dopo blur.
+// Questo forza la viewport a scale=1 manipolando temporaneamente il meta tag.
+window._resetMobileZoom = function() {
+    const vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) return;
+    const orig = vp.getAttribute('content');
+    vp.setAttribute('content', orig + ', maximum-scale=1');
+    requestAnimationFrame(() => {
+        vp.setAttribute('content', orig);
+    });
 };
 
 // Evidenzia una card dopo la navigazione (flash ring + scroll)
@@ -1462,6 +1513,8 @@ window._searchNavigateTo = async function(secIdx, hitIdx) {
     if (!sec || !item) return;
 
     window._closeSearch();
+    // ── Reset zoom mobile: iOS/Chrome non resettano lo zoom dopo blur ──
+    window._resetMobileZoom();
 
     const cardId       = sec.getId ? sec.getId(item) : item.id;
     const fallbackName = sec.getName ? sec.getName(item) : '';
@@ -1478,10 +1531,8 @@ window._searchNavigateTo = async function(secIdx, hitIdx) {
     if (sec.table === 'Farmacie' || sec.table === 'Numeri_utili') {
         const navBtn = document.querySelector('.nav-item[onclick*="servizi"]');
         await switchView('servizi', navBtn);
-        // Carica la lista (renderSimpleList → loadTableData)
         await new Promise(r => setTimeout(r, 150));
-        sec.openModal(item); // renderSimpleList
-        // Flash dopo che renderSimpleList ha popola il DOM
+        sec.openModal(item);
         setTimeout(() => window._flashCard(cardId, fallbackName), 400);
         return;
     }
@@ -1494,16 +1545,19 @@ window._searchNavigateTo = async function(secIdx, hitIdx) {
     const navBtn = document.querySelector('.nav-item[onclick*="' + viewName + '"]');
     await switchView(viewName, navBtn);
 
-    // 2. Attendi renderSubMenu, poi forza il tab corretto
-    await new Promise(r => setTimeout(r, 120));
-    const tabBtn = document.querySelector('button[data-table="' + tableName + '"]');
+    // 2. Attendi renderSubMenu, poi forza il tab corretto (polling robusto)
+    let tabBtn = null;
+    for (let i = 0; i < 8; i++) {
+        await new Promise(r => setTimeout(r, 80));
+        tabBtn = document.querySelector('button[data-table="' + tableName + '"]');
+        if (tabBtn) break;
+    }
     if (tabBtn) await loadTableData(tableName, tabBtn);
 
-    // 3. Flash con retry — non dipende da timeout fisso
-    //    Parte subito, il polling interno aspetta che la card appaia
+    // 3. Flash con retry — polling interno aspetta che la card appaia
     window._flashCard(cardId, fallbackName);
 
-    // 4. Apri il modal (300ms dopo il flash per dare respiro visivo)
+    // 4. Apri il modal (300ms dopo per dare respiro visivo)
     setTimeout(() => sec.openModal(item), 300);
 };
 
@@ -1650,7 +1704,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     clearTimeout(netErrorTimer);
 
     window.currentViewName = 'home';
-    // ── History: imposta lo state iniziale (replaceState, non push) ──
+    // ── History: stato iniziale (replaceState, non push, per non creare entry extra) ──
     history.replaceState({ view: 'home' }, '', '#/home');
     if (typeof setupHeaderElements === 'function') setupHeaderElements();
     if (typeof updateNavBar === 'function') updateNavBar();
@@ -1776,26 +1830,26 @@ window.userAccuracyCircle = null;
  */
 window._requestGeoPermission = async function(onGranted, onDenied) {
     if (!navigator.geolocation) {
-        _showGeoErrorModal(window.t('geo_unsupported_title') || "GPS non supportato", window.t('geo_unsupported_msg') || "Il tuo browser non supporta la geolocalizzazione.");
+        _showGeoErrorModal(window.t('geo_blocked_title'), window.t('geo_unsupported'));
         if (onDenied) onDenied();
         return;
     }
 
-    let permState = 'prompt'; // default conservativo per browser senza Permissions API
+    let permState = 'prompt';
     if (navigator.permissions) {
         try {
             const perm = await navigator.permissions.query({ name: 'geolocation' });
             permState = perm.state;
             perm.onchange = () => {
                 if (perm.state === 'denied') {
-                    _showGeoErrorModal(window.t('geo_blocked_title') || "Posizione bloccata", window.t('geo_blocked_msg') || "Hai negato l'accesso alla posizione.");
+                    _showGeoErrorModal(window.t('geo_blocked_title'), window.t('geo_blocked_msg'));
                 }
             };
-        } catch (e) { /* Permissions API non disponibile (es. Safari) — si mostra comunque il modal */ }
+        } catch (e) { }
     }
 
     if (permState === 'denied') {
-        _showGeoErrorModal(window.t('geo_blocked_title') || "Posizione bloccata", window.t('geo_blocked_msg') || "Hai già negato l'accesso alla posizione. Per riabilitarla vai nelle impostazioni del browser e cerca i permessi per questo sito.");
+        _showGeoErrorModal(window.t('geo_blocked_title'), window.t('geo_blocked_msg'));
         if (onDenied) onDenied();
         return;
     }
@@ -1881,7 +1935,7 @@ function _showGeoRequestModal(onGranted, onDenied) {
                 ${window.t('geo_desc')}
             </p>
             <p style="text-align:center;font-size:0.78rem;color:#94a3b8;line-height:1.5;margin:0 0 24px;">
-                ${window.t('geo_privacy') || '🔒'}
+                ${window.t('geo_privacy')}
             </p>
 
             <!-- Info browser (visibile solo su Firefox/Chrome dove il popup è nella toolbar) -->
@@ -1891,7 +1945,7 @@ function _showGeoRequestModal(onGranted, onDenied) {
                 font-size:0.78rem;color:#606C38;font-weight:600;
                 text-align:center;line-height:1.5;
             ">
-                📍 ${window.t('geo_hint') || "Dopo aver toccato il pulsante, cerca la richiesta nella barra in alto del browser."}
+                📍 ${window.t('geo_hint')}
             </div>
 
             <!-- Bottoni -->
@@ -1985,7 +2039,7 @@ function _showGeoErrorModal(title, message) {
                 background:#264653;color:white;font-size:0.9rem;font-weight:800;
                 letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;
                 font-family:'Plus Jakarta Sans',sans-serif;
-            ">${window.t('geo_ok') || 'OK'}</button>
+            ">${window.t('geo_ok')}</button>
         </div>`;
 
     document.body.appendChild(overlay);

@@ -36,7 +36,7 @@
 //     - LegalBlink (cookie consent) → script di terze parti
 // ═══════════════════════════════════════════════════════════════════════════
 
-const APP_VERSION  = 'v2';
+const APP_VERSION  = 'v3';
 const STATIC_CACHE = `five2go-static-${APP_VERSION}`;
 const CDN_CACHE    = `five2go-cdn-${APP_VERSION}`;
 const IMAGE_CACHE  = `five2go-images-${APP_VERSION}`;

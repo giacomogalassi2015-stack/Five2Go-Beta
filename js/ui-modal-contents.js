@@ -6,10 +6,11 @@ window.getModalContent = function(type, payload, item) {
     // --- RISTORANTE ---
    if (type === 'ristorante' || type === 'restaurant') {
     const item = JSON.parse(decodeURIComponent(payload));
-    const nome = window.escapeHtml(window.dbCol(item, 'Nome'));
-    const nomeIT = window.valIT(item, 'Nome');  // non-escaped: usato per URL immagine
-    const indirizzo = window.escapeHtml(window.dbCol(item, 'Paesi') || ''); 
-    const desc = window.escapeHtml(window.dbCol(item, 'Descrizioni') || window.t('desc_missing')); 
+    const esc = window.escapeHtml || (s => s);
+    const nome = esc(window.dbCol(item, 'Nome'));
+    const nomeIT = window.valIT(item, 'Nome');
+    const indirizzo = esc(window.dbCol(item, 'Paesi') || '');
+    const desc = esc(window.dbCol(item, 'Descrizioni') || window.t('desc_missing')); 
     
     const imgUrl = window.getSmartUrl(nomeIT, '', 600);
 
@@ -29,10 +30,11 @@ window.getModalContent = function(type, payload, item) {
     // --- PRODOTTI ---
     else if (type === 'product') {
         const p = JSON.parse(decodeURIComponent(payload));
-        const nome = window.escapeHtml(window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome'));
+        const esc = window.escapeHtml || (s => s);
+        const nome = esc(window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome'));
         const nomeIT = window.valIT(p, 'Prodotti') || window.valIT(p, 'Nome');
-        const desc = window.escapeHtml(window.dbCol(p, 'Descrizione'));   
-        const ideale = window.escapeHtml(window.dbCol(p, 'Ideale per')); 
+        const desc = esc(window.dbCol(p, 'Descrizione'));
+        const ideale = esc(window.dbCol(p, 'Ideale per')); 
         const fotoKey = p.Prodotti_foto || nomeIT;
         const bigImg = window.getSmartUrl(fotoKey, '', 600);
 
@@ -55,13 +57,13 @@ window.getModalContent = function(type, payload, item) {
         if (!item) { return { html: '', class: '' }; }
         const esc = window.escapeHtml || (s => s);
         const nome = esc(window.dbCol(item, 'Nome'));
-        const tipoLabel = window.t('wine_red'); // Fallback
+        const tipoLabel = window.t('wine_red');
         const produttore = esc(window.dbCol(item, 'Produttore'));
         const uve = esc(window.dbCol(item, 'Uve'));
         const gradi = esc(window.dbCol(item, 'Gradi'));
         const abbinamenti = esc(window.dbCol(item, 'Abbinamenti'));
         const desc = esc(window.dbCol(item, 'Descrizione'));
-        const foto = window.dbCol(item, 'Foto');  // URL, non escapare
+        const foto = window.dbCol(item, 'Foto');
 
         // Logic color based on IT
         const tipoIT = String(window.valIT(item, 'Tipo')).toLowerCase();
@@ -178,9 +180,9 @@ window.getModalContent = function(type, payload, item) {
         const desc = esc(window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione') || 'Descrizione non disponibile.');
         
         // Dati tecnici connessi al database
-        const dist = esc(item.distanza_km ? item.distanza_km + ' km' : (item.Distanza || '--'));
-        const dur = esc(item.durata_minuti ? item.durata_minuti + ' min' : (item.Durata || '--'));
-        const diff = esc(item.Tag || item.Difficolta || 'Medio');
+        const dist = item.distanza_km ? item.distanza_km + ' km' : (item.Distanza || '--');
+        const dur = item.durata_minuti ? item.durata_minuti + ' min' : (item.Durata || '--');
+        const diff = item.Tag || item.Difficolta || 'Medio';
         
         // Colore badge difficoltà
         let diffColor = 'text-yellow-600 bg-yellow-50 border-yellow-100';
@@ -256,6 +258,7 @@ window.getModalContent = function(type, payload, item) {
         let beachItem = {};
         try { beachItem = JSON.parse(decodeURIComponent(payload)); } catch(e) { if(item) beachItem = item; }
         if (!beachItem || Object.keys(beachItem).length === 0) { return { html: `<div class="p-8 text-center text-slate-500">Dati non trovati</div>`, class: '' }; }
+
         const esc = window.escapeHtml || (s => s);
         const nome = esc(window.dbCol(beachItem, 'Nome') || 'Spiaggia');
         const nomeIT = window.valIT(beachItem, 'Nome') || nome;
