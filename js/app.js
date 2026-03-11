@@ -56,11 +56,16 @@ window.switchView = async function(view, el) {
     const content = document.getElementById('app-content');
     if (!content) return;
 
-    // --- FIX SCROLL: Resetta lo scroll in alto ---
+    // --- FIX SCROLL: Resetta lo scroll in alto (istantaneo) ---
+    content.style.scrollBehavior = 'auto';
     content.scrollTop = 0; 
+    requestAnimationFrame(() => { content.style.scrollBehavior = ''; });
     // ---------------------------------------------
 
     window.currentViewName = view; 
+
+    // Chiudi la ricerca se aperta
+    if (typeof window._closeSearch === 'function') window._closeSearch();
     
     const centerBtnWrapper = document.getElementById('center-lang-btn-wrapper');
     const body = document.body;
@@ -161,12 +166,12 @@ function renderHome() {
   const lang = window.currentLang || 'it';
 
   const copy = {
-    it: { locationLabel: 'Cinque Terre', tagline: 'Scopri, salva, esplora.<br>Anche senza connessione.', wishlistLabel: 'Preferiti',  itinLabel: 'Itinerario', mapLabel: 'Mappa'  },
-    en: { locationLabel: 'Cinque Terre', tagline: 'Discover, save, explore.<br>Even without connection.', wishlistLabel: 'Favourites', itinLabel: 'Itinerary',  mapLabel: 'Map'    },
-    fr: { locationLabel: 'Cinque Terre', tagline: 'Découvrez, sauvegardez, explorez.<br>Même hors ligne.', wishlistLabel: 'Favoris',    itinLabel: 'Itinéraire', mapLabel: 'Carte'  },
-    de: { locationLabel: 'Cinque Terre', tagline: 'Entdecken, speichern, erkunden.<br>Auch offline.', wishlistLabel: 'Favoriten',  itinLabel: 'Route',      mapLabel: 'Karte'  },
-    es: { locationLabel: 'Cinque Terre', tagline: 'Descubre, guarda, explora.<br>También sin conexión.', wishlistLabel: 'Favoritos', itinLabel: 'Itinerario', mapLabel: 'Mapa'   },
-    zh: { locationLabel: '五渔村',        tagline: '发现、保存、探索。<br>即使离线也可用。',           wishlistLabel: '收藏',       itinLabel: '行程',        mapLabel: '地图'    }
+    it: { locationLabel: 'Cinque Terre', tagline: 'Scopri, salva, esplora.<br>Anche senza connessione.', wishlistLabel: 'Preferiti',  itinLabel: 'Itinerario', mapLabel: 'Mappa', searchPlaceholder: 'Cerca ristoranti, spiagge, sentieri…'  },
+    en: { locationLabel: 'Cinque Terre', tagline: 'Discover, save, explore.<br>Even without connection.', wishlistLabel: 'Favourites', itinLabel: 'Itinerary',  mapLabel: 'Map', searchPlaceholder: 'Search restaurants, beaches, trails…'    },
+    fr: { locationLabel: 'Cinque Terre', tagline: 'Découvrez, sauvegardez, explorez.<br>Même hors ligne.', wishlistLabel: 'Favoris',    itinLabel: 'Itinéraire', mapLabel: 'Carte', searchPlaceholder: 'Chercher restaurants, plages, sentiers…'  },
+    de: { locationLabel: 'Cinque Terre', tagline: 'Entdecken, speichern, erkunden.<br>Auch offline.', wishlistLabel: 'Favoriten',  itinLabel: 'Route',      mapLabel: 'Karte', searchPlaceholder: 'Restaurants, Strände, Wanderwege suchen…'  },
+    es: { locationLabel: 'Cinque Terre', tagline: 'Descubre, guarda, explora.<br>También sin conexión.', wishlistLabel: 'Favoritos', itinLabel: 'Itinerario', mapLabel: 'Mapa', searchPlaceholder: 'Buscar restaurantes, playas, senderos…'   },
+    zh: { locationLabel: '五渔村',        tagline: '发现、保存、探索。<br>即使离线也可用。',           wishlistLabel: '收藏',       itinLabel: '行程',        mapLabel: '地图', searchPlaceholder: '搜索餐厅、海滩、步道…'    }
   };
 
   const C       = copy[lang] || copy.en;
@@ -176,7 +181,7 @@ function renderHome() {
   content.innerHTML = `
     <div class="home-v2">
 
-      <!-- HERO: location label + titolo + tagline ancorati in basso -->
+      <!-- HERO: location label + titolo + tagline + search ancorati in basso -->
       <div class="home-hero-central">
         <div class="home-location-label">
           <span class="home-location-dot"></span>
@@ -186,6 +191,23 @@ function renderHome() {
           <em class="home-title-five">Five</em><span class="home-title-2go">2Go</span>
         </h1>
         <p class="home-tagline">${C.tagline}</p>
+
+        <!-- SEARCH BAR -->
+        <div class="home-search-wrap" id="global-search-anchor">
+          <span class="material-icons home-search-icon">search</span>
+          <input id="global-search-input"
+                 type="search"
+                 autocomplete="off"
+                 spellcheck="false"
+                 placeholder="${C.searchPlaceholder}"
+                 oninput="window._searchDebounced(this.value)"
+                 onfocus="window._positionResultsSheet && window._positionResultsSheet()"
+                 class="home-search-input">
+          <button id="search-clear-btn" class="home-search-clear hidden"
+                  onclick="window._closeSearch()">
+            <span class="material-icons" style="font-size:18px;">close</span>
+          </button>
+        </div>
       </div>
 
       <!-- BOTTOM ACTIONS: 3 pill glass buttons -->
@@ -208,6 +230,16 @@ function renderHome() {
 
     </div>`;
 
+  // Inject search backdrop (dismisses results on tap-outside)
+  if (!document.getElementById('search-backdrop')) {
+    const bd = document.createElement('div');
+    bd.id = 'search-backdrop';
+    bd.className = 'hidden';
+    bd.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.25);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);';
+    bd.onclick = () => window._closeSearch();
+    document.body.appendChild(bd);
+  }
+
   // Mascotte (se presente)
   const mascotHTML = window._getMascotHTML ? window._getMascotHTML() : '';
   if (mascotHTML) {
@@ -225,7 +257,7 @@ window.renderSubMenu = function(options, defaultTable) {
     window.currentMenuOptions = options;
     
    let menuHtml = `
-    <div class="nav-sticky-header sticky top-0 z-30 bg-ct-sand/95 backdrop-blur-md py-4 shadow-sm mb-4 border-b border-stone-200/50 transition-all">
+    <div class="nav-sticky-header sticky top-0 z-30 pt-4 pb-4 transition-all relative">
         <div class="nav-scroll-container flex gap-3 overflow-x-auto no-scrollbar items-center px-4 pt-2 pb-2 w-full" id="nav-tabs-container">
             ${options.map((opt, index) => {
                 const colorMap = {
@@ -264,9 +296,14 @@ window.renderSubMenu = function(options, defaultTable) {
 
 // 2. Modifica loadTableData per aggiornare lo stato attivo e scrollare il menu
 window.loadTableData = async function(tableName, btnEl) {
-    // --- FIX SCROLL: Resetta lo scroll del contenitore principale ---
+    // --- FIX SCROLL: Resetta lo scroll ISTANTANEO (bypassa scroll-behavior:smooth) ---
     const mainContainer = document.getElementById('app-content');
-    if (mainContainer) mainContainer.scrollTop = 0;
+    if (mainContainer) {
+        mainContainer.style.scrollBehavior = 'auto';
+        mainContainer.scrollTop = 0;
+        // Ripristina smooth dopo il reset (nel prossimo frame per sicurezza)
+        requestAnimationFrame(() => { mainContainer.style.scrollBehavior = ''; });
+    }
     // ----------------------------------------------------------------
 
     window.currentActiveTable = tableName;
@@ -321,7 +358,8 @@ window.loadTableData = async function(tableName, btnEl) {
             return; 
         }
         data = response.data;
-        window.appCache[tableName] = data; 
+        window.appCache[tableName] = data;
+        if (typeof _saveOnlineTimestamp === 'function') _saveOnlineTimestamp();
     }
 
     window.currentTableData = data; 
@@ -336,7 +374,7 @@ window.loadTableData = async function(tableName, btnEl) {
     }
     else if (tableName === 'Attrazioni') { 
         const culturaConfig = { primary: { key: 'Paese', title: window.t('filter_village'), customOrder: ["Riomaggiore", "Manarola", "Corniglia", "Vernazza", "Monterosso"] }, secondary: { key: 'Label', title: window.t('filter_cat') } };
-        renderDoubleHorizontalFilterView(data, culturaConfig, subContent, window.attrazioniRenderer); 
+        renderDoubleHorizontalFilterView(data, culturaConfig, subContent, window.attrazioniRenderer, 'lat_at', 'long_at'); 
     }
     else if (tableName === 'Ristoranti') { renderHorizontalFilterView(data, 'Paesi', subContent, window.ristoranteRenderer); }
     else if (tableName === 'Sentieri') { renderHorizontalFilterView(data, 'difficolta_cai', subContent, window.sentieroRenderer); }
@@ -375,7 +413,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
     const hasNearMe  = !!(latKey && lonKey);
 
     container.innerHTML = `
-        <div class="smart-filter-bar-container sticky top-[85px] z-20 -mx-4 px-4 mb-4">
+        <div class="smart-filter-bar-container sticky top-[76px] z-20 -mx-4 px-4 pb-3 relative">
             <div class="flex items-center gap-2">
                 <button id="${triggerId}" class="flex-1 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl py-3 px-4 flex items-center justify-between transition-all active:scale-95" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">
                     <div class="flex items-center gap-2">
@@ -394,7 +432,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
                     <span class="material-icons text-sm">near_me</span>
                 </button>` : ''}
             </div>
-            <div id="${panelId}" class="hidden overflow-hidden transition-all duration-300 bg-ct-sand/95 backdrop-blur-md rounded-b-xl border-x border-b border-stone-200/50 shadow-md">
+            <div id="${panelId}" class="hidden overflow-hidden transition-all duration-300 bg-ct-sand rounded-b-xl border-x border-b border-stone-200/50 shadow-md">
                 <div class="p-3 overflow-x-auto no-scrollbar flex gap-2" id="chips-${filterId}"></div>
             </div>
         </div>
@@ -503,27 +541,40 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
     window.applySingleSmartFilter('__ALL__', filterId); 
 }
 
-function renderDoubleHorizontalFilterView(allData, filtersConfig, container, cardRenderer) {
+function renderDoubleHorizontalFilterView(allData, filtersConfig, container, cardRenderer, latKey, lonKey) {
     const values1 = getUniqueValues(allData, filtersConfig.primary.key, filtersConfig.primary.customOrder);
     const values2 = getUniqueValues(allData, filtersConfig.secondary.key);
     
     const filterId = `filter-dbl-${Math.random().toString(36).substr(2, 9)}`;
     const triggerId = `trigger-${filterId}`;
     const panelId = `panel-${filterId}`;
+    const nearMeId = `nearbyme-${filterId}`;
     const labelAll = window.t('label_all');
     const labelAllFem = window.t('label_all_fem');
     const btnClose = window.t('btn_close_show');
+    const hasNearMe = !!(latKey && lonKey);
 
     container.innerHTML = `
-        <div class="smart-filter-bar-container sticky top-[85px] z-20 -mx-4 px-4 mb-4">
-            <button id="${triggerId}" class="w-full bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl py-3 px-4 flex items-center justify-between transition-all active:scale-95" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">
-                <div class="flex items-center gap-2 overflow-hidden">
-                    <span class="material-icons text-ct-blue text-sm">tune</span>
-                    <span id="filter-label-${filterId}" class="text-sm font-bold text-slate-700 truncate">${labelAll} • ${labelAllFem}</span>
-                </div>
-                <span class="material-icons text-slate-400 text-sm transition-transform duration-300" id="icon-${filterId}">expand_more</span>
-            </button>
-            <div id="${panelId}" class="hidden overflow-hidden transition-all duration-300 bg-ct-sand/95 backdrop-blur-md rounded-b-xl border-x border-b border-stone-200/50 shadow-md">
+        <div class="smart-filter-bar-container sticky top-[76px] z-20 -mx-4 px-4 pb-3 relative">
+            <div class="flex items-center gap-2">
+                <button id="${triggerId}" class="flex-1 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl py-3 px-4 flex items-center justify-between transition-all active:scale-95" onclick="toggleSmartFilter('${panelId}', '${triggerId}')">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <span class="material-icons text-ct-blue text-sm">tune</span>
+                        <span id="filter-label-${filterId}" class="text-sm font-bold text-slate-700 truncate">${labelAll} • ${labelAllFem}</span>
+                    </div>
+                    <span class="material-icons text-slate-400 text-sm transition-transform duration-300" id="icon-${filterId}">expand_more</span>
+                </button>
+                ${hasNearMe ? `
+                <button id="${nearMeId}"
+                    class="near-me-btn ${window._nearMeEnabled ? 'active-near-me' : ''}"
+                    title="${window.currentLang === 'it' ? 'Ordina per distanza' : 'Sort by distance'}"
+                    aria-label="${window.currentLang === 'it' ? 'Vicino a me' : 'Near me'}"
+                    aria-pressed="${window._nearMeEnabled}"
+                    onclick="window.toggleNearMe('${nearMeId}', function(){ window.applyDoubleSmartFilter(0, null, '${filterId}'); })">
+                    <span class="material-icons text-sm">near_me</span>
+                </button>` : ''}
+            </div>
+            <div id="${panelId}" class="hidden overflow-hidden transition-all duration-300 bg-ct-sand rounded-b-xl border-x border-b border-stone-200/50 shadow-md">
                 <div class="p-3 space-y-3">
                     <div>
                         <div class="text-[11px] font-bold text-slate-400 uppercase mb-2 ml-1">${window.t('filter_village')}</div>
@@ -601,13 +652,17 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     }
 
     function executeFilter() {
-        const filtered = allData.filter(item => {
+        let filtered = allData.filter(item => {
             const val1 = window.dbCol(item, filtersConfig.primary.key) || '';
             const val2 = window.dbCol(item, filtersConfig.secondary.key) || '';
             const match1 = (activeVal1 === '__ALL__') || val1.includes(activeVal1);
             const match2 = (activeVal2 === '__ALL__') || val2.toLowerCase().includes(activeVal2.toLowerCase());
             return match1 && match2;
         });
+        // Ordina per distanza se Near Me è attivo
+        if (hasNearMe && window.sortByDistance) {
+            filtered = window.sortByDistance(filtered, latKey, lonKey);
+        }
         if (filtered.length === 0) {
             listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`;
         } else {
@@ -731,6 +786,22 @@ window.renderServicesGrid = async function() {
             <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
 
+        <!-- ── CINQUE TERRE CARD ── -->
+        <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft border border-slate-100/70" style="height:130px" onclick="window.switchView('ct_card')">
+            <div class="absolute inset-0" style="background: linear-gradient(140deg, #0d3b2e 0%, #1a7a6a 60%, #2A9D8F 100%)"></div>
+            <div class="absolute bottom-0 left-0 right-0 h-1.5" style="background: linear-gradient(90deg, #E9C46A, #E76F51, #2A9D8F)"></div>
+            <div class="absolute inset-0 p-5 flex items-center gap-4 z-10">
+                <div class="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/25 shrink-0">
+                    <span class="material-icons text-2xl text-white">card_membership</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-serif text-xl font-bold text-white leading-tight">Cinque Terre Card</h3>
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-white/50 mt-0.5">${window.t('ct_card_sub') || 'Prezzi · Punti vendita · Info'}</p>
+                </div>
+                <span class="material-icons text-white/40 text-xl shrink-0">chevron_right</span>
+            </div>
+        </div>
+
         <div class="text-center pt-1">
             <button onclick="renderLegalPage()" class="text-slate-400 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 mx-auto py-2 px-4 rounded-xl bg-white shadow-sm border border-slate-200 active:scale-95 touch-manipulation">
                 <span class="material-icons text-sm">policy</span> ${window.t('menu_legal')}
@@ -776,6 +847,9 @@ const _BUS_VIRTUAL = [
 ];
 const _FERRY_VIRTUAL = [
     { _virtual: true, id: 'ferry', Nome: 'Orari Traghetti', Alias: 'traghetto ferry orari nave battello', Sottotitolo: 'Collegamento via mare' },
+];
+const _TRAIN_VIRTUAL = [
+    { _virtual: true, id: 'train', Nome: 'Orari Treni', Alias: 'treno train trenitalia stazione ferrovia', Sottotitolo: 'Trenitalia — orari e tratte' },
 ];
 
 const _SEARCH_SECTIONS = [
@@ -892,6 +966,20 @@ const _SEARCH_SECTIONS = [
         getSub:     item => item.Sottotitolo,
         openModal:  item => openModal('transport', 'ferry'),
     },
+    {
+        table:      '_train',
+        view:       'servizi',
+        virtual:    true,
+        data:       _TRAIN_VIRTUAL,
+        label:      'Treni',
+        icon:       'train',
+        color:      '#E76F51',
+        bg:         '#FFEDE1',
+        getId:      item => item.id,
+        getName:    item => item.Nome,
+        getSub:     item => item.Sottotitolo,
+        openModal:  item => openModal('transport', 'train'),
+    },
 ];
 
 // Helper: estrae stringa da campo possibilmente JSON/oggetto multilingua
@@ -941,16 +1029,28 @@ function _searchInItem(item, q) {
     document.body.appendChild(sheet);
 })();
 
-// Posiziona il sheet sotto l'anchor dell'input, rispettando viewport
+// Posiziona il sheet rispetto all'anchor: sopra se in basso, sotto se in alto
 window._positionResultsSheet = function() {
     const anchor = document.getElementById('global-search-anchor');
     const sheet  = document.getElementById('search-results-sheet');
     if (!anchor || !sheet) return;
     const rect = anchor.getBoundingClientRect();
     const gap  = 8;
-    sheet.style.top   = (rect.bottom + gap) + 'px';
+    const viewH = window.innerHeight;
+
     sheet.style.left  = rect.left + 'px';
     sheet.style.width = rect.width + 'px';
+
+    // Se l'anchor è nella metà inferiore dello schermo, apri verso l'alto
+    if (rect.top > viewH * 0.4) {
+        sheet.style.top    = 'auto';
+        sheet.style.bottom = (viewH - rect.top + gap) + 'px';
+        sheet.style.maxHeight = (rect.top - gap - 20) + 'px';
+    } else {
+        sheet.style.bottom   = 'auto';
+        sheet.style.top      = (rect.bottom + gap) + 'px';
+        sheet.style.maxHeight = '58vh';
+    }
 };
 
 // ── Column projection: solo i campi utili alla ricerca ──────────────
@@ -1082,6 +1182,7 @@ function _showSearchResults(query, groups, total) {
     }
 
     window._searchSections = _SEARCH_SECTIONS;
+    if (window._positionResultsSheet) window._positionResultsSheet();
     sheet.classList.remove('hidden');
     if (backdrop) backdrop.classList.remove('hidden');
 }
@@ -1089,7 +1190,7 @@ function _showSearchResults(query, groups, total) {
 function _hideSearchResults() {
     const sheet   = document.getElementById('search-results-sheet');
     const backdrop = document.getElementById('search-backdrop');
-    if (sheet)   sheet.classList.add('hidden');
+    if (sheet)   { sheet.classList.add('hidden'); sheet.style.top = ''; sheet.style.bottom = ''; }
     if (backdrop) backdrop.classList.add('hidden');
 }
 
@@ -1232,25 +1333,52 @@ async function checkRealConnectivity() {
     }
 }
 
-// Mostra un banner discreto non bloccante per la modalità offline
+// Mostra un badge persistente per la modalità offline
+// Resta visibile finché non torna la connessione
 function _showOfflineBanner() {
     if (document.getElementById('offline-banner')) return;
+
+    // Cerchiamo la data dell'ultimo fetch riuscito (salvata nel SW data-cache)
+    let lastDateStr = '';
+    try {
+        const stored = localStorage.getItem('f2g_last_online');
+        if (stored) {
+            const d = new Date(stored);
+            lastDateStr = d.toLocaleDateString(window.currentLang || 'it', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        }
+    } catch(e) {}
+
+    const lang = window.currentLang || 'it';
+    const labels = {
+        it: 'Offline', en: 'Offline', fr: 'Hors ligne',
+        de: 'Offline', es: 'Sin conexión', zh: '离线'
+    };
+    const dataLabels = {
+        it: 'dati del', en: 'data from', fr: 'données du',
+        de: 'Daten vom', es: 'datos del', zh: '数据来自'
+    };
+
     const banner = document.createElement('div');
     banner.id = 'offline-banner';
-    banner.style.cssText = [
-        'position:fixed','top:12px','left:50%','transform:translateX(-50%)',
-        'z-index:9000','background:#264653','color:white',
-        'padding:8px 18px','border-radius:12px','font-size:12px',
-        'font-weight:700','white-space:nowrap','letter-spacing:0.04em',
-        'box-shadow:0 4px 16px rgba(0,0,0,0.25)','pointer-events:none',
-        'transition:opacity 0.4s ease'
-    ].join(';');
-    banner.textContent = '📵 Offline — dati dall\'ultima sessione';
+    banner.className = 'offline-badge';
+    banner.innerHTML = `
+        <span class="material-icons" style="font-size:14px;">cloud_off</span>
+        <span>${labels[lang] || 'Offline'}${lastDateStr ? ` · ${dataLabels[lang] || 'data from'} ${lastDateStr}` : ''}</span>
+    `;
     document.body.appendChild(banner);
-    setTimeout(() => {
+}
+
+function _hideOfflineBanner() {
+    const banner = document.getElementById('offline-banner');
+    if (banner) {
         banner.style.opacity = '0';
         setTimeout(() => banner.remove(), 400);
-    }, 4000);
+    }
+}
+
+// Salva il timestamp dell'ultima sessione online riuscita
+function _saveOnlineTimestamp() {
+    try { localStorage.setItem('f2g_last_online', new Date().toISOString()); } catch(e) {}
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1287,11 +1415,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             showNetworkError();
             return;
         }
+    } else {
+        // Online: salva timestamp per il badge offline futuro
+        _saveOnlineTimestamp();
     }
 
     // Avvisa in tempo reale se la connessione cade durante la navigazione
     window.addEventListener('offline', () => {
         _showOfflineBanner();
+    });
+    // Nascondi il badge quando torna la connessione
+    window.addEventListener('online', () => {
+        _hideOfflineBanner();
+        _saveOnlineTimestamp();
     });
 
     setLoadingStep(isOnline ? 'Connessione stabilita...' : 'Modalità offline...');

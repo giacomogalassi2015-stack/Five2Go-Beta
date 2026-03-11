@@ -820,3 +820,100 @@ window.renderCinqueTerreCard = function() {
         </button>
     </div>`;
 };
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  9. NEAR ME — Ordinamento per distanza (geolocalizzazione)
+// ─────────────────────────────────────────────────────────────────────────────
+// Toggle state: true = ordina per distanza, false = ordine originale
+window._nearMeEnabled = false;
+// Cached user position (aggiornata da getCurrentPosition)
+window._nearMePos = null;
+
+/**
+ * Toggle del pulsante "Vicino a me" nella filter bar.
+ * Se si attiva per la prima volta, chiede il permesso geo tramite il flusso branded.
+ * @param {string}   btnId    — id del bottone near-me nella filter bar
+ * @param {Function} callback — richiamata dopo il toggle per rinfrescare la lista
+ */
+window.toggleNearMe = function(btnId, callback) {
+    const btn = document.getElementById(btnId);
+
+    // Se sta per attivarsi e non abbiamo posizione: chiedi permesso
+    if (!window._nearMeEnabled && !window._nearMePos) {
+        window._requestGeoPermission(
+            () => {
+                // Permesso concesso: ottieni posizione
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        window._nearMePos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        window._nearMeEnabled = true;
+                        if (btn) { btn.classList.add('active-near-me'); btn.setAttribute('aria-pressed', 'true'); }
+                        if (callback) callback();
+                    },
+                    (err) => {
+                        console.warn('Near Me geo error:', err.message);
+                        window._nearMeEnabled = false;
+                    },
+                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 120000 }
+                );
+            },
+            () => {
+                // Permesso negato
+                window._nearMeEnabled = false;
+                if (btn) { btn.classList.remove('active-near-me'); btn.setAttribute('aria-pressed', 'false'); }
+            }
+        );
+        return;
+    }
+
+    // Toggle on/off
+    window._nearMeEnabled = !window._nearMeEnabled;
+    if (btn) {
+        btn.classList.toggle('active-near-me', window._nearMeEnabled);
+        btn.setAttribute('aria-pressed', String(window._nearMeEnabled));
+    }
+
+    // Se si riattiva, aggiorna posizione in background
+    if (window._nearMeEnabled) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => { window._nearMePos = { lat: pos.coords.latitude, lng: pos.coords.longitude }; },
+            () => {},
+            { enableHighAccuracy: false, timeout: 5000, maximumAge: 120000 }
+        );
+    }
+
+    if (callback) callback();
+};
+
+/**
+ * Ordina un array di item per distanza dall'utente.
+ * Se Near Me non è attivo o non abbiamo posizione, restituisce l'array invariato.
+ * @param {Array}  items  — array di oggetti (row del DB)
+ * @param {string} latKey — chiave del campo latitudine (es. 'lat_sp')
+ * @param {string} lonKey — chiave del campo longitudine (es. 'long_sp')
+ * @returns {Array} — array ordinato per distanza crescente
+ */
+window.sortByDistance = function(items, latKey, lonKey) {
+    if (!window._nearMeEnabled || !window._nearMePos) return items;
+    const { lat: uLat, lng: uLng } = window._nearMePos;
+
+    // Haversine semplificata (km) — sufficiente per distanze < 50 km
+    function dist(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    return [...items].sort((a, b) => {
+        const aLat = parseFloat(a[latKey]); const aLon = parseFloat(a[lonKey]);
+        const bLat = parseFloat(b[latKey]); const bLon = parseFloat(b[lonKey]);
+        const aDist = (isNaN(aLat) || isNaN(aLon)) ? 9999 : dist(uLat, uLng, aLat, aLon);
+        const bDist = (isNaN(bLat) || isNaN(bLon)) ? 9999 : dist(uLat, uLng, bLat, bLon);
+        return aDist - bDist;
+    });
+};
