@@ -170,88 +170,124 @@ window.getModalContent = function(type, payload, item) {
         </div>`;
     }
 
-    // --- INFO SENTIERI ---
-    // --- INFO SENTIERI (RESTYLING) ---
-    else if (type === 'sentieroInfo') {
-        let item = {};
-        try { item = JSON.parse(decodeURIComponent(payload)); } catch(e) {}
-        const esc = window.escapeHtml || (s => s);
-        const nome = esc(item.Nome || item.Titolo || 'Dettagli Sentiero');
-        const desc = esc(window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione') || 'Descrizione non disponibile.');
-        
-        // Dati tecnici connessi al database
-        const dist = item.distanza_km ? item.distanza_km + ' km' : (item.Distanza || '--');
-        const dur = item.durata_minuti ? item.durata_minuti + ' min' : (item.Durata || '--');
-        const diff = item.Tag || item.Difficolta || 'Medio';
-        
-        // Colore badge difficoltà
-        let diffColor = 'text-yellow-600 bg-yellow-50 border-yellow-100';
-        if(diff.toLowerCase().includes('facile') || diff.toLowerCase().includes('turistic')) diffColor = 'text-green-600 bg-green-50 border-green-100';
-        if(diff.toLowerCase().includes('esperto') || diff.toLowerCase().includes('difficile')) diffColor = 'text-red-600 bg-red-50 border-red-100';
+  else if (type === 'sentieroInfo') {
+    let item = {};
+    try { item = JSON.parse(decodeURIComponent(payload)); } catch(e) {}
+    const esc = window.escapeHtml || (s => s);
 
-        contentHtml = `
-            <div class="relative w-full bg-white min-h-[400px]">
-                
-                <div class="bg-gradient-to-br from-ct-green to-[#4a5d2b] p-8 pb-12 relative overflow-hidden">
-                    <div class="absolute -right-6 -top-6 opacity-20 transform rotate-12">
-                        <span class="material-icons text-[150px] text-white">hiking</span>
-                    </div>
-                    
-                    <div class="relative z-10">
-                        <span class="inline-block py-1 px-3 rounded-lg bg-white/20 backdrop-blur border border-white/30 text-white text-[11px] font-bold uppercase tracking-widest mb-3">
-                            Outdoor & Trekking
-                        </span>
-                        <h2 class="font-serif text-3xl font-bold text-white leading-tight shadow-black drop-shadow-md pr-4">
-                            ${nome}
-                        </h2>
-                    </div>
+    const nome = esc(window.dbCol(item, 'Nome') || item.Nome || item.Titolo || 'Dettagli Sentiero');
+   const desc = window.dbCol(item, 'Descrizione') || window.dbCol(item, 'descrizione') || window.t('desc_missing');
+
+    const dist = item.distanza_km ? item.distanza_km + ' km' : (item.Distanza || '--');
+    const dur  = item.durata_minuti ? item.durata_minuti + ' min' : (item.Durata || '--');
+    const diff = item.Tag || item.Difficolta || 'Medio';
+
+    let diffColor = 'text-yellow-600 bg-yellow-50 border-yellow-100';
+    if (diff.toLowerCase().includes('facile') || diff.toLowerCase().includes('turistic'))
+        diffColor = 'text-green-600 bg-green-50 border-green-100';
+    if (diff.toLowerCase().includes('esperto') || diff.toLowerCase().includes('difficile'))
+        diffColor = 'text-red-600 bg-red-50 border-red-100';
+
+    contentHtml = `
+        <div class="relative w-full bg-white min-h-[400px]">
+
+            <div class="bg-gradient-to-br from-ct-green to-[#4a5d2b] p-8 pb-12 relative overflow-hidden">
+                <div class="absolute -right-6 -top-6 opacity-20 transform rotate-12">
+                    <span class="material-icons text-[150px] text-white">hiking</span>
                 </div>
-
-                <div class="px-6 relative z-20 -mt-8">
-                    <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/60 p-4 border border-slate-100 grid grid-cols-3 divide-x divide-slate-100">
-                        
-                        <div class="flex flex-col items-center justify-center text-center px-1">
-                            <span class="material-icons text-ct-green text-xl mb-1">schedule</span>
-                            <span class="text-sm font-extrabold text-slate-700 leading-none">${dur}</span>
-                            <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">Durata</span>
-                        </div>
-
-                        <div class="flex flex-col items-center justify-center text-center px-1">
-                            <span class="material-icons text-ct-green text-xl mb-1">straighten</span>
-                            <span class="text-sm font-extrabold text-slate-700 leading-none">${dist}</span>
-                            <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">Lunghezza</span>
-                        </div>
-
-                        <div class="flex flex-col items-center justify-center text-center px-1">
-                            <span class="material-icons text-ct-green text-xl mb-1">signal_cellular_alt</span>
-                            <span class="text-sm font-extrabold text-slate-700 leading-none truncate w-full">${diff.slice(0,8)}</span>
-                            <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">Livello</span>
-                        </div>
-
-                    </div>
+                <div class="relative z-10">
+                    <span class="inline-block py-1 px-3 rounded-lg bg-white/20 backdrop-blur border border-white/30 text-white text-[11px] font-bold uppercase tracking-widest mb-3">
+                        ${window.t('trail_outdoor_badge')}
+                    </span>
+                    <h2 class="font-serif text-3xl font-bold text-white leading-tight shadow-black drop-shadow-md pr-4">
+                        ${nome}
+                    </h2>
                 </div>
+            </div>
 
-                <div class="p-6 pt-8">
-
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">
-                        Descrizione del percorso
-                    </h3>
-                    
-                    <div class="prose prose-slate prose-p:text-slate-600 prose-p:text-lg prose-p:leading-relaxed text-justify">
-                        ${desc}
+            <div class="px-6 relative z-20 -mt-8">
+                <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/60 p-4 border border-slate-100 grid grid-cols-3 divide-x divide-slate-100">
+                    <div class="flex flex-col items-center justify-center text-center px-1">
+                        <span class="material-icons text-ct-green text-xl mb-1">schedule</span>
+                        <span class="text-sm font-extrabold text-slate-700 leading-none">${dur}</span>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">${window.t('trail_duration_label')}</span>
                     </div>
-
-                    <div class="mt-8 pt-6 border-t border-dashed border-slate-200 text-center">
-                        <p class="text-[11px] text-slate-400 italic">
-                            Ricorda: indossa sempre scarpe adatte e porta acqua con te.
-                        </p>
+                    <div class="flex flex-col items-center justify-center text-center px-1">
+                        <span class="material-icons text-ct-green text-xl mb-1">straighten</span>
+                        <span class="text-sm font-extrabold text-slate-700 leading-none">${dist}</span>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">${window.t('trail_length_label')}</span>
+                    </div>
+                    <div class="flex flex-col items-center justify-center text-center px-1">
+                        <span class="material-icons text-ct-green text-xl mb-1">signal_cellular_alt</span>
+                        <span class="text-sm font-extrabold text-slate-700 leading-none truncate w-full">${diff.slice(0,8)}</span>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">${window.t('trail_level_label')}</span>
                     </div>
                 </div>
             </div>
-        `;
-        // Nota: rimuoviamo padding/rounded standard dalla modale container per far aderire l'header
-        return { html: contentHtml, class: 'bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative max-h-[85vh] overflow-y-auto' };
-    }
+
+            <div class="p-6 pt-8">
+
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">
+                    ${window.t('trail_desc_label')}
+                </h3>
+                <div class="prose prose-slate prose-p:text-slate-600 prose-p:text-lg prose-p:leading-relaxed text-justify">
+                    ${desc}
+                </div>
+
+                <!-- Sezione Regole -->
+                <div class="mt-8 pt-6 border-t border-slate-100">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
+                        ${window.t('trail_rules_title')}
+                    </h3>
+                    <p class="text-slate-500 text-sm mb-4">${window.t('trail_rules_intro')}</p>
+                    <ul class="space-y-4">
+                        <li class="flex flex-col gap-1">
+                            <strong class="text-slate-700 text-sm">${window.t('trail_rule_shoes_label')}</strong>
+                            <span class="text-slate-500 text-sm leading-relaxed">${window.t('trail_rule_shoes_text')}</span>
+                        </li>
+                        <li class="flex flex-col gap-1">
+                            <strong class="text-slate-700 text-sm">${window.t('trail_rule_weather_label')}</strong>
+                            <span class="text-slate-500 text-sm leading-relaxed">${window.t('trail_rule_weather_text')}</span>
+                        </li>
+                        <li class="flex flex-col gap-1">
+                            <strong class="text-slate-700 text-sm">${window.t('trail_rule_water_label')}</strong>
+                            <span class="text-slate-500 text-sm leading-relaxed">${window.t('trail_rule_water_text')}</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Sezione Fonti -->
+                <div class="mt-6 pt-6 border-t border-slate-100">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
+                        ${window.t('trail_sources_title')}
+                    </h3>
+                    <p class="text-slate-500 text-sm mb-3">${window.t('trail_sources_intro')}</p>
+                    <div class="flex flex-col gap-2">
+                        <a href="http://www.parconazionale5terre.it/sentieri-outdoor.php"
+                           target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-2 text-ct-green font-bold text-sm underline underline-offset-2 active:opacity-70">
+                            <span class="material-icons text-base">open_in_new</span>
+                            ${window.t('trail_source1_label')}
+                        </a>
+                        <a href="https://www.cailaspezia.it/"
+                           target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-2 text-ct-green font-bold text-sm underline underline-offset-2 active:opacity-70">
+                            <span class="material-icons text-base">open_in_new</span>
+                            ${window.t('trail_source2_label')}
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-dashed border-slate-200 text-center">
+                    <p class="text-[11px] text-slate-400 italic">
+                        ${window.t('trail_footer_hint')}
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+    return { html: contentHtml, class: 'bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative max-h-[85vh] overflow-y-auto' };
+}
 
     // --- SPIAGGE ---
     else if (type === 'Spiagge') {
