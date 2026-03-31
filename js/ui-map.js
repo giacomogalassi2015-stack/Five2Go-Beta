@@ -1041,9 +1041,15 @@ function _doStartMapGPS() {
     const label = document.getElementById('map-gps-label');
     if (!map) return;
 
-    if (btn)   { btn.classList.add('gps-searching'); }
-    if (icon)  { icon.textContent = 'sync'; icon.classList.add('spin-anim'); }
-    if (label) { label.textContent = 'Cerco...'; }
+    // Se NON abbiamo posizione cached, mostra stato "Cerco..." durante il cold start.
+    // Se la posizione è già cached dal singleton, la callback arriva istantaneamente
+    // dentro GeoTracker.start() e non vedremo mai "Cerco..." (override sotto).
+    const hasCachedPos = window.GeoTracker && window.GeoTracker.getLastPos();
+    if (!hasCachedPos) {
+        if (btn)   { btn.classList.add('gps-searching'); }
+        if (icon)  { icon.textContent = 'sync'; icon.classList.add('spin-anim'); }
+        if (label) { label.textContent = 'Cerco...'; }
+    }
 
     window.GeoTracker.start('mappa', ({ lat, lng, accuracy, isFirst }) => {
         window._gpsLatLng = { lat, lng };

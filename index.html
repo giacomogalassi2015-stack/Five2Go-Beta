@@ -84,6 +84,42 @@
             scroll-behavior: smooth;
         }
 
+        /* ── HOME: Overlay gradiente FULL-VIEWPORT ──
+           Perché su ::after del body e non su .home-v2?
+           → L'immagine di sfondo è sul body (position:fixed, cover).
+           → .home-v2 sta dentro #app-content che ha pt-4, px-4, max-w-2xl
+              → NON copre l'intera viewport (gap in alto, ai lati, in basso).
+           → body::after è position:fixed inset:0 → copre TUTTO, pixel per pixel.
+           → z-index:1 lo mette sopra il bg ma sotto #app-content (z-index:10).
+           
+           Il gradiente è cinematografico: velo leggero in alto per far respirare
+           la foto, si intensifica verso il basso per garantire leggibilità
+           di titolo, tagline, search bar e pill buttons. */
+        body.is-home::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background: linear-gradient(
+                to bottom,
+                rgba(0,0,0,0.15) 0%,
+                rgba(0,0,0,0.18) 10%,
+                rgba(0,0,0,0.25) 25%,
+                rgba(0,0,0,0.38) 42%,
+                rgba(0,0,0,0.55) 58%,
+                rgba(0,0,0,0.70) 74%,
+                rgba(0,0,0,0.80) 88%,
+                rgba(0,0,0,0.88) 100%
+            );
+        }
+        /* Sulla home: rimuovi padding-top per layout immersivo edge-to-edge.
+           Il pt-4 serve alle view con contenuti (cibo, outdoor, servizi)
+           ma la landing page deve usare tutta la viewport. */
+        body.is-home #app-content {
+            padding-top: 0;
+        }
+
         /* Nascondi scrollbar */
         .no-scrollbar::-webkit-scrollbar,
         #app-content::-webkit-scrollbar { display: none; }
@@ -293,19 +329,9 @@
             /* dvh = dynamic viewport height, esclude la barra browser su mobile */
             min-height: calc(100dvh - 100px);
             padding: 0;
-            /* ── Gradiente unico su tutta la home ──
-               Un solo gradiente continuo dal trasparente in alto (la foto
-               respira) fino al nero denso in basso (testo e pill leggibili).
-               Elimina il "taglio" visivo tra hero e actions. */
-            background: linear-gradient(
-                to bottom,
-                transparent 0%,
-                rgba(0,0,0,0.05) 25%,
-                rgba(0,0,0,0.30) 50%,
-                rgba(0,0,0,0.58) 70%,
-                rgba(0,0,0,0.75) 85%,
-                rgba(0,0,0,0.82) 100%
-            );
+            /* Gradiente rimosso da qui — ora gestito da body.is-home::after
+               che copre l'intera viewport senza gap (vedi sopra).
+               .home-v2 resta trasparente: solo layout flex-col. */
         }
 
         /* ── Hero central: contenuto centrato verticalmente ── */
@@ -516,6 +542,116 @@
         .home-section-label { display: none !important; }
         .home-grid          { display: none !important; }
         [data-home-badge]   { }
+
+        /* ══════════════════════════════════════════════════════════
+           CHICCO — Weather FAB "seduto sulla barra"
+           Piccolo bottone circolare posizionato sulla sinistra,
+           appoggiato sopra la nav bar. Al tap si espande in una
+           card meteo con info real-time e trivia locale.
+           Pattern: Citymapper weather pill, Google Maps FAB.
+           ══════════════════════════════════════════════════════════ */
+        .chicco-fab {
+            position: fixed;
+            left: 20px;
+            bottom: 80px;
+            z-index: 48;
+            pointer-events: auto;
+            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease;
+        }
+        .chicco-fab.chicco-hidden {
+            opacity: 0;
+            transform: translateY(20px) scale(0.7);
+            pointer-events: none;
+        }
+        .chicco-fab-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.95);
+            border: 2px solid rgba(255,255,255,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.08);
+            transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, width 0.3s, height 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            font-size: 20px;
+            line-height: 1;
+            position: relative;
+        }
+        .chicco-fab-btn:active {
+            transform: scale(0.88);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        /* Live pulse ring sotto il bottone — indica "dati live" */
+        .chicco-fab-btn::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            border: 2px solid rgba(42,157,143,0.4);
+            animation: chicco-pulse 2.5s ease-in-out infinite;
+        }
+        @keyframes chicco-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50%      { transform: scale(1.15); opacity: 0; }
+        }
+
+        /* Card meteo espansa */
+        .chicco-card {
+            position: fixed;
+            left: 16px;
+            right: 16px;
+            bottom: 88px;
+            z-index: 9003;
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border-radius: 20px;
+            box-shadow: 0 -4px 32px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.04);
+            padding: 20px;
+            max-width: 380px;
+            animation: chiccoCardIn 0.3s cubic-bezier(0.2,0.8,0.2,1) forwards;
+        }
+        @keyframes chiccoCardIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.94); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .chicco-card-weather {
+            font-size: 14px;
+            color: #475569;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+        .chicco-card-advice {
+            font-size: 13px;
+            font-weight: 600;
+            color: #264653;
+            line-height: 1.5;
+            padding: 12px 14px;
+            background: #F4F1DE;
+            border-radius: 12px;
+            border-left: 3px solid #E9C46A;
+        }
+        .chicco-card-close {
+            position: absolute;
+            top: 12px; right: 12px;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.06);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #94a3b8;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .chicco-card-close:active {
+            background: rgba(0,0,0,0.12);
+        }
 
         /* ── Near Me button nella filter bar ── */
         .near-me-btn {

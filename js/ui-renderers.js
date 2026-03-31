@@ -201,9 +201,8 @@ window.ristoranteRenderer = (r) => {
     const numero = r.Numero || r.Telefono;
     const imgUrl = nomeIT ? window.getSmartUrl(nomeIT, '', 600) : null;
 
-    // Oggetti per wishlist e itinerario
+    // Oggetti per wishlist (V1.0: itinerario rimosso)
     const wlItem = { wl_id: String(r.id || nomeIT), wl_type: 'ristorante', wl_name: nome, wl_sub: paesi, wl_modal_type: 'ristorante', wl_modal_payload: safeObj };
-    const itinItem = { itin_id: String(r.id || nomeIT), itin_type: 'ristorante', itin_name: nome, itin_sub: paesi, itin_modal_type: 'ristorante', itin_modal_payload: safeObj };
 
     return renderMasterCard({
         id: r.id,
@@ -219,7 +218,6 @@ window.ristoranteRenderer = (r) => {
             ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('ristorante', '${safeObj}')`)}
             ${getCandyBtn('map', window.t('btn_map'), 'green', `event.stopPropagation(); window.open('${mapLink}', '_blank')`)}
             ${numero ? getCandyBtn('call', 'Tel', 'green', `event.stopPropagation(); window.location.href='tel:${numero}'`) : ''}
-            ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem) : ''}
         `
     });
 };
@@ -240,9 +238,8 @@ window.attrazioniRenderer = function(item) {
     else if (labelRaw.includes('panoram') || labelRaw.includes('natur')) { catLabel = window.t('cat_panorama'); themeColor = 'green'; iconFallback = 'landscape'; }
     else if (labelRaw.includes('stori') || labelRaw.includes('castell')) { catLabel = window.t('cat_history'); themeColor = 'orange'; iconFallback = 'castle'; }
 
-    // Oggetti per wishlist e itinerario
+    // Oggetti per wishlist (V1.0: itinerario rimosso)
     const wlItem   = { wl_id: String(safeId), wl_type: 'attrazione', wl_name: titolo, wl_sub: paese, wl_modal_type: 'attrazione', wl_modal_payload: String(safeId) };
-    const itinItem = { itin_id: String(safeId), itin_type: 'attrazione', itin_name: titolo, itin_sub: paese, itin_modal_type: 'attrazione', itin_modal_payload: String(safeId) };
 
   return renderMasterCard({
         id: safeId,
@@ -257,7 +254,6 @@ window.attrazioniRenderer = function(item) {
         buttonsHtml: `
             ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('attrazione', '${safeId}')`)}
             ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
-            ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem)  : ''}
         `
     });
 };
@@ -271,9 +267,8 @@ window.spiaggiaRenderer = function(item) {
     const lat = item.lat_sp; const lon = item.long_sp;
     const imgUrl = nomeIT ? window.getSmartUrl(nomeIT, '', 600) : null;
 
-    // Oggetti per wishlist e itinerario
+    // Oggetti per wishlist (V1.0: itinerario rimosso)
     const wlItem   = { wl_id: String(item.id), wl_type: 'spiaggia', wl_name: nome, wl_sub: paesi, wl_modal_type: 'Spiagge', wl_modal_payload: safeObj };
-    const itinItem = { itin_id: String(item.id), itin_type: 'spiaggia', itin_name: nome, itin_sub: paesi, itin_modal_type: 'Spiagge', itin_modal_payload: safeObj };
 
     return renderMasterCard({
         id: item.id,
@@ -288,7 +283,6 @@ window.spiaggiaRenderer = function(item) {
         buttonsHtml: `
             ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('Spiagge', '${safeObj}')`)}
             ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
-            ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem)  : ''}
         `
     });
 };
@@ -306,7 +300,6 @@ window.prodottoRenderer = (p) => {
     const itemId = String(p.id != null ? p.id : (titoloIT || fotoKey || titolo || Math.random()));
 
     const wlItem   = { wl_id: itemId, wl_type: 'prodotto', wl_name: titolo, wl_sub: 'Prodotto locale', wl_modal_type: 'product', wl_modal_payload: safeObj };
-    const itinItem = { itin_id: itemId, itin_type: 'prodotto', itin_name: titolo, itin_sub: 'Prodotto locale', itin_modal_type: 'product', itin_modal_payload: safeObj };
 
     return renderMasterCard({
         id: p.id,
@@ -320,7 +313,6 @@ window.prodottoRenderer = (p) => {
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
             <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mr-auto flex items-center gap-1">${window.t('btn_details')} <span class="material-icons text-xs">chevron_right</span></span>
-            ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem)  : ''}
         `
     });
 };
@@ -345,9 +337,8 @@ window.vinoRenderer = function(item) {
         tipoLabel = window.t('wine_passito'); 
     }
 
-    // Oggetti per wishlist e itinerario
+    // Oggetti per wishlist (V1.0: itinerario rimosso)
     const wlItem   = { wl_id: String(safeId), wl_type: 'vino', wl_name: nome, wl_sub: cantina, wl_modal_type: 'Vini', wl_modal_payload: String(safeId) };
-    const itinItem = { itin_id: String(safeId), itin_type: 'vino', itin_name: nome, itin_sub: cantina, itin_modal_type: 'Vini', itin_modal_payload: String(safeId) };
     
     return renderWineCard({
         id: safeId,
@@ -358,9 +349,7 @@ window.vinoRenderer = function(item) {
         grapes: uve,
         themeColor: themeColor,
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem, 'light') : '',
-        buttonsHtml: `
-            ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem) : ''}
-        `
+        buttonsHtml: ``
     });
 };
 
@@ -376,10 +365,9 @@ window.sentieroRenderer = (s) => {
         window.pendingMaps.push({ id: uniqueId, gpx: s.gpx_url, startLabel: s.nome_partenza, endLabel: s.nome_arrivo }); 
     }
 
-    // Oggetti per wishlist e itinerario
+    // Oggetti per wishlist (V1.0: itinerario rimosso)
     const sId      = String(s.poi_id || s.id || uniqueId);
     const wlItem   = { wl_id: sId, wl_type: 'sentiero', wl_name: nome, wl_sub: durata + ' · ' + dist, wl_modal_type: 'sentieroInfo', wl_modal_payload: safeObj };
-    const itinItem = { itin_id: sId, itin_type: 'sentiero', itin_name: nome, itin_sub: durata + ' · ' + dist, itin_modal_type: 'sentieroInfo', itin_modal_payload: safeObj };
 
     return `
     <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group border border-slate-100/50 hover:shadow-lg transition-all">
@@ -406,7 +394,6 @@ window.sentieroRenderer = (s) => {
              <button onclick="window.openModal('sentieroInfo', '${safeObj}')" class="flex-1 min-w-[80px] py-2.5 bg-ct-blue text-white rounded-xl font-bold text-[11px] uppercase tracking-wide shadow-sm active:scale-[0.97] transition-all duration-150 touch-manipulation flex items-center justify-center gap-1.5">
                 <span class="material-icons text-sm">visibility</span> ${window.t('btn_info')}
              </button>
-             ${window.renderPlanBtn  ? window.renderPlanBtn(itinItem)  : ''}
         </div>
     </div>`;
 };

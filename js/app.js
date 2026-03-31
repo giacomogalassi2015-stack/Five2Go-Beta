@@ -120,10 +120,11 @@ window.switchView = async function(view, el) {
     const centerBtnWrapper = document.getElementById('center-lang-btn-wrapper');
     const body = document.body;
 
-    // Rimuoviamo SEMPRE la mascotte quando cambiamo vista (per sicurezza)
-    // La re-inseriremo solo se siamo in 'home'
-    const mascot = document.getElementById('mascot-container');
-    if (mascot) mascot.remove();
+    // Rimuoviamo SEMPRE il Chicco FAB e la sua card quando cambiamo vista
+    // Chicco si re-inietta solo sulla home tramite _injectChiccoFAB()
+    const chiccoFab = document.getElementById('chicco-fab-wrap');
+    if (chiccoFab) chiccoFab.remove();
+    window._closeChiccoCard();
 
     if (view === 'home') {
         body.style.backgroundColor   = '#0d1f18';
@@ -194,9 +195,10 @@ window.switchView = async function(view, el) {
         window.renderWishlist();
         }
         else if (view === 'itinerary') {
+        // V1.0: itinerario disabilitato — redirect silenzioso alla wishlist
         document.body.style.backgroundColor = '#F4F1DE';
         document.body.classList.remove('is-home');
-        window.renderItinerary();
+        window.renderWishlist();
         }
         else if (view === 'ct_card') {
         document.body.style.backgroundColor = '#F4F1DE';
@@ -218,18 +220,18 @@ function renderHome() {
 
   const lang = window.currentLang || 'it';
 
+  // ── V1.0: rimossa itinLabel — itinerario disabilitato per ridurre carico cognitivo ──
   const copy = {
-    it: { locationLabel: 'Cinque Terre', tagline: 'Scopri, salva, esplora.<br>Anche senza connessione.', wishlistLabel: 'Preferiti',  itinLabel: 'Itinerario', mapLabel: 'Mappa', searchPlaceholder: 'Cerca ristoranti, spiagge, sentieri…'  },
-    en: { locationLabel: 'Cinque Terre', tagline: 'Discover, save, explore.<br>Even without connection.', wishlistLabel: 'Favourites', itinLabel: 'Itinerary',  mapLabel: 'Map', searchPlaceholder: 'Search restaurants, beaches, trails…'    },
-    fr: { locationLabel: 'Cinque Terre', tagline: 'Découvrez, sauvegardez, explorez.<br>Même hors ligne.', wishlistLabel: 'Favoris',    itinLabel: 'Itinéraire', mapLabel: 'Carte', searchPlaceholder: 'Chercher restaurants, plages, sentiers…'  },
-    de: { locationLabel: 'Cinque Terre', tagline: 'Entdecken, speichern, erkunden.<br>Auch offline.', wishlistLabel: 'Favoriten',  itinLabel: 'Route',      mapLabel: 'Karte', searchPlaceholder: 'Restaurants, Strände, Wanderwege suchen…'  },
-    es: { locationLabel: 'Cinque Terre', tagline: 'Descubre, guarda, explora.<br>También sin conexión.', wishlistLabel: 'Favoritos', itinLabel: 'Itinerario', mapLabel: 'Mapa', searchPlaceholder: 'Buscar restaurantes, playas, senderos…'   },
-    zh: { locationLabel: '五渔村',        tagline: '发现、保存、探索。<br>即使离线也可用。',           wishlistLabel: '收藏',       itinLabel: '行程',        mapLabel: '地图', searchPlaceholder: '搜索餐厅、海滩、步道…'    }
+    it: { locationLabel: 'Cinque Terre', tagline: 'Scopri, salva, esplora.<br>Anche senza connessione.', wishlistLabel: 'Preferiti', mapLabel: 'Mappa', searchPlaceholder: 'Cerca ristoranti, spiagge, sentieri…'  },
+    en: { locationLabel: 'Cinque Terre', tagline: 'Discover, save, explore.<br>Even without connection.', wishlistLabel: 'Favourites', mapLabel: 'Map', searchPlaceholder: 'Search restaurants, beaches, trails…'    },
+    fr: { locationLabel: 'Cinque Terre', tagline: 'Découvrez, sauvegardez, explorez.<br>Même hors ligne.', wishlistLabel: 'Favoris', mapLabel: 'Carte', searchPlaceholder: 'Chercher restaurants, plages, sentiers…'  },
+    de: { locationLabel: 'Cinque Terre', tagline: 'Entdecken, speichern, erkunden.<br>Auch offline.', wishlistLabel: 'Favoriten', mapLabel: 'Karte', searchPlaceholder: 'Restaurants, Strände, Wanderwege suchen…'  },
+    es: { locationLabel: 'Cinque Terre', tagline: 'Descubre, guarda, explora.<br>También sin conexión.', wishlistLabel: 'Favoritos', mapLabel: 'Mapa', searchPlaceholder: 'Buscar restaurantes, playas, senderos…'   },
+    zh: { locationLabel: '五渔村',        tagline: '发现、保存、探索。<br>即使离线也可用。',           wishlistLabel: '收藏', mapLabel: '地图', searchPlaceholder: '搜索餐厅、海滩、步道…'    }
   };
 
   const C       = copy[lang] || copy.en;
-  const wlCount = window.WL        ? window.WL.get().length        : 0;
-  const itCount = window.ITINERARY ? window.ITINERARY.get().length : 0;
+  const wlCount = window.WL ? window.WL.get().length : 0;
 
   content.innerHTML = `
     <div class="home-v2">
@@ -265,17 +267,12 @@ function renderHome() {
         </div>
       </div>
 
-      <!-- BOTTOM ACTIONS: 3 pill glass buttons -->
+      <!-- BOTTOM ACTIONS: 2 pill glass (V1.0 — itinerario rimosso) -->
       <div class="home-actions">
         <button class="home-pill home-pill--heart" onclick="window.switchView('wishlist')">
           <span class="material-icons home-pill-icon">favorite</span>
           <span class="home-pill-label">${C.wishlistLabel}</span>
           <span class="home-pill-badge" data-home-badge="wishlist" style="${wlCount > 0 ? '' : 'display:none'}">${wlCount}</span>
-        </button>
-        <button class="home-pill home-pill--itin" onclick="window.switchView('itinerary')">
-          <span class="material-icons home-pill-icon">map</span>
-          <span class="home-pill-label">${C.itinLabel}</span>
-          <span class="home-pill-badge" data-home-badge="itinerary" style="${itCount > 0 ? '' : 'display:none'}">${itCount}</span>
         </button>
         <button class="home-pill home-pill--map" onclick="window.switchView('mappa')">
           <span class="material-icons home-pill-icon">explore</span>
@@ -295,14 +292,11 @@ function renderHome() {
     document.body.appendChild(bd);
   }
 
-  // Mascotte (se presente)
-  const mascotHTML = window._getMascotHTML ? window._getMascotHTML() : '';
-  if (mascotHTML) {
-    const mascotEl = document.createElement('div');
-    mascotEl.id = 'mascot-container';
-    mascotEl.innerHTML = mascotHTML;
-    document.body.appendChild(mascotEl);
-  }
+  // ── Chicco Weather FAB ──
+  // Piccolo bottone meteo "appoggiato" sopra la nav bar a sinistra.
+  // Al tap chiama toggleChicco() che espande la card meteo real-time.
+  // Si mostra solo sulla home per non ingombrare le altre view.
+  _injectChiccoFAB();
 }
 
 
@@ -1825,6 +1819,11 @@ window.userAccuracyCircle = null;
  * Gestisce il controllo del permesso e mostra il modal branded prima
  * di invocare qualsiasi chiamata nativa al browser.
  *
+ * FIX iOS Safari: navigator.permissions non è supportato → permState resta
+ * sempre 'prompt' e il modal branded si mostra OGNI volta, anche dopo aver
+ * dato il consenso. Soluzione: localStorage flag 'f2g_geo_granted' salvato
+ * al primo fix GPS riuscito. Al successivo accesso il flag bypassa il modal.
+ *
  * @param {Function} onGranted  - chiamata quando il permesso è/viene concesso
  * @param {Function} [onDenied] - chiamata opzionale se il permesso è negato
  */
@@ -1842,10 +1841,22 @@ window._requestGeoPermission = async function(onGranted, onDenied) {
             permState = perm.state;
             perm.onchange = () => {
                 if (perm.state === 'denied') {
+                    // Permesso revocato: rimuovi il flag localStorage
+                    try { localStorage.removeItem('f2g_geo_granted'); } catch(e) {}
                     _showGeoErrorModal(window.t('geo_blocked_title'), window.t('geo_blocked_msg'));
                 }
             };
         } catch (e) { }
+    }
+
+    // Fallback per Safari iOS: se navigator.permissions non è disponibile,
+    // controlla il flag localStorage settato al primo fix GPS riuscito
+    if (permState === 'prompt') {
+        try {
+            if (localStorage.getItem('f2g_geo_granted') === 'true') {
+                permState = 'granted';
+            }
+        } catch(e) {}
     }
 
     if (permState === 'denied') {
@@ -1855,12 +1866,13 @@ window._requestGeoPermission = async function(onGranted, onDenied) {
     }
 
     if (permState === 'granted') {
-        // Permesso già concesso in precedenza: parte subito, nessun modal
+        // Permesso già concesso (via Permissions API o via localStorage flag):
+        // parte subito, nessun modal branded
         onGranted();
         return;
     }
 
-    // permState === 'prompt': mostra il modal branded PRIMA del popup nativo
+    // permState === 'prompt': prima visita, mostra il modal branded PRIMA del popup nativo
     _showGeoRequestModal(onGranted, onDenied);
 };
 
@@ -2048,7 +2060,10 @@ function _showGeoErrorModal(title, message) {
 
 // Avvia effettivamente il tracking GPS (chiamato dopo consenso nel modal branded)
 function _startGeoWatch(btn, map) {
-    if (btn) {
+    // Mostra "Cerco..." solo se NON abbiamo una posizione cached
+    // (se il GPS era già attivo in un'altra sezione, il callback è istantaneo)
+    const hasCachedPos = window.GeoTracker && window.GeoTracker.getLastPos();
+    if (!hasCachedPos && btn) {
         btn.innerHTML = '<span class="material-icons spin text-sm">refresh</span> Cerco...';
         btn.className = 'flex-1 py-3 bg-amber-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform';
     }
@@ -2126,19 +2141,133 @@ function _showGeoError(btn, msg) {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  CHICCO WEATHER FAB — Bottone meteo "appoggiato" sulla nav bar
+//  Pattern: Citymapper / Google Maps floating action button
+//
+//  _injectChiccoFAB()  — Inietta il FAB nella home (chiamato da renderHome)
+//  toggleChicco()      — Al tap espande la card meteo con dati real-time
+//  _closeChiccoCard()  — Chiude la card meteo espansa
+//
+//  Il FAB mostra un'emoji meteo live (aggiornata da Open-Meteo).
+//  Al primo tap si espande una card glassmorphism con:
+//    - Temperatura, condizioni, umidità, stato del mare
+//    - Un consiglio/trivia locale random (da getChiccoRealTimeAdvice)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Inietta il FAB Chicco nel DOM — solo sulla home */
+function _injectChiccoFAB() {
+    // Evita duplicati
+    if (document.getElementById('chicco-fab-wrap')) return;
+
+    const fab = document.createElement('div');
+    fab.id = 'chicco-fab-wrap';
+    fab.className = 'chicco-fab';
+    fab.innerHTML = `
+        <button class="chicco-fab-btn"
+                onclick="window.toggleChicco()"
+                aria-label="Meteo Cinque Terre"
+                id="chicco-fab-btn">
+            <span id="chicco-fab-emoji">🌤️</span>
+        </button>
+    `;
+    document.body.appendChild(fab);
+
+    // Aggiorna l'emoji con il meteo reale (asincrono, non blocca il render)
+    _updateChiccoFabEmoji();
+}
+
+/** Aggiorna l'emoji del FAB con il meteo corrente */
+async function _updateChiccoFabEmoji() {
+    try {
+        if (!window.getChiccoRealTimeAdvice) return;
+        const info = await window.getChiccoRealTimeAdvice();
+        const emojiEl = document.getElementById('chicco-fab-emoji');
+        if (!emojiEl) return;
+        // Estrai la prima emoji dal weatherPhrase (es. "☀️ <b>Sereno</b>...")
+        const match = info.weather.match(/^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/u);
+        if (match) emojiEl.textContent = match[1];
+    } catch(e) { /* silenzioso: l'emoji di default resta 🌤️ */ }
+}
+
+/** Toggle: apre/chiude la card meteo espansa */
 window.toggleChicco = async function() {
-    const bubble = document.getElementById('chicco-bubble'); const textSpan = document.getElementById('chicco-text');
-    const staticImg = document.getElementById('chicco-static'); const lottieAnim = document.getElementById('chicco-anim');
-    if (!bubble || !textSpan) return;
-    if (bubble.style.display === 'none' || bubble.style.display === '') {
-        bubble.style.display = 'block'; textSpan.innerHTML = `Mmh... <span class="material-icons spin" style="font-size:0.9rem;">sync</span>`;
-        let info = { weather: "Errore", advice: "Non riesco a connettermi.", action: null };
-        if (window.getChiccoRealTimeAdvice) { info = await window.getChiccoRealTimeAdvice(); }
-        textSpan.innerHTML = `<div style="font-size:0.85rem; color:#555; margin-bottom:5px;">${info.weather}</div><div style="font-weight:bold; color:#8E44AD; margin-bottom:8px;">${info.advice}</div>`;
-        if (staticImg) staticImg.style.display = 'none'; if (lottieAnim) { lottieAnim.style.display = 'block'; lottieAnim.loop = true; lottieAnim.play(); let loopCount = 0; const stopAfterTwo = () => { loopCount++; if (loopCount >= 1) { lottieAnim.loop = false; lottieAnim.removeEventListener('loop', stopAfterTwo); } }; lottieAnim.removeEventListener('loop', stopAfterTwo); lottieAnim.addEventListener('loop', stopAfterTwo); }
-    } else {
-        bubble.style.display = 'none'; if (lottieAnim) { lottieAnim.stop(); lottieAnim.style.display = 'none'; } if (staticImg) staticImg.style.display = 'block';
+    // Se la card è già aperta, chiudila
+    if (document.getElementById('chicco-weather-card')) {
+        window._closeChiccoCard();
+        return;
     }
+
+    // Crea la card con spinner di caricamento
+    const card = document.createElement('div');
+    card.id = 'chicco-weather-card';
+    card.className = 'chicco-card';
+    card.innerHTML = `
+        <button class="chicco-card-close" onclick="window._closeChiccoCard()">
+            <span class="material-icons" style="font-size:16px;">close</span>
+        </button>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <span style="font-size:28px;line-height:1;">🌤️</span>
+            <div>
+                <div style="font-size:13px;font-weight:800;color:#264653;text-transform:uppercase;letter-spacing:0.08em;">Cinque Terre</div>
+                <div style="font-size:11px;color:#94a3b8;font-weight:600;">Live Weather</div>
+            </div>
+        </div>
+        <div id="chicco-card-body" class="chicco-card-weather">
+            <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;">
+                <span class="material-icons spin" style="font-size:18px;">sync</span>
+                <span style="font-size:13px;font-weight:600;">${window.t ? window.t('loading') : 'Loading...'}</span>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(card);
+
+    // Backdrop per chiudere al tap fuori
+    const backdrop = document.createElement('div');
+    backdrop.id = 'chicco-card-backdrop';
+    backdrop.style.cssText = 'position:fixed;inset:0;z-index:9002;';
+    backdrop.onclick = () => window._closeChiccoCard();
+    document.body.appendChild(backdrop);
+
+    // Fetch dati meteo reali
+    try {
+        let info = { weather: '😴 ...', advice: '' };
+        if (window.getChiccoRealTimeAdvice) {
+            info = await window.getChiccoRealTimeAdvice();
+        }
+        const bodyEl = document.getElementById('chicco-card-body');
+        if (bodyEl) {
+            bodyEl.innerHTML = `
+                <div class="chicco-card-weather">${info.weather}</div>
+                <div class="chicco-card-advice">${info.advice}</div>
+            `;
+        }
+        // Aggiorna anche l'emoji grande nella card header
+        const headerEmoji = card.querySelector('span[style*="font-size:28px"]');
+        if (headerEmoji) {
+            const match = info.weather.match(/^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/u);
+            if (match) headerEmoji.textContent = match[1];
+        }
+    } catch(e) {
+        const bodyEl = document.getElementById('chicco-card-body');
+        if (bodyEl) bodyEl.innerHTML = '<div style="color:#94a3b8;font-size:13px;">Dati meteo non disponibili.</div>';
+    }
+
+    // Haptic feedback al tap
+    if (window._haptic) window._haptic(10);
+};
+
+/** Chiude la card meteo e il backdrop */
+window._closeChiccoCard = function() {
+    const card     = document.getElementById('chicco-weather-card');
+    const backdrop = document.getElementById('chicco-card-backdrop');
+    if (card) {
+        card.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(8px) scale(0.96)';
+        setTimeout(() => card.remove(), 200);
+    }
+    if (backdrop) backdrop.remove();
 };
 
 // ── BUMP LANG PANEL ──────────────────────────────────────────────
@@ -2428,82 +2557,179 @@ window._openMapAttrazione = function() {
 };
 
 // ══════════════════════════════════════════════════════════════════
-// GeoTracker — unified, precision-smoothed, battery-friendly
+// GeoTracker — TRUE PUB/SUB SINGLETON
 // ══════════════════════════════════════════════════════════════════
 //
-// Precision strategy: accuracy-adaptive EMA smoothing.
+// PROBLEMA RISOLTO:
+//   Prima, ogni start('bus'), start('mappa'), start('sentieri') creava
+//   il SUO watchPosition → 3 GPS indipendenti, nessuna posizione condivisa,
+//   cold start di 3-15 secondi ogni volta che l'utente cambiava sezione.
+//
+// ORA:
+//   UN SOLO watchPosition condiviso. Più subscriber (callback per nome).
+//   Quando un nuovo subscriber si registra e la posizione è già nota,
+//   riceve un callback ISTANTANEO con la posizione cached.
+//   Il watch parte al primo subscriber e si ferma solo quando l'ultimo
+//   si stacca. Risultato: GPS dato nel Bus → la mappa lo vede subito.
+//
+// Precision strategy: accuracy-adaptive EMA smoothing (invariata).
 //   α = clamp(20 / accuracy_meters, 0.05, 1.0)
-//   → fix with 10m accuracy  → α ≈ 1.0  (full update, trust it)
-//   → fix with 50m accuracy  → α = 0.4  (blend in slowly)
-//   → fix with 150m accuracy → α = 0.13 (mostly ignore)
-// This is a lightweight 1-state Kalman approximation: zero arrays,
-// just two multiplications per GPS update.
 //
 // Battery strategy:
-//   maximumAge: 60 000 ms — OS reuses existing chip fix, no re-acquisition
-//   One active watchId per named tracker (bus, mappa). Callers call
-//   stop() when they unmount; watch is cleaned up automatically.
+//   maximumAge: 60 000 ms — OS riusa il fix esistente, no re-acquisition
+//   Un solo watchId attivo per tutta l'app.
 //
 window.GeoTracker = (function() {
-    const _watchers = {};   // name → watchId
-    const _smoothed = {};   // name → { lat, lng }
-    const _firstFix = {};   // name → bool
+    let _watchId     = null;      // L'unico watchPosition ID
+    let _lastPos     = null;      // { lat, lng, accuracy, alpha } — cached
+    let _smoothed    = null;      // { lat, lng } — stato EMA
+    const _subs      = {};        // { name: callback }
 
-    function _smooth(name, rawLat, rawLng, accuracy) {
+    /** EMA smoothing — stessa logica di prima, ma condivisa */
+    function _smooth(rawLat, rawLng, accuracy) {
         const clampedAcc = Math.max(accuracy || 50, 1);
         const alpha = Math.min(1.0, Math.max(0.05, 20 / clampedAcc));
-        if (!_smoothed[name]) {
-            _smoothed[name] = { lat: rawLat, lng: rawLng };
+        if (!_smoothed) {
+            _smoothed = { lat: rawLat, lng: rawLng };
         } else {
-            _smoothed[name].lat = _smoothed[name].lat * (1 - alpha) + rawLat * alpha;
-            _smoothed[name].lng = _smoothed[name].lng * (1 - alpha) + rawLng * alpha;
+            _smoothed.lat = _smoothed.lat * (1 - alpha) + rawLat * alpha;
+            _smoothed.lng = _smoothed.lng * (1 - alpha) + rawLng * alpha;
         }
-        return { lat: _smoothed[name].lat, lng: _smoothed[name].lng, accuracy: clampedAcc, alpha };
+        return { lat: _smoothed.lat, lng: _smoothed.lng, accuracy: clampedAcc, alpha };
+    }
+
+    /** Avvia l'unico watch condiviso (se non già attivo) */
+    function _ensureWatch() {
+        if (_watchId != null) return;            // già attivo
+        if (!navigator.geolocation) return;
+
+        _watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                if (typeof _dismissGeoBanner === 'function') _dismissGeoBanner();
+                const s = _smooth(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+
+                // Aggiorna cache globale
+                const isFirstGlobal = !_lastPos;
+                _lastPos = { ...s };
+
+                // Primo fix GPS globale → salva flag per Safari iOS
+                // (che non supporta navigator.permissions e mostrerebbe
+                // il modal branded OGNI volta senza questo fallback)
+                if (isFirstGlobal) {
+                    try { localStorage.setItem('f2g_geo_granted', 'true'); } catch(e) {}
+                }
+
+                // Notifica TUTTI i subscriber attivi
+                Object.keys(_subs).forEach(name => {
+                    try {
+                        // isFirst è per-subscriber: true solo se è il loro primo update
+                        const sub = _subs[name];
+                        if (sub) {
+                            sub.cb({ ...s, isFirst: sub.first });
+                            sub.first = false;
+                        }
+                    } catch(e) { console.warn(`GeoTracker[${name}] callback error:`, e); }
+                });
+            },
+            (err) => {
+                if (typeof _dismissGeoBanner === 'function') _dismissGeoBanner();
+                console.warn(`GeoTracker error (code ${err.code}): ${err.message}`);
+                // Se il permesso è stato revocato, rimuovi il flag localStorage
+                // (err.code 1 = PERMISSION_DENIED)
+                if (err.code === 1) {
+                    try { localStorage.removeItem('f2g_geo_granted'); } catch(e) {}
+                }
+                // Notifica i subscriber dell'errore (opzionale)
+                Object.keys(_subs).forEach(name => {
+                    if (_subs[name] && _subs[name].onError) {
+                        try { _subs[name].onError(err); } catch(e) {}
+                    }
+                });
+            },
+            { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 }
+        );
+    }
+
+    /** Ferma il watch se non ci sono più subscriber */
+    function _maybeStopWatch() {
+        if (Object.keys(_subs).length > 0) return;  // ancora subscriber attivi
+        if (_watchId != null) {
+            navigator.geolocation.clearWatch(_watchId);
+            _watchId = null;
+            // NON resettiamo _lastPos e _smoothed:
+            // così il prossimo subscriber avrà ancora la posizione cached
+        }
     }
 
     return {
-        // Check if a named tracker is currently active
-        _isTracking(name) { return _watchers[name] != null; },
-        // Start tracking. onUpdate({ lat, lng, accuracy, isFirst })
-        start(name, onUpdate) {
+        /**
+         * Registra un subscriber. Se la posizione è già nota, callback istantaneo.
+         * @param {string}   name      — ID unico del subscriber ('bus', 'mappa', 'sentieri', etc.)
+         * @param {Function} onUpdate  — callback({ lat, lng, accuracy, isFirst })
+         * @param {Function} [onError] — callback opzionale per errori GPS
+         */
+        start(name, onUpdate, onError) {
             if (!navigator.geolocation) return;
-            this.stop(name); // clear any previous watch for this name
-            _firstFix[name] = true;
-            _smoothed[name] = null;
-            _watchers[name] = navigator.geolocation.watchPosition(
-                (pos) => {
-                    _dismissGeoBanner();
-                    const s = _smooth(name, pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
-                    const isFirst = _firstFix[name];
-                    _firstFix[name] = false;
-                    onUpdate({ ...s, isFirst });
-                },
-                (err) => {
-                    _dismissGeoBanner();
-                    console.warn(`GeoTracker[${name}] error (code ${err.code})`);
-                },
-                { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 }
-            );
-        },
-        stop(name) {
-            if (_watchers[name] != null) {
-                navigator.geolocation.clearWatch(_watchers[name]);
-                delete _watchers[name];
-                delete _smoothed[name];
+
+            // Se questo subscriber era già attivo, rimuovilo prima (clean restart)
+            if (_subs[name]) delete _subs[name];
+
+            // Registra il nuovo subscriber
+            _subs[name] = { cb: onUpdate, onError: onError || null, first: true };
+
+            // Se abbiamo già una posizione cached → callback ISTANTANEO
+            // Questo è il fix chiave: Bus→Mappa non deve più aspettare
+            if (_lastPos) {
+                try {
+                    onUpdate({ ..._lastPos, isFirst: true });
+                    _subs[name].first = false;
+                } catch(e) { console.warn(`GeoTracker[${name}] instant callback error:`, e); }
             }
+
+            // Assicura che il watch condiviso sia attivo
+            _ensureWatch();
         },
+
+        /** Rimuove un subscriber. Se era l'ultimo, ferma il watch. */
+        stop(name) {
+            delete _subs[name];
+            _maybeStopWatch();
+        },
+
+        /** Ferma tutto e resetta */
         stopAll() {
-            Object.keys(_watchers).forEach(n => this.stop(n));
-        }
+            Object.keys(_subs).forEach(name => delete _subs[name]);
+            if (_watchId != null) {
+                navigator.geolocation.clearWatch(_watchId);
+                _watchId = null;
+            }
+            // Reset anche la cache e smoothing
+            _lastPos  = null;
+            _smoothed = null;
+        },
+
+        /** Check se un subscriber specifico è attivo */
+        _isTracking(name) { return _subs[name] != null; },
+
+        /** 
+         * Restituisce l'ultima posizione nota (sincrono).
+         * Utile per sortByDistance, NearMe, e qualsiasi logica che
+         * ha bisogno della posizione senza avviare un nuovo watch.
+         * @returns {{ lat, lng, accuracy } | null}
+         */
+        getLastPos() { return _lastPos ? { ..._lastPos } : null; }
     };
 })();
 
-// Legacy shims kept for backwards compatibility
+// Legacy shims — mantenuti per retrocompatibilità con codice esistente
 window.startBusGeoWatch = (cb) => window.GeoTracker.start('bus', p => cb({ coords: { latitude: p.lat, longitude: p.lng, accuracy: p.accuracy } }));
 window.stopBusGeoWatch  = ()   => window.GeoTracker.stop('bus');
 window.getCachedPosition = (cb) => {
-    const tmp = window.GeoTracker;
-    tmp.start('_once', p => { tmp.stop('_once'); cb({ coords: { latitude: p.lat, longitude: p.lng, accuracy: p.accuracy } }); });
+    // Se abbiamo già una posizione, restituiscila subito
+    const cached = window.GeoTracker.getLastPos();
+    if (cached) { cb({ coords: { latitude: cached.lat, longitude: cached.lng, accuracy: cached.accuracy } }); return; }
+    // Altrimenti avvia un one-shot
+    window.GeoTracker.start('_once', p => { window.GeoTracker.stop('_once'); cb({ coords: { latitude: p.lat, longitude: p.lng, accuracy: p.accuracy } }); });
 };
 
 window.loadAllStops = async function() {

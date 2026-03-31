@@ -308,60 +308,16 @@ window.toggleHeart = function(btn, encoded) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * @param {Object} itinItem — { itin_id, itin_type, itin_name, itin_sub, itin_modal_type, itin_modal_payload }
+ * V1.0: renderPlanBtn e togglePlan DISABILITATI
+ * Il pulsante "Aggiungi al Piano" è stato rimosso da tutte le card
+ * per ridurre il carico cognitivo dell'utente nella prima release.
+ * Il codice ITINERARY manager (sopra) resta dormiente per V2.
+ *
+ * @param {Object} itinItem — ignorato in V1.0
+ * @returns {string} stringa vuota — nessun bottone renderizzato
  */
-window.renderPlanBtn = function(itinItem) {
-    const isActive = window.ITINERARY.has(itinItem.itin_id);
-    const safeItem = encodeURIComponent(JSON.stringify(itinItem)).replace(/'/g, '%27');
-
-    const iconName    = isActive ? 'event_available'     : 'add_circle_outline';
-    const iconClass   = isActive ? 'text-amber-500'      : 'text-slate-400';
-    const wrapperClass = isActive ? 'bg-amber-50 border-amber-100' : 'bg-slate-50 border-slate-200';
-    const labelClass  = isActive ? 'text-amber-500'      : 'text-slate-400';
-    const ariaLabel   = isActive ? "Rimuovi dall'itinerario" : "Aggiungi all'itinerario";
-
-    return `<button
-        class="flex flex-col items-center justify-center gap-1 group/btn active:scale-95 transition-all duration-200 min-w-[50px] cursor-pointer touch-manipulation itin-plan-btn${isActive ? ' itin-active' : ''}"
-        data-itin-id="${itinItem.itin_id}"
-        onclick="event.stopPropagation(); window.togglePlan(this, '${safeItem}')"
-        aria-label="${ariaLabel}">
-        <div class="h-11 w-11 rounded-xl ${wrapperClass} shadow-sm flex items-center justify-center border transition-colors duration-200">
-            <span class="material-icons text-lg ${iconClass}">${iconName}</span>
-        </div>
-        <span class="text-[10px] font-bold uppercase tracking-wide ${labelClass} transition-colors">Piano</span>
-    </button>`;
-};
-
-window.togglePlan = function(btn, encoded) {
-    const item     = JSON.parse(decodeURIComponent(encoded));
-    const wasIn    = window.ITINERARY.has(item.itin_id);
-
-    if (wasIn) { window.ITINERARY.remove(item.itin_id); }
-    else        { window.ITINERARY.add(item); }
-
-    const added  = !wasIn;
-    // Haptic feedback
-    window._haptic(added ? 12 : 6);
-    const icon    = btn.querySelector('.material-icons');
-    const wrapper = btn.querySelector('.h-11');
-    const label   = btn.querySelector('span:last-child');
-
-    if (added) {
-        btn.classList.add('itin-active');
-        if (icon)    { icon.textContent = 'event_available'; icon.classList.replace('text-slate-400', 'text-amber-500'); }
-        if (wrapper) { wrapper.classList.add('bg-amber-50', 'border-amber-100'); wrapper.classList.remove('bg-slate-50', 'border-slate-200'); }
-        if (label)   { label.classList.replace('text-slate-400', 'text-amber-500'); }
-        btn.style.transform = 'scale(1.25)';
-        setTimeout(() => { btn.style.transform = ''; }, 280);
-    } else {
-        btn.classList.remove('itin-active');
-        if (icon)    { icon.textContent = 'add_circle_outline'; icon.classList.replace('text-amber-500', 'text-slate-400'); }
-        if (wrapper) { wrapper.classList.remove('bg-amber-50', 'border-amber-100'); wrapper.classList.add('bg-slate-50', 'border-slate-200'); }
-        if (label)   { label.classList.replace('text-amber-500', 'text-slate-400'); }
-    }
-
-    window._updateHomeBadges();
-};
+window.renderPlanBtn = function(/* itinItem */) { return ''; };
+window.togglePlan    = function() { /* no-op V1.0 */ };
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -370,18 +326,13 @@ window.togglePlan = function(btn, encoded) {
 // ─────────────────────────────────────────────────────────────────────────────
 window._updateHomeBadges = function() {
     const wlBadge = document.querySelector('[data-home-badge="wishlist"]');
-    const itBadge = document.querySelector('[data-home-badge="itinerary"]');
 
     if (wlBadge) {
         const count = window.WL.get().length;
         wlBadge.textContent = count;
         wlBadge.style.display = count > 0 ? 'flex' : 'none';
     }
-    if (itBadge) {
-        const count = window.ITINERARY.get().length;
-        itBadge.textContent = count;
-        itBadge.style.display = count > 0 ? 'flex' : 'none';
-    }
+    // V1.0: badge itinerario rimosso dalla home — pill itinerario disabilitata
 };
 
 
@@ -921,12 +872,14 @@ window.renderCinqueTerreCard = function() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Toggle state: true = ordina per distanza, false = ordine originale
 window._nearMeEnabled = false;
-// Cached user position (aggiornata da getCurrentPosition)
+// Cached user position (aggiornata via GeoTracker singleton)
 window._nearMePos = null;
 
 /**
  * Toggle del pulsante "Vicino a me" nella filter bar.
- * Se si attiva per la prima volta, chiede il permesso geo tramite il flusso branded.
+ * Ora usa GeoTracker singleton: se il GPS era già attivo (es. dal Bus o dalla Mappa),
+ * la posizione è disponibile ISTANTANEAMENTE via getLastPos() — zero attesa.
+ * Se è la prima volta, chiede il permesso e avvia il tracker condiviso.
  * @param {string}   btnId    — id del bottone near-me nella filter bar
  * @param {Function} callback — richiamata dopo il toggle per rinfrescare la lista
  */
@@ -935,22 +888,30 @@ window.toggleNearMe = function(btnId, callback) {
 
     // Se sta per attivarsi e non abbiamo posizione: chiedi permesso
     if (!window._nearMeEnabled && !window._nearMePos) {
+
+        // Check veloce: forse il GeoTracker ha già una posizione cached?
+        const cached = window.GeoTracker ? window.GeoTracker.getLastPos() : null;
+        if (cached) {
+            // Posizione già disponibile (utente ha usato GPS in un'altra sezione) → ISTANTANEO
+            window._nearMePos = { lat: cached.lat, lng: cached.lng };
+            window._nearMeEnabled = true;
+            if (btn) { btn.classList.add('active-near-me'); btn.setAttribute('aria-pressed', 'true'); }
+            if (callback) callback();
+            return;
+        }
+
+        // Nessuna posizione cached → chiedi permesso e avvia GeoTracker
         window._requestGeoPermission(
             () => {
-                // Permesso concesso: ottieni posizione
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        window._nearMePos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                        window._nearMeEnabled = true;
-                        if (btn) { btn.classList.add('active-near-me'); btn.setAttribute('aria-pressed', 'true'); }
-                        if (callback) callback();
-                    },
-                    (err) => {
-                        console.warn('Near Me geo error:', err.message);
-                        window._nearMeEnabled = false;
-                    },
-                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 120000 }
-                );
+                // Permesso concesso: avvia un subscriber one-shot per ottenere la posizione
+                window.GeoTracker.start('nearme', ({ lat, lng }) => {
+                    window._nearMePos = { lat, lng };
+                    window._nearMeEnabled = true;
+                    if (btn) { btn.classList.add('active-near-me'); btn.setAttribute('aria-pressed', 'true'); }
+                    // Rimuovi il subscriber one-shot (ma il watch condiviso resta se altri lo usano)
+                    window.GeoTracker.stop('nearme');
+                    if (callback) callback();
+                });
             },
             () => {
                 // Permesso negato
@@ -968,13 +929,12 @@ window.toggleNearMe = function(btnId, callback) {
         btn.setAttribute('aria-pressed', String(window._nearMeEnabled));
     }
 
-    // Se si riattiva, aggiorna posizione in background
+    // Se si riattiva, aggiorna posizione dal cache GeoTracker (sincrono, no GPS call)
     if (window._nearMeEnabled) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => { window._nearMePos = { lat: pos.coords.latitude, lng: pos.coords.longitude }; },
-            () => {},
-            { enableHighAccuracy: false, timeout: 5000, maximumAge: 120000 }
-        );
+        const fresh = window.GeoTracker ? window.GeoTracker.getLastPos() : null;
+        if (fresh) {
+            window._nearMePos = { lat: fresh.lat, lng: fresh.lng };
+        }
     }
 
     if (callback) callback();
