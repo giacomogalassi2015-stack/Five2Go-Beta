@@ -2158,14 +2158,12 @@ function _showGeoError(btn, msg) {
 //  dal Service Worker (res.cloudinary.com → IMAGE_CACHE, Cache First).
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** URL asset Chicco su Cloudinary */
-const CHICCO_STATIC_URL = 'https://res.cloudinary.com/dkg0jfady/image/upload/w_112,f_auto,q_auto/chicco_wxxwbm';
+/** URL asset Chicco statico in locale */
+const CHICCO_STATIC_URL = 'img/mascot-mini.png';
 const CHICCO_LOTTIE_URL = 'https://res.cloudinary.com/dkg0jfady/raw/upload/chicco.json';
 
 /** Cache globale per i dati Lottie (evita ri-download dopo il primo tap) */
 let _chiccoLottieData = null;
-/** Riferimento all'animazione Lottie attiva nel FAB */
-let _chiccoFabAnim = null;
 /** Riferimento all'animazione Lottie attiva nella card */
 let _chiccoCardAnim = null;
 
@@ -2186,7 +2184,6 @@ function _injectChiccoFAB() {
                  class="chicco-fab-img"
                  id="chicco-fab-static"
                  draggable="false">
-            <div id="chicco-fab-lottie" class="chicco-fab-lottie" style="display:none;"></div>
         </button>
     `;
     document.body.appendChild(fab);
@@ -2205,18 +2202,6 @@ async function _loadChiccoLottie() {
     }
 }
 
-/** Avvia animazione Lottie in un container DOM */
-function _startChiccoAnim(container) {
-    if (!_chiccoLottieData || !window.lottie) return null;
-    return window.lottie.loadAnimation({
-        container: container,
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        animationData: _chiccoLottieData
-    });
-}
-
 /** Toggle: apre/chiude la card meteo con Chicco animato */
 window.toggleChicco = async function() {
     // Se la card è già aperta, chiudila
@@ -2228,20 +2213,12 @@ window.toggleChicco = async function() {
     // Haptic feedback
     if (window._haptic) window._haptic(10);
 
-    // Chicco "si avvicina" — scala +30% per simulare conversazione
+    // Nascondi il FAB fintanto che c'è il popup
     const fabWrap = document.getElementById('chicco-fab-wrap');
-    if (fabWrap) fabWrap.classList.add('chicco-talking');
+    if (fabWrap) fabWrap.style.display = 'none';
 
-    // Avvia animazione Lottie nel FAB (sostituisce immagine statica)
+    // Carica i dati per l'animazione Lottie
     const lottieData = await _loadChiccoLottie();
-    const fabStatic  = document.getElementById('chicco-fab-static');
-    const fabLottie  = document.getElementById('chicco-fab-lottie');
-    if (lottieData && fabLottie && window.lottie) {
-        if (fabStatic) fabStatic.style.display = 'none';
-        fabLottie.style.display = 'block';
-        fabLottie.innerHTML = '';
-        _chiccoFabAnim = _startChiccoAnim(fabLottie);
-    }
 
     // Crea la card meteo con Chicco animato nell'header
     const card = document.createElement('div');
@@ -2267,10 +2244,26 @@ window.toggleChicco = async function() {
     `;
     document.body.appendChild(card);
 
-    // Avvia Lottie anche nell'header della card
+    // Avvia Lottie nell'header della card gestendo il limite di 3 riproduzioni
     const cardAnimContainer = document.getElementById('chicco-card-anim');
     if (lottieData && cardAnimContainer && window.lottie) {
-        _chiccoCardAnim = _startChiccoAnim(cardAnimContainer);
+        _chiccoCardAnim = window.lottie.loadAnimation({
+            container: cardAnimContainer,
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            animationData: lottieData
+        });
+
+        let loopCount = 0;
+        _chiccoCardAnim.addEventListener('loopComplete', () => {
+            loopCount++;
+            if (loopCount >= 3) {
+                _chiccoCardAnim.destroy();
+                _chiccoCardAnim = null;
+                cardAnimContainer.innerHTML = `<img src="${CHICCO_STATIC_URL}" style="width:52px;height:52px;object-fit:contain;" alt="Chicco">`;
+            }
+        });
     } else if (cardAnimContainer) {
         // Fallback: mostra immagine statica se Lottie non disponibile
         cardAnimContainer.innerHTML = `<img src="${CHICCO_STATIC_URL}" style="width:52px;height:52px;object-fit:contain;" alt="Chicco">`;
@@ -2302,7 +2295,7 @@ window.toggleChicco = async function() {
     }
 };
 
-/** Chiude la card meteo, ferma le animazioni, torna a Chicco statico */
+/** Chiude la card meteo, ferma le animazioni, torna a Chicco statico e riapre il FAB */
 window._closeChiccoCard = function() {
     // Distruggi animazione Lottie nella card
     if (_chiccoCardAnim) {
@@ -2310,19 +2303,12 @@ window._closeChiccoCard = function() {
         _chiccoCardAnim = null;
     }
 
-    // Distruggi animazione Lottie nel FAB → torna a immagine statica
-    if (_chiccoFabAnim) {
-        try { _chiccoFabAnim.destroy(); } catch(e) {}
-        _chiccoFabAnim = null;
-    }
-    const fabStatic = document.getElementById('chicco-fab-static');
-    const fabLottie = document.getElementById('chicco-fab-lottie');
-    if (fabStatic) fabStatic.style.display = '';
-    if (fabLottie) { fabLottie.style.display = 'none'; fabLottie.innerHTML = ''; }
-
-    // Chicco torna alla dimensione normale
+    // Rendi nuovamente visibile il FAB
     const fabWrap = document.getElementById('chicco-fab-wrap');
-    if (fabWrap) fabWrap.classList.remove('chicco-talking');
+    if (fabWrap) {
+        fabWrap.style.display = '';
+        fabWrap.classList.remove('chicco-talking');
+    }
 
     // Anima chiusura card
     const card     = document.getElementById('chicco-weather-card');
