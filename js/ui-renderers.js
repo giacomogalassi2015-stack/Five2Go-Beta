@@ -84,13 +84,12 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
                 <img src="${image}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" alt="${title}">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
                 ${label ? `<div class="absolute top-3 left-3 z-10">
-                    <span class="inline-flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white/90 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border border-white/15">${label}</span>
+
                 </div>` : ''}
                 ${heartOverlayHtml || ''}
                 <div class="absolute bottom-0 left-0 right-0 p-4 z-10">
                     <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-sm mb-1 line-clamp-2">${title}</h3>
-                    ${subText ? `<p class="text-white/70 text-xs font-medium leading-relaxed line-clamp-2">${subText}</p>` : ''}
-                </div>
+                    </div>
             </div>
             <div class="px-3 py-2.5 flex items-center justify-end gap-2 bg-white shrink-0">
                 ${buttonsHtml}

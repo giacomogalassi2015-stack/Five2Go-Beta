@@ -941,8 +941,7 @@ window.renderServicesGrid = async function() {
             <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
             <div class="absolute inset-0 p-5 flex flex-col justify-between z-10">
                 <div class="flex items-center justify-between">
-                    <span class="bg-ct-yellow/90 backdrop-blur text-yellow-900 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">${window.t('bus_badge')}</span>
-                    <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border border-white/30">
+                                       <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border border-white/30">
                         <span class="material-icons text-xl text-white">directions_bus</span>
                     </div>
                 </div>
