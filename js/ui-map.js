@@ -263,7 +263,7 @@ window.renderMappaInterattiva = async function() {
             <div class="relative z-10 flex items-start justify-between mb-3">
                 <div>
                     <div class="flex items-center gap-2 mb-0.5">
-                        <span class="text-xl leading-none">🗺️</span>
+                       
                         <h1 class="font-serif text-xl font-bold text-white tracking-tight drop-shadow-sm">Esplora i Borghi</h1>
                     </div>
                     <p class="text-white/60 text-[11px] font-medium pl-1">
@@ -277,7 +277,7 @@ window.renderMappaInterattiva = async function() {
                 <button data-borgo="Tutti"
                     class="borgo-chip active flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold bg-white text-slate-700 shadow-md border-2 border-white"
                     onclick="window.mapFlyTo('Tutti', this)">
-                    🌊 Tutti
+                     Tutti
                 </button>
                 ${BORGHI_ORDER.map(b => {
                     const col = BORGHI_COLORS[b] || '#264653';

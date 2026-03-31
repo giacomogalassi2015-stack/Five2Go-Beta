@@ -585,7 +585,7 @@ window.getModalContent = function(type, payload, item) {
         return { html: contentHtml, class: 'bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto' };
     }
 
-    // --- FARMACIA ---    // --- FARMACIA ---
+    // --- FARMACIA --- 
     } else if (type === 'farmacia') {
         const item = JSON.parse(decodeURIComponent(payload)); 
         const nome = window.dbCol(item, 'Nome');
