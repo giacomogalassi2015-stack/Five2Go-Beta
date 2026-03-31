@@ -20,11 +20,12 @@ const BORGHI_BOUNDS = {
 };
 
 const CATEGORIE = {
-    vino:       { emoji:"🍷", label:"Vino",       color:"#C0392B", pill:"bg-red-100 text-red-700 border-red-200",            markerBg:"#FFF0EE", markerBorder:"#E74C3C" },
-    aperitivo:  { emoji:"🥂", label:"Aperitivo",  color:"#D97706", pill:"bg-amber-100 text-amber-700 border-amber-200",       markerBg:"#FFFBEB", markerBorder:"#F59E0B" },
-    spiaggia:   { emoji:"🏖️", label:"Spiaggia",   color:"#0369A1", pill:"bg-sky-100 text-sky-700 border-sky-200",             markerBg:"#EFF6FF", markerBorder:"#38BDF8" },
-    attrazione: { emoji:"🏛️", label:"Attrazioni", color:"#15803D", pill:"bg-emerald-100 text-emerald-700 border-emerald-200", markerBg:"#ECFDF5", markerBorder:"#34D399" },
+    vino:       { icon:"wine_bar",       label:"Vino",       color:"#C0392B", pill:"bg-red-100 text-red-700 border-red-200",            markerBg:"#FFF0EE", markerBorder:"#E74C3C" },
+    aperitivo:  { icon:"local_bar",      label:"Aperitivo",  color:"#D97706", pill:"bg-amber-100 text-amber-700 border-amber-200",      markerBg:"#FFFBEB", markerBorder:"#F59E0B" },
+    spiaggia:   { icon:"beach_access",   label:"Spiaggia",   color:"#0369A1", pill:"bg-sky-100 text-sky-700 border-sky-200",            markerBg:"#EFF6FF", markerBorder:"#38BDF8" },
+    attrazione: { icon:"account_balance",label:"Attrazioni", color:"#15803D", pill:"bg-emerald-100 text-emerald-700 border-emerald-200", markerBg:"#ECFDF5", markerBorder:"#34D399" },
 };
+
 const BORGHI_COLORS = {
     Riomaggiore:"#E76F51", Manarola:"#2A9D8F",
     Corniglia:"#C9A600",   Vernazza:"#264653", Monterosso:"#606C38"
@@ -74,7 +75,7 @@ const MOCK_DATA = [
             width:40px; height:40px; border-radius:50% 50% 50% 4px;
             transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; border:2.5px solid;
         }
-        .map-pin-emoji { transform:rotate(45deg); font-size:18px; line-height:1; }
+        .map-pin-emoji { transform:rotate(45deg); line-height:1; }
         .map-pin-tail  { width:3px; height:6px; border-radius:0 0 3px 3px; margin-top:-1px; opacity:0.5; }
 
         /* Bottom sheet draggable */
@@ -241,15 +242,12 @@ window.renderMappaInterattiva = async function() {
     await window._mapLoadData();
 
     content.innerHTML = `
-    <!-- WRAPPER a tutto schermo -->
     <div id="mappa-root" style="position:relative; height:calc(100vh - 80px); height:calc(100dvh - 80px); overflow:hidden;">
 
-        <!-- ── HEADER FILTRI (sempre visibile sopra la mappa) ── -->
         <div id="map-header"
             style="position:absolute; top:0; left:0; right:0; z-index:500;"
             class="bg-gradient-to-br from-[#1a6e64] via-ct-blue to-[#0e5a52] px-4 pt-4 pb-9 overflow-hidden">
 
-            <!-- Bolle deco -->
             <div class="absolute inset-0 pointer-events-none overflow-hidden">
                 <div class="absolute -top-6 -right-6 w-36 h-36 rounded-full bg-white/5"></div>
                 <div class="absolute -bottom-4 left-4 w-24 h-24 rounded-full bg-ct-terracotta/15"></div>
@@ -259,20 +257,18 @@ window.renderMappaInterattiva = async function() {
                 </svg>
             </div>
 
-            <!-- Titolo -->
             <div class="relative z-10 flex items-start justify-between mb-3">
                 <div>
                     <div class="flex items-center gap-2 mb-0.5">
-                       
+                        
                         <h1 class="font-serif text-xl font-bold text-white tracking-tight drop-shadow-sm">Esplora i Borghi</h1>
                     </div>
                     <p class="text-white/60 text-[11px] font-medium pl-1">
-                        <span id="map-result-count" class="font-black text-white">0</span>&nbsp;posti in vista
+                        <span id="map-result-count" class="font-black text-white">0</span> posti in vista
                     </p>
                 </div>
             </div>
 
-            <!-- Chip borghi: fly-to, NON filtrano la lista -->
             <div class="relative z-10 flex gap-2 overflow-x-auto no-scrollbar">
                 <button data-borgo="Tutti"
                     class="borgo-chip active flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold bg-white text-slate-700 shadow-md border-2 border-white"
@@ -290,28 +286,25 @@ window.renderMappaInterattiva = async function() {
                 }).join('')}
             </div>
 
-            <!-- Cat toggle -->
             <div class="relative z-10 mt-2.5 flex gap-1.5 overflow-x-auto no-scrollbar">
                 <button data-cat="Tutte"
                     class="cat-toggle active flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-slate-800 text-white border-2 border-transparent"
                     onclick="window.mapSetCat('Tutte', this)">
-                    ✨ Tutte
+                     Tutte
                 </button>
                 ${Object.entries(CATEGORIE).map(([key,cfg]) => `
                 <button data-cat="${key}"
-                    class="cat-toggle flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white/20 border-2 border-white/20 text-white backdrop-blur"
+                    class="cat-toggle flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white/20 border-2 border-white/20 text-white backdrop-blur"
                     onclick="window.mapSetCat('${key}', this)">
-                    ${cfg.emoji} ${cfg.label}
+                    <span class="material-icons text-[14px] leading-none">${cfg.icon}</span> ${cfg.label}
                 </button>`).join('')}
             </div>
         </div>
 
-        <!-- ── MAPPA (occupa tutto lo spazio) ── -->
         <div id="map-leaflet"
             style="position:absolute; top:0; left:0; right:0; bottom:80px; z-index:100;">
         </div>
 
-        <!-- Badge LIVE: bottom-right della mappa, sopra i controlli zoom -->
         <div id="map-live-badge"
             style="position:absolute; z-index:600; pointer-events:none; bottom:16px; right:12px;"
             class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full px-2.5 py-1 shadow-md border border-slate-100">
@@ -319,10 +312,8 @@ window.renderMappaInterattiva = async function() {
             <span class="text-[11px] font-black text-slate-700 uppercase tracking-widest">Live</span>
         </div>
 
-        <!-- Controlli bottom-left: GPS + Legenda in riga, ancorati sopra il peek del sheet -->
         <div style="position:absolute; z-index:600; bottom:96px; left:12px; display:flex; gap:8px; align-items:center;">
 
-            <!-- GPS -->
             <button id="map-gps-btn"
                 onclick="window.mapToggleGPS()"
                 class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full pl-2.5 pr-3 py-1.5 shadow-md border border-slate-100 active:scale-95 transition-transform"
@@ -331,7 +322,6 @@ window.renderMappaInterattiva = async function() {
                 <span class="text-[11px] font-black text-slate-600 uppercase tracking-widest" id="map-gps-label">GPS</span>
             </button>
 
-            <!-- Legenda -->
             <button id="map-legend-btn"
                 onclick="window.mapToggleLegend()"
                 class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full pl-2.5 pr-3 py-1.5 shadow-md border border-slate-100 active:scale-95 transition-transform">
@@ -340,18 +330,15 @@ window.renderMappaInterattiva = async function() {
             </button>
         </div>
 
-        <!-- Legenda pannello (posizionato separatamente per non creare overflow issues) -->
         <div id="map-legend-wrap"
             style="position:absolute; z-index:600; bottom:132px; left:12px;">
-            <!-- Bottone toggle invisibile — usato solo per il pannello espanso -->
             <button id="map-legend-btn-ghost" style="display:none;"></button>
-            <!-- Pannello espanso (nascosto di default) -->
             <div id="map-legend-panel"
                 class="hidden absolute bottom-0 left-0 bg-white/97 backdrop-blur rounded-2xl shadow-xl border border-slate-100 p-3 min-w-[140px]"
                 style="animation: slideUpSheet 0.2s cubic-bezier(0.2,0.8,0.2,1) forwards;">
                 ${Object.entries(CATEGORIE).map(([k,c]) => `
                 <div class="flex items-center gap-2 py-1">
-                    <span class="text-base leading-none">${c.emoji}</span>
+                    <span class="material-icons text-[18px] leading-none" style="color:${c.color}">${c.icon}</span>
                     <span class="text-xs font-bold text-slate-700">${c.label}</span>
                     <span class="ml-auto w-3 h-3 rounded-full flex-shrink-0 border-2"
                         style="background:${c.markerBg}; border-color:${c.markerBorder};"></span>
@@ -359,13 +346,10 @@ window.renderMappaInterattiva = async function() {
             </div>
         </div>
 
-        <!-- ── BOTTOM SHEET draggabile ── -->
         <div id="map-sheet">
             <div id="map-sheet-inner">
-                <!-- Handle drag -->
                 <div id="map-sheet-handle-bar"></div>
 
-                <!-- Header sheet -->
                 <div class="px-4 pb-2 flex items-center justify-between flex-shrink-0">
                     <h2 class="font-serif text-base font-bold text-slate-800">
                         In vista
@@ -376,56 +360,45 @@ window.renderMappaInterattiva = async function() {
                     </span>
                 </div>
 
-                <!-- Lista geo-dinamica -->
                 <div id="map-sheet-list"></div>
             </div>
         </div>
 
-        <!-- ── Detail Banner (rimpiazza la lista quando si seleziona un luogo) ── -->
         <div id="map-detail-sheet"
             class="hidden"
             style="position:fixed; bottom:80px; left:0; right:0; z-index:1100; padding:0 12px;">
 
-            <!-- Card banner -->
             <div id="map-detail-card"
                 class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden relative">
 
-                <!-- Barra colore top -->
                 <div id="map-detail-color-bar" class="h-1 w-full"></div>
 
                 <div class="flex items-stretch">
 
-                    <!-- Colonna emoji/categoria -->
                     <div id="map-detail-side"
                         class="w-16 flex-shrink-0 flex items-center justify-center text-3xl">
                     </div>
 
-                    <!-- Contenuto principale -->
                     <div class="flex-1 px-4 py-3.5 min-w-0">
                         <div id="map-detail-badges" class="flex flex-wrap gap-1.5 mb-1.5"></div>
                         <h3 id="map-detail-title"
                             class="font-serif text-lg font-bold text-slate-800 leading-tight truncate"></h3>
                         <p id="map-detail-desc"
                             class="text-slate-400 text-[11px] leading-snug mt-0.5 line-clamp-2"></p>
-                        <!-- Meta row: indirizzo / orari -->
                         <div id="map-detail-meta" class="flex items-center gap-3 mt-1.5"></div>
                     </div>
 
-                    <!-- Colonna azioni -->
                     <div class="flex flex-col items-center justify-center gap-2 px-3 py-3 flex-shrink-0">
-                        <!-- Dettagli (apre modal) -->
                         <button id="map-detail-cta"
                             class="flex flex-col items-center justify-center gap-1 bg-ct-terracotta text-white w-14 h-12 rounded-2xl shadow-md active:scale-90 transition-transform">
                             <span class="material-icons text-base">info</span>
                             <span class="text-[9px] font-bold uppercase tracking-wide leading-none">Dettagli</span>
                         </button>
-                        <!-- Naviga (Google Maps) -->
                         <button id="map-detail-navigate"
                             class="flex flex-col items-center justify-center gap-1 bg-ct-blue text-white w-14 h-12 rounded-2xl shadow-md active:scale-90 transition-transform">
                             <span class="material-icons text-base">directions</span>
                             <span class="text-[9px] font-bold uppercase tracking-wide leading-none">Naviga</span>
                         </button>
-                        <!-- Chiudi -->
                         <button onclick="window.mapCloseDetail()"
                             class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 active:scale-90 transition-transform">
                             <span class="material-icons text-slate-400 text-sm">close</span>
@@ -549,7 +522,7 @@ window._mapRenderMarkers = function() {
             className: '',
             html: `<div class="map-pin-wrap">
                 <div class="map-pin-head" style="background:${cfg.markerBg}; border-color:${cfg.markerBorder};">
-                    <span class="map-pin-emoji">${cfg.emoji}</span>
+                    <span class="map-pin-emoji material-icons" style="font-size:20px; color:${cfg.color};">${cfg.icon}</span>
                 </div>
                 <div class="map-pin-tail" style="background:${cfg.markerBorder};"></div>
             </div>`,
@@ -634,7 +607,7 @@ window._mapUpdateListFromBounds = function() {
                 <div class="w-1.5 flex-shrink-0 rounded-l-[1.25rem]"
                     style="background:linear-gradient(to bottom, ${cfg.markerBorder}, ${cfg.color}80);"></div>
                 <div class="flex items-center justify-center w-12 flex-shrink-0 py-3.5" style="background:${cfg.markerBg};">
-                    <span class="text-xl">${cfg.emoji}</span>
+                    <span class="material-icons text-[22px]" style="color:${cfg.color};">${cfg.icon}</span>
                 </div>
                 <div class="flex-1 px-3 py-3 min-w-0">
                     <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">${cfg.label}</span>
@@ -897,9 +870,9 @@ window.mapOpenDetail = function(item) {
     if (colorBar) colorBar.style.background =
         `linear-gradient(90deg, ${cfg.markerBorder}, ${cfg.color})`;
 
-    // Side emoji block
+    // Side icon block
     if (sideEl) {
-        sideEl.textContent  = cfg.emoji;
+        sideEl.innerHTML = `<span class="material-icons" style="font-size:28px; color:${cfg.color};">${cfg.icon}</span>`;
         sideEl.style.background = cfg.markerBg;
     }
 
@@ -909,8 +882,8 @@ window.mapOpenDetail = function(item) {
             style="color:${borgCol}; background:${borgCol}18; border:1px solid ${borgCol}30;">
             📍 ${item.borgo}
         </span>
-        <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${cfg.pill}">
-            ${cfg.emoji} ${cfg.label}
+        <span class="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${cfg.pill}">
+            <span class="material-icons text-[12px] leading-none">${cfg.icon}</span> ${cfg.label}
         </span>`;
 
     // Title
