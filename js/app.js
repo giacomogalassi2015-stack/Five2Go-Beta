@@ -300,14 +300,17 @@ function renderHome() {
 }
 
 
-// 1. Modifica renderSubMenu per salvare le opzioni
+// 1. Modifica renderSubMenu per la barra laterale a scomparsa
 window.renderSubMenu = function(options, defaultTable) {
-    // 1. Salva le opzioni per la logica dello swipe
+    // Salva le opzioni per la logica dello swipe
     window.currentMenuOptions = options;
     
-   let menuHtml = `
-    <div class="nav-sticky-header pt-4 pb-4 transition-all relative" id="nav-tab-bar">
-        <div class="nav-scroll-container flex gap-3 overflow-x-auto no-scrollbar items-center px-4 pt-2 pb-2 w-full" id="nav-tabs-container">
+    let menuHtml = `
+    <div id="side-category-menu" class="fixed top-28 left-0 z-[80] flex transition-transform duration-300" style="transform: translateX(0px);">
+        
+        <div id="side-menu-panel" class="bg-white/95 backdrop-blur-xl shadow-floating rounded-r-3xl p-3 flex flex-col gap-3 border-y border-r border-slate-200 min-w-[150px]">
+           
+            
             ${options.map((opt, index) => {
                 const colorMap = {
                     'orange': 'bg-white text-ct-terracotta border-orange-100 active:border-ct-terracotta shadow-sm',
@@ -319,19 +322,24 @@ window.renderSubMenu = function(options, defaultTable) {
                 const theme = colorMap[opt.color] || colorMap['blue'];
                 const icon = opt.icon || 'star';
 
+                // Nota: Aggiunto window.toggleSideMenu(false) al click!
                 return `
-                <button class="btn-pop-menu flex-shrink-0 px-4 py-2.5 rounded-2xl flex items-center gap-2 border transition-all duration-300 transform ${theme}" 
+                <button class="btn-pop-menu w-full px-3 py-2.5 rounded-2xl flex items-center gap-3 border transition-all duration-300 transform ${theme}" 
                     data-table="${opt.table}"
                     data-index="${index}"
-                    onclick="loadTableData('${opt.table}', this)">
-                    <span class="material-icons text-lg opacity-80">${icon}</span>
-                    <span class="text-xs font-bold uppercase tracking-wide">${opt.label}</span>
+                    onclick="window.loadTableData('${opt.table}', this); window.toggleSideMenu(false);">
+                    <span class="material-icons text-xl opacity-80">${icon}</span>
+                    <span class="text-xs font-bold uppercase tracking-wide text-left flex-1">${opt.label}</span>
                 </button>
             `}).join('')}
         </div>
+
+        <button onclick="window.toggleSideMenu()" class="bg-white/95 backdrop-blur-xl shadow-[4px_4px_10px_rgba(0,0,0,0.1)] border-y border-r border-slate-200 rounded-r-2xl w-10 h-16 flex items-center justify-center -ml-1 mt-6 active:scale-95 transition-all outline-none touch-manipulation">
+            <span id="side-menu-arrow" class="material-icons text-slate-500 transition-transform duration-300" style="transform: rotate(180deg);">chevron_right</span>
+        </button>
     </div>
     
-    <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-200 ease-out"></div>`;
+    <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-200 ease-out pt-6 px-2"></div>`;
     
     const content = document.getElementById('app-content');
     content.innerHTML = menuHtml;
@@ -342,8 +350,37 @@ window.renderSubMenu = function(options, defaultTable) {
         loadTableData(defaultBtn.getAttribute('data-table'), defaultBtn);
     }
 
+    // Auto-chiudi il menu dopo 1.5 secondi la prima volta (così l'utente capisce che è lì)
+    setTimeout(() => {
+        window.toggleSideMenu(false);
+    }, 1500);
+
     // Attiva i FAB flottanti per questa view
-    window._initScrollFABs();
+    if (window._initScrollFABs) window._initScrollFABs();
+};
+
+// NUOVA FUNZIONE: Apre e chiude dinamicamente la barra laterale
+window.toggleSideMenu = function(forceState) {
+    const menu = document.getElementById('side-category-menu');
+    const panel = document.getElementById('side-menu-panel');
+    const arrow = document.getElementById('side-menu-arrow');
+    if (!menu || !panel) return;
+
+    const isClosed = menu.style.transform.includes('translateX(-');
+    const panelWidth = panel.offsetWidth; 
+    
+    // Decide se aprire o chiudere
+    const shouldOpen = forceState !== undefined ? forceState : isClosed;
+
+    if (shouldOpen) {
+        // Apri il menu a zero pixel
+        menu.style.transform = 'translateX(0px)';
+        if (arrow) arrow.style.transform = 'rotate(180deg)';
+    } else {
+        // Nascondi spostandolo a sinistra dell'esatta larghezza del pannello (-2px per nascondere il bordo)
+        menu.style.transform = `translateX(-${panelWidth - 2}px)`;
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    }
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -547,8 +584,20 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
     const panelId    = `panel-${filterId}`;
     const nearMeId   = `nearbyme-${filterId}`;
     const labelAll   = window.t('label_all');
+    
     // Near Me è disponibile solo se la tabella ha campi lat/lon noti
     const hasNearMe  = !!(latKey && lonKey);
+
+    // Identifichiamo la vista corrente per assegnare l'azione della mappa
+    const isRistorantiView = (filterKey === 'Paesi' && cardRenderer === window.ristoranteRenderer);
+    const isVinoView       = (filterKey === 'Tipo'  && cardRenderer === window.vinoRenderer);
+    const isSpiaggiaView   = (filterKey === 'Paesi' && cardRenderer === window.spiaggiaRenderer);
+
+    let mapAction = null;
+    
+    if (isRistorantiView) { mapAction = '_openMapAperitivo'; }
+    else if (isVinoView)  { mapAction = '_openMapVino'; }
+    else if (isSpiaggiaView) { mapAction = '_openMapSpiaggia'; }
 
     container.innerHTML = `
         <div class="smart-filter-bar-container -mx-4 px-4 pb-3 relative">
@@ -560,7 +609,12 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
                     </div>
                     <span class="material-icons text-slate-400 text-sm transition-transform duration-300" id="icon-${filterId}">expand_more</span>
                 </button>
-                ${hasNearMe ? `
+                
+                ${mapAction ? `
+                <button class="shrink-0 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl w-[50px] flex items-center justify-center transition-all active:scale-95 self-stretch"
+                    onclick="window.${mapAction} && window.${mapAction}()" aria-label="Mappa">
+                    <img src="img/mascot-mini.png" alt="Mappa" class="w-7 h-7 object-contain drop-shadow-sm">
+                </button>` : (hasNearMe ? `
                 <button id="${nearMeId}"
                     class="near-me-btn ${window._nearMeEnabled ? 'active-near-me' : ''}"
                     title="${window.currentLang === 'it' ? 'Ordina per distanza' : 'Sort by distance'}"
@@ -568,7 +622,8 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
                     aria-pressed="${window._nearMeEnabled}"
                     onclick="window.toggleNearMe('${nearMeId}', function(){ window.applySingleSmartFilter('${'__ALL__'}', '${filterId}', false); })">
                     <span class="material-icons text-sm">near_me</span>
-                </button>` : ''}
+                </button>` : '')}
+                
             </div>
             <div id="${panelId}" class="hidden overflow-hidden transition-all duration-300 bg-ct-sand rounded-b-xl border-x border-b border-stone-200/50 shadow-md">
                 <div class="p-3 overflow-x-auto no-scrollbar flex gap-2" id="chips-${filterId}"></div>
@@ -627,47 +682,11 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
         updateList(filtered);
     };
 
-    // Aperitivo editorial strip — above the list, below the filter bar, only for Ristoranti
-    const isRistorantiView = (filterKey === 'Paesi' && cardRenderer === window.ristoranteRenderer);
-    const isVinoView       = (filterKey === 'Tipo'  && cardRenderer === window.vinoRenderer);
-    const isSpiaggiaView   = (filterKey === 'Paesi' && cardRenderer === window.spiaggiaRenderer);
-
-    if (isRistorantiView || isVinoView || isSpiaggiaView) {
-        const isVino = isVinoView;
-        const strip = document.createElement('div');
-        strip.className = 'animate-fade';
-        strip.style.cssText = 'margin-bottom:12px;';
-
-        // Visual tokens per category
-        const MAP_STRIP_CFG = {
-            aperitivo:  { fn: '_openMapAperitivo',  bg: 'linear-gradient(100deg,#fffbeb,#fff7ed)',  border: 'rgba(217,119,6,0.2)',  shadow: 'rgba(217,119,6,0.08)',  iconBg: 'rgba(217,119,6,0.1)',  emoji: '🥂', labelColor: '#b45309', textColor: 'rgba(120,53,15,0.7)', arrowColor: '#F59E0B', labelKey: 'aperitivo_hint_label',  descKey: 'aperitivo_hint_desc'  },
-            vino:       { fn: '_openMapVino',        bg: 'linear-gradient(100deg,#fff0ee,#fef2f2)',  border: 'rgba(192,57,43,0.2)',  shadow: 'rgba(192,57,43,0.08)',  iconBg: 'rgba(192,57,43,0.1)',  emoji: '🍷', labelColor: '#9b1c1c', textColor: 'rgba(127,29,29,0.7)', arrowColor: '#E74C3C', labelKey: 'vino_map_hint_label',   descKey: 'vino_map_hint_desc'   },
-            spiaggia:   { fn: '_openMapSpiaggia',    bg: 'linear-gradient(100deg,#eff6ff,#f0f9ff)',  border: 'rgba(3,105,161,0.2)',   shadow: 'rgba(3,105,161,0.08)',   iconBg: 'rgba(3,105,161,0.1)',   emoji: '🏖️', labelColor: '#075985', textColor: 'rgba(7,89,133,0.7)',  arrowColor: '#38BDF8', labelKey: 'spiaggia_map_hint_label', descKey: 'spiaggia_map_hint_desc' },
-            attrazione: { fn: '_openMapAttrazione',  bg: 'linear-gradient(100deg,#f0fdf4,#ecfdf5)',  border: 'rgba(21,128,61,0.2)',   shadow: 'rgba(21,128,61,0.08)',   iconBg: 'rgba(21,128,61,0.1)',   emoji: '🏛️', labelColor: '#166534', textColor: 'rgba(20,83,45,0.7)',  arrowColor: '#34D399', labelKey: 'attrazione_map_hint_label', descKey: 'attrazione_map_hint_desc' },
-        };
-        const cfg = isVino ? MAP_STRIP_CFG.vino : isSpiaggiaView ? MAP_STRIP_CFG.spiaggia : MAP_STRIP_CFG.aperitivo;
-
-        strip.innerHTML = `
-            <div onclick="window.${cfg.fn} && window.${cfg.fn}()"
-                class="flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer active:scale-[0.98] transition-all touch-manipulation"
-                style="background:${cfg.bg}; border:1px solid ${cfg.border}; box-shadow:0 1px 4px ${cfg.shadow};">
-                <div style="width:36px;height:36px;border-radius:10px;background:${cfg.iconBg};display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">${cfg.emoji}</div>
-                <div style="flex:1;min-width:0;">
-                    <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:${cfg.labelColor};line-height:1;margin-bottom:2px;">${window.t(cfg.labelKey) || cfg.labelFallback}</div>
-                    <div style="font-size:12px;color:${cfg.textColor};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${window.t(cfg.descKey) || cfg.descFallback}</div>
-                </div>
-                <span class="material-icons" style="color:${cfg.arrowColor};font-size:18px;flex-shrink:0;">chevron_right</span>
-            </div>`;
-        const dynList = container.querySelector('#dynamic-list');
-        if (dynList) dynList.parentNode.insertBefore(strip, dynList);
-    }
-
     // ── Render incrementale: prime BATCH_SIZE card subito, il resto via IntersectionObserver ──
     const BATCH_SIZE = 10;
-    let _incrementalObs = null; // riferimento all'observer per cleanup
+    let _incrementalObs = null;
 
     function updateList(items) {
-        // Pulisci eventuale observer precedente
         if (_incrementalObs) { _incrementalObs.disconnect(); _incrementalObs = null; }
 
         if (!items || items.length === 0) { 
@@ -675,25 +694,21 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
             return;
         }
 
-        // Ordina per distanza se Near Me è attivo e la tabella ha lat/lon
         const sorted = (hasNearMe && window.sortByDistance)
             ? window.sortByDistance(items, latKey, lonKey)
             : items;
 
         if (filterKey === 'Prodotti') listContainer.className = "grid grid-cols-2 gap-3 pb-24 animate-fade";
 
-        // Se pochi elementi, renderizza tutto subito (no overhead observer)
         if (sorted.length <= BATCH_SIZE) {
             listContainer.innerHTML = sorted.map(item => cardRenderer(item)).join('');
             setTimeout(() => { if(window.initPendingMaps) window.initPendingMaps(); }, 100);
             return;
         }
 
-        // Render primo batch
         let rendered = BATCH_SIZE;
         listContainer.innerHTML = sorted.slice(0, BATCH_SIZE).map(item => cardRenderer(item)).join('');
 
-        // Sentinel per IntersectionObserver (infinite scroll leggero)
         const sentinel = document.createElement('div');
         sentinel.className = 'incremental-sentinel';
         sentinel.style.height = '1px';
@@ -704,16 +719,13 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
             const nextBatch = sorted.slice(rendered, rendered + BATCH_SIZE);
             rendered += nextBatch.length;
 
-            // Inserisci le nuove card prima del sentinel
             const fragment = document.createRange().createContextualFragment(
                 nextBatch.map(item => cardRenderer(item)).join('')
             );
             listContainer.insertBefore(fragment, sentinel);
 
-            // Mappe pendenti per i sentieri appena aggiunti
             setTimeout(() => { if(window.initPendingMaps) window.initPendingMaps(); }, 50);
 
-            // Rimuovi sentinel se tutto è stato renderizzato
             if (rendered >= sorted.length) {
                 _incrementalObs.disconnect();
                 _incrementalObs = null;
@@ -739,7 +751,12 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     const labelAll = window.t('label_all');
     const labelAllFem = window.t('label_all_fem');
     const btnClose = window.t('btn_close_show');
+    
     const hasNearMe = !!(latKey && lonKey);
+    const isAttrazioniView = (cardRenderer === window.attrazioniRenderer);
+    
+    let mapAction = null;
+    if (isAttrazioniView) mapAction = '_openMapAttrazione';
 
     container.innerHTML = `
         <div class="smart-filter-bar-container -mx-4 px-4 pb-3 relative">
@@ -751,7 +768,12 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
                     </div>
                     <span class="material-icons text-slate-400 text-sm transition-transform duration-300" id="icon-${filterId}">expand_more</span>
                 </button>
-                ${hasNearMe ? `
+                
+                ${mapAction ? `
+                <button class="shrink-0 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl w-[50px] flex items-center justify-center transition-all active:scale-95 self-stretch"
+                    onclick="window.${mapAction} && window.${mapAction}()" aria-label="Mappa">
+                    <img src="img/mascot-mini.png" alt="Mappa" class="w-7 h-7 object-contain drop-shadow-sm">
+                </button>` : (hasNearMe ? `
                 <button id="${nearMeId}"
                     class="near-me-btn ${window._nearMeEnabled ? 'active-near-me' : ''}"
                     title="${window.currentLang === 'it' ? 'Ordina per distanza' : 'Sort by distance'}"
@@ -759,7 +781,8 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
                     aria-pressed="${window._nearMeEnabled}"
                     onclick="window.toggleNearMe('${nearMeId}', function(){ window.applyDoubleSmartFilter(0, null, '${filterId}'); })">
                     <span class="material-icons text-sm">near_me</span>
-                </button>` : ''}
+                </button>` : '')}
+                
             </div>
             <div id="${panelId}" class="hidden overflow-hidden transition-all duration-300 bg-ct-sand rounded-b-xl border-x border-b border-stone-200/50 shadow-md">
                 <div class="p-3 space-y-3">
@@ -777,32 +800,6 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
         </div>
         <div id="dynamic-list" class="flex flex-col gap-3 pb-24 animate-fade min-h-[50vh]"></div>
     `;
-
-    // Attrazioni strip — same pattern as other views
-    if (cardRenderer === window.attrazioniRenderer) {
-        const MAP_STRIP_ATTRAZ = {
-            fn: '_openMapAttrazione', bg: 'linear-gradient(100deg,#f0fdf4,#ecfdf5)',
-            border: 'rgba(21,128,61,0.2)', shadow: 'rgba(21,128,61,0.08)', iconBg: 'rgba(21,128,61,0.1)',
-            emoji: '🏛️', labelColor: '#166534', textColor: 'rgba(20,83,45,0.7)', arrowColor: '#34D399',
-            labelKey: 'attrazione_map_hint_label', descKey: 'attrazione_map_hint_desc'
-        };
-        const strip = document.createElement('div');
-        strip.className = 'animate-fade';
-        strip.style.cssText = 'margin-bottom:12px;';
-        strip.innerHTML = `
-            <div onclick="window.${MAP_STRIP_ATTRAZ.fn} && window.${MAP_STRIP_ATTRAZ.fn}()"
-                class="flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer active:scale-[0.98] transition-all touch-manipulation"
-                style="background:${MAP_STRIP_ATTRAZ.bg}; border:1px solid ${MAP_STRIP_ATTRAZ.border}; box-shadow:0 1px 4px ${MAP_STRIP_ATTRAZ.shadow};">
-                <div style="width:36px;height:36px;border-radius:10px;background:${MAP_STRIP_ATTRAZ.iconBg};display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">${MAP_STRIP_ATTRAZ.emoji}</div>
-                <div style="flex:1;min-width:0;">
-                    <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:${MAP_STRIP_ATTRAZ.labelColor};line-height:1;margin-bottom:2px;">${window.t(MAP_STRIP_ATTRAZ.labelKey) || 'Sulla mappa'}</div>
-                    <div style="font-size:12px;color:${MAP_STRIP_ATTRAZ.textColor};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${window.t(MAP_STRIP_ATTRAZ.descKey) || 'Vedi le attrazioni sulla mappa'}</div>
-                </div>
-                <span class="material-icons" style="color:${MAP_STRIP_ATTRAZ.arrowColor};font-size:18px;flex-shrink:0;">chevron_right</span>
-            </div>`;
-        const dynList = container.querySelector('#dynamic-list');
-        if (dynList) dynList.parentNode.insertBefore(strip, dynList);
-    }
 
     const c1 = container.querySelector(`#row1-${filterId}`);
     const c2 = container.querySelector(`#row2-${filterId}`);
@@ -838,12 +835,10 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
         }).join('');
     }
 
-    // ── Render incrementale per double filter ──
     const DBL_BATCH = 10;
     let _dblIncrObs = null;
 
     function executeFilter() {
-        // Pulisci observer precedente
         if (_dblIncrObs) { _dblIncrObs.disconnect(); _dblIncrObs = null; }
 
         let filtered = allData.filter(item => {
@@ -853,24 +848,23 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
             const match2 = (activeVal2 === '__ALL__') || val2.toLowerCase().includes(activeVal2.toLowerCase());
             return match1 && match2;
         });
-        // Ordina per distanza se Near Me è attivo
+        
         if (hasNearMe && window.sortByDistance) {
             filtered = window.sortByDistance(filtered, latKey, lonKey);
         }
+        
         if (filtered.length === 0) {
             listContainer.innerHTML = `<div class="py-12 text-center text-slate-400 font-medium italic">${window.t('no_results')}</div>`;
             return;
         }
 
-        // Pochi elementi: render tutto subito
         if (filtered.length <= DBL_BATCH) {
             listContainer.innerHTML = filtered.map(item => cardRenderer(item)).join('');
             return;
         }
 
-        // Render primo batch + sentinel
         let rendered = DBL_BATCH;
-        const allFiltered = filtered; // cattura per closure observer
+        const allFiltered = filtered; 
         listContainer.innerHTML = allFiltered.slice(0, DBL_BATCH).map(item => cardRenderer(item)).join('');
 
         const sentinel = document.createElement('div');
