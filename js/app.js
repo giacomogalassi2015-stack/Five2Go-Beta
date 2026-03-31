@@ -2221,6 +2221,7 @@ window.toggleChicco = async function() {
     const lottieData = await _loadChiccoLottie();
 
     // Crea la card meteo con Chicco animato nell'header
+    // L'immagine statica ha un transform: scale() per pareggiare le dimensioni visive
     const card = document.createElement('div');
     card.id = 'chicco-weather-card';
     card.className = 'chicco-card';
@@ -2229,7 +2230,10 @@ window.toggleChicco = async function() {
             <span class="material-icons" style="font-size:16px;">close</span>
         </button>
         <div class="chicco-card-header">
-            <div id="chicco-card-anim" class="chicco-card-anim"></div>
+            <div style="position:relative; width:52px; height:52px;">
+                <div id="chicco-card-anim" class="chicco-card-anim" style="width:100%; height:100%;"></div>
+                <img id="chicco-card-static-fallback" src="${CHICCO_STATIC_URL}" style="width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; display:none; transform: scale(1.02);" alt="Chicco">
+            </div>
             <div>
                 <div style="font-size:13px;font-weight:800;color:#264653;text-transform:uppercase;letter-spacing:0.08em;">Cinque Terre</div>
                 <div style="font-size:11px;color:#94a3b8;font-weight:600;">Live Weather</div>
@@ -2244,8 +2248,10 @@ window.toggleChicco = async function() {
     `;
     document.body.appendChild(card);
 
-    // Avvia Lottie nell'header della card gestendo il limite di 3 riproduzioni
     const cardAnimContainer = document.getElementById('chicco-card-anim');
+    const cardStaticFallback = document.getElementById('chicco-card-static-fallback');
+
+    // Avvia Lottie nell'header della card gestendo il limite di 3 riproduzioni
     if (lottieData && cardAnimContainer && window.lottie) {
         _chiccoCardAnim = window.lottie.loadAnimation({
             container: cardAnimContainer,
@@ -2259,14 +2265,17 @@ window.toggleChicco = async function() {
         _chiccoCardAnim.addEventListener('loopComplete', () => {
             loopCount++;
             if (loopCount >= 3) {
+                // Distrugge l'animazione e scambia la visibilità dei due elementi
                 _chiccoCardAnim.destroy();
                 _chiccoCardAnim = null;
-                cardAnimContainer.innerHTML = `<img src="${CHICCO_STATIC_URL}" style="width:52px;height:52px;object-fit:contain;" alt="Chicco">`;
+                cardAnimContainer.style.display = 'none';
+                cardStaticFallback.style.display = 'block';
             }
         });
     } else if (cardAnimContainer) {
-        // Fallback: mostra immagine statica se Lottie non disponibile
-        cardAnimContainer.innerHTML = `<img src="${CHICCO_STATIC_URL}" style="width:52px;height:52px;object-fit:contain;" alt="Chicco">`;
+        // Fallback immediato: mostra l'immagine statica se Lottie non è disponibile o fallisce
+        cardAnimContainer.style.display = 'none';
+        cardStaticFallback.style.display = 'block';
     }
 
     // Backdrop per chiudere al tap fuori
