@@ -922,8 +922,8 @@ window.renderServicesGrid = async function() {
 
     let headerHtml = `
         <div class="px-2 mb-4 animate-pop text-center">
-            <h1 class="text-3xl font-serif font-bold text-slate-800 mb-1 uppercase tracking-tight">${window.t('nav_services')}</h1>
-            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">${window.t('services_subtitle')}</p>
+          
+           
         </div>
     `;
 
@@ -947,7 +947,7 @@ window.renderServicesGrid = async function() {
                 </div>
                 <div>
                     <h3 class="font-serif text-2xl font-bold text-white leading-none drop-shadow-md">${window.t('label_bus')}</h3>
-                    <p class="text-white/70 text-xs font-bold uppercase tracking-wider mt-1">${window.t('bus_connections_sub')}</p>
+
                 </div>
             </div>
         </div>
@@ -964,7 +964,7 @@ window.renderServicesGrid = async function() {
                     </div>
                     <div>
                         <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-md">${window.t('label_train')}</h3>
-                        <p class="text-red-100/80 text-[10px] font-bold uppercase tracking-wider mt-0.5">${window.t("trenitalia_sub")}</p>
+                       
                     </div>
                 </div>
             </div>
@@ -978,7 +978,7 @@ window.renderServicesGrid = async function() {
                     </div>
                     <div>
                         <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-md">${window.t('label_ferry')}</h3>
-                        <p class="text-teal-100/80 text-[10px] font-bold uppercase tracking-wider mt-0.5">${window.t("ferry_nav_sub")}</p>
+                    
                     </div>
                 </div>
             </div>
@@ -991,7 +991,7 @@ window.renderServicesGrid = async function() {
             </div>
             <div class="flex-1 min-w-0">
                 <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_num')}</h3>
-                <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">${window.t('emergency_sub')}</p>
+               
             </div>
             <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
@@ -1002,7 +1002,7 @@ window.renderServicesGrid = async function() {
             </div>
             <div class="flex-1 min-w-0">
                 <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_pharm')}</h3>
-                <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">${window.t('pharmacy_sub')}</p>
+               
             </div>
             <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
@@ -1017,8 +1017,7 @@ window.renderServicesGrid = async function() {
                 </div>
                 <div class="flex-1 min-w-0">
                     <h3 class="font-serif text-xl font-bold text-white leading-tight">Cinque Terre Card</h3>
-                    <p class="text-[11px] font-bold uppercase tracking-widest text-white/50 mt-0.5">${window.t('ct_card_sub') || 'Prezzi · Punti vendita · Info'}</p>
-                </div>
+                  </div>
                 <span class="material-icons text-white/40 text-xl shrink-0">chevron_right</span>
             </div>
         </div>
