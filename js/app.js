@@ -1696,6 +1696,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (typeof updateNavBar === 'function') updateNavBar();
     switchView('home');
     window._initPullToRefresh();
+    window._showLangTooltipIfFirstVisit();
 });
 
 // 1. Inizio tocco
@@ -2391,6 +2392,83 @@ window._closeBumpLangPanel = function() {
     if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
     var trigger = document.getElementById('bump-lang-trigger');
     if (trigger) trigger.setAttribute('aria-expanded', 'false');
+};
+
+// ── TOOLTIP FIRST-VISIT LINGUA ──────────────────────────────────
+// Mostra un tooltip "Cambia lingua qui!" sopra il bottone bandiera
+// solo alla prima visita. Usa localStorage per non ripresentarsi.
+// Il testo è multilingue (breve, riconoscibile da chiunque).
+// Si chiude: al tap, al tap sul bottone lingua, o dopo 6 secondi.
+// Include un pulse ring sul bottone per attirare l'attenzione.
+
+window._showLangTooltipIfFirstVisit = function() {
+    var STORAGE_KEY = 'five2go_lang_tooltip_seen';
+    if (localStorage.getItem(STORAGE_KEY)) return;
+
+    // Ritardo: lasciamo che splash e home si stabilizzino
+    setTimeout(function() {
+        var trigger = document.getElementById('bump-lang-trigger');
+        if (!trigger) return;
+
+        // ── Pulse ring ──
+        var pulse = document.createElement('span');
+        pulse.className = 'lang-pulse-ring';
+        pulse.id = 'lang-pulse-ring';
+        // Inserisci nel wrapper .lang-btn-inner se esiste, altrimenti nel button
+        var inner = trigger.querySelector('.lang-btn-inner');
+        if (inner) {
+            inner.style.position = 'relative';
+            inner.appendChild(pulse);
+        } else {
+            trigger.style.position = 'relative';
+            trigger.appendChild(pulse);
+        }
+
+        // ── Tooltip ──
+        var tooltip = document.createElement('div');
+        tooltip.className = 'lang-first-tooltip';
+        tooltip.id = 'lang-first-tooltip';
+        tooltip.setAttribute('role', 'status');
+        tooltip.setAttribute('aria-live', 'polite');
+        tooltip.innerHTML = '<span class="material-icons">translate</span>'
+            + '<span>Change language · Cambia lingua</span>';
+        document.body.appendChild(tooltip);
+
+        // ── Chiusura ──
+        var dismissed = false;
+        function dismiss() {
+            if (dismissed) return;
+            dismissed = true;
+            localStorage.setItem(STORAGE_KEY, '1');
+
+            // Fade out tooltip
+            var tt = document.getElementById('lang-first-tooltip');
+            if (tt) {
+                tt.style.animation = 'tooltipFadeOut 0.25s ease forwards';
+                setTimeout(function() { if (tt.parentNode) tt.parentNode.removeChild(tt); }, 260);
+            }
+            // Rimuovi pulse
+            var pr = document.getElementById('lang-pulse-ring');
+            if (pr && pr.parentNode) pr.parentNode.removeChild(pr);
+        }
+
+        // Tap sul tooltip stesso
+        tooltip.addEventListener('click', function() {
+            dismiss();
+            window._toggleBumpLangPanel();
+        });
+
+        // Auto-dismiss dopo 6s
+        var autoTimer = setTimeout(dismiss, 6000);
+
+        // Se l'utente apre il panel lingua, dismiss immediato
+        var origToggle = window._toggleBumpLangPanel;
+        window._toggleBumpLangPanel = function() {
+            dismiss();
+            clearTimeout(autoTimer);
+            origToggle();
+        };
+    }, 1800);
 };
 
 // ── PULL-TO-REFRESH ──────────────────────────────────────────────
