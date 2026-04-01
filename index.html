@@ -855,6 +855,24 @@
             .grid-cols-2 .master-card-img { height: 170px; }
         }
 
+        /* ── CHIP nel banner azioni delle card ── */
+        .mc-chip-bar {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            line-height: 1.2;
+            white-space: nowrap;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         /* Fallback per browser senza line-clamp nativo (raro, ma safety net) */
         .line-clamp-2 {
             display: -webkit-box;
