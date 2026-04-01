@@ -159,6 +159,101 @@
             transform: scale(0.88);
             box-shadow: 0 2px 8px rgba(0,0,0,0.12);
         }
+
+        /* ── BADGE TRANSLATE sull'icona lingua ── */
+        .lang-btn-inner {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+        .lang-translate-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #264653;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+            pointer-events: none;
+        }
+        .lang-translate-badge .material-icons {
+            font-size: 11px;
+            color: #fff;
+            line-height: 1;
+        }
+
+        /* ── PULSE prima visita ── */
+        @keyframes langPulseRing {
+            0%   { transform: scale(1);   opacity: 0.5; }
+            70%  { transform: scale(1.6); opacity: 0; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+        .lang-pulse-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 2.5px solid #264653;
+            animation: langPulseRing 1.8s cubic-bezier(0.4,0,0.2,1) infinite;
+            pointer-events: none;
+        }
+
+        /* ── TOOLTIP prima visita ── */
+        .lang-first-tooltip {
+            position: fixed;
+            bottom: 106px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9010;
+            background: #264653;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            padding: 10px 18px;
+            border-radius: 14px;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(38,70,83,0.35);
+            animation: tooltipFadeIn 0.35s cubic-bezier(0.2,0.8,0.2,1) forwards;
+            pointer-events: auto;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .lang-first-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 14px;
+            height: 14px;
+            background: #264653;
+            border-radius: 0 0 3px 0;
+            transform: translateX(-50%) rotate(45deg);
+        }
+        .lang-first-tooltip .material-icons {
+            font-size: 16px;
+            opacity: 0.85;
+        }
+        @keyframes tooltipFadeIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(8px) scale(0.92); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+        }
+        @keyframes tooltipFadeOut {
+            from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            to   { opacity: 0; transform: translateX(-50%) translateY(8px) scale(0.92); }
+        }
+
         #bump-lang-panel {
             position: fixed;
             bottom: 100px;
@@ -760,6 +855,24 @@
             .grid-cols-2 .master-card-img { height: 170px; }
         }
 
+        /* ── CHIP nel banner azioni delle card ── */
+        .mc-chip-bar {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            line-height: 1.2;
+            white-space: nowrap;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         /* Fallback per browser senza line-clamp nativo (raro, ma safety net) */
         .line-clamp-2 {
             display: -webkit-box;
@@ -838,7 +951,12 @@
                 aria-haspopup="true"
                 aria-expanded="false"
                 id="bump-lang-trigger">
-                <span id="nav-lang-flag" class="text-2xl filter drop-shadow-sm leading-none pt-0.5">🇮🇹</span>
+                <span class="lang-btn-inner">
+                    <span id="nav-lang-flag" class="text-2xl filter drop-shadow-sm leading-none">🇮🇹</span>
+                    <span class="lang-translate-badge" aria-hidden="true">
+                        <span class="material-icons">translate</span>
+                    </span>
+                </span>
             </button>
         </div>
     </div>

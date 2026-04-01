@@ -66,16 +66,20 @@ function getCandyBtn(icon, label, color, onclick) {
     const theme = colors[color] || colors['blue'];
 
     return `
-    <button class="flex flex-col items-center justify-center gap-1 group/btn active:scale-95 transition-all duration-200 min-w-[46px] cursor-pointer touch-manipulation" onclick="${onclick}">
-        <div class="h-11 w-11 rounded-xl ${theme} shadow-sm flex items-center justify-center border">
-            <span class="material-icons text-base">${icon}</span>
-        </div>
-        ${label ? `<span class="text-[10px] font-bold uppercase tracking-wide text-slate-400 group-hover/btn:text-slate-600 transition-colors">${label}</span>` : ''}
+    <button class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl ${theme} border shadow-sm active:scale-95 transition-all duration-200 cursor-pointer touch-manipulation" onclick="${onclick}">
+        <span class="material-icons text-sm">${icon}</span>
+        ${label ? `<span class="text-[11px] font-bold uppercase tracking-wide">${label}</span>` : ''}
     </button>`;
 }
-function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml, heartOverlayHtml }) {
+function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml, heartOverlayHtml, chips }) {
     const esc = window.escapeHtml || (s => s);
     title = esc(title); subText = esc(subText); label = esc(label);
+
+    // Genera HTML chip per il banner azioni (pill informative a sinistra dei bottoni)
+    const chipsBarHtml = (chips && chips.length)
+        ? `<div class="flex items-center gap-1.5 mr-auto min-w-0">${chips.map(c => `<span class="mc-chip-bar"><span class="material-icons" style="font-size:13px;">${esc(c.icon)}</span>${esc(c.text)}</span>`).join('')}</div>`
+        : '';
+
     if (image) {
         return `
         <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col relative group cursor-pointer hover:shadow-lg transition-all duration-300 active:scale-[0.98] active:shadow-sm touch-manipulation border border-slate-100/30 master-card"
@@ -83,16 +87,16 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
             <div class="master-card-img w-full relative overflow-hidden shrink-0">
                 <img src="${image}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" alt="${title}">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
-                ${label ? `<div class="absolute top-3 left-3 z-10">
-
-                </div>` : ''}
                 ${heartOverlayHtml || ''}
                 <div class="absolute bottom-0 left-0 right-0 p-4 z-10">
-                    <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-sm mb-1 line-clamp-2">${title}</h3>
-                    </div>
+                    <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-sm line-clamp-2">${title}</h3>
+                </div>
             </div>
-            <div class="px-3 py-2.5 flex items-center justify-end gap-2 bg-white shrink-0">
-                ${buttonsHtml}
+            <div class="px-3 py-2 flex items-center gap-2 bg-white shrink-0">
+                ${chipsBarHtml}
+                <div class="flex items-center gap-2 shrink-0">
+                    ${buttonsHtml}
+                </div>
             </div>
         </div>`;
     } else {
@@ -120,8 +124,11 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
                 <h3 class="font-serif text-lg font-bold text-slate-800 leading-tight group-hover:text-primary transition-colors line-clamp-2">${title}</h3>
                 ${subText ? `<p class="text-xs text-slate-500 font-medium leading-relaxed mt-1 line-clamp-2">${subText}</p>` : ''}
             </div>
-            <div class="px-3 py-2.5 flex items-center justify-end gap-2 bg-white">
-                ${buttonsHtml}
+            <div class="px-3 py-2 flex items-center gap-2 bg-white">
+                ${chipsBarHtml}
+                <div class="flex items-center gap-2 shrink-0">
+                    ${buttonsHtml}
+                </div>
             </div>
         </div>`;
     }
@@ -200,6 +207,10 @@ window.ristoranteRenderer = (r) => {
     const numero = r.Numero || r.Telefono;
     const imgUrl = nomeIT ? window.getSmartUrl(nomeIT, '', 600) : null;
 
+    // Chip informativi — solo paese (telefono già nei bottoni azione)
+    const chips = [];
+    if (paesi) chips.push({ icon: 'place', text: paesi });
+
     // Oggetti per wishlist (V1.0: itinerario rimosso)
     const wlItem = { wl_id: String(r.id || nomeIT), wl_type: 'ristorante', wl_name: nome, wl_sub: paesi, wl_modal_type: 'ristorante', wl_modal_payload: safeObj };
 
@@ -208,10 +219,11 @@ window.ristoranteRenderer = (r) => {
         onClick: `openModal('ristorante', '${safeObj}')`,
         label: `📍 ${paesi}`,
         title: nome,
-        subText: desc || 'Cucina tipica locale.',
+        subText: '',
         image: imgUrl,
         iconFallback: 'restaurant',
         themeColor: 'yellow',
+        chips: chips,
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
             ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('ristorante', '${safeObj}')`)}
@@ -237,6 +249,10 @@ window.attrazioniRenderer = function(item) {
     else if (labelRaw.includes('panoram') || labelRaw.includes('natur')) { catLabel = window.t('cat_panorama'); themeColor = 'green'; iconFallback = 'landscape'; }
     else if (labelRaw.includes('stori') || labelRaw.includes('castell')) { catLabel = window.t('cat_history'); themeColor = 'orange'; iconFallback = 'castle'; }
 
+    // Chip informativi
+    const chips = [];
+    if (paese) chips.push({ icon: 'place', text: paese });
+
     // Oggetti per wishlist (V1.0: itinerario rimosso)
     const wlItem   = { wl_id: String(safeId), wl_type: 'attrazione', wl_name: titolo, wl_sub: paese, wl_modal_type: 'attrazione', wl_modal_payload: String(safeId) };
 
@@ -245,10 +261,11 @@ window.attrazioniRenderer = function(item) {
         onClick: `openModal('attrazione', '${safeId}')`,
         label: `${catLabel} • ${paese}`,
         title: titolo,
-        subText: window.dbCol(item, 'Descrizione') || 'Scopri questo luogo.',
+        subText: '',
         image: imgUrl,
         iconFallback: iconFallback,
         themeColor: themeColor,
+        chips: chips,
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
             ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('attrazione', '${safeId}')`)}
@@ -266,6 +283,11 @@ window.spiaggiaRenderer = function(item) {
     const lat = item.lat_sp; const lon = item.long_sp;
     const imgUrl = nomeIT ? window.getSmartUrl(nomeIT, '', 600) : null;
 
+    // Chip informativi
+    const chips = [];
+    if (tipo) chips.push({ icon: 'waves', text: tipo });
+    if (paesi) chips.push({ icon: 'place', text: paesi });
+
     // Oggetti per wishlist (V1.0: itinerario rimosso)
     const wlItem   = { wl_id: String(item.id), wl_type: 'spiaggia', wl_name: nome, wl_sub: paesi, wl_modal_type: 'Spiagge', wl_modal_payload: safeObj };
 
@@ -274,10 +296,11 @@ window.spiaggiaRenderer = function(item) {
         onClick: `openModal('Spiagge', '${safeObj}')`,
         label: `${tipo} • ${paesi}`,
         title: nome,
-        subText: 'Relax, sole e mare cristallino.',
+        subText: '',
         image: imgUrl,
         iconFallback: 'waves',
         themeColor: 'blue',
+        chips: chips,
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
             ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('Spiagge', '${safeObj}')`)}
