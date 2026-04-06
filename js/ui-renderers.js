@@ -71,14 +71,9 @@ function getCandyBtn(icon, label, color, onclick) {
         ${label ? `<span class="text-[11px] font-bold uppercase tracking-wide">${label}</span>` : ''}
     </button>`;
 }
-function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml, heartOverlayHtml, chips }) {
+function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml, heartOverlayHtml }) {
     const esc = window.escapeHtml || (s => s);
     title = esc(title); subText = esc(subText); label = esc(label);
-
-    // Genera HTML chip per il banner azioni (pill informative a sinistra dei bottoni)
-    const chipsBarHtml = (chips && chips.length)
-        ? `<div class="flex items-center gap-1.5 mr-auto min-w-0">${chips.map(c => `<span class="mc-chip-bar"><span class="material-icons" style="font-size:13px;">${esc(c.icon)}</span>${esc(c.text)}</span>`).join('')}</div>`
-        : '';
 
     if (image) {
         return `
@@ -92,10 +87,13 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
                     <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-sm line-clamp-2">${title}</h3>
                 </div>
             </div>
-            <div class="px-3 py-2 flex items-center gap-2 bg-white shrink-0">
-                ${chipsBarHtml}
+            <div class="px-3 py-2 flex items-center justify-between bg-white shrink-0 border-t border-slate-100">
                 <div class="flex items-center gap-2 shrink-0">
-                    ${buttonsHtml}
+                    ${buttonsHtml || ''}
+                </div>
+                <div class="flex items-center gap-1 text-slate-400 group-hover:text-slate-700 transition-colors ml-auto pl-2">
+                    <span class="text-[11px] font-bold uppercase tracking-widest">${window.t('btn_details')}</span>
+                    <span class="material-icons text-[14px]">arrow_forward</span>
                 </div>
             </div>
         </div>`;
@@ -120,14 +118,17 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
                 </div>` : ''}
                 ${heartOverlayHtml || ''}
             </div>
-            <div class="px-4 pt-3 pb-1 min-w-0">
+            <div class="px-4 pt-3 pb-2 min-w-0">
                 <h3 class="font-serif text-lg font-bold text-slate-800 leading-tight group-hover:text-primary transition-colors line-clamp-2">${title}</h3>
                 ${subText ? `<p class="text-xs text-slate-500 font-medium leading-relaxed mt-1 line-clamp-2">${subText}</p>` : ''}
             </div>
-            <div class="px-3 py-2 flex items-center gap-2 bg-white">
-                ${chipsBarHtml}
+            <div class="px-3 py-2 flex items-center justify-between bg-white shrink-0 border-t border-slate-100">
                 <div class="flex items-center gap-2 shrink-0">
-                    ${buttonsHtml}
+                    ${buttonsHtml || ''}
+                </div>
+                <div class="flex items-center gap-1 text-slate-400 group-hover:text-slate-700 transition-colors ml-auto pl-2">
+                    <span class="text-[11px] font-bold uppercase tracking-widest">${window.t('btn_details')}</span>
+                    <span class="material-icons text-[14px]">arrow_forward</span>
                 </div>
             </div>
         </div>`;
@@ -162,12 +163,14 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
                 <span class="material-icons text-[14px] text-slate-300 shrink-0">storefront</span>
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wide truncate">${producer}</span>
             </div>
-           <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <div class="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-xl text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600 transition-colors">
-                    <span class="text-[11px] font-bold uppercase">${window.t('btn_details')}</span>
-                    <span class="material-icons text-xs">arrow_forward</span>
+           <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 shrink-0">
+                    ${buttonsHtml || ''}
                 </div>
-                ${buttonsHtml || ''}
+                <div class="flex items-center gap-1 text-slate-400 group-hover:text-slate-700 transition-colors ml-auto pl-2">
+                    <span class="text-[11px] font-bold uppercase tracking-widest">${window.t('btn_details')}</span>
+                    <span class="material-icons text-[14px]">arrow_forward</span>
+                </div>
             </div>
         </div>
     </div>`;
@@ -181,7 +184,7 @@ function renderUtilityCard({ id, icon, title, subtitle, phone, color }) {
         'purple': 'bg-purple-100 text-purple-700', 'red': 'bg-red-100 text-red-700'
     };
     const iconTheme = iconColors[color] || iconColors['blue'];
-    // MODIFICA 4: Ridotto mb-3 a mb-2
+    
     return `
     <div class="flex items-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm mb-2 animate-pop active:scale-[0.98] active:shadow-none transition-all duration-150 touch-manipulation cursor-pointer" data-card-id="${id || ''}">
         <div class="w-12 h-12 rounded-xl ${iconTheme} flex items-center justify-center shrink-0 mr-4">
@@ -201,17 +204,11 @@ window.ristoranteRenderer = (r) => {
     const nome = window.dbCol(r, 'Nome') || 'Ristorante';
     const nomeIT = window.valIT(r, 'Nome'); 
     const paesi = window.dbCol(r, 'Paesi') || '5 Terre';
-    const desc = window.dbCol(r, 'Descrizioni') || '';
     const safeObj = encodeURIComponent(JSON.stringify(r)).replace(/'/g, "%27");
     const mapLink = r.Mappa || '#';
     const numero = r.Numero || r.Telefono;
     const imgUrl = nomeIT ? window.getSmartUrl(nomeIT, '', 600) : null;
 
-    // Chip informativi — solo paese (telefono già nei bottoni azione)
-    const chips = [];
-    if (paesi) chips.push({ icon: 'place', text: paesi });
-
-    // Oggetti per wishlist (V1.0: itinerario rimosso)
     const wlItem = { wl_id: String(r.id || nomeIT), wl_type: 'ristorante', wl_name: nome, wl_sub: paesi, wl_modal_type: 'ristorante', wl_modal_payload: safeObj };
 
     return renderMasterCard({
@@ -223,10 +220,8 @@ window.ristoranteRenderer = (r) => {
         image: imgUrl,
         iconFallback: 'restaurant',
         themeColor: 'yellow',
-        chips: chips,
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
-            ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('ristorante', '${safeObj}')`)}
             ${getCandyBtn('map', window.t('btn_map'), 'green', `event.stopPropagation(); window.open('${mapLink}', '_blank')`)}
             ${numero ? getCandyBtn('call', 'Tel', 'green', `event.stopPropagation(); window.location.href='tel:${numero}'`) : ''}
         `
@@ -238,9 +233,7 @@ window.attrazioniRenderer = function(item) {
     const titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
     const titoloIT = window.valIT(item, 'Attrazioni') || window.valIT(item, 'Titolo'); 
     const paese = window.dbCol(item, 'Paese');
-    
     const imgUrl = titoloIT ? window.getSmartUrl(titoloIT, '', 600) : null;
-    
     const labelRaw = String(window.valIT(item, 'Label')).toLowerCase();
     const lat = item.lat_at; const lon = item.long_at;
 
@@ -249,14 +242,9 @@ window.attrazioniRenderer = function(item) {
     else if (labelRaw.includes('panoram') || labelRaw.includes('natur')) { catLabel = window.t('cat_panorama'); themeColor = 'green'; iconFallback = 'landscape'; }
     else if (labelRaw.includes('stori') || labelRaw.includes('castell')) { catLabel = window.t('cat_history'); themeColor = 'orange'; iconFallback = 'castle'; }
 
-    // Chip informativi
-    const chips = [];
-    if (paese) chips.push({ icon: 'place', text: paese });
+    const wlItem = { wl_id: String(safeId), wl_type: 'attrazione', wl_name: titolo, wl_sub: paese, wl_modal_type: 'attrazione', wl_modal_payload: String(safeId) };
 
-    // Oggetti per wishlist (V1.0: itinerario rimosso)
-    const wlItem   = { wl_id: String(safeId), wl_type: 'attrazione', wl_name: titolo, wl_sub: paese, wl_modal_type: 'attrazione', wl_modal_payload: String(safeId) };
-
-  return renderMasterCard({
+    return renderMasterCard({
         id: safeId,
         onClick: `openModal('attrazione', '${safeId}')`,
         label: `${catLabel} • ${paese}`,
@@ -265,10 +253,8 @@ window.attrazioniRenderer = function(item) {
         image: imgUrl,
         iconFallback: iconFallback,
         themeColor: themeColor,
-        chips: chips,
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
-            ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('attrazione', '${safeId}')`)}
             ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
         `
     });
@@ -283,13 +269,7 @@ window.spiaggiaRenderer = function(item) {
     const lat = item.lat_sp; const lon = item.long_sp;
     const imgUrl = nomeIT ? window.getSmartUrl(nomeIT, '', 600) : null;
 
-    // Chip informativi
-    const chips = [];
-    if (tipo) chips.push({ icon: 'waves', text: tipo });
-    if (paesi) chips.push({ icon: 'place', text: paesi });
-
-    // Oggetti per wishlist (V1.0: itinerario rimosso)
-    const wlItem   = { wl_id: String(item.id), wl_type: 'spiaggia', wl_name: nome, wl_sub: paesi, wl_modal_type: 'Spiagge', wl_modal_payload: safeObj };
+    const wlItem = { wl_id: String(item.id), wl_type: 'spiaggia', wl_name: nome, wl_sub: paesi, wl_modal_type: 'Spiagge', wl_modal_payload: safeObj };
 
     return renderMasterCard({
         id: item.id,
@@ -300,10 +280,8 @@ window.spiaggiaRenderer = function(item) {
         image: imgUrl,
         iconFallback: 'waves',
         themeColor: 'blue',
-        chips: chips,
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
-            ${getCandyBtn('visibility', window.t('btn_details'), 'blue', `event.stopPropagation(); openModal('Spiagge', '${safeObj}')`)}
             ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
         `
     });
@@ -315,11 +293,7 @@ window.prodottoRenderer = (p) => {
     const fotoKey  = p.Prodotti_foto || titoloIT;
     const imgUrl   = window.getSmartUrl(fotoKey, '', 600);
     const safeObj  = encodeURIComponent(JSON.stringify(p)).replace(/'/g, "%27");
-
-    // FIX: p.id era undefined su tutti i prodotti → tutti condividevano
-    // wl_id:"undefined" e il toggle appariva attivo su tutte le card.
-    // titoloIT è unico per prodotto nel DB e funziona come fallback affidabile.
-    const itemId = String(p.id != null ? p.id : (titoloIT || fotoKey || titolo || Math.random()));
+    const itemId   = String(p.id != null ? p.id : (titoloIT || fotoKey || titolo || Math.random()));
 
     const wlItem   = { wl_id: itemId, wl_type: 'prodotto', wl_name: titolo, wl_sub: 'Prodotto locale', wl_modal_type: 'product', wl_modal_payload: safeObj };
 
@@ -328,14 +302,12 @@ window.prodottoRenderer = (p) => {
         onClick: `openModal('product', '${safeObj}')`,
         label: null, 
         title: titolo,
-        subText: '', // <-- Rimossa la descrizione come da richiesta
+        subText: '', 
         image: imgUrl,
         iconFallback: 'restaurant',
         themeColor: 'orange',
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
-        buttonsHtml: `
-            <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mr-auto flex items-center gap-1">${window.t('btn_details')} <span class="material-icons text-xs">chevron_right</span></span>
-        `
+        buttonsHtml: `` // Lasciato vuoto: renderMasterCard aggiungerà "Dettagli" a destra
     });
 };
 
@@ -344,23 +316,19 @@ window.vinoRenderer = function(item) {
     const nome = item.Nome || 'Vino';
     const cantina = item.Produttore || 'Cantina Locale'; 
     const uve = window.dbCol(item, 'Uve');
-    
     let tipoIT = String(window.valIT(item, 'Tipo')).toLowerCase();
     
     let themeColor = 'red';
     let tipoLabel = window.t('wine_red'); 
-    
     if (tipoIT.includes('bianco')) { 
         themeColor = 'yellow'; 
         tipoLabel = window.t('wine_white'); 
-    }
-    else if (tipoIT.includes('sciacchetr') || tipoIT.includes('dolce') || tipoIT.includes('passito')) { 
+    } else if (tipoIT.includes('sciacchetr') || tipoIT.includes('dolce') || tipoIT.includes('passito')) { 
         themeColor = 'orange'; 
         tipoLabel = window.t('wine_passito'); 
     }
 
-    // Oggetti per wishlist (V1.0: itinerario rimosso)
-    const wlItem   = { wl_id: String(safeId), wl_type: 'vino', wl_name: nome, wl_sub: cantina, wl_modal_type: 'Vini', wl_modal_payload: String(safeId) };
+    const wlItem = { wl_id: String(safeId), wl_type: 'vino', wl_name: nome, wl_sub: cantina, wl_modal_type: 'Vini', wl_modal_payload: String(safeId) };
     
     return renderWineCard({
         id: safeId,
@@ -371,7 +339,7 @@ window.vinoRenderer = function(item) {
         grapes: uve,
         themeColor: themeColor,
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem, 'light') : '',
-        buttonsHtml: ``
+        buttonsHtml: `` // WineCard ora gestisce "Dettagli" internamente a destra
     });
 };
 
