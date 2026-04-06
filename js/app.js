@@ -614,7 +614,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
                 ${mapAction ? `
                 <button class="shrink-0 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl w-[50px] flex items-center justify-center transition-all active:scale-95 self-stretch"
                     onclick="window.${mapAction} && window.${mapAction}()" aria-label="Mappa">
-                    <img src="img/mascot-mini.png" alt="Mappa" class="w-7 h-7 object-contain drop-shadow-sm">
+                <span class="material-icons">explore</span>
                 </button>` : (hasNearMe ? `
                 <button id="${nearMeId}"
                     class="near-me-btn ${window._nearMeEnabled ? 'active-near-me' : ''}"
@@ -773,7 +773,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
                 ${mapAction ? `
                 <button class="shrink-0 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl w-[50px] flex items-center justify-center transition-all active:scale-95 self-stretch"
                     onclick="window.${mapAction} && window.${mapAction}()" aria-label="Mappa">
-                    <img src="img/mascot-mini.png" alt="Mappa" class="w-7 h-7 object-contain drop-shadow-sm">
+                    <span class="material-icons">explore</span>
                 </button>` : (hasNearMe ? `
                 <button id="${nearMeId}"
                     class="near-me-btn ${window._nearMeEnabled ? 'active-near-me' : ''}"
@@ -2165,7 +2165,7 @@ function _showGeoError(btn, msg) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** URL asset Chicco statico in locale */
-const CHICCO_STATIC_URL = 'img/mascot-mini.png';
+const CHICCO_STATIC_URL = 'https://res.cloudinary.com/dkg0jfady/image/upload/v1770990643/chicco_wxxwbm.png';
 const CHICCO_LOTTIE_URL = 'https://res.cloudinary.com/dkg0jfady/raw/upload/chicco.json';
 
 /** Cache globale per i dati Lottie (evita ri-download dopo il primo tap) */

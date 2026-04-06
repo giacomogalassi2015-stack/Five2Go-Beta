@@ -687,7 +687,7 @@ window.renderCinqueTerreCard = function() {
             ],
             more_prices: 'Tariffe 3 giorni e gruppi disponibili sul sito ufficiale.',
             peak_dates_title: 'Calendario Alta Affluenza 2026',
-            peak_periods: ['3 - 6 Aprile', '25 - 26 Aprile', '1 - 3 Maggio', '9 - 10 Maggio', '14 - 17 Maggio', '23 - 24 Maggio', '30 Maggio - 1 Giugno'],
+            peak_periods: ['3 - 6 Aprile', '25 - 26 Aprile', '1 - 3 Maggio', '9 - 10 Maggio', '14 - 17 Maggio', '23 - 24 Maggio', '30 Maggio - 2 Giugno', '6 - 7 Giugno', '13 - 14 Giugno', '12 - 13 Settembre', '19 - 20 Settembre', '26 - 27 Settembre'],
             included_title: 'Cosa include',
             included: [
                 "Accesso al sentiero Verde Azzurro (SVA) Monterosso-Vernazza-Corniglia e alla Via dell'Amore",
@@ -720,7 +720,7 @@ window.renderCinqueTerreCard = function() {
             ],
             more_prices: '3-day and group rates available on the official website.',
             peak_dates_title: '2026 Peak Days Calendar',
-            peak_periods: ['April 3 - 6', 'April 25 - 26', 'May 1 - 3', 'May 9 - 10', 'May 14 - 17', 'May 23 - 24', 'May 30 - June 1'],
+            peak_periods: ['April 3 - 6', 'April 25 - 26', 'May 1 - 3', 'May 9 - 10', 'May 14 - 17', 'May 23 - 24', 'May 30 - June 2', 'June 6 - 7', 'June 13 - 14', 'September 12 - 13', 'September 19 - 20', 'September 26 - 27'],
             included_title: "What's included",
             included: [
                 "Access to the Verde Azzurro trail (SVA) Monterosso-Vernazza-Corniglia and Via dell'Amore",
@@ -753,7 +753,7 @@ window.renderCinqueTerreCard = function() {
             ],
             more_prices: 'Tarifs 3 jours et groupes disponibles sur le site officiel.',
             peak_dates_title: 'Calendrier Haute Affluence 2026',
-            peak_periods: ['3 - 6 Avril', '25 - 26 Avril', '1 - 3 Mai', '9 - 10 Mai', '14 - 17 Mai', '23 - 24 Mai', '30 Mai - 1 Juin'],
+            peak_periods: ['3 - 6 Avril', '25 - 26 Avril', '1 - 3 Mai', '9 - 10 Mai', '14 - 17 Mai', '23 - 24 Mai', '30 Mai - 2 Juin', '6 - 7 Juin', '13 - 14 Juin', '12 - 13 Septembre', '19 - 20 Septembre', '26 - 27 Septembre'],
             included_title: 'Ce qui est inclus',
             included: [
                 "Accès au sentier Verde Azzurro (SVA) Monterosso-Vernazza-Corniglia et à la Via dell'Amore",
@@ -786,7 +786,7 @@ window.renderCinqueTerreCard = function() {
             ],
             more_prices: '3-Tages- und Gruppenpreise auf der offiziellen Website verfügbar.',
             peak_dates_title: 'Hochsaison-Kalender 2026',
-            peak_periods: ['3. - 6. April', '25. - 26. April', '1. - 3. Mai', '9. - 10. Mai', '14. - 17. Mai', '23. - 24. Mai', '30. Mai - 1. Juni'],
+            peak_periods: ['3. - 6. April', '25. - 26. April', '1. - 3. Mai', '9. - 10. Mai', '14. - 17. Mai', '23. - 24. Mai', '30. Mai - 2. Juni', '6. - 7. Juni', '13. - 14. Juni', '12. - 13. September', '19. - 20. September', '26. - 27. September'],
             included_title: 'Was ist inbegriffen',
             included: [
                 "Zugang zum Verde Azzurro Weg (SVA) Monterosso-Vernazza-Corniglia und Via dell'Amore",
@@ -819,7 +819,7 @@ window.renderCinqueTerreCard = function() {
             ],
             more_prices: 'Tarifas de 3 días y para grupos disponibles en la web oficial.',
             peak_dates_title: 'Calendario Alta Afluencia 2026',
-            peak_periods: ['3 - 6 Abril', '25 - 26 Abril', '1 - 3 Mayo', '9 - 10 Mayo', '14 - 17 Mayo', '23 - 24 Mayo', '30 Mayo - 1 Junio'],
+            peak_periods: ['3 - 6 Abril', '25 - 26 Abril', '1 - 3 Mayo', '9 - 10 Mayo', '14 - 17 Mayo', '23 - 24 Mayo', '30 Mayo - 2 Junio', '6 - 7 Junio', '13 - 14 Junio', '12 - 13 Septiembre', '19 - 20 Septiembre', '26 - 27 Septiembre'],
             included_title: 'Qué incluye',
             included: [
                 "Acceso al sendero Verde Azzurro (SVA) Monterosso-Vernazza-Corniglia y a la Via dell'Amore",
@@ -852,7 +852,7 @@ window.renderCinqueTerreCard = function() {
             ],
             more_prices: '3天通票和团体票可在官方网站上查看。',
             peak_dates_title: '2026年旺季日历',
-            peak_periods: ['4月3日 - 6日', '4月25日 - 26日', '5月1日 - 3日', '5月9日 - 10日', '5月14日 - 17日', '5月23日 - 24日', '5月30日 - 6月1日'],
+            peak_periods: ['4月3日 - 6日', '4月25日 - 26日', '5月1日 - 3日', '5月9日 - 10日', '5月14日 - 17日', '5月23日 - 24日', '5月30日 - 6月2日', '6月6日 - 7日', '6月13日 - 14日', '9月12日 - 13日', '9月19日 - 20日', '9月26日 - 27日'],
             included_title: '包含内容',
             included: [
                 "蓝色小径 (SVA) 蒙特罗索-韦尔纳扎-科尔尼利亚段及爱之路通行证",
