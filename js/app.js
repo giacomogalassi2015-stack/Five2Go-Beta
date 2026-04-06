@@ -206,6 +206,11 @@ window.switchView = async function(view, el) {
         document.body.classList.remove('is-home');
         window.renderCinqueTerreCard();
         }
+else if (view === 'treno_card') {
+        document.body.style.backgroundColor = '#F4F1DE';
+        document.body.classList.remove('is-home');
+        window.renderCinqueTerreTrenoCard();
+        }
 
         else if (view === 'mappe_monumenti') renderSubMenu([{ label: window.t('menu_map'), table: "Mappe" }], 'Mappe');
     } catch (err) {
@@ -1022,6 +1027,20 @@ window.renderServicesGrid = async function() {
                 <span class="material-icons text-white/40 text-xl shrink-0">chevron_right</span>
             </div>
         </div>
+
+        <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft border border-slate-100/70 mb-4" style="height:130px" onclick="window.switchView('treno_card')">
+    <div class="absolute inset-0" style="background: linear-gradient(140deg, #33181c 0%, #be123c 60%, #e11d48 100%)"></div>
+    <div class="absolute bottom-0 left-0 right-0 h-1.5" style="background: linear-gradient(90deg, #fcd34d, #f97316, #e11d48)"></div>
+    <div class="absolute inset-0 p-5 flex items-center gap-4 z-10">
+        <div class="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/25 shrink-0">
+            <span class="material-icons text-2xl text-white">train</span>
+        </div>
+        <div class="flex-1 min-w-0">
+            <h3 class="font-serif text-xl font-bold text-white leading-tight">Cinque Terre Treno Card</h3>
+        </div>
+        <span class="material-icons text-white/40 text-xl shrink-0">chevron_right</span>
+    </div>
+</div>
 
         <div class="text-center pt-1">
             <button onclick="renderLegalPage()" class="text-slate-400 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 mx-auto py-2 px-4 rounded-xl bg-white shadow-sm border border-slate-200 active:scale-95 touch-manipulation">
@@ -2927,46 +2946,22 @@ window.handleBusSelectionChange = function(source) {
     const selArr  = document.getElementById('selArrivo');
     if (!selPart || !selArr || !window.cachedStops) return;
 
-    // ── REGOLA FONDAMENTALE: solo la PARTENZA filtra l'ARRIVO, mai il contrario.
-    //    Se cambia l'arrivo, non tocchiamo la partenza — l'utente sceglie libero.
     if (source === 'arrivo') return;
-
-    const partenzaId = parseInt(selPart.value);
-    const prevArrivo = selArr.value;
 
     if (window.flashInputFeedback) window.flashInputFeedback('selPartenza');
 
-    // Nessuna partenza → ripristina arrivo completo
-    if (!partenzaId) {
-        const allOpts = window.cachedStops
-            .map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
-        selArr.innerHTML = `<option value="" selected>${window.t('select_placeholder')}</option>` + allOpts;
-        return;
-    }
+    const prevArrivo = selArr.value;
 
-    // ── Calcolo ISTANTANEO tramite lookup map pre-costruita ──
-    if (window._busConnMap) {
-        const corsePartenza = window._busConnMap.get(partenzaId) || new Set();
-        const validIds = new Set();
-        window._busConnMap.forEach((corse, fermataId) => {
-            if (fermataId === partenzaId) return;
-            for (const corsaId of corse) {
-                if (corsePartenza.has(corsaId)) { validIds.add(fermataId); break; }
-            }
-        });
-        const validStops = window.cachedStops
-            .filter(s => validIds.has(s.ID))
-            .sort((a, b) => a.NOME_FERMATA.localeCompare(b.NOME_FERMATA));
-        const newOptions = validStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
-        const placeholder = `<option value="" disabled selected>${window.t('valid_destinations')}</option>`;
-        selArr.innerHTML = placeholder + newOptions;
-        // Mantieni arrivo selezionato se ancora valido
-        const prevId = parseInt(prevArrivo);
-        selArr.value = validIds.has(prevId) ? prevArrivo : '';
-    } else {
-        // Fallback se la map non è ancora pronta (raro): lascia arrivo invariato
-        selArr.innerHTML = `<option value="" disabled selected>${window.t('select_placeholder')}</option>` +
-            window.cachedStops.map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+    // Popola sempre l'arrivo con tutte le fermate in ordine alfabetico
+    const allOpts = window.cachedStops
+        .sort((a, b) => a.NOME_FERMATA.localeCompare(b.NOME_FERMATA))
+        .map(f => `<option value="${f.ID}">${f.NOME_FERMATA}</option>`).join('');
+        
+    selArr.innerHTML = `<option value="" selected>${window.t('select_placeholder')}</option>` + allOpts;
+    
+    // Mantiene la selezione precedente dell'arrivo se ancora presente
+    if (prevArrivo) {
+        selArr.value = prevArrivo;
     }
 };
 

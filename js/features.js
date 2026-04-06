@@ -961,6 +961,374 @@ window.renderCinqueTerreCard = function() {
     </div>`;
 };
 
+window.renderCinqueTerreTrenoCard = function() {
+    const content = document.getElementById('app-content');
+    if (!content) return;
+    const lang = window.currentLang || 'it';
+
+    const L = {
+        it: {
+            title: 'Cinque Terre Treno MS', subtitle: 'Tessera ufficiale + Treni Illimitati',
+            where_title: 'Dove acquistarla',
+            where: ['Infopoint nei borghi', "Stazioni ferroviarie (La Spezia - Levanto)", 'Online sul sito ufficiale'],
+            prices_title: 'Tariffe Primavera/Estate 2026',
+            prices_subtitle: 'Dal 14 Marzo al 1 Novembre 2026',
+            col_type: 'Tipologia',
+            col_low: 'Fascia A',
+            col_med: 'Fascia B',
+            col_high: 'Fascia C',
+            prices: [
+                { label: 'Adulti (12-69) - 1G', low: '€ 22,00', med: '€ 29,50', high: '€ 35,00' },
+                { label: 'Adulti (12-69) - 2G', low: '€ 36,50', med: '€ 51,00', high: '€ 61,00' },
+                { label: 'Adulti (12-69) - 3G', low: '€ 49,00', med: '€ 68,00', high: '€ 81,00' },
+                { label: 'Ragazzi (4-11) - 1G', low: '€ 15,00', med: '€ 20,00', high: '€ 23,50' },
+                { label: 'Ragazzi (4-11) - 2G', low: '€ 24,50', med: '€ 33,50', high: '€ 40,50' },
+                { label: 'Over 70 - 1G',        low: '€ 18,50', med: '€ 25,00', high: '€ 29,50' },
+                { label: 'Over 70 - 2G',        low: '€ 30,50', med: '€ 42,50', high: '€ 51,00' },
+                { label: 'Famiglia (2+1) - 1G', low: '€ 56,50', med: '€ 77,00', high: '€ 91,50' }
+            ],
+            calendar_title: 'Calendario Fasce 2026',
+            calendar_desc: 'La tariffa cambia ogni giorno. Ecco come funziona:',
+            cal_a: 'Giorni feriali di bassa stagione (Marzo, tardo Autunno).',
+            cal_b: 'Feriali primaverili/estivi e weekend di spalla.',
+            cal_c: 'Weekend, festività, ponti e altissima stagione estiva (Luglio-Agosto).',
+            btn_calendar: 'Vedi Calendario Esatto',
+            winter_title: 'Tariffe Inverno 2026 (2 Nov - 31 Dic)',
+            winter_prices: 'Adulti: € 17,30 (1G) / € 29,00 (2G)<br>Ragazzi: € 11,00 (1G) / € 16,70 (2G)<br>Over 70: € 13,70 (1G) / € 21,30 (2G)',
+            included_title: 'Cosa include',
+            included: [
+                "Viaggi illimitati su treni regionali (2° classe) tratta La Spezia - Cinque Terre - Levanto",
+                "Accesso al sentiero Verde Azzurro (SVA) e alla Via dell'Amore",
+                "Visite guidate (Cinque Terre Walking Park da Maggio a Ottobre)",
+                "Utilizzo dei bus navetta all'interno dei paesi",
+                "Ingresso gratuito al CAMeC della Spezia",
+                "Ingresso gratuito al Podere Case Lovara (FAI)",
+                "Uso gratuito dei servizi igienici nelle stazioni (altrimenti €1)",
+                "Navigazione internet WI-FI negli Hot Spot del Parco",
+                "Passaporto PN5T",
+                "Ingresso ridotto ai Musei Civici della Spezia e laboratori CEAS"
+            ],
+            official_site: 'Acquista Ora'
+        },
+        en: {
+            title: 'Cinque Terre Train Card', subtitle: 'Official Pass + Unlimited Trains',
+            where_title: 'Where to buy',
+            where: ['Info points in the villages', 'Train stations (La Spezia - Levanto)', 'Online on the official website'],
+            prices_title: 'Spring/Summer Prices 2026',
+            prices_subtitle: 'From March 14 to Nov 1, 2026',
+            col_type: 'Type',
+            col_low: 'Band A',
+            col_med: 'Band B',
+            col_high: 'Band C',
+            prices: [
+                { label: 'Adults (12-69) - 1D', low: '€ 22.00', med: '€ 29.50', high: '€ 35.00' },
+                { label: 'Adults (12-69) - 2D', low: '€ 36.50', med: '€ 51.00', high: '€ 61.00' },
+                { label: 'Adults (12-69) - 3D', low: '€ 49.00', med: '€ 68.00', high: '€ 81.00' },
+                { label: 'Children (4-11) - 1D', low: '€ 15.00', med: '€ 20.00', high: '€ 23.50' },
+                { label: 'Children (4-11) - 2D', low: '€ 24.50', med: '€ 33.50', high: '€ 40.50' },
+                { label: 'Over 70 - 1D',         low: '€ 18.50', med: '€ 25.00', high: '€ 29.50' },
+                { label: 'Over 70 - 2D',         low: '€ 30.50', med: '€ 42.50', high: '€ 51.00' },
+                { label: 'Family (2+1) - 1D',    low: '€ 56.50', med: '€ 77.00', high: '€ 91.50' }
+            ],
+            calendar_title: '2026 Bands Calendar',
+            calendar_desc: 'Rates change daily. Here is how it works:',
+            cal_a: 'Low season weekdays (March, late Autumn).',
+            cal_b: 'Spring/Summer weekdays and mid-season weekends.',
+            cal_c: 'Weekends, holidays, and peak summer season (July-August).',
+            btn_calendar: 'View Exact Calendar',
+            winter_title: 'Winter Prices 2026 (Nov 2 - Dec 31)',
+            winter_prices: 'Adults: € 17.30 (1D) / € 29.00 (2D)<br>Children: € 11.00 (1D) / € 16.70 (2D)<br>Over 70: € 13.70 (1D) / € 21.30 (2D)',
+            included_title: "What's included",
+            included: [
+                "Unlimited travel on regional trains (2nd class) La Spezia - Cinque Terre - Levanto",
+                "Access to the Verde Azzurro trail (SVA) and Via dell'Amore",
+                "Guided tours (Cinque Terre Walking Park, May-October)",
+                "Shuttle buses within the villages",
+                "Free entry to CAMeC in La Spezia",
+                "Free entry to Podere Case Lovara (FAI)",
+                "Free use of train station toilets (otherwise €1)",
+                "Wi-Fi at Park Hot Spots",
+                "PN5T Passport",
+                "Reduced entry to La Spezia Museums and CEAS workshops"
+            ],
+            official_site: 'Buy Now'
+        },
+        fr: {
+            title: 'Cinque Terre Train Card', subtitle: 'Pass Officiel + Trains Illimités',
+            where_title: "Où l'acheter",
+            where: ['Points info dans les villages', 'Gares (La Spezia - Levanto)', 'Sur le site officiel'],
+            prices_title: 'Tarifs Printemps/Été 2026',
+            prices_subtitle: 'Du 14 Mars au 1 Nov 2026',
+            col_type: 'Type',
+            col_low: 'Bande A',
+            col_med: 'Bande B',
+            col_high: 'Bande C',
+            prices: [
+                { label: 'Adultes (12-69) - 1J', low: '€ 22,00', med: '€ 29,50', high: '€ 35,00' },
+                { label: 'Adultes (12-69) - 2J', low: '€ 36,50', med: '€ 51,00', high: '€ 61,00' },
+                { label: 'Adultes (12-69) - 3J', low: '€ 49,00', med: '€ 68,00', high: '€ 81,00' },
+                { label: 'Enfants (4-11) - 1J',  low: '€ 15,00', med: '€ 20,00', high: '€ 23,50' },
+                { label: 'Enfants (4-11) - 2J',  low: '€ 24,50', med: '€ 33,50', high: '€ 40,50' },
+                { label: 'Seniors (70+) - 1J',   low: '€ 18,50', med: '€ 25,00', high: '€ 29,50' },
+                { label: 'Seniors (70+) - 2J',   low: '€ 30,50', med: '€ 42,50', high: '€ 51,00' },
+                { label: 'Famille (2+1) - 1J',   low: '€ 56,50', med: '€ 77,00', high: '€ 91,50' }
+            ],
+            calendar_title: 'Calendrier des Bandes 2026',
+            calendar_desc: 'Le tarif change chaque jour. Voici comment :',
+            cal_a: 'Jours de semaine en basse saison (Mars, fin d\'Automne).',
+            cal_b: 'Jours de semaine au Printemps/Été et week-ends de mi-saison.',
+            cal_c: 'Week-ends, jours fériés et haute saison estivale (Juillet-Août).',
+            btn_calendar: 'Voir le Calendrier Exact',
+            winter_title: 'Tarifs Hiver 2026 (2 Nov - 31 Déc)',
+            winter_prices: 'Adultes: € 17,30 (1J) / € 29,00 (2J)<br>Enfants: € 11,00 (1J) / € 16,70 (2J)<br>Seniors: € 13,70 (1J) / € 21,30 (2J)',
+            included_title: 'Ce qui est inclus',
+            included: [
+                "Voyages illimités en trains régionaux (2ème cl.) La Spezia - Cinque Terre - Levanto",
+                "Accès au sentier Verde Azzurro (SVA) et à la Via dell'Amore",
+                "Visites guidées (Cinque Terre Walking Park, Mai-Oct)",
+                "Bus navettes dans les villages",
+                "Entrée gratuite au CAMeC de La Spezia",
+                "Entrée gratuite au Podere Case Lovara (FAI)",
+                "Toilettes gratuites dans les gares (sinon 1€)",
+                "Wi-Fi dans les Hot Spots du Parc",
+                "Passeport PN5T",
+                "Entrée réduite aux Musées de La Spezia"
+            ],
+            official_site: 'Acheter'
+        },
+        de: {
+            title: 'Cinque Terre Zug-Karte', subtitle: 'Offizieller Pass + Unbegrenzte Züge',
+            where_title: 'Wo kaufen',
+            where: ['Infopunkte in den Dörfern', 'Bahnhöfe (La Spezia - Levanto)', 'Online auf der offiziellen Website'],
+            prices_title: 'Frühling/Sommer Preise 2026',
+            prices_subtitle: '14. März - 1. Nov 2026',
+            col_type: 'Typ',
+            col_low: 'Band A',
+            col_med: 'Band B',
+            col_high: 'Band C',
+            prices: [
+                { label: 'Erwachsene (12-69) 1T', low: '€ 22,00', med: '€ 29,50', high: '€ 35,00' },
+                { label: 'Erwachsene (12-69) 2T', low: '€ 36,50', med: '€ 51,00', high: '€ 61,00' },
+                { label: 'Erwachsene (12-69) 3T', low: '€ 49,00', med: '€ 68,00', high: '€ 81,00' },
+                { label: 'Kinder (4-11) - 1T',    low: '€ 15,00', med: '€ 20,00', high: '€ 23,50' },
+                { label: 'Kinder (4-11) - 2T',    low: '€ 24,50', med: '€ 33,50', high: '€ 40,50' },
+                { label: 'Senioren (70+) - 1T',   low: '€ 18,50', med: '€ 25,00', high: '€ 29,50' },
+                { label: 'Familie (2+1) - 1T',    low: '€ 56,50', med: '€ 77,00', high: '€ 91,50' }
+            ],
+            calendar_title: 'Kalender der Bänder 2026',
+            calendar_desc: 'Die Rate ändert sich täglich. So funktioniert es:',
+            cal_a: 'Wochentage in der Nebensaison (März, Spätherbst).',
+            cal_b: 'Frühling/Sommer Wochentage und Zwischensaison-Wochenenden.',
+            cal_c: 'Wochenenden, Feiertage und Hochsommer (Juli-August).',
+            btn_calendar: 'Genauen Kalender Ansehen',
+            winter_title: 'Winterpreise 2026 (2. Nov - 31. Dez)',
+            winter_prices: 'Erwachsene: € 17,30 (1T) / € 29,00 (2T)<br>Kinder: € 11,00 (1T) / € 16,70 (2T)<br>Senioren: € 13,70 (1T) / € 21,30 (2T)',
+            included_title: 'Was ist inbegriffen',
+            included: [
+                "Unbegrenzte Fahrten mit Regionalzügen (2. Klasse) La Spezia - Cinque Terre - Levanto",
+                "Zugang zum Verde Azzurro Weg (SVA) und Via dell'Amore",
+                "Geführte Touren (Cinque Terre Walking Park)",
+                "Shuttle-Busse in den Dörfern",
+                "Freier Eintritt ins CAMeC (La Spezia)",
+                "Kostenlose Toilettennutzung an Bahnhöfen (sonst 1€)",
+                "WLAN an Hot Spots",
+                "PN5T Reisepass"
+            ],
+            official_site: 'Jetzt Kaufen'
+        },
+        es: {
+            title: 'Cinque Terre Train Card', subtitle: 'Pase Oficial + Trenes Ilimitados',
+            where_title: 'Dónde comprarla',
+            where: ['Puntos de info en los pueblos', 'Estaciones (La Spezia - Levanto)', 'Web oficial'],
+            prices_title: 'Tarifas Primavera/Verano 2026',
+            prices_subtitle: 'Del 14 de marzo al 1 de nov 2026',
+            col_type: 'Tipo',
+            col_low: 'Banda A',
+            col_med: 'Banda B',
+            col_high: 'Banda C',
+            prices: [
+                { label: 'Adultos (12-69) - 1D', low: '€ 22,00', med: '€ 29,50', high: '€ 35,00' },
+                { label: 'Adultos (12-69) - 2D', low: '€ 36,50', med: '€ 51,00', high: '€ 61,00' },
+                { label: 'Adultos (12-69) - 3D', low: '€ 49,00', med: '€ 68,00', high: '€ 81,00' },
+                { label: 'Niños (4-11) - 1D',    low: '€ 15,00', med: '€ 20,00', high: '€ 23,50' },
+                { label: 'Niños (4-11) - 2D',    low: '€ 24,50', med: '€ 33,50', high: '€ 40,50' },
+                { label: 'Mayores (70+) - 1D',   low: '€ 18,50', med: '€ 25,00', high: '€ 29,50' },
+                { label: 'Familia (2+1) - 1D',   low: '€ 56,50', med: '€ 77,00', high: '€ 91,50' }
+            ],
+            calendar_title: 'Calendario Bandas 2026',
+            calendar_desc: 'La tarifa cambia cada día. Así funciona:',
+            cal_a: 'Días laborables en temporada baja (marzo, finales de otoño).',
+            cal_b: 'Días laborables en primavera/verano y fines de semana de temporada media.',
+            cal_c: 'Fines de semana, festivos y temporada altísima de verano (julio-agosto).',
+            btn_calendar: 'Ver Calendario Exacto',
+            winter_title: 'Tarifas Invierno 2026 (2 Nov - 31 Dic)',
+            winter_prices: 'Adultos: € 17,30 (1D) / € 29,00 (2D)<br>Niños: € 11,00 (1D) / € 16,70 (2D)<br>Mayores: € 13,70 (1D)',
+            included_title: 'Qué incluye',
+            included: [
+                "Viajes ilimitados en trenes regionales (2ª clase) La Spezia - Cinque Terre - Levanto",
+                "Acceso al sendero Verde Azzurro (SVA) y Via dell'Amore",
+                "Visitas guiadas (Cinque Terre Walking Park)",
+                "Autobuses lanzadera en los pueblos",
+                "Uso gratuito de aseos en estaciones (si no, 1€)",
+                "Wi-Fi en Hot Spots del Parque",
+                "Pasaporte PN5T"
+            ],
+            official_site: 'Comprar Ahora'
+        },
+        zh: {
+            title: '五渔村火车卡 (Train Card)', subtitle: '官方通行证 + 无限次火车',
+            where_title: '购买地点',
+            where: ['村庄信息中心', '火车站 (拉斯佩齐亚 - 莱万托)', '官方网站'],
+            prices_title: '2026 春夏价格',
+            prices_subtitle: '2026年3月14日至11月1日',
+            col_type: '类型',
+            col_low: 'A档',
+            col_med: 'B档',
+            col_high: 'C档',
+            prices: [
+                { label: '成人 (12-69) - 1天', low: '€ 22.00', med: '€ 29.50', high: '€ 35.00' },
+                { label: '成人 (12-69) - 2天', low: '€ 36.50', med: '€ 51.00', high: '€ 61.00' },
+                { label: '成人 (12-69) - 3天', low: '€ 49.00', med: '€ 68.00', high: '€ 81.00' },
+                { label: '儿童 (4-11) - 1天',  low: '€ 15.00', med: '€ 20.00', high: '€ 23.50' },
+                { label: '儿童 (4-11) - 2天',  low: '€ 24.50', med: '€ 33.50', high: '€ 40.50' },
+                { label: '长者 (70+) - 1天',   low: '€ 18.50', med: '€ 25.00', high: '€ 29.50' },
+                { label: '家庭 (2大1小) - 1天', low: '€ 56.50', med: '€ 77.00', high: '€ 91.50' }
+            ],
+            calendar_title: '2026 档期日历',
+            calendar_desc: '费率每天变化。工作原理如下：',
+            cal_a: '淡季工作日（3月，深秋）。',
+            cal_b: '春夏工作日和中季周末。',
+            cal_c: '周末、节假日和夏季旺季（7月至8月）。',
+            btn_calendar: '查看准确日历',
+            winter_title: '2026 冬季价格 (11月2日 - 12月31日)',
+            winter_prices: '成人: € 17.30 (1天) / € 29.00 (2天)<br>儿童: € 11.00 (1天) / € 16.70 (2天)<br>长者: € 13.70 (1天)',
+            included_title: '包含内容',
+            included: [
+                "无限次乘坐区域火车（二等座）拉斯佩齐亚 - 五渔村 - 莱万托",
+                "蓝色小径 (SVA) 及爱之路通行证",
+                "导游服务（5月至10月）",
+                "村庄内接驳巴士",
+                "免费使用火车站洗手间（原价1欧元）",
+                "热点区域 Wi-Fi",
+                "PN5T 护照"
+            ],
+            official_site: '立即购买'
+        }
+    }[lang] || L.it;
+
+    content.innerHTML = `<div class="animate-fade pb-8">
+        <div class="rounded-3xl overflow-hidden mb-5" style="background: linear-gradient(140deg, #33181c 0%, #be123c 60%, #e11d48 100%);">
+            <div class="p-6">
+                <div class="flex items-start justify-between mb-3">
+                    <span class="material-icons text-4xl text-white/80">train</span>
+                    <div class="text-right">
+                        <div class="text-[10px] font-black uppercase tracking-widest text-white/50">PARCO NAZIONALE</div>
+                        <div class="text-[10px] font-black uppercase tracking-widest text-white/50">CINQUE TERRE</div>
+                    </div>
+                </div>
+                <h2 class="font-serif text-3xl font-bold text-white leading-tight mb-1">${L.title}</h2>
+                <p class="text-sm font-bold text-white/55 uppercase tracking-wide">${L.subtitle}</p>
+            </div>
+            <div class="h-1.5" style="background: linear-gradient(90deg, #fcd34d, #f97316, #e11d48)"></div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-3">
+            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span class="material-icons text-sky-600 text-base">storefront</span>
+                ${L.where_title}
+            </h3>
+            <ul class="flex flex-col gap-2">
+                ${L.where.map(w => `<li class="flex items-start gap-2.5 text-sm text-slate-600">
+                    <span class="material-icons text-sky-600 text-sm mt-0.5 shrink-0">check_circle</span>
+                    <span>${w}</span>
+                </li>`).join('')}
+            </ul>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-3 overflow-hidden">
+            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-widest mb-1 flex items-center gap-2">
+                <span class="material-icons text-amber-500 text-base">sell</span>
+                ${L.prices_title}
+            </h3>
+            <p class="text-[11px] text-slate-400 font-medium mb-4 ml-6">${L.prices_subtitle}</p>
+
+            <div class="grid grid-cols-12 gap-1 mb-2 px-1 text-[9px] font-black uppercase text-slate-400">
+                <div class="col-span-5">${L.col_type}</div>
+                <div class="col-span-2 text-right text-emerald-600">${L.col_low}</div>
+                <div class="col-span-2 text-right text-amber-500">${L.col_med}</div>
+                <div class="col-span-3 text-right" style="color: #be123c;">${L.col_high}</div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                ${L.prices.map(p => `
+                <div class="grid grid-cols-12 gap-1 items-center py-2 px-2 rounded-xl bg-slate-50 border border-slate-100">
+                    <div class="col-span-5 text-[10px] md:text-[11px] font-bold text-slate-700 leading-tight">${p.label}</div>
+                    <div class="col-span-2 text-right text-[10px] font-bold text-emerald-600">${p.low}</div>
+                    <div class="col-span-2 text-right text-[10px] font-bold text-amber-600">${p.med}</div>
+                    <div class="col-span-3 text-right text-[11px] font-black" style="color: #be123c;">${p.high}</div>
+                </div>`).join('')}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-3">
+            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-widest mb-2 flex items-center gap-2">
+                <span class="material-icons text-slate-500 text-[18px]">event_note</span>
+                ${L.calendar_title}
+            </h3>
+            <p class="text-xs text-slate-500 mb-4 leading-relaxed">${L.calendar_desc}</p>
+
+            <div class="flex flex-col gap-3 mb-5">
+                <div class="flex items-start gap-3">
+                    <div class="w-3.5 h-3.5 rounded-full bg-emerald-500 shrink-0 mt-0.5 shadow-sm"></div>
+                    <div class="text-[11px] text-slate-600 leading-tight"><strong class="text-emerald-700">Fascia A (Verde):</strong> ${L.cal_a}</div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-3.5 h-3.5 rounded-full bg-amber-400 shrink-0 mt-0.5 shadow-sm"></div>
+                    <div class="text-[11px] text-slate-600 leading-tight"><strong class="text-amber-600">Fascia B (Gialla):</strong> ${L.cal_b}</div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-3.5 h-3.5 rounded-full shrink-0 mt-0.5 shadow-sm" style="background-color: #e11d48;"></div>
+                    <div class="text-[11px] text-slate-600 leading-tight"><strong style="color: #be123c;">Fascia C (Rossa):</strong> ${L.cal_c}</div>
+                </div>
+            </div>
+
+            <button onclick="window.open('https://www.parconazionale5terre.it/pdfuff/PN5TRdocumento-148-3.pdf', '_blank')" class="w-full py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm">
+                <span class="material-icons text-[16px] text-slate-500">picture_as_pdf</span>
+                ${L.btn_calendar}
+            </button>
+        </div>
+
+        <div class="bg-sky-50 rounded-2xl shadow-sm border border-sky-100 p-5 mb-3">
+            <h3 class="font-bold text-sky-800 text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span class="material-icons text-sky-500 text-[16px]">ac_unit</span>
+                ${L.winter_title}
+            </h3>
+            <p class="text-[11px] text-sky-700 leading-relaxed font-medium">${L.winter_prices}</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
+            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span class="material-icons text-sky-600 text-base">confirmation_number</span>
+                ${L.included_title}
+            </h3>
+            <ul class="flex flex-col gap-2">
+                ${L.included.map(i => `<li class="flex items-start gap-2.5 text-sm text-slate-600">
+                    <span class="material-icons text-sky-600 text-sm shrink-0 mt-0.5">check</span>
+                    <span class="leading-snug">${i}</span>
+                </li>`).join('')}
+            </ul>
+        </div>
+
+        <button
+            onclick="window.open('https://card.parconazionale5terre.it/en', '_blank')"
+            class="w-full py-4 rounded-2xl font-bold text-sm uppercase tracking-widest text-white active:scale-[0.97] transition-all shadow-md flex items-center justify-center gap-2 touch-manipulation mb-2"
+            style="background: linear-gradient(135deg, #33181c 0%, #be123c 60%, #e11d48 100%)">
+            <span class="material-icons text-base">shopping_cart</span>
+            ${L.official_site}
+        </button>
+    </div>`;
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  9. NEAR ME — Ordinamento per distanza (geolocalizzazione)
 // ─────────────────────────────────────────────────────────────────────────────
