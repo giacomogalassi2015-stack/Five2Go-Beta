@@ -688,9 +688,20 @@ window.renderCinqueTerreCard = function() {
             more_prices: 'Tariffe 3 giorni e gruppi disponibili sul sito ufficiale.',
             peak_dates_title: 'Calendario Alta Affluenza 2026',
             peak_periods: ['3 - 6 Aprile', '25 - 26 Aprile', '1 - 3 Maggio', '9 - 10 Maggio', '14 - 17 Maggio', '23 - 24 Maggio', '30 Maggio - 1 Giugno'],
-            peak_note: 'In questi giorni di ponti, festività e fine settimana primaverili viene applicata la tariffa maggiorata.',
             included_title: 'Cosa include',
-            included: ['Accesso ai percorsi Trekking (Sentiero Azzurro)', 'Bus navetta ATC tra i borghi', 'Wi-Fi nei punti info', 'Uso dei bagni gratuiti nei borghi'],
+            included: [
+                "Accesso al sentiero Verde Azzurro (SVA) Monterosso-Vernazza-Corniglia e alla Via dell'Amore",
+                "Visite guidate (Cinque Terre Walking Park da Maggio a Ottobre)",
+                "Utilizzo del bus navetta ATC all'interno dei paesi",
+                "Ingresso gratuito al CAMeC della Spezia",
+                "Ingresso gratuito al Podere Case Lovara (bene FAI)",
+                "Uso gratuito dei bagni nelle stazioni ferroviarie (altrimenti €1)",
+                "Wi-Fi negli Hot Spot del Parco",
+                "Passaporto PN5T",
+                "Ingresso ridotto ai Musei Civici della Spezia",
+                "Laboratori del CEAS del Parco (secondo programmazione)",
+                "Percorsi del Parco Letterario Eugenio Montale"
+            ],
             official_site: 'Acquisto Ufficiale'
         },
         en: {
@@ -710,9 +721,20 @@ window.renderCinqueTerreCard = function() {
             more_prices: '3-day and group rates available on the official website.',
             peak_dates_title: '2026 Peak Days Calendar',
             peak_periods: ['April 3 - 6', 'April 25 - 26', 'May 1 - 3', 'May 9 - 10', 'May 14 - 17', 'May 23 - 24', 'May 30 - June 1'],
-            peak_note: 'Peak rates apply during these spring weekends, national holidays, and long weekends.',
             included_title: "What's included",
-            included: ['Access to Trekking paths (Blue Trail)', 'ATC shuttle buses', 'Wi-Fi at info points', 'Free use of village toilets'],
+            included: [
+                "Access to the Verde Azzurro trail (SVA) Monterosso-Vernazza-Corniglia and Via dell'Amore",
+                "Guided tours (Cinque Terre Walking Park, May-October)",
+                "ATC shuttle buses within the villages",
+                "Free entry to CAMeC in La Spezia",
+                "Free entry to Podere Case Lovara (FAI property)",
+                "Free use of train station toilets (otherwise €1)",
+                "Wi-Fi at Park Hot Spots",
+                "PN5T Passport",
+                "Reduced entry to La Spezia Civic Museums",
+                "Park CEAS workshops (scheduled)",
+                "Eugenio Montale Literary Park tours"
+            ],
             official_site: 'Official Purchase'
         },
         fr: {
@@ -732,9 +754,20 @@ window.renderCinqueTerreCard = function() {
             more_prices: 'Tarifs 3 jours et groupes disponibles sur le site officiel.',
             peak_dates_title: 'Calendrier Haute Affluence 2026',
             peak_periods: ['3 - 6 Avril', '25 - 26 Avril', '1 - 3 Mai', '9 - 10 Mai', '14 - 17 Mai', '23 - 24 Mai', '30 Mai - 1 Juin'],
-            peak_note: 'Le tarif majoré s\'applique pendant ces week-ends de printemps et jours fériés.',
             included_title: 'Ce qui est inclus',
-            included: ['Accès aux sentiers de Trekking (Sentier Bleu)', 'Bus navettes ATC', 'Wi-Fi aux points info', 'Toilettes gratuites dans les villages'],
+            included: [
+                "Accès au sentier Verde Azzurro (SVA) Monterosso-Vernazza-Corniglia et à la Via dell'Amore",
+                "Visites guidées (Cinque Terre Walking Park, Mai-Octobre)",
+                "Bus navettes ATC dans les villages",
+                "Entrée gratuite au CAMeC de La Spezia",
+                "Entrée gratuite au Podere Case Lovara (propriété FAI)",
+                "Toilettes gratuites dans les gares (sinon 1€)",
+                "Wi-Fi dans les Hot Spots du Parc",
+                "Passeport PN5T",
+                "Entrée réduite aux Musées Civiques de La Spezia",
+                "Ateliers du CEAS du Parc (selon programme)",
+                "Parcours du Parc Littéraire Eugenio Montale"
+            ],
             official_site: 'Achat Officiel'
         },
         de: {
@@ -754,9 +787,20 @@ window.renderCinqueTerreCard = function() {
             more_prices: '3-Tages- und Gruppenpreise auf der offiziellen Website verfügbar.',
             peak_dates_title: 'Hochsaison-Kalender 2026',
             peak_periods: ['3. - 6. April', '25. - 26. April', '1. - 3. Mai', '9. - 10. Mai', '14. - 17. Mai', '23. - 24. Mai', '30. Mai - 1. Juni'],
-            peak_note: 'An diesen Frühlingswochenenden und Feiertagen gelten erhöhte Preise.',
             included_title: 'Was ist inbegriffen',
-            included: ['Zugang zu Wanderwegen (Blauer Weg)', 'ATC Shuttle-Busse', 'WLAN an Infopunkten', 'Kostenlose Toilettennutzung'],
+            included: [
+                "Zugang zum Verde Azzurro Weg (SVA) Monterosso-Vernazza-Corniglia und Via dell'Amore",
+                "Geführte Touren (Cinque Terre Walking Park, Mai-Okt.)",
+                "ATC Shuttle-Busse in den Dörfern",
+                "Freier Eintritt ins CAMeC in La Spezia",
+                "Freier Eintritt ins Podere Case Lovara (FAI-Eigentum)",
+                "Kostenlose Toilettennutzung an den Bahnhöfen (sonst 1€)",
+                "WLAN an den Hot Spots des Parks",
+                "PN5T Reisepass",
+                "Ermäßigter Eintritt in die städtischen Museen von La Spezia",
+                "Workshops des CEAS des Parks",
+                "Eugenio Montale Literaturpark-Touren"
+            ],
             official_site: 'Offizieller Kauf'
         },
         es: {
@@ -776,9 +820,20 @@ window.renderCinqueTerreCard = function() {
             more_prices: 'Tarifas de 3 días y para grupos disponibles en la web oficial.',
             peak_dates_title: 'Calendario Alta Afluencia 2026',
             peak_periods: ['3 - 6 Abril', '25 - 26 Abril', '1 - 3 Mayo', '9 - 10 Mayo', '14 - 17 Mayo', '23 - 24 Mayo', '30 Mayo - 1 Junio'],
-            peak_note: 'La tarifa superior se aplica durante estos fines de semana de primavera y festivos.',
             included_title: 'Qué incluye',
-            included: ['Acceso a los senderos Trekking (Sendero Azul)', 'Autobuses lanzadera ATC', 'Wi-Fi en puntos info', 'Uso gratuito de aseos'],
+            included: [
+                "Acceso al sendero Verde Azzurro (SVA) Monterosso-Vernazza-Corniglia y a la Via dell'Amore",
+                "Visitas guiadas (Cinque Terre Walking Park, mayo-octubre)",
+                "Autobuses lanzadera ATC en los pueblos",
+                "Entrada gratuita al CAMeC de La Spezia",
+                "Entrada gratuita al Podere Case Lovara (propiedad FAI)",
+                "Uso gratuito de aseos en estaciones de tren (si no, 1€)",
+                "Wi-Fi en los Hot Spots del Parque",
+                "Pasaporte PN5T",
+                "Entrada reducida a los Museos Cívicos de La Spezia",
+                "Talleres del CEAS del Parque",
+                "Rutas del Parque Literario Eugenio Montale"
+            ],
             official_site: 'Compra Oficial'
         },
         zh: {
@@ -798,9 +853,20 @@ window.renderCinqueTerreCard = function() {
             more_prices: '3天通票和团体票可在官方网站上查看。',
             peak_dates_title: '2026年旺季日历',
             peak_periods: ['4月3日 - 6日', '4月25日 - 26日', '5月1日 - 3日', '5月9日 - 10日', '5月14日 - 17日', '5月23日 - 24日', '5月30日 - 6月1日'],
-            peak_note: '在这些春季周末和公共假日期间，将适用旺季价格。',
             included_title: '包含内容',
-            included: ['徒步路线通行证（蓝色小径）', 'ATC接驳巴士', '信息中心Wi-Fi', '免费使用村庄公共洗手间'],
+            included: [
+                "蓝色小径 (SVA) 蒙特罗索-韦尔纳扎-科尔尼利亚段及爱之路通行证",
+                "导游服务（五渔村徒步公园，5月至10月）",
+                "村庄内的ATC接驳巴士",
+                "免费参观拉斯佩齐亚CAMeC现代艺术中心",
+                "免费参观Podere Case Lovara (FAI财产)",
+                "免费使用火车站洗手间（原价1欧元）",
+                "公园热点区域Wi-Fi",
+                "PN5T护照",
+                "拉斯佩齐亚市政博物馆折扣门票",
+                "公园CEAS工作坊",
+                "埃乌杰尼奥·蒙塔莱文学公园路线"
+            ],
             official_site: '官方购买'
         }
     }[lang] || L.it;
@@ -870,8 +936,6 @@ window.renderCinqueTerreCard = function() {
                     ${period}
                 </div>`).join('')}
             </div>
-            
-            <p class="text-[11px] text-rose-600 mt-4 leading-relaxed font-medium">${L.peak_note}</p>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
@@ -880,9 +944,9 @@ window.renderCinqueTerreCard = function() {
                 ${L.included_title}
             </h3>
             <ul class="flex flex-col gap-2">
-                ${L.included.map(i => `<li class="flex items-center gap-2.5 text-sm text-slate-600">
-                    <span class="material-icons text-ct-blue text-sm shrink-0">check</span>
-                    <span>${i}</span>
+                ${L.included.map(i => `<li class="flex items-start gap-2.5 text-sm text-slate-600">
+                    <span class="material-icons text-ct-blue text-sm shrink-0 mt-0.5">check</span>
+                    <span class="leading-snug">${i}</span>
                 </li>`).join('')}
             </ul>
         </div>
