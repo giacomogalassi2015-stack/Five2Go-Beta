@@ -672,123 +672,140 @@ window.renderCinqueTerreCard = function() {
 
     const L = {
         it: {
-            title: 'Cinque Terre Card', subtitle: 'Tessera ufficiale del Parco Nazionale',
+            title: 'Cinque Terre Trekking Card', subtitle: 'Tessera ufficiale del Parco Nazionale',
             where_title: 'Dove acquistarla',
-            where: ['Infopoint nei 5 borghi (Riomaggiore, Manarola, Corniglia, Vernazza, Monterosso)', "Stazioni ferroviarie delle Cinque Terre", 'Online sul sito ufficiale del Parco'],
-            prices_title: 'Prezzi indicativi',
+            where: ['Infopoint nei 5 borghi', "Stazioni ferroviarie", 'Online sul sito ufficiale'],
+            prices_title: 'Tariffe 2026',
+            col_standard: 'Standard',
+            col_peak: 'Alta Affluenza',
             prices: [
-                { label: 'Card Giornaliera Adulti', price: '€ 7,50', note: 'Accesso sentieri + Bus navetta', highlight: false },
-                { label: 'Card 2 Giorni Adulti',    price: '€ 14,50', note: 'Accesso sentieri + Bus navetta', highlight: false },
-                { label: 'Card Trekking (1 giorno)', price: '€ 5,00', note: 'Solo sentieri, no bus',          highlight: false },
-                { label: 'Card famiglia (2+2)',       price: 'Scontata', note: 'Chiedi agli infopoint',        highlight: true },
-                { label: 'Bambini < 4 anni',          price: 'Gratis', note: '',                               highlight: false }
+                { label: 'Adulti (12-69) - 1 Giorno', standard: '€ 10,00', peak: '€ 15,00' },
+                { label: 'Adulti (12-69) - 2 Giorni', standard: '€ 17,00', peak: '€ 26,70' },
+                { label: 'Ragazzi (4-11) - 1 Giorno', standard: '€ 7,00', peak: '€ 10,00' },
+                { label: 'Over 70 - 1 Giorno',        standard: '€ 8,50', peak: '€ 12,50' },
+                { label: 'Famiglia (2Ad+Rag) - 1G',   standard: '€ 27,10', peak: '€ 40,20' }
             ],
+            more_prices: 'Tariffe 3 giorni e gruppi disponibili sul sito ufficiale.',
+            peak_dates_title: 'Calendario Alta Affluenza 2026',
+            peak_periods: ['3 - 6 Aprile', '25 - 26 Aprile', '1 - 3 Maggio', '9 - 10 Maggio', '14 - 17 Maggio', '23 - 24 Maggio', '30 Maggio - 1 Giugno'],
+            peak_note: 'In questi giorni di ponti, festività e fine settimana primaverili viene applicata la tariffa maggiorata.',
             included_title: 'Cosa include',
-            included: ['Accesso al Sentiero Azzurro (SVA)', 'Bus navetta ATC tra i borghi', 'Wi-Fi nei punti info del Parco', 'Mappe sentieri ufficiali'],
-            note_title: '⚠ Nota importante',
-            note: 'I prezzi indicati sono orientativi e possono variare per stagione. Verifica sempre i prezzi aggiornati agli infopoint ufficiali o sul sito del Parco.',
-            official_site: 'Sito ufficiale del Parco'
+            included: ['Accesso ai percorsi Trekking (Sentiero Azzurro)', 'Bus navetta ATC tra i borghi', 'Wi-Fi nei punti info', 'Uso dei bagni gratuiti nei borghi'],
+            official_site: 'Acquisto Ufficiale'
         },
         en: {
-            title: 'Cinque Terre Card', subtitle: 'Official National Park pass',
+            title: 'Cinque Terre Trekking Card', subtitle: 'Official National Park pass',
             where_title: 'Where to buy',
-            where: ['Info points in all 5 villages (Riomaggiore, Manarola, Corniglia, Vernazza, Monterosso)', 'Cinque Terre train stations', 'Online on the official Park website'],
-            prices_title: 'Indicative prices',
+            where: ['Info points in the 5 villages', 'Train stations', 'Online on the official website'],
+            prices_title: '2026 Prices',
+            col_standard: 'Standard',
+            col_peak: 'Peak Days',
             prices: [
-                { label: '1-Day Adult Card',     price: '€ 7.50',   note: 'Trails + Shuttle bus',     highlight: false },
-                { label: '2-Day Adult Card',     price: '€ 14.50',  note: 'Trails + Shuttle bus',     highlight: false },
-                { label: 'Trekking Card (1 day)', price: '€ 5.00',  note: 'Trails only, no bus',      highlight: false },
-                { label: 'Family card (2+2)',     price: 'Discounted', note: 'Ask at info points',    highlight: true },
-                { label: 'Children under 4',      price: 'Free',    note: '',                          highlight: false }
+                { label: 'Adults (12-69) - 1 Day', standard: '€ 10.00', peak: '€ 15.00' },
+                { label: 'Adults (12-69) - 2 Days', standard: '€ 17.00', peak: '€ 26.70' },
+                { label: 'Children (4-11) - 1 Day', standard: '€ 7.00', peak: '€ 10.00' },
+                { label: 'Seniors (70+) - 1 Day',   standard: '€ 8.50', peak: '€ 12.50' },
+                { label: 'Family (2Ad+Ch) - 1 Day', standard: '€ 27.10', peak: '€ 40.20' }
             ],
+            more_prices: '3-day and group rates available on the official website.',
+            peak_dates_title: '2026 Peak Days Calendar',
+            peak_periods: ['April 3 - 6', 'April 25 - 26', 'May 1 - 3', 'May 9 - 10', 'May 14 - 17', 'May 23 - 24', 'May 30 - June 1'],
+            peak_note: 'Peak rates apply during these spring weekends, national holidays, and long weekends.',
             included_title: "What's included",
-            included: ['Access to Blue Trail (SVA)', 'ATC shuttle bus between villages', 'Wi-Fi at Park info points', 'Official trail maps'],
-            note_title: '⚠ Important note',
-            note: 'Prices shown are indicative and may vary by season. Always check current prices at official info points or the Park website.',
-            official_site: 'Official Park website'
+            included: ['Access to Trekking paths (Blue Trail)', 'ATC shuttle buses', 'Wi-Fi at info points', 'Free use of village toilets'],
+            official_site: 'Official Purchase'
         },
         fr: {
-            title: 'Cinque Terre Card', subtitle: 'Carte officielle du Parc National',
+            title: 'Cinque Terre Trekking Card', subtitle: 'Carte officielle du Parc National',
             where_title: "Où l'acheter",
-            where: ['Points info dans les 5 villages', 'Gares des Cinque Terre', 'Sur le site officiel du Parc'],
-            prices_title: 'Prix indicatifs',
+            where: ['Points info dans les 5 villages', 'Gares', 'Sur le site officiel'],
+            prices_title: 'Tarifs 2026',
+            col_standard: 'Standard',
+            col_peak: 'Haute Affluence',
             prices: [
-                { label: 'Carte 1 jour Adulte', price: '€ 7,50',   note: 'Sentiers + Bus navette', highlight: false },
-                { label: 'Carte 2 jours Adulte', price: '€ 14,50', note: 'Sentiers + Bus navette', highlight: false },
-                { label: 'Carte Trekking (1j)',   price: '€ 5,00', note: 'Sentiers seulement',     highlight: false },
-                { label: 'Carte famille (2+2)',    price: 'Réduit', note: 'Demander aux infos',     highlight: true },
-                { label: 'Enfants - de 4 ans',     price: 'Gratuit', note: '',                      highlight: false }
+                { label: 'Adultes (12-69) - 1 Jour', standard: '€ 10,00', peak: '€ 15,00' },
+                { label: 'Adultes (12-69) - 2 Jours', standard: '€ 17,00', peak: '€ 26,70' },
+                { label: 'Enfants (4-11) - 1 Jour',  standard: '€ 7,00', peak: '€ 10,00' },
+                { label: 'Seniors (70+) - 1 Jour',   standard: '€ 8,50', peak: '€ 12,50' },
+                { label: 'Famille (2Ad+Enf) - 1J',   standard: '€ 27,10', peak: '€ 40,20' }
             ],
+            more_prices: 'Tarifs 3 jours et groupes disponibles sur le site officiel.',
+            peak_dates_title: 'Calendrier Haute Affluence 2026',
+            peak_periods: ['3 - 6 Avril', '25 - 26 Avril', '1 - 3 Mai', '9 - 10 Mai', '14 - 17 Mai', '23 - 24 Mai', '30 Mai - 1 Juin'],
+            peak_note: 'Le tarif majoré s\'applique pendant ces week-ends de printemps et jours fériés.',
             included_title: 'Ce qui est inclus',
-            included: ['Accès au Sentier Azzurro (SVA)', 'Bus navette ATC', 'Wi-Fi aux points info', 'Cartes des sentiers'],
-            note_title: '⚠ Note importante',
-            note: 'Les prix sont indicatifs et peuvent varier selon la saison. Vérifiez toujours les tarifs actuels.',
-            official_site: 'Site officiel du Parc'
+            included: ['Accès aux sentiers de Trekking (Sentier Bleu)', 'Bus navettes ATC', 'Wi-Fi aux points info', 'Toilettes gratuites dans les villages'],
+            official_site: 'Achat Officiel'
         },
         de: {
-            title: 'Cinque Terre Card', subtitle: 'Offizielle Nationalpark-Karte',
+            title: 'Cinque Terre Trekking Card', subtitle: 'Offizielle Nationalpark-Karte',
             where_title: 'Wo kaufen',
-            where: ['Infopunkte in allen 5 Dörfern', 'Bahnhöfe der Cinque Terre', 'Online auf der offiziellen Park-Website'],
-            prices_title: 'Ungefähre Preise',
+            where: ['Infopunkte in den 5 Dörfern', 'Bahnhöfe', 'Online auf der offiziellen Website'],
+            prices_title: 'Preise 2026',
+            col_standard: 'Standard',
+            col_peak: 'Hochsaison',
             prices: [
-                { label: '1-Tages-Karte Erwachsene', price: '€ 7,50',   note: 'Wanderwege + Shuttle-Bus', highlight: false },
-                { label: '2-Tages-Karte Erwachsene', price: '€ 14,50',  note: 'Wanderwege + Shuttle-Bus', highlight: false },
-                { label: 'Trekking-Karte (1 Tag)',    price: '€ 5,00',   note: 'Nur Wanderwege',           highlight: false },
-                { label: 'Familienkarte (2+2)',        price: 'Ermäßigt', note: 'An Infopunkten erfragen',  highlight: true },
-                { label: 'Kinder unter 4 Jahren',      price: 'Kostenlos', note: '',                        highlight: false }
+                { label: 'Erwachsene (12-69) - 1 Tag', standard: '€ 10,00', peak: '€ 15,00' },
+                { label: 'Erwachsene (12-69) - 2 Tage', standard: '€ 17,00', peak: '€ 26,70' },
+                { label: 'Kinder (4-11) - 1 Tag',      standard: '€ 7,00', peak: '€ 10,00' },
+                { label: 'Senioren (70+) - 1 Tag',     standard: '€ 8,50', peak: '€ 12,50' },
+                { label: 'Familie (2Erw+Knd) - 1T',    standard: '€ 27,10', peak: '€ 40,20' }
             ],
+            more_prices: '3-Tages- und Gruppenpreise auf der offiziellen Website verfügbar.',
+            peak_dates_title: 'Hochsaison-Kalender 2026',
+            peak_periods: ['3. - 6. April', '25. - 26. April', '1. - 3. Mai', '9. - 10. Mai', '14. - 17. Mai', '23. - 24. Mai', '30. Mai - 1. Juni'],
+            peak_note: 'An diesen Frühlingswochenenden und Feiertagen gelten erhöhte Preise.',
             included_title: 'Was ist inbegriffen',
-            included: ['Zugang zum Blauen Weg (SVA)', 'ATC Shuttle-Bus zwischen den Dörfern', 'WLAN an Park-Infopunkten', 'Offizielle Wanderkarten'],
-            note_title: '⚠ Wichtiger Hinweis',
-            note: 'Die Preise sind Richtwerte und können je nach Saison variieren.',
-            official_site: 'Offizielle Park-Website'
+            included: ['Zugang zu Wanderwegen (Blauer Weg)', 'ATC Shuttle-Busse', 'WLAN an Infopunkten', 'Kostenlose Toilettennutzung'],
+            official_site: 'Offizieller Kauf'
         },
         es: {
-            title: 'Cinque Terre Card', subtitle: 'Tarjeta oficial del Parque Nacional',
+            title: 'Cinque Terre Trekking Card', subtitle: 'Tarjeta oficial del Parque Nacional',
             where_title: 'Dónde comprarla',
-            where: ['Puntos de información en los 5 pueblos', 'Estaciones de tren de las Cinque Terre', 'En la web oficial del Parque'],
-            prices_title: 'Precios orientativos',
+            where: ['Puntos de información en los 5 pueblos', 'Estaciones de tren', 'En la web oficial'],
+            prices_title: 'Tarifas 2026',
+            col_standard: 'Estándar',
+            col_peak: 'Alta Afluencia',
             prices: [
-                { label: 'Tarjeta 1 día Adulto', price: '€ 7,50',   note: 'Senderos + Autobús lanzadera', highlight: false },
-                { label: 'Tarjeta 2 días Adulto', price: '€ 14,50', note: 'Senderos + Autobús lanzadera', highlight: false },
-                { label: 'Tarjeta Trekking (1d)', price: '€ 5,00',  note: 'Solo senderos',                highlight: false },
-                { label: 'Tarjeta familia (2+2)',  price: 'Descuento', note: 'Pregunta en los infopuntos', highlight: true },
-                { label: 'Niños menores de 4',     price: 'Gratis',  note: '',                             highlight: false }
+                { label: 'Adultos (12-69) - 1 Día',  standard: '€ 10,00', peak: '€ 15,00' },
+                { label: 'Adultos (12-69) - 2 Días', standard: '€ 17,00', peak: '€ 26,70' },
+                { label: 'Niños (4-11) - 1 Día',     standard: '€ 7,00', peak: '€ 10,00' },
+                { label: 'Mayores (70+) - 1 Día',    standard: '€ 8,50', peak: '€ 12,50' },
+                { label: 'Familia (2Ad+Niñ) - 1D',   standard: '€ 27,10', peak: '€ 40,20' }
             ],
+            more_prices: 'Tarifas de 3 días y para grupos disponibles en la web oficial.',
+            peak_dates_title: 'Calendario Alta Afluencia 2026',
+            peak_periods: ['3 - 6 Abril', '25 - 26 Abril', '1 - 3 Mayo', '9 - 10 Mayo', '14 - 17 Mayo', '23 - 24 Mayo', '30 Mayo - 1 Junio'],
+            peak_note: 'La tarifa superior se aplica durante estos fines de semana de primavera y festivos.',
             included_title: 'Qué incluye',
-            included: ['Acceso al Sendero Azzurro (SVA)', 'Autobús lanzadera ATC', 'Wi-Fi en puntos info del Parque', 'Mapas oficiales de senderos'],
-            note_title: '⚠ Nota importante',
-            note: 'Los precios son orientativos y pueden variar según la temporada.',
-            official_site: 'Web oficial del Parque'
+            included: ['Acceso a los senderos Trekking (Sendero Azul)', 'Autobuses lanzadera ATC', 'Wi-Fi en puntos info', 'Uso gratuito de aseos'],
+            official_site: 'Compra Oficial'
         },
         zh: {
-            title: '五渔村卡', subtitle: '国家公园官方通行证',
+            title: '五渔村徒步卡 (Trekking Card)', subtitle: '国家公园官方通行证',
             where_title: '购买地点',
-            where: ['五个村庄的信息中心', '五渔村火车站', '国家公园官方网站'],
-            prices_title: '参考价格',
+            where: ['五个村庄的信息中心', '火车站', '官方网站在线购买'],
+            prices_title: '2026年价格',
+            col_standard: '标准价',
+            col_peak: '旺季价',
             prices: [
-                { label: '成人一日卡',   price: '€ 7.50',  note: '步道 + 接驳巴士', highlight: false },
-                { label: '成人两日卡',   price: '€ 14.50', note: '步道 + 接驳巴士', highlight: false },
-                { label: '徒步卡（一日）', price: '€ 5.00', note: '仅步道，不含巴士', highlight: false },
-                { label: '家庭卡 (2+2)', price: '优惠价',  note: '请询问信息中心',  highlight: true },
-                { label: '4岁以下儿童',  price: '免费',    note: '',                highlight: false }
+                { label: '成人 (12-69) - 1天', standard: '€ 10.00', peak: '€ 15.00' },
+                { label: '成人 (12-69) - 2天', standard: '€ 17.00', peak: '€ 26.70' },
+                { label: '儿童 (4-11) - 1天',  standard: '€ 7.00', peak: '€ 10.00' },
+                { label: '长者 (70+) - 1天',   standard: '€ 8.50', peak: '€ 12.50' },
+                { label: '家庭 (2成人+儿童) - 1天', standard: '€ 27.10', peak: '€ 40.20' }
             ],
+            more_prices: '3天通票和团体票可在官方网站上查看。',
+            peak_dates_title: '2026年旺季日历',
+            peak_periods: ['4月3日 - 6日', '4月25日 - 26日', '5月1日 - 3日', '5月9日 - 10日', '5月14日 - 17日', '5月23日 - 24日', '5月30日 - 6月1日'],
+            peak_note: '在这些春季周末和公共假日期间，将适用旺季价格。',
             included_title: '包含内容',
-            included: ['蓝色小径 (SVA) 通行证', 'ATC接驳巴士', '公园信息中心Wi-Fi', '官方步道地图'],
-            note_title: '⚠ 重要提示',
-            note: '价格仅供参考，可能因季节而异。请在官方信息中心或公园网站查询最新价格。',
-            official_site: '公园官方网站'
+            included: ['徒步路线通行证（蓝色小径）', 'ATC接驳巴士', '信息中心Wi-Fi', '免费使用村庄公共洗手间'],
+            official_site: '官方购买'
         }
-    }[lang] || {
-        title: 'Cinque Terre Card', subtitle: 'Official National Park pass',
-        where_title: 'Where to buy', where: ['Info points in all 5 villages'],
-        prices_title: 'Prices', prices: [],
-        included_title: "Included", included: [],
-        note_title: 'Note', note: 'Check current prices on site.', official_site: 'Official website'
-    };
+    }[lang] || L.it;
 
     content.innerHTML = `<div class="animate-fade pb-8">
-        <!-- Header card -->
         <div class="rounded-3xl overflow-hidden mb-5" style="background: linear-gradient(140deg, #0d3b2e 0%, #1a7a6a 100%);">
             <div class="p-6">
                 <div class="flex items-start justify-between mb-3">
@@ -804,7 +821,6 @@ window.renderCinqueTerreCard = function() {
             <div class="h-1.5" style="background: linear-gradient(90deg, #E9C46A, #E76F51, #2A9D8F)"></div>
         </div>
 
-        <!-- Dove acquistarla -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-3">
             <h3 class="font-bold text-slate-800 text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
                 <span class="material-icons text-ct-terracotta text-base">storefront</span>
@@ -818,25 +834,47 @@ window.renderCinqueTerreCard = function() {
             </ul>
         </div>
 
-        <!-- Prezzi -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-3">
-            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
-                <span class="material-icons text-ct-yellow text-base">sell</span>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-3 overflow-hidden">
+            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span class="material-icons text-amber-500 text-base">sell</span>
                 ${L.prices_title}
             </h3>
-            <div class="flex flex-col gap-2">
-                ${L.prices.map(p => `<div class="flex items-center justify-between py-2.5 px-3 rounded-xl ${p.highlight ? 'bg-ct-yellow-light border border-yellow-200' : 'bg-slate-50'}">
-                    <div>
-                        <div class="text-sm font-bold text-slate-800">${p.label}</div>
-                        ${p.note ? `<div class="text-[11px] text-slate-400 font-medium">${p.note}</div>` : ''}
-                    </div>
-                    <span class="font-black text-lg ${p.highlight ? 'text-yellow-700' : 'text-ct-green'} ml-3 shrink-0">${p.price}</span>
+
+            <div class="grid grid-cols-12 gap-1 mb-2 px-1 text-[10px] font-black uppercase text-slate-400">
+                <div class="col-span-6">Tipologia</div>
+                <div class="col-span-3 text-right">${L.col_standard}</div>
+                <div class="col-span-3 text-right text-rose-600">${L.col_peak}</div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                ${L.prices.map(p => `
+                <div class="grid grid-cols-12 gap-1 items-center py-2 px-2 rounded-xl bg-slate-50 border border-slate-100">
+                    <div class="col-span-6 text-[11px] md:text-xs font-bold text-slate-700 leading-tight">${p.label}</div>
+                    <div class="col-span-3 text-right text-xs font-bold text-slate-600">${p.standard}</div>
+                    <div class="col-span-3 text-right text-xs font-black text-rose-600">${p.peak}</div>
                 </div>`).join('')}
             </div>
+            <div class="mt-3 text-[10px] text-slate-400 text-center font-medium">${L.more_prices}</div>
         </div>
 
-        <!-- Cosa include -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-3">
+        <div class="bg-rose-50 rounded-2xl shadow-sm border border-rose-100 p-5 mb-3">
+            <h3 class="font-bold text-rose-800 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span class="material-icons text-rose-500 text-base">calendar_month</span>
+                ${L.peak_dates_title}
+            </h3>
+            
+            <div class="flex flex-wrap gap-2.5">
+                ${L.peak_periods.map(period => `
+                <div class="flex items-center gap-1.5 bg-white border border-rose-200 text-rose-700 text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-sm">
+                    <span class="material-icons text-[14px] text-rose-400">event</span>
+                    ${period}
+                </div>`).join('')}
+            </div>
+            
+            <p class="text-[11px] text-rose-600 mt-4 leading-relaxed font-medium">${L.peak_note}</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
             <h3 class="font-bold text-slate-800 text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
                 <span class="material-icons text-ct-blue text-base">confirmation_number</span>
                 ${L.included_title}
@@ -849,15 +887,8 @@ window.renderCinqueTerreCard = function() {
             </ul>
         </div>
 
-        <!-- Nota -->
-        <div class="rounded-2xl p-4 mb-4 bg-amber-50 border border-amber-100">
-            <p class="text-xs font-bold text-amber-700 mb-1">${L.note_title}</p>
-            <p class="text-xs text-amber-600 leading-relaxed">${L.note}</p>
-        </div>
-
-        <!-- Link ufficiale -->
         <button
-            onclick="window.open('https://www.parconazionale5terre.it', '_blank')"
+            onclick="window.open('https://card.parconazionale5terre.it/', '_blank')"
             class="w-full py-4 rounded-2xl font-bold text-sm uppercase tracking-widest text-white active:scale-[0.97] transition-all shadow-md flex items-center justify-center gap-2 touch-manipulation"
             style="background: linear-gradient(135deg, #264653, #2A9D8F)">
             <span class="material-icons text-base">open_in_new</span>
@@ -865,7 +896,6 @@ window.renderCinqueTerreCard = function() {
         </button>
     </div>`;
 };
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  9. NEAR ME — Ordinamento per distanza (geolocalizzazione)

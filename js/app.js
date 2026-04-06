@@ -34,7 +34,8 @@ window.addEventListener('popstate', function(e) {
     if (reportModal)  { reportModal.remove(); return; }
     if (confirmModal) { confirmModal.remove(); return; }
     if (geoModal)     { geoModal.remove(); return; }
-    if (genericModal) { if (window._dismissModal) window._dismissModal(genericModal); else { genericModal.classList.add('opacity-0'); setTimeout(() => genericModal.remove(), 200); } return; }
+    if (genericModal) { if (window._dismissModal) window._dismissModal(genericModal); else { genericModal.classList.add('opacity-0'); 
+        setTimeout(() => genericModal.remove(), 200); } return; }
 
     // 2. Altrimenti naviga alla view precedente
     window._historyNav = false;
@@ -1773,10 +1774,16 @@ window.initPendingMaps = function() {
                 const gpxLayer = e.target;
                 map.fitBounds(gpxLayer.getBounds(), { padding: [20, 20] }); 
                 let layers = gpxLayer.getLayers(); let points = [];
-                layers.forEach(layer => { if (layer instanceof L.Polyline) { const latlngs = layer.getLatLngs(); if (latlngs.length > 0) { if (Array.isArray(latlngs[0])) { latlngs.forEach(segment => points = points.concat(segment)); } else { points = points.concat(latlngs); } } } });
+                layers.forEach(layer => 
+                    { if (layer instanceof L.Polyline) { const latlngs = layer.getLatLngs(); 
+                        if (latlngs.length > 0) 
+                    { if (Array.isArray(latlngs[0])) { latlngs.forEach(segment => points = points.concat(segment)); } 
+                else { points = points.concat(latlngs); } } } });
                 if (points.length > 0) {
                     const startPoint = points[0]; const endPoint = points[points.length - 1];
-                    const createLabelIcon = (text, color, isStart) => { return L.divIcon({ className: 'custom-map-label', html: `<div style="display:flex; flex-direction:column; align-items:center;"><div style="background:white; padding:2px 6px; border-radius:4px; border:1px solid #ccc; font-size:10px; font-weight:bold; color:#333; white-space:nowrap; box-shadow:0 2px 4px rgba(0,0,0,0.2); margin-bottom:2px;">${text}</div><div style="width:10px; height:10px; background:${color}; border:2px solid white; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div></div>`, iconSize: [100, 40], iconAnchor: [50, 38] }); };
+                    const createLabelIcon = (text, color, isStart) => { return L.divIcon({ className: 'custom-map-label', html: `<div style="display:flex; flex-direction:column; align-items:center;">
+                        <div style="background:white; padding:2px 6px; border-radius:4px; border:1px solid #ccc; font-size:10px; font-weight:bold; color:#333; white-space:nowrap; box-shadow:0 2px 4px rgba(0,0,0,0.2); margin-bottom:2px;">${text}</div>
+                        <div style="width:10px; height:10px; background:${color}; border:2px solid white; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div></div>`, iconSize: [100, 40], iconAnchor: [50, 38] }); };
                     if (item.startLabel) { L.marker(startPoint, { icon: createLabelIcon(item.startLabel, '#27ae60', true), interactive: false }).addTo(map); }
                     if (item.endLabel) { L.marker(endPoint, { icon: createLabelIcon(item.endLabel, '#c0392b', false), interactive: false }).addTo(map); }
                 }
