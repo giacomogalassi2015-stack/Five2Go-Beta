@@ -952,7 +952,7 @@ window.renderCinqueTerreCard = function() {
         </div>
 
         <button
-            onclick="window.open('https://card.parconazionale5terre.it/', '_blank')"
+            onclick="window.open('https://card.parconazionale5terre.it/en/cartaparco', '_blank')"
             class="w-full py-4 rounded-2xl font-bold text-sm uppercase tracking-widest text-white active:scale-[0.97] transition-all shadow-md flex items-center justify-center gap-2 touch-manipulation"
             style="background: linear-gradient(135deg, #264653, #2A9D8F)">
             <span class="material-icons text-base">open_in_new</span>
@@ -1292,7 +1292,7 @@ window.renderCinqueTerreTrenoCard = function() {
                 </div>
             </div>
 
-            <button onclick="window.open('https://www.parconazionale5terre.it/pdfuff/PN5TRdocumento-148-3.pdf', '_blank')" class="w-full py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm">
+            <button onclick="window.open('https://card.parconazionale5terre.it/en/cartatreno', '_blank')" class="w-full py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm">
                 <span class="material-icons text-[16px] text-slate-500">picture_as_pdf</span>
                 ${L.btn_calendar}
             </button>
@@ -1320,7 +1320,7 @@ window.renderCinqueTerreTrenoCard = function() {
         </div>
 
         <button
-            onclick="window.open('https://card.parconazionale5terre.it/en', '_blank')"
+            onclick="window.open('https://card.parconazionale5terre.it/en/cartatreno', '_blank')"
             class="w-full py-4 rounded-2xl font-bold text-sm uppercase tracking-widest text-white active:scale-[0.97] transition-all shadow-md flex items-center justify-center gap-2 touch-manipulation mb-2"
             style="background: linear-gradient(135deg, #33181c 0%, #be123c 60%, #e11d48 100%)">
             <span class="material-icons text-base">shopping_cart</span>
