@@ -171,7 +171,7 @@ const _VIEW_RENDERERS = {
         { label: window.t('menu_trail'), table: 'Sentieri',   icon: 'hiking',       color: 'green' },
     ], 'Attrazioni'),
 
-    mappa:    () => window.renderMappaInterattiva(),
+   
     servizi:  () => renderServicesGrid(),
     wishlist: () => window.renderWishlist(),
     itinerary:() => window.renderWishlist(),   // v1.0 redirect silenzioso
@@ -228,15 +228,26 @@ function renderHome() {
     const lang = window.currentLang || 'it';
 
     const copy = {
-        it: { locationLabel: 'Cinque Terre', tagline: 'Scopri, salva, esplora.<br>Anche senza connessione.',        wishlistLabel: 'Preferiti',  mapLabel: 'Mappa',  searchPlaceholder: 'Cerca ristoranti, spiagge, sentieri…'   },
-        en: { locationLabel: 'Cinque Terre', tagline: 'Discover, save, explore.<br>Even without connection.',       wishlistLabel: 'Favourites', mapLabel: 'Map',    searchPlaceholder: 'Search restaurants, beaches, trails…'    },
-        fr: { locationLabel: 'Cinque Terre', tagline: 'Découvrez, sauvegardez, explorez.<br>Même hors ligne.',      wishlistLabel: 'Favoris',    mapLabel: 'Carte',  searchPlaceholder: 'Chercher restaurants, plages, sentiers…'  },
-        de: { locationLabel: 'Cinque Terre', tagline: 'Entdecken, speichern, erkunden.<br>Auch offline.',           wishlistLabel: 'Favoriten',  mapLabel: 'Karte',  searchPlaceholder: 'Restaurants, Strände, Wanderwege suchen…' },
-        es: { locationLabel: 'Cinque Terre', tagline: 'Descubre, guarda, explora.<br>También sin conexión.',        wishlistLabel: 'Favoritos',  mapLabel: 'Mapa',   searchPlaceholder: 'Buscar restaurantes, playas, senderos…'   },
-        zh: { locationLabel: '五渔村',        tagline: '发现、保存、探索。<br>即使离线也可用。',                        wishlistLabel: '收藏',       mapLabel: '地图',   searchPlaceholder: '搜索餐厅、海滩、步道…'                    },
+        it: { locationLabel: 'Cinque Terre', tagline: 'Scopri, salva, esplora.',        wishlistLabel: 'Preferiti',  mapLabel: 'Mappa',  searchPlaceholder: 'Cerca ristoranti, spiagge, sentieri…'   },
+        en: { locationLabel: 'Cinque Terre', tagline: 'Discover, save, explore.<br>',       wishlistLabel: 'Favourites', mapLabel: 'Map',    searchPlaceholder: 'Search restaurants, beaches, trails…'    },
+        fr: { locationLabel: 'Cinque Terre', tagline: 'Découvrez, sauvegardez, explorez.',      wishlistLabel: 'Favoris',    mapLabel: 'Carte',  searchPlaceholder: 'Chercher restaurants, plages, sentiers…'  },
+        de: { locationLabel: 'Cinque Terre', tagline: 'Entdecken, speichern, erkunden.',           wishlistLabel: 'Favoriten',  mapLabel: 'Karte',  searchPlaceholder: 'Restaurants, Strände, Wanderwege suchen…' },
+        es: { locationLabel: 'Cinque Terre', tagline: 'Descubre, guarda, explora.',        wishlistLabel: 'Favoritos',  mapLabel: 'Mapa',   searchPlaceholder: 'Buscar restaurantes, playas, senderos…'   },
+        zh: { locationLabel: '五渔村',        tagline: '发现、保存、探索。',                        wishlistLabel: '收藏',       mapLabel: '地图',   searchPlaceholder: '搜索餐厅、海滩、步道…'                    },
+    };
+
+    // Mappatura per il pulsante lingua
+    const langDisplay = {
+        it: { flag: '🇮🇹', name: 'ITALIANO' },
+        en: { flag: '🇬🇧', name: 'ENGLISH' },
+        fr: { flag: '🇫🇷', name: 'FRANÇAIS' },
+        de: { flag: '🇩🇪', name: 'DEUTSCH' },
+        es: { flag: '🇪🇸', name: 'ESPAÑOL' },
+        zh: { flag: '🇨🇳', name: '中文' }
     };
 
     const C       = copy[lang] || copy.en;
+    const currentLangData = langDisplay[lang] || langDisplay.en;
     const wlCount = window.WL ? window.WL.get().length : 0;
 
     content.innerHTML = `
@@ -267,17 +278,21 @@ function renderHome() {
         </div>
       </div>
 
-      <div class="home-actions">
-        <button class="home-pill home-pill--heart" onclick="window.switchView('wishlist')">
+      <div class="home-actions" style="display: flex; gap: 12px; width: 100%; justify-content: center; padding-bottom: 60px;">
+        
+        <button class="home-pill home-pill--heart" style="flex: 1;" onclick="window.switchView('wishlist')">
           <span class="material-icons home-pill-icon">favorite</span>
           <span class="home-pill-label">${C.wishlistLabel}</span>
           <span class="home-pill-badge" data-home-badge="wishlist"
                 style="${wlCount > 0 ? '' : 'display:none'}">${wlCount}</span>
         </button>
-        <button class="home-pill home-pill--map" onclick="window.switchView('mappa')">
-          <span class="material-icons home-pill-icon">explore</span>
-          <span class="home-pill-label">${C.mapLabel}</span>
+        
+        <button id="bump-lang-trigger" class="home-pill" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="window._toggleBumpLangPanel()">
+          <span style="font-size: 16px; line-height: 1;">${currentLangData.flag}</span>
+          <span style="font-weight: bold; font-size: 13px; color: rgba(255,255,255,0.88);">${currentLangData.name}</span>
+          <span class="material-icons" style="font-size: 18px; opacity: 0.5; margin-left: -4px; color: white;">expand_more</span>
         </button>
+
       </div>
     </div>`;
 
@@ -652,15 +667,12 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
     const labelAll  = window.t('label_all');
     const hasNearMe = !!(latKey && lonKey);
 
-    // Determina azione mappa contestuale
+// Determina azione mappa contestuale
     const isRistorantiView = filterKey === 'Paesi' && cardRenderer === window.ristoranteRenderer;
     const isVinoView       = filterKey === 'Tipo'  && cardRenderer === window.vinoRenderer;
     const isSpiaggiaView   = filterKey === 'Paesi' && cardRenderer === window.spiaggiaRenderer;
 
-    let mapAction = null;
-    if (isRistorantiView) mapAction = '_openMapAperitivo';
-    else if (isVinoView)  mapAction = '_openMapVino';
-    else if (isSpiaggiaView) mapAction = '_openMapSpiaggia';
+    let mapAction = null; // <-- FONDAMENTALE: dichiara la variabile come null qui
 
     const secondaryBtnHtml = mapAction
         ? `<button class="shrink-0 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl w-[50px] flex items-center justify-center transition-all active:scale-95 self-stretch"
@@ -769,7 +781,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     const btnClose     = window.t('btn_close_show');
     const hasNearMe    = !!(latKey && lonKey);
     const isAttrazioni = cardRenderer === window.attrazioniRenderer;
-    const mapAction    = isAttrazioni ? '_openMapAttrazione' : null;
+    const mapAction    = null; // <-- Disabilitato (era: isAttrazioni ? '_openMapAttrazione' : null)
 
     const secondaryBtnHtml = mapAction
         ? `<button class="shrink-0 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl w-[50px] flex items-center justify-center transition-all active:scale-95 self-stretch"
@@ -908,12 +920,10 @@ window.renderServicesGrid = async function() {
     targetEl.innerHTML = `
     <div class="flex flex-col gap-3 pb-32 animate-pop">
 
-        <!-- BUS hero full-width -->
         <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft"
-             style="height:190px" onclick="openModal('transport','bus')">
+             style="height:150px" onclick="openModal('transport','bus')">
             <img src="${busImg}" class="absolute inset-0 w-full h-full object-cover scale-[1.02]" onerror="this.style.display='none'">
-            <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent"></div>
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
             <div class="absolute inset-0 p-5 flex flex-col justify-between z-10">
                 <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border border-white/30">
                     <span class="material-icons text-xl text-white">directions_bus</span>
@@ -922,12 +932,11 @@ window.renderServicesGrid = async function() {
             </div>
         </div>
 
-        <!-- TRENO + BATTELLO -->
         <div class="grid grid-cols-2 gap-3">
             <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-150 touch-manipulation shadow-soft"
-                 style="height:170px" onclick="openModal('transport','train')">
+                 style="height:150px" onclick="openModal('transport','train')">
                 <img src="${trainImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
-                <div class="absolute inset-0 bg-gradient-to-t from-ct-terracotta/95 via-ct-terracotta/50 to-ct-terracotta/10"></div>
+                <div class="absolute inset-0 bg-black/20"></div>
                 <div class="absolute inset-0 p-4 flex flex-col justify-between z-10">
                     <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border border-white/30">
                         <span class="material-icons text-lg text-white">train</span>
@@ -936,9 +945,9 @@ window.renderServicesGrid = async function() {
                 </div>
             </div>
             <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-150 touch-manipulation shadow-soft"
-                 style="height:170px" onclick="openModal('transport','ferry')">
+                 style="height:150px" onclick="openModal('transport','ferry')">
                 <img src="${ferryImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
-                <div class="absolute inset-0 bg-gradient-to-t from-ct-blue/95 via-ct-blue/50 to-ct-blue/10"></div>
+                <div class="absolute inset-0 bg-black/20"></div>
                 <div class="absolute inset-0 p-4 flex flex-col justify-between z-10">
                     <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border border-white/30">
                         <span class="material-icons text-lg text-white">directions_boat</span>
@@ -948,7 +957,6 @@ window.renderServicesGrid = async function() {
             </div>
         </div>
 
-        <!-- UTILITY ROWS -->
         <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation"
              onclick="renderSimpleList('Numeri_utili')">
             <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 shadow-sm">
@@ -971,31 +979,29 @@ window.renderServicesGrid = async function() {
             <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
 
-        <!-- CINQUE TERRE CARD -->
-        <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft border border-slate-100/70"
-             style="height:130px" onclick="window.switchView('ct_card')">
-            <div class="absolute inset-0" style="background:linear-gradient(140deg,#0d3b2e 0%,#1a7a6a 60%,#2A9D8F 100%)"></div>
-            <div class="absolute bottom-0 left-0 right-0 h-1.5" style="background:linear-gradient(90deg,#E9C46A,#E76F51,#2A9D8F)"></div>
-            <div class="absolute inset-0 p-5 flex items-center gap-4 z-10">
-                <div class="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/25 shrink-0">
-                    <span class="material-icons text-2xl text-white">card_membership</span>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft border border-slate-100/70 flex flex-col justify-between p-4"
+                 style="height:140px" onclick="window.switchView('ct_card')">
+                <div class="absolute inset-0" style="background:linear-gradient(140deg,#0d3b2e 0%,#1a7a6a 60%,#2A9D8F 100%)"></div>
+                <div class="absolute bottom-0 left-0 right-0 h-1.5" style="background:linear-gradient(90deg,#E9C46A,#E76F51,#2A9D8F)"></div>
+                <div class="relative z-10">
+                    <div class="w-10 h-10 mb-2.5 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/25">
+                        <span class="material-icons text-xl text-white">card_membership</span>
+                    </div>
+                    <h3 class="font-serif text-base font-bold text-white leading-tight drop-shadow-sm">Cinque Terre Card</h3>
                 </div>
-                <h3 class="font-serif text-xl font-bold text-white leading-tight flex-1 min-w-0">Cinque Terre Card</h3>
-                <span class="material-icons text-white/40 text-xl shrink-0">chevron_right</span>
             </div>
-        </div>
 
-        <!-- CINQUE TERRE TRENO CARD -->
-        <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft border border-slate-100/70 mb-4"
-             style="height:130px" onclick="window.switchView('treno_card')">
-            <div class="absolute inset-0" style="background:linear-gradient(140deg,#33181c 0%,#be123c 60%,#e11d48 100%)"></div>
-            <div class="absolute bottom-0 left-0 right-0 h-1.5" style="background:linear-gradient(90deg,#fcd34d,#f97316,#e11d48)"></div>
-            <div class="absolute inset-0 p-5 flex items-center gap-4 z-10">
-                <div class="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/25 shrink-0">
-                    <span class="material-icons text-2xl text-white">train</span>
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft border border-slate-100/70 flex flex-col justify-between p-4"
+                 style="height:140px" onclick="window.switchView('treno_card')">
+                <div class="absolute inset-0" style="background:linear-gradient(140deg,#33181c 0%,#be123c 60%,#e11d48 100%)"></div>
+                <div class="absolute bottom-0 left-0 right-0 h-1.5" style="background:linear-gradient(90deg,#fcd34d,#f97316,#e11d48)"></div>
+                <div class="relative z-10">
+                    <div class="w-10 h-10 mb-2.5 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/25">
+                        <span class="material-icons text-xl text-white">train</span>
+                    </div>
+                    <h3 class="font-serif text-base font-bold text-white leading-tight drop-shadow-sm">Cinque Terre Treno</h3>
                 </div>
-                <h3 class="font-serif text-xl font-bold text-white leading-tight flex-1 min-w-0">Cinque Terre Treno Card</h3>
-                <span class="material-icons text-white/40 text-xl shrink-0">chevron_right</span>
             </div>
         </div>
 
@@ -2221,13 +2227,6 @@ window.toggleBusMap = function() {
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  MAP PRE-FILTER SHORTCUTS
-// ─────────────────────────────────────────────────────────────────────────
-window._openMapAperitivo  = function() { window._mapPreFilter = 'aperitivo';  switchView('mappa'); };
-window._openMapVino       = function() { window._mapPreFilter = 'vino';       switchView('mappa'); };
-window._openMapSpiaggia   = function() { window._mapPreFilter = 'spiaggia';   switchView('mappa'); };
-window._openMapAttrazione = function() { window._mapPreFilter = 'attrazione'; switchView('mappa'); };
 
 // ─────────────────────────────────────────────────────────────────────────
 //  GEOTRACKER — Pub/Sub singleton (unico watchPosition condiviso)

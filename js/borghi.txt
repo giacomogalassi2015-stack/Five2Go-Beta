@@ -1,0 +1,38 @@
+<button class="home-pill home-pill--map" onclick="window.switchView('mappa')">
+          <span class="material-icons home-pill-icon">explore</span>
+          <span class="home-pill-label">${C.mapLabel}</span>
+        </button>
+
+
+
+
+
+
+
+          let mapAction = null;
+    if (isRistorantiView) mapAction = '_openMapAperitivo';
+    else if (isVinoView)  mapAction = '_openMapVino';
+    else if (isSpiaggiaView) mapAction = '_openMapSpiaggia';
+
+
+
+
+
+
+
+
+
+    const isAttrazioni = cardRenderer === window.attrazioniRenderer;
+    const mapAction    = isAttrazioni ? '_openMapAttrazione' : null;
+
+
+    mappa:    () => window.renderMappaInterattiva(),
+
+
+// ─────────────────────────────────────────────────────────────────────────
+//  MAP PRE-FILTER SHORTCUTS
+// ─────────────────────────────────────────────────────────────────────────
+window._openMapAperitivo  = function() { window._mapPreFilter = 'aperitivo';  switchView('mappa'); };
+window._openMapVino       = function() { window._mapPreFilter = 'vino';       switchView('mappa'); };
+window._openMapSpiaggia   = function() { window._mapPreFilter = 'spiaggia';   switchView('mappa'); };
+window._openMapAttrazione = function() { window._mapPreFilter = 'attrazione'; switchView('mappa'); };
