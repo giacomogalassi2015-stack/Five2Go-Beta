@@ -150,6 +150,7 @@ function _cleanupPreviousView() {
     if (mapRoot) mapRoot.remove();
     const chiccoFab = document.getElementById('chicco-fab-wrap');
     if (chiccoFab) chiccoFab.remove();
+    _dismissChiccoBubble();
     window._closeChiccoCard();
 }
 
@@ -2001,6 +2002,48 @@ function _injectChiccoFAB() {
                  id="chicco-fab-static" draggable="false">
         </button>`;
     document.body.appendChild(fab);
+
+    // ── Speech bubble di benvenuto ──
+    // La bubble è un elemento separato posizionato sopra Chicco,
+    // appesa al body (non al FAB) così non interferisce col tap su Chicco.
+    // Al click sulla bubble stessa → apre Chicco (come se fosse un'estensione del FAB).
+    const WELCOME_KEY = 'f2g_chicco_welcomed';
+    const isFirstVisit = !sessionStorage.getItem(WELCOME_KEY);
+    if (isFirstVisit) sessionStorage.setItem(WELCOME_KEY, '1');
+
+    const bubbleKey = isFirstVisit
+        ? 'chicco_bubble_welcome'
+        : _getChiccoBubbleKeyByTime();
+
+    // Rimuovi eventuale bubble precedente
+    document.getElementById('chicco-bubble')?.remove();
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chicco-bubble';
+    bubble.id = 'chicco-bubble';
+    bubble.textContent = window.t(bubbleKey);
+    // Click sulla bubble = click su Chicco
+    bubble.addEventListener('click', () => window.toggleChicco());
+    document.body.appendChild(bubble);
+
+    // Auto-dismiss dopo 6.5s (1.5s delay CSS + 5s visibile)
+    window._chiccoBubbleTimer = setTimeout(() => _dismissChiccoBubble(), 6500);
+}
+
+/** Restituisce la chiave chicco_bubble_* in base all'ora locale */
+function _getChiccoBubbleKeyByTime() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12)  return 'chicco_bubble_morning';
+    if (h >= 12 && h < 18) return 'chicco_bubble_afternoon';
+    return 'chicco_bubble_evening';
+}
+
+function _dismissChiccoBubble() {
+    clearTimeout(window._chiccoBubbleTimer);
+    const bubble = document.getElementById('chicco-bubble');
+    if (!bubble || bubble.classList.contains('bubble-out')) return;
+    bubble.classList.add('bubble-out');
+    setTimeout(() => bubble.remove(), 350);
 }
 
 async function _loadChiccoLottie() {
@@ -2018,10 +2061,19 @@ async function _loadChiccoLottie() {
 window.toggleChicco = async function() {
     if (document.getElementById('chicco-weather-card')) { window._closeChiccoCard(); return; }
 
+    // Dismiss la bubble se presente
+    _dismissChiccoBubble();
+
     window._haptic?.(10);
 
+    // ── Animate FAB out: shrink + fade verso la posizione della card ──
     const fabWrap = document.getElementById('chicco-fab-wrap');
-    if (fabWrap) fabWrap.style.display = 'none';
+    if (fabWrap) {
+        fabWrap.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease';
+        fabWrap.style.transform  = 'scale(0.3) translateY(-30px)';
+        fabWrap.style.opacity    = '0';
+        fabWrap.style.pointerEvents = 'none';
+    }
 
     const lottieData = await _loadChiccoLottie();
 
@@ -2095,15 +2147,32 @@ window.toggleChicco = async function() {
 window._closeChiccoCard = function() {
     if (_chiccoCardAnim) { try { _chiccoCardAnim.destroy(); } catch(e) {} _chiccoCardAnim = null; }
 
-    const fabWrap = document.getElementById('chicco-fab-wrap');
-    if (fabWrap) { fabWrap.style.display = ''; fabWrap.classList.remove('chicco-talking'); }
-
+    const fabWrap  = document.getElementById('chicco-fab-wrap');
     const card     = document.getElementById('chicco-weather-card');
     const backdrop = document.getElementById('chicco-card-backdrop');
-    if (card) {
-        Object.assign(card.style, { transition: 'opacity 0.18s ease, transform 0.18s ease', opacity: '0', transform: 'translateY(8px) scale(0.96)' });
-        setTimeout(() => card.remove(), 200);
+
+    // ── Tutto parte nello stesso frame ──
+    // Card: fade-out + slide giù (250ms)
+    // FAB:  spring-back elastico (450ms, parte da scale 0.3)
+    // Il FAB è più lento della card → l'occhio segue il movimento
+    // di Chicco che "atterra" mentre la card è già svanita.
+    if (fabWrap) {
+        fabWrap.classList.remove('chicco-talking');
+        fabWrap.style.transition = 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease';
+        fabWrap.style.transform  = '';
+        fabWrap.style.opacity    = '';
+        fabWrap.style.pointerEvents = '';
     }
+
+    if (card) {
+        Object.assign(card.style, {
+            transition: 'opacity 0.25s ease, transform 0.25s cubic-bezier(0.4,0,0.2,1)',
+            opacity: '0',
+            transform: 'translateY(12px) scale(0.95)'
+        });
+        setTimeout(() => card.remove(), 280);
+    }
+
     backdrop?.remove();
 };
 
