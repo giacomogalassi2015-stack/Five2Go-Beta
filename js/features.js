@@ -1292,10 +1292,15 @@ window.renderCinqueTerreTrenoCard = function() {
                 </div>
             </div>
 
-            <button onclick="window.open('https://card.parconazionale5terre.it/en/cartatreno', '_blank')" class="w-full py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm">
-                <span class="material-icons text-[16px] text-slate-500">picture_as_pdf</span>
+            <button onclick="window._toggleCTCalendar()" 
+                class="w-full py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
+                id="ct-calendar-toggle-btn">
+                <span class="material-icons text-[16px] text-slate-500" id="ct-calendar-toggle-icon">expand_more</span>
                 ${L.btn_calendar}
             </button>
+
+            <!-- Calendario interattivo inline (hidden by default) -->
+            <div id="ct-calendar-container" class="hidden mt-3"></div>
         </div>
 
         <div class="bg-sky-50 rounded-2xl shadow-sm border border-sky-100 p-5 mb-3">
@@ -1327,6 +1332,184 @@ window.renderCinqueTerreTrenoCard = function() {
             ${L.official_site}
         </button>
     </div>`;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  8b. CINQUE TERRE CARD — CALENDARIO FASCE INTERATTIVO
+//  Dataset estratto dal PDF ufficiale PN5T 2026 (Carte Multiservizi 1 giorno).
+//  Fascia per giorno: A=verde (bassa), B=giallo (media), C=rosso (alta).
+//  Periodo: 14 marzo - 1 novembre 2026.
+// ─────────────────────────────────────────────────────────────────────────────
+
+(function() {
+    // Default = A (verde). Override solo B e C.
+    // Fonte: mappatura manuale da PDF ufficiale PN5T "Carte Multiservizi 1 giorno" 2026.
+    const _B = new Set(['2026-04-02','2026-04-03','2026-04-07','2026-04-08','2026-04-09','2026-04-10','2026-04-11','2026-04-12','2026-04-18','2026-04-19','2026-04-24','2026-04-27','2026-04-28','2026-04-29','2026-04-30','2026-05-08','2026-05-09','2026-05-10','2026-05-15','2026-05-16','2026-05-17','2026-05-22','2026-05-23','2026-05-24','2026-05-29','2026-06-03','2026-06-04','2026-06-06','2026-06-07','2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12','2026-06-13','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19','2026-06-20','2026-06-21','2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-29','2026-06-30','2026-07-01','2026-07-02','2026-07-03','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-13','2026-07-14','2026-07-15','2026-07-16','2026-07-17','2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24','2026-07-28','2026-07-29','2026-07-30','2026-07-31','2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07','2026-08-10','2026-08-11','2026-08-12','2026-08-13','2026-08-17','2026-08-18','2026-08-19','2026-08-20','2026-08-21','2026-08-24','2026-08-25','2026-08-26','2026-08-27','2026-08-28','2026-08-31','2026-09-01','2026-09-02','2026-09-03','2026-09-04','2026-09-05','2026-09-06','2026-09-07','2026-09-08','2026-09-09','2026-09-10','2026-09-11','2026-09-12','2026-09-13','2026-09-14','2026-09-15','2026-09-16','2026-09-17','2026-09-18','2026-09-19','2026-09-20','2026-09-21','2026-09-22','2026-09-23','2026-09-24','2026-09-25','2026-09-26','2026-09-27','2026-09-28','2026-09-29','2026-09-30','2026-10-03','2026-10-04','2026-10-05','2026-10-10','2026-10-11','2026-10-30','2026-10-31','2026-11-01']);
+    const _C = new Set(['2026-04-04','2026-04-05','2026-04-06','2026-04-25','2026-04-26','2026-05-01','2026-05-02','2026-05-03','2026-05-30','2026-05-31','2026-06-01','2026-06-02','2026-06-05','2026-06-27','2026-06-28','2026-07-04','2026-07-05','2026-07-11','2026-07-12','2026-07-18','2026-07-19','2026-07-25','2026-07-26','2026-07-27','2026-08-01','2026-08-02','2026-08-08','2026-08-09','2026-08-14','2026-08-15','2026-08-16','2026-08-22','2026-08-23','2026-08-29','2026-08-30']);
+
+    // Periodo coperto
+    const START = new Date(2026, 2, 14); // 14 marzo
+    const END   = new Date(2026, 10, 1); // 1 novembre
+
+    window._getCTBand = function(dateISO) {
+        const d = new Date(dateISO + 'T00:00:00');
+        if (d < START || d > END) return null;
+        if (_C.has(dateISO)) return 'C';
+        if (_B.has(dateISO)) return 'B';
+        return 'A';
+    };
+})();
+
+// Mesi localizzati per il calendario
+const _CT_CAL_MONTHS = {
+    it: ['Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre'],
+    en: ['March','April','May','June','July','August','September','October','November'],
+    fr: ['Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre'],
+    de: ['März','April','Mai','Juni','Juli','August','September','Oktober','November'],
+    es: ['Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre'],
+    zh: ['三月','四月','五月','六月','七月','八月','九月','十月','十一月']
+};
+const _CT_CAL_DAYS = {
+    it: ['L','M','M','G','V','S','D'],
+    en: ['M','T','W','T','F','S','S'],
+    fr: ['L','M','M','J','V','S','D'],
+    de: ['M','D','M','D','F','S','S'],
+    es: ['L','M','X','J','V','S','D'],
+    zh: ['一','二','三','四','五','六','日']
+};
+
+// Stato calendario
+window._ctCalMonth = null; // indice 0=marzo, 1=aprile...
+
+/** Toggle apertura/chiusura calendario */
+window._toggleCTCalendar = function() {
+    const container = document.getElementById('ct-calendar-container');
+    const icon      = document.getElementById('ct-calendar-toggle-icon');
+    if (!container) return;
+
+    if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        if (icon) icon.textContent = 'expand_less';
+        // Inizia dal mese corrente se nel range, altrimenti aprile
+        const now   = new Date();
+        const month = now.getMonth(); // 0-indexed
+        if (month >= 2 && month <= 10) { // marzo(2) - novembre(10)
+            window._ctCalMonth = month - 2; // indice interno (0=marzo)
+        } else {
+            window._ctCalMonth = 1; // aprile come default
+        }
+        window._renderCTCalendar();
+        setTimeout(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+    } else {
+        container.classList.add('hidden');
+        if (icon) icon.textContent = 'expand_more';
+    }
+};
+
+/** Render del calendario per il mese corrente */
+window._renderCTCalendar = function() {
+    const container = document.getElementById('ct-calendar-container');
+    if (!container) return;
+
+    const lang   = window.currentLang || 'it';
+    const idx    = window._ctCalMonth;
+    const months = _CT_CAL_MONTHS[lang] || _CT_CAL_MONTHS.en;
+    const days   = _CT_CAL_DAYS[lang]   || _CT_CAL_DAYS.en;
+
+    // Mese reale: marzo=2 + idx
+    const realMonth = 2 + idx; // 0-indexed JS (2=marzo, 3=aprile, ...)
+    const year      = 2026;
+    const firstDay  = new Date(year, realMonth, 1).getDay(); // 0=dom
+    const mondayStart = (firstDay + 6) % 7; // 0=lunedì
+    const daysInMonth = new Date(year, realMonth + 1, 0).getDate();
+
+    // Griglia celle
+    let cells = '';
+    // Celle vuote prima del primo giorno
+    for (let i = 0; i < mondayStart; i++) {
+        cells += `<div class="w-full aspect-square"></div>`;
+    }
+    // Giorni del mese
+    const today = new Date().toISOString().split('T')[0];
+    for (let d = 1; d <= daysInMonth; d++) {
+        const iso  = `${year}-${String(realMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const band = window._getCTBand(iso);
+        const isToday = iso === today;
+
+        let bgClass = 'bg-slate-50 text-slate-300';  // fuori periodo
+        let dotColor = '';
+        if (band === 'A') { bgClass = 'bg-emerald-50 text-emerald-800'; dotColor = '#10b981'; }
+        if (band === 'B') { bgClass = 'bg-amber-50 text-amber-800';     dotColor = '#f59e0b'; }
+        if (band === 'C') { bgClass = 'bg-rose-50 text-rose-800';       dotColor = '#e11d48'; }
+
+        const todayRing = isToday ? 'ring-2 ring-slate-800 ring-offset-1' : '';
+
+        cells += `<div class="w-full aspect-square rounded-lg flex flex-col items-center justify-center ${bgClass} ${todayRing} transition-colors">
+            <span class="text-xs font-bold leading-none">${d}</span>
+            ${dotColor ? `<span class="w-1.5 h-1.5 rounded-full mt-0.5" style="background:${dotColor};"></span>` : ''}
+        </div>`;
+    }
+
+    const canPrev = idx > 0;
+    const canNext = idx < 8; // 0=marzo ... 8=novembre
+
+    container.innerHTML = `
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <!-- Header mese con navigazione -->
+            <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
+                <button onclick="window._ctCalNav(-1)" 
+                    class="w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 transition-transform ${canPrev ? 'text-slate-600 hover:bg-slate-200' : 'text-slate-300 pointer-events-none'}"
+                    ${canPrev ? '' : 'disabled'}>
+                    <span class="material-icons text-lg">chevron_left</span>
+                </button>
+                <span class="text-sm font-bold text-slate-800 uppercase tracking-wide">${months[idx]} 2026</span>
+                <button onclick="window._ctCalNav(1)" 
+                    class="w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 transition-transform ${canNext ? 'text-slate-600 hover:bg-slate-200' : 'text-slate-300 pointer-events-none'}"
+                    ${canNext ? '' : 'disabled'}>
+                    <span class="material-icons text-lg">chevron_right</span>
+                </button>
+            </div>
+
+            <!-- Giorni della settimana -->
+            <div class="grid grid-cols-7 gap-1 px-3 pt-2 pb-1">
+                ${days.map(d => `<div class="text-center text-[10px] font-bold text-slate-400 uppercase">${d}</div>`).join('')}
+            </div>
+
+            <!-- Griglia giorni -->
+            <div class="grid grid-cols-7 gap-1 px-3 pb-3">
+                ${cells}
+            </div>
+
+            <!-- Legenda compatta sotto il calendario -->
+            <div class="flex items-center justify-center gap-4 px-3 py-2.5 bg-slate-50 border-t border-slate-100">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span class="text-[10px] font-bold text-slate-500">A</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                    <span class="text-[10px] font-bold text-slate-500">B</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full" style="background:#e11d48;"></span>
+                    <span class="text-[10px] font-bold text-slate-500">C</span>
+                </div>
+            </div>
+
+            <!-- Banner: calendario basato su card 1 giorno -->
+            <div class="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border-t border-amber-100">
+                <span class="material-icons text-amber-500 text-sm shrink-0 mt-0.5">info</span>
+                <p class="text-[10px] text-amber-700 leading-snug">
+                    ${window.t('ct_cal_1day_note')}
+                </p>
+            </div>
+        </div>`;
+};
+
+/** Naviga avanti/indietro di un mese */
+window._ctCalNav = function(dir) {
+    window._ctCalMonth = Math.max(0, Math.min(8, window._ctCalMonth + dir));
+    window._renderCTCalendar();
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
