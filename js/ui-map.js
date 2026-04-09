@@ -63,26 +63,93 @@ const MOCK_DATA = [
             margin-right:12px !important; margin-bottom:12px !important;
         }
         #map-leaflet .leaflet-control-zoom a {
-            width:36px !important; height:36px !important; line-height:36px !important;
+            width:40px !important; height:40px !important; line-height:40px !important;
             font-size:18px !important; font-weight:800 !important;
-            color:#264653 !important; background:white !important; border:none !important;
+            color:#264653 !important; background:rgba(255,255,255,0.95) !important;
+            backdrop-filter:blur(12px) !important; border:none !important;
         }
-        #map-leaflet .leaflet-control-zoom a:hover { background:#F4F1DE !important; }
+        #map-leaflet .leaflet-control-zoom a:hover { background:white !important; }
 
-        /* Pin marker */
-        .map-pin-wrap { display:flex; flex-direction:column; align-items:center; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.25)); }
-        .map-pin-head {
-            width:40px; height:40px; border-radius:50% 50% 50% 4px;
-            transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; border:2.5px solid;
+        /* ── Marker dot compatto (stile Apple Maps) ──
+           Cerchio colorato con icona categoria. Nessun testo sulla mappa
+           per evitare sovrapposizione con i label delle vie.
+           Al tap → detail card in basso con tutte le info. */
+        .map-dot-marker {
+            width:30px; height:30px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            border:2.5px solid white;
+            box-shadow:0 2px 8px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.06);
+            cursor:pointer;
+            transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
         }
-        .map-pin-emoji { transform:rotate(45deg); line-height:1; }
-        .map-pin-tail  { width:3px; height:6px; border-radius:0 0 3px 3px; margin-top:-1px; opacity:0.5; }
+        .map-dot-marker:hover, .map-dot-marker:active {
+            transform:scale(1.25);
+            box-shadow:0 4px 16px rgba(0,0,0,0.3), 0 0 0 2px rgba(255,255,255,0.8);
+        }
+        .map-dot-marker .material-icons {
+            font-size:14px; color:white; line-height:1;
+            filter:drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+        }
 
-        /* Bottom sheet draggable */
+        /* ── Chip scroll containers — lock vertical scroll ── */
+        .chip-scroll-row {
+            display:flex; gap:8px;
+            overflow-x:auto; overflow-y:hidden;
+            -webkit-overflow-scrolling:touch;
+            touch-action: pan-x;          /* BLOCCA scroll verticale sulle chip */
+            overscroll-behavior-x: contain; /* non propaga alla mappa */
+            scrollbar-width:none;
+            margin:0 -16px; padding:0 16px;
+            /* Fade edges */
+            mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 24px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 24px), transparent 100%);
+        }
+        .chip-scroll-row::-webkit-scrollbar { display:none; }
+
+        /* ── Vignette overlay — incornicia la mappa ── */
+        #map-vignette {
+            position:absolute; inset:0; z-index:150;
+            pointer-events:none;
+            background:
+                radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.06) 100%);
+            mix-blend-mode:multiply;
+        }
+
+        /* ── Bottom controls — unified pill bar ── */
+        #map-bottom-bar {
+            position:absolute; z-index:600;
+            bottom:16px; left:50%; transform:translateX(-50%);
+            display:flex; align-items:center; gap:1px;
+            background:rgba(255,255,255,0.92);
+            backdrop-filter:blur(16px) saturate(160%);
+            -webkit-backdrop-filter:blur(16px) saturate(160%);
+            border-radius:50px;
+            box-shadow:0 4px 24px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.06);
+            border:1px solid rgba(255,255,255,0.6);
+            padding:4px;
+            transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #map-bottom-bar button {
+            display:flex; align-items:center; justify-content:center; gap:4px;
+            padding:8px 14px; border-radius:50px; border:none;
+            background:transparent; cursor:pointer;
+            font-size:11px; font-weight:800; color:#475569;
+            text-transform:uppercase; letter-spacing:0.06em;
+            transition:all 0.2s ease;
+            -webkit-tap-highlight-color:transparent;
+        }
+        #map-bottom-bar button:active { transform:scale(0.92); }
+        #map-bottom-bar button.bar-active {
+            background:#264653; color:white;
+            box-shadow:0 2px 8px rgba(38,70,83,0.3);
+        }
+        #map-bottom-bar .material-icons { font-size:16px; }
+
+        /* ── Bottom sheet ── */
         #map-sheet {
             position: fixed;
             left: 0; right: 0;
-            bottom: 0;             /* fullscreen — no navbar */
+            bottom: 0;
             z-index: 1000;
             touch-action: none;
             will-change: transform;
@@ -283,8 +350,8 @@ window.renderMappaInterattiva = async function() {
                     </div>
                 </div>
 
-                <!-- Borgo chips — glass su sfondo scuro -->
-                <div class="flex gap-2 overflow-x-auto no-scrollbar" style="margin:0 -16px; padding:0 16px;">
+                <!-- Borgo chips — scroll orizzontale bloccato verticalmente -->
+                <div class="chip-scroll-row">
                     <button data-borgo="Tutti"
                         class="borgo-chip active flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-bold bg-white text-slate-800 shadow-md border border-white/50"
                         onclick="window.mapFlyTo('Tutti', this)">
@@ -302,8 +369,8 @@ window.renderMappaInterattiva = async function() {
                     }).join('')}
                 </div>
 
-                <!-- Category toggles -->
-                <div class="mt-2 flex gap-1.5 overflow-x-auto no-scrollbar" style="margin:0 -16px; padding:0 16px;">
+                <!-- Category toggles — scroll orizzontale bloccato verticalmente -->
+                <div class="chip-scroll-row mt-2" style="gap:6px;">
                     <button data-cat="Tutte"
                         class="cat-toggle active flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold text-white border border-transparent shadow-sm"
                         style="background:#E76F51;"
@@ -321,50 +388,43 @@ window.renderMappaInterattiva = async function() {
             </div>
         </div>
 
-        <!-- Mappa Leaflet — copre tutto, il top viene settato via JS -->
+        <!-- Mappa Leaflet -->
         <div id="map-leaflet"
             style="position:absolute; top:0; left:0; right:0; bottom:0; z-index:100;">
         </div>
 
-        <div id="map-bottom-controls" style="position:absolute; z-index:600; bottom:16px; left:12px; display:flex; gap:8px; align-items:center;
-                    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);">
+        <!-- Vignette overlay — incornicia la mappa con profondità -->
+        <div id="map-vignette"></div>
 
-            <button id="map-list-toggle"
-                onclick="window.mapToggleList()"
-                class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full pl-2.5 pr-3 py-1.5 shadow-md border border-slate-100 active:scale-95 transition-transform">
-                <span class="material-icons text-ct-terracotta text-sm" id="map-list-toggle-icon">list</span>
-                <span class="text-[11px] font-black text-slate-600 uppercase tracking-widest" id="map-list-toggle-label">Lista</span>
+        <!-- ── Bottom controls — barra unificata centrata (stile Uber/Google Maps) ── -->
+        <div id="map-bottom-bar">
+            <button id="map-list-toggle" onclick="window.mapToggleList()">
+                <span class="material-icons" id="map-list-toggle-icon">list</span>
+                <span id="map-list-toggle-label">Lista</span>
             </button>
-
-            <button id="map-gps-btn"
-                onclick="window.mapToggleGPS()"
-                class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full pl-2.5 pr-3 py-1.5 shadow-md border border-slate-100 active:scale-95 transition-transform"
-                title="Mostra posizione GPS">
-                <span class="material-icons text-slate-600 text-sm" id="map-gps-icon">my_location</span>
-                <span class="text-[11px] font-black text-slate-600 uppercase tracking-widest" id="map-gps-label">GPS</span>
+            <button id="map-gps-btn" onclick="window.mapToggleGPS()" title="GPS">
+                <span class="material-icons" id="map-gps-icon">my_location</span>
+                <span id="map-gps-label">GPS</span>
             </button>
-
-            <button id="map-legend-btn"
-                onclick="window.mapToggleLegend()"
-                class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full pl-2.5 pr-3 py-1.5 shadow-md border border-slate-100 active:scale-95 transition-transform">
-                <span class="material-icons text-slate-600 text-sm">info_outline</span>
-                <span class="text-[11px] font-black text-slate-600 uppercase tracking-widest">Legenda</span>
+            <button id="map-legend-btn" onclick="window.mapToggleLegend()">
+                <span class="material-icons">info_outline</span>
+                <span>Info</span>
             </button>
         </div>
 
         <div id="map-legend-wrap"
-            style="position:absolute; z-index:600; bottom:52px; left:12px;
+            style="position:absolute; z-index:600; bottom:64px; left:50%; transform:translateX(-50%);
                    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);">
             <button id="map-legend-btn-ghost" style="display:none;"></button>
             <div id="map-legend-panel"
-                class="hidden absolute bottom-0 left-0 bg-white/97 backdrop-blur rounded-2xl shadow-xl border border-slate-100 p-3 min-w-[140px]"
+                class="hidden bg-white/97 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-100 p-4 min-w-[180px]"
                 style="animation: slideUpSheet 0.2s cubic-bezier(0.2,0.8,0.2,1) forwards;">
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Legenda</div>
                 ${Object.entries(CATEGORIE).map(([k,c]) => `
-                <div class="flex items-center gap-2 py-1">
-                    <span class="material-icons text-[18px] leading-none" style="color:${c.color}">${c.icon}</span>
-                    <span class="text-xs font-bold text-slate-700">${c.label}</span>
-                    <span class="ml-auto w-3 h-3 rounded-full flex-shrink-0 border-2"
-                        style="background:${c.markerBg}; border-color:${c.markerBorder};"></span>
+                <div class="flex items-center gap-2.5 py-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${c.color};"></span>
+                    <span class="material-icons text-[16px] leading-none" style="color:${c.color}">${c.icon}</span>
+                    <span class="text-xs font-semibold text-slate-700">${c.label}</span>
                 </div>`).join('')}
             </div>
         </div>
@@ -541,13 +601,10 @@ window._mapRenderMarkers = function() {
         const cfg  = CATEGORIE[item.categoria] || CATEGORIE.attrazione;
         const icon = L.divIcon({
             className: '',
-            html: `<div class="map-pin-wrap">
-                <div class="map-pin-head" style="background:${cfg.markerBg}; border-color:${cfg.markerBorder};">
-                    <span class="map-pin-emoji material-icons" style="font-size:20px; color:${cfg.color};">${cfg.icon}</span>
-                </div>
-                <div class="map-pin-tail" style="background:${cfg.markerBorder};"></div>
+            html: `<div class="map-dot-marker" style="background:${cfg.color};">
+                <span class="material-icons">${cfg.icon}</span>
             </div>`,
-            iconSize:[40,52], iconAnchor:[20,52], popupAnchor:[0,-54],
+            iconSize:[30,30], iconAnchor:[15,15],
         });
         const marker = L.marker([item.lat, item.lon], { icon, zIndexOffset:400 }).addTo(map);
         marker.on('click', e => {
@@ -674,12 +731,12 @@ window._sheetInit = function() {
 
     // Helper: sincronizza posizione controlli con lo sheet
     window._sheetSyncControls = function(sheetTranslateY) {
-        const controls = document.getElementById('map-bottom-controls');
-        const legend   = document.getElementById('map-legend-wrap');
+        const bar    = document.getElementById('map-bottom-bar');
+        const legend = document.getElementById('map-legend-wrap');
         const visibleH = Math.max(0, window._sheetH - sheetTranslateY);
         const lift = visibleH > 10 ? visibleH + 8 : 0;
-        if (controls) controls.style.transform = lift > 0 ? `translateY(-${lift}px)` : '';
-        if (legend)   legend.style.transform   = lift > 0 ? `translateY(-${lift}px)` : '';
+        if (bar)    bar.style.transform = lift > 0 ? `translateX(-50%) translateY(-${lift}px)` : 'translateX(-50%)';
+        if (legend) legend.style.transform = lift > 0 ? `translateY(-${lift}px)` : '';
     };
 
     // ── TOUCH DRAG — solo per chiudere (swipe giù) ──
@@ -789,17 +846,17 @@ window._sheetSetSnap = function(snap, animate = true) {
 
 // Aggiorna aspetto toggle button
 function _sheetUpdateToggleBtn(isOpen) {
+    const btn = document.getElementById('map-list-toggle');
     const icon  = document.getElementById('map-list-toggle-icon');
     const label = document.getElementById('map-list-toggle-label');
-    const btn   = document.getElementById('map-list-toggle');
     if (isOpen) {
-        if (icon)  { icon.textContent = 'close'; icon.style.color = 'white'; }
-        if (label) { label.textContent = 'Chiudi'; label.style.color = 'white'; }
-        if (btn)   btn.style.background = '#264653';
+        if (icon)  icon.textContent = 'close';
+        if (label) label.textContent = 'Chiudi';
+        if (btn)   btn.classList.add('bar-active');
     } else {
-        if (icon)  { icon.textContent = 'list'; icon.style.color = ''; }
-        if (label) { label.textContent = 'Lista'; label.style.color = ''; }
-        if (btn)   btn.style.background = '';
+        if (icon)  icon.textContent = 'list';
+        if (label) label.textContent = 'Lista';
+        if (btn)   btn.classList.remove('bar-active');
     }
 }
 

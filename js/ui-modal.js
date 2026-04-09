@@ -3,7 +3,7 @@ try {
     if (!document.getElementById('f2g-modal-styles')) {
         const _s = document.createElement('style');
         _s.id = 'f2g-modal-styles';
-        _s.textContent = '@keyframes modalSheetUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:translateY(0)}}@keyframes modalSheetDown{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(100%)}}@keyframes modalBackdropOut{from{opacity:1}to{opacity:0}}.modal-sheet-enter{animation:modalSheetUp .3s cubic-bezier(.2,.8,.2,1) both}.modal-sheet-exit{animation:modalSheetDown .25s ease-in both}.modal-backdrop-exit{animation:modalBackdropOut .2s ease-in both}.modal-grab-handle{width:40px;height:6px;background:#cbd5e1;border-radius:9999px;transition:background .2s,width .2s}.modal-grab-handle.dragging{width:56px;background:#94a3b8}';
+        _s.textContent = '@keyframes modalSheetUp{from{opacity:0;transform:translateY(40px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes modalSheetDown{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(100%)}}@keyframes modalBackdropOut{from{opacity:1}to{opacity:0}}.modal-sheet-enter{animation:modalSheetUp .32s cubic-bezier(.2,.8,.2,1) both}.modal-sheet-exit{animation:modalSheetDown .25s ease-in both}.modal-backdrop-exit{animation:modalBackdropOut .2s ease-in both}';
         document.head.appendChild(_s);
     }
 } catch(e) { /* CSP o browser vecchio — le animazioni degradano graziosamente */ }
@@ -133,22 +133,19 @@ window.openModal = async function(type, payload) {
         reportBtnHtml = `<div class="px-5 pb-4 flex justify-start">${window.renderReportBtn(type, itemId, itemName)}</div>`;
     }
 
-    // Content Container: bottom-sheet mobile, centered card desktop
-    // Garantiamo che modal-sheet sia sempre presente (serve per lo swipe-down)
-    let modalClass = content.class || 'modal-sheet bg-white w-full max-w-md rounded-t-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden relative overflow-y-auto' +
-        ' ' + 'max-h-[95vh] max-h-[95dvh]';
+    // Content Container: bottom-sheet auto-sizing mobile, centered card desktop
+    // L'altezza si adatta al contenuto con max-h-[85vh] — schede piccole
+    // (farmacia) restano piccole, schede grandi (ristorante) usano più spazio.
+    let modalClass = content.class || 'modal-sheet bg-white w-full max-w-md rounded-t-[1.75rem] md:rounded-[2rem] shadow-2xl overflow-hidden relative overflow-y-auto' +
+        ' ' + 'max-h-[85vh] max-h-[85dvh]';
     if (!modalClass.includes('modal-sheet')) modalClass = 'modal-sheet ' + modalClass;
 
     const _closeLabel = (window.t ? window.t('close_label') : 'Close');
     
     modal.innerHTML = `
     <div class="${modalClass} modal-sheet-enter transform transition-all scale-100">
-        <!-- Grab handle: zona swipe-down + indicatore visivo -->
-        <div class="w-full flex justify-center pt-3 pb-1 md:hidden sticky top-0 z-30 bg-white cursor-grab" aria-hidden="true">
-            <div class="modal-grab-handle"></div>
-        </div>
-        <button class="absolute top-3 right-4 z-20 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-800 shadow-sm active:scale-90 transition-transform cursor-pointer touch-manipulation" onclick="this.closest('.fixed').remove()" aria-label="${_closeLabel}">
-            <span class="material-icons text-xl">close</span>
+        <button class="absolute top-3 right-4 z-20 w-9 h-9 bg-slate-100/90 backdrop-blur rounded-full flex items-center justify-center text-slate-500 shadow-sm active:scale-90 transition-transform cursor-pointer touch-manipulation" onclick="window._dismissModal(this.closest('.fixed'))" aria-label="${_closeLabel}">
+            <span class="material-icons" style="font-size:18px;">close</span>
         </button>
         ${content.html}
         ${reportBtnHtml}
