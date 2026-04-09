@@ -82,7 +82,7 @@ const MOCK_DATA = [
         #map-sheet {
             position: fixed;
             left: 0; right: 0;
-            bottom: 76px;          /* sopra la navbar */
+            bottom: 0;             /* fullscreen — no navbar */
             z-index: 1000;
             touch-action: none;
             will-change: transform;
@@ -214,11 +214,8 @@ window._mapMarkers      = [];
 window._mapAllData      = [];
 window._mapActiveCat    = 'Tutte';
 
-// Bottom sheet stato: 'peek' | 'half' | 'full'
-window._sheetState      = 'peek';
-window._sheetSnapPeek   = 0;    // calcolati dopo mount
-window._sheetSnapHalf   = 0;
-window._sheetSnapFull   = 0;
+// Bottom sheet stato: 'open' | 'closed'
+window._sheetState      = 'closed';
 
 // GPS tracking state
 window._gpsWatchId      = null;   // ID del watchPosition
@@ -242,77 +239,102 @@ window.renderMappaInterattiva = async function() {
     await window._mapLoadData();
 
     content.innerHTML = `
-    <div id="mappa-root" style="position:relative; height:calc(100vh - 80px); height:calc(100dvh - 80px); overflow:hidden;">
+    <div id="mappa-root" style="position:fixed; inset:0; z-index:40; overflow:hidden; background:#F4F1DE;">
 
-        <div id="map-header"
-            style="position:absolute; top:0; left:0; right:0; z-index:500;"
-            class="bg-gradient-to-br from-[#1a6e64] via-ct-blue to-[#0e5a52] px-4 pt-4 pb-9 overflow-hidden">
+        <!-- ══════════════════════════════════════════════════════
+             MAP HEADER — Teal gradient con profondità marina
+             Il teal scuro (#264653) è il colore brand principale,
+             richiama il mare delle Cinque Terre e crea contrasto
+             ottimale con chip glass e testo bianco (WCAG AAA).
+             ══════════════════════════════════════════════════════ -->
+        <div id="map-header" style="position:absolute; top:0; left:0; right:0; z-index:600;">
 
-            <div class="absolute inset-0 pointer-events-none overflow-hidden">
-                <div class="absolute -top-6 -right-6 w-36 h-36 rounded-full bg-white/5"></div>
-                <div class="absolute -bottom-4 left-4 w-24 h-24 rounded-full bg-ct-terracotta/15"></div>
-                <div class="absolute top-3 left-1/2 w-3 h-3 rounded-full bg-ct-yellow/70"></div>
-                <svg class="absolute bottom-0 left-0 right-0 w-full h-8" viewBox="0 0 400 32" preserveAspectRatio="none">
-                    <path d="M0,16 C60,0 120,32 180,16 C240,0 300,32 360,16 L400,16 L400,32 L0,32 Z" fill="rgba(255,255,255,0.07)"/>
+            <!-- Sfondo: gradiente teal con depth e un accento caldo -->
+            <div style="position:absolute; inset:0;
+                        background: linear-gradient(165deg, #1a3a42 0%, #264653 40%, #2A5260 75%, #2d6b5e 100%);
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 12px 32px rgba(38,70,83,0.25);
+                        overflow:hidden;">
+                <!-- Bagliore sottile in alto a destra — effetto luce naturale -->
+                <div style="position:absolute; top:-30px; right:-20px; width:140px; height:140px;
+                            border-radius:50%; background:radial-gradient(circle, rgba(233,196,106,0.12) 0%, transparent 70%);
+                            pointer-events:none;"></div>
+                <!-- Onda sottile al bordo inferiore -->
+                <svg style="position:absolute; bottom:0; left:0; right:0; height:6px;" viewBox="0 0 400 6" preserveAspectRatio="none">
+                    <path d="M0,3 C80,0 160,6 240,3 C320,0 400,6 400,3 L400,6 L0,6 Z" fill="rgba(255,255,255,0.06)"/>
                 </svg>
             </div>
 
-            <div class="relative z-10 flex items-start justify-between mb-3">
-                <div>
-                    <div class="flex items-center gap-2 mb-0.5">
-                        
-                        <h1 class="font-serif text-xl font-bold text-white tracking-tight drop-shadow-sm">Esplora i Borghi</h1>
+            <!-- Contenuto header -->
+            <div style="position:relative; z-index:1; padding: env(safe-area-inset-top, 12px) 16px 12px 16px;">
+
+                <!-- Riga top: back + titolo + counter -->
+                <div class="flex items-center gap-3 mb-3">
+                    <button id="map-back-btn" onclick="window.mapGoBack()"
+                        class="flex items-center justify-center w-9 h-9 rounded-xl active:scale-90 transition-all flex-shrink-0"
+                        style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.15);
+                               -webkit-tap-highlight-color:transparent; backdrop-filter:blur(8px);">
+                        <span class="material-icons text-white" style="font-size:20px;">arrow_back</span>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                        <h1 class="font-serif text-[17px] font-bold text-white tracking-tight leading-none drop-shadow-sm">${window.t('map_title')}</h1>
+                        <p class="text-[11px] font-semibold mt-1 leading-none" style="color:rgba(255,255,255,0.55);">
+                            <span id="map-result-count" class="font-black" style="color:#E9C46A;">0</span> ${window.t('map_count_label')}
+                        </p>
                     </div>
-                    <p class="text-white/60 text-[11px] font-medium pl-1">
-                        <span id="map-result-count" class="font-black text-white">0</span> posti in vista
-                    </p>
+                </div>
+
+                <!-- Borgo chips — glass su sfondo scuro -->
+                <div class="flex gap-2 overflow-x-auto no-scrollbar" style="margin:0 -16px; padding:0 16px;">
+                    <button data-borgo="Tutti"
+                        class="borgo-chip active flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-bold bg-white text-slate-800 shadow-md border border-white/50"
+                        onclick="window.mapFlyTo('Tutti', this)">
+                         Tutti
+                    </button>
+                    ${BORGHI_ORDER.map(b => {
+                        const col = BORGHI_COLORS[b] || '#264653';
+                        return `<button data-borgo="${b}"
+                            class="borgo-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-bold text-white border border-white/15"
+                            style="background:rgba(255,255,255,0.10); backdrop-filter:blur(8px);"
+                            onclick="window.mapFlyTo('${b}', this)">
+                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${col}; box-shadow:0 0 6px ${col}88;"></span>
+                            ${b}
+                        </button>`;
+                    }).join('')}
+                </div>
+
+                <!-- Category toggles -->
+                <div class="mt-2 flex gap-1.5 overflow-x-auto no-scrollbar" style="margin:0 -16px; padding:0 16px;">
+                    <button data-cat="Tutte"
+                        class="cat-toggle active flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold text-white border border-transparent shadow-sm"
+                        style="background:#E76F51;"
+                        onclick="window.mapSetCat('Tutte', this)">
+                         Tutte
+                    </button>
+                    ${Object.entries(CATEGORIE).map(([key,cfg]) => `
+                    <button data-cat="${key}"
+                        class="cat-toggle flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-white/80 border border-white/15"
+                        style="background:rgba(255,255,255,0.10); backdrop-filter:blur(8px);"
+                        onclick="window.mapSetCat('${key}', this)">
+                        <span class="material-icons text-[13px] leading-none" style="color:${cfg.color}; filter:brightness(1.3);">${cfg.icon}</span> ${cfg.label}
+                    </button>`).join('')}
                 </div>
             </div>
-
-            <div class="relative z-10 flex gap-2 overflow-x-auto no-scrollbar">
-                <button data-borgo="Tutti"
-                    class="borgo-chip active flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold bg-white text-slate-700 shadow-md border-2 border-white"
-                    onclick="window.mapFlyTo('Tutti', this)">
-                     Tutti
-                </button>
-                ${BORGHI_ORDER.map(b => {
-                    const col = BORGHI_COLORS[b] || '#264653';
-                    return `<button data-borgo="${b}"
-                        class="borgo-chip flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold bg-white/20 text-white border-2 border-white/25 backdrop-blur"
-                        onclick="window.mapFlyTo('${b}', this)">
-                        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${col}"></span>
-                        ${b}
-                    </button>`;
-                }).join('')}
-            </div>
-
-            <div class="relative z-10 mt-2.5 flex gap-1.5 overflow-x-auto no-scrollbar">
-                <button data-cat="Tutte"
-                    class="cat-toggle active flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-slate-800 text-white border-2 border-transparent"
-                    onclick="window.mapSetCat('Tutte', this)">
-                     Tutte
-                </button>
-                ${Object.entries(CATEGORIE).map(([key,cfg]) => `
-                <button data-cat="${key}"
-                    class="cat-toggle flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white/20 border-2 border-white/20 text-white backdrop-blur"
-                    onclick="window.mapSetCat('${key}', this)">
-                    <span class="material-icons text-[14px] leading-none">${cfg.icon}</span> ${cfg.label}
-                </button>`).join('')}
-            </div>
         </div>
 
+        <!-- Mappa Leaflet — copre tutto, il top viene settato via JS -->
         <div id="map-leaflet"
-            style="position:absolute; top:0; left:0; right:0; bottom:80px; z-index:100;">
+            style="position:absolute; top:0; left:0; right:0; bottom:0; z-index:100;">
         </div>
 
-        <div id="map-live-badge"
-            style="position:absolute; z-index:600; pointer-events:none; bottom:16px; right:12px;"
-            class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full px-2.5 py-1 shadow-md border border-slate-100">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></span>
-            <span class="text-[11px] font-black text-slate-700 uppercase tracking-widest">Live</span>
-        </div>
+        <div id="map-bottom-controls" style="position:absolute; z-index:600; bottom:16px; left:12px; display:flex; gap:8px; align-items:center;
+                    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);">
 
-        <div style="position:absolute; z-index:600; bottom:96px; left:12px; display:flex; gap:8px; align-items:center;">
+            <button id="map-list-toggle"
+                onclick="window.mapToggleList()"
+                class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full pl-2.5 pr-3 py-1.5 shadow-md border border-slate-100 active:scale-95 transition-transform">
+                <span class="material-icons text-ct-terracotta text-sm" id="map-list-toggle-icon">list</span>
+                <span class="text-[11px] font-black text-slate-600 uppercase tracking-widest" id="map-list-toggle-label">Lista</span>
+            </button>
 
             <button id="map-gps-btn"
                 onclick="window.mapToggleGPS()"
@@ -331,7 +353,8 @@ window.renderMappaInterattiva = async function() {
         </div>
 
         <div id="map-legend-wrap"
-            style="position:absolute; z-index:600; bottom:132px; left:12px;">
+            style="position:absolute; z-index:600; bottom:52px; left:12px;
+                   transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);">
             <button id="map-legend-btn-ghost" style="display:none;"></button>
             <div id="map-legend-panel"
                 class="hidden absolute bottom-0 left-0 bg-white/97 backdrop-blur rounded-2xl shadow-xl border border-slate-100 p-3 min-w-[140px]"
@@ -366,7 +389,7 @@ window.renderMappaInterattiva = async function() {
 
         <div id="map-detail-sheet"
             class="hidden"
-            style="position:fixed; bottom:80px; left:0; right:0; z-index:1100; padding:0 12px;">
+            style="position:fixed; bottom:0; left:0; right:0; z-index:1100; padding:0 12px 12px;">
 
             <div id="map-detail-card"
                 class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden relative">
@@ -442,13 +465,11 @@ window._mapInit = async function() {
     const mapEl = document.getElementById('map-leaflet');
     if (!mapEl) return;
 
-    // Sposta mappa sotto l'header e limita al di sopra del sheet peek
+    // Sposta mappa sotto l'header
     const header  = document.getElementById('map-header');
-    const headerH = header ? header.offsetHeight : 160;
+    const headerH = header ? header.offsetHeight : 120;
     mapEl.style.top    = headerH + 'px';
-    // bottom già fissato a 80px nell'HTML (sheet peek); lo confermiamo via JS
-    // così fitBounds/flyToBounds terrà conto dell'area realmente visibile
-    mapEl.style.bottom = '80px';
+    mapEl.style.bottom = '0';
 
     const map = L.map('map-leaflet', {
         zoomControl: false, attributionControl: false,
@@ -624,85 +645,102 @@ window._mapUpdateListFromBounds = function() {
     listEl.innerHTML = html;
 };
 
+
 // ---------------------------------------------------------------------------
-// BOTTOM SHEET — DRAG & SNAP
+// BOTTOM SHEET — APPROCCIO IBRIDO
+// Due stati: aperto (altezza fissa ~50vh) o chiuso (nascosto).
+// Il drag serve SOLO per chiudere (swipe giù) — niente snap multipli.
+// I controlli bottom seguono la posizione dello sheet in tempo reale.
 // ---------------------------------------------------------------------------
+const SHEET_OPEN_RATIO = 0.50;
+
 window._sheetInit = function() {
     const sheet     = document.getElementById('map-sheet');
     const handleBar = document.getElementById('map-sheet-handle-bar');
     if (!sheet || !handleBar) return;
 
-    // Calcola altezze snap in base alla viewport
-    const viewH     = window.innerHeight;
-    const navH      = 76;   // navbar
-    const available = viewH - navH;
+    const viewH  = window.innerHeight;
+    const sheetH = Math.round(viewH * SHEET_OPEN_RATIO);
+    sheet.style.height = sheetH + 'px';
 
-    // peek: solo handle + header lista visibile (80px)
-    // half: metà schermo (~40%)
-    // full: quasi tutto (~85%)
-    window._sheetSnapPeek = available - 80;
-    window._sheetSnapHalf = available * 0.55;
-    window._sheetSnapFull = available * 0.12;
+    window._sheetOpenY  = 0;
+    window._sheetCloseY = sheetH + 20;
+    window._sheetH      = sheetH;
 
-    // Imposta altezza fissa del sheet
-    sheet.style.height = available + 'px';
+    // Parte nascosto — mappa pulita, il pulsante "Lista" lo apre
+    sheet.style.transform = `translateY(${window._sheetCloseY}px)`;
+    sheet.classList.add('sheet-hidden');
+    window._sheetState = 'closed';
 
-    // Posizione iniziale: peek
-    window._sheetSetSnap('peek', false);
+    // Helper: sincronizza posizione controlli con lo sheet
+    window._sheetSyncControls = function(sheetTranslateY) {
+        const controls = document.getElementById('map-bottom-controls');
+        const legend   = document.getElementById('map-legend-wrap');
+        const visibleH = Math.max(0, window._sheetH - sheetTranslateY);
+        const lift = visibleH > 10 ? visibleH + 8 : 0;
+        if (controls) controls.style.transform = lift > 0 ? `translateY(-${lift}px)` : '';
+        if (legend)   legend.style.transform   = lift > 0 ? `translateY(-${lift}px)` : '';
+    };
 
-    // ── TOUCH DRAG ──
-    let startY    = 0;
-    let startTr   = 0;
-    let currentTr = window._sheetSnapPeek;
+    // ── TOUCH DRAG — solo per chiudere (swipe giù) ──
+    let startY = 0, startTr = 0, dragging = false;
 
-    function getTr() {
-        const t = sheet.style.transform;
-        const m = t.match(/translateY\(([0-9.]+)px\)/);
-        return m ? parseFloat(m[1]) : currentTr;
+    function getSheetY() {
+        const m = sheet.style.transform.match(/translateY\(([0-9.-]+)px\)/);
+        return m ? parseFloat(m[1]) : window._sheetCloseY;
     }
 
     handleBar.addEventListener('touchstart', e => {
-        startY  = e.touches[0].clientY;
-        startTr = getTr();
+        if (window._sheetState !== 'open') return;
+        startY = e.touches[0].clientY;
+        startTr = getSheetY();
+        dragging = true;
         sheet.classList.add('is-dragging');
-    }, { passive:true });
+    }, { passive: true });
 
     handleBar.addEventListener('touchmove', e => {
-        const dy  = e.touches[0].clientY - startY;
-        const newTr = Math.max(window._sheetSnapFull, Math.min(window._sheetSnapPeek, startTr + dy));
-        sheet.style.transform = `translateY(${newTr}px)`;
-    }, { passive:true });
+        if (!dragging) return;
+        const dy = e.touches[0].clientY - startY;
+        const newY = Math.max(window._sheetOpenY, startTr + dy);
+        sheet.style.transform = `translateY(${newY}px)`;
+        window._sheetSyncControls(newY);
+    }, { passive: true });
 
-    handleBar.addEventListener('touchend', e => {
+    handleBar.addEventListener('touchend', () => {
+        if (!dragging) return;
+        dragging = false;
         sheet.classList.remove('is-dragging');
-        const tr   = getTr();
-        const midPH = (window._sheetSnapPeek + window._sheetSnapHalf) / 2;
-        const midHF = (window._sheetSnapHalf + window._sheetSnapFull) / 2;
-
-        if (tr > midPH)       window._sheetSetSnap('peek');
-        else if (tr > midHF)  window._sheetSetSnap('half');
-        else                  window._sheetSetSnap('full');
-    }, { passive:true });
+        const currentY = getSheetY();
+        if (currentY > window._sheetH * 0.3) {
+            window._sheetClose();
+        } else {
+            window._sheetOpen(true);
+        }
+    }, { passive: true });
 
     // ── MOUSE DRAG (desktop) ──
     handleBar.addEventListener('mousedown', e => {
-        startY  = e.clientY;
-        startTr = getTr();
+        if (window._sheetState !== 'open') return;
+        startY = e.clientY;
+        startTr = getSheetY();
+        dragging = true;
         sheet.classList.add('is-dragging');
-
         const onMove = ev => {
-            const dy    = ev.clientY - startY;
-            const newTr = Math.max(window._sheetSnapFull, Math.min(window._sheetSnapPeek, startTr + dy));
-            sheet.style.transform = `translateY(${newTr}px)`;
+            if (!dragging) return;
+            const dy = ev.clientY - startY;
+            const newY = Math.max(window._sheetOpenY, startTr + dy);
+            sheet.style.transform = `translateY(${newY}px)`;
+            window._sheetSyncControls(newY);
         };
         const onUp = () => {
+            dragging = false;
             sheet.classList.remove('is-dragging');
-            const tr   = getTr();
-            const midPH = (window._sheetSnapPeek + window._sheetSnapHalf) / 2;
-            const midHF = (window._sheetSnapHalf + window._sheetSnapFull) / 2;
-            if (tr > midPH)       window._sheetSetSnap('peek');
-            else if (tr > midHF)  window._sheetSetSnap('half');
-            else                  window._sheetSetSnap('full');
+            const currentY = getSheetY();
+            if (currentY > window._sheetH * 0.3) {
+                window._sheetClose();
+            } else {
+                window._sheetOpen(true);
+            }
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
         };
@@ -711,39 +749,64 @@ window._sheetInit = function() {
     });
 };
 
-window._sheetSetSnap = function(snap, animate = true) {
+// Apri sheet a posizione fissa
+window._sheetOpen = function(animate = true) {
     const sheet = document.getElementById('map-sheet');
     if (!sheet) return;
-    window._sheetState = snap;
-    const tr = {
-        peek: window._sheetSnapPeek,
-        half: window._sheetSnapHalf,
-        full: window._sheetSnapFull,
-    }[snap] ?? window._sheetSnapPeek;
-
+    sheet.classList.remove('sheet-hidden');
+    window._sheetState = 'open';
     if (!animate) sheet.style.transition = 'none';
-    sheet.style.transform = `translateY(${tr}px)`;
+    sheet.style.transform = `translateY(${window._sheetOpenY}px)`;
     if (!animate) setTimeout(() => sheet.style.transition = '', 50);
-
-    // Aggiusta padding mappa in base allo snap
+    window._sheetSyncControls?.(window._sheetOpenY);
+    _sheetUpdateToggleBtn(true);
     const map = window._mapLeaflet;
     if (map) setTimeout(() => map.invalidateSize(), 350);
 };
 
-// Slide il list sheet fuori dallo schermo (verso il basso)
-window._sheetHide = function() {
+// Chiudi sheet (slide fuori)
+window._sheetClose = function(animate = true) {
     const sheet = document.getElementById('map-sheet');
     if (!sheet) return;
-    sheet.classList.add('sheet-hidden');
+    window._sheetState = 'closed';
+    if (!animate) sheet.style.transition = 'none';
+    sheet.style.transform = `translateY(${window._sheetCloseY}px)`;
+    if (!animate) setTimeout(() => sheet.style.transition = '', 50);
+    setTimeout(() => { if (window._sheetState === 'closed') sheet.classList.add('sheet-hidden'); }, 400);
+    window._sheetSyncControls?.(window._sheetCloseY);
+    _sheetUpdateToggleBtn(false);
 };
 
-// Ripristina il list sheet alla posizione peek
-window._sheetShow = function() {
-    const sheet = document.getElementById('map-sheet');
-    if (!sheet) return;
-    sheet.classList.remove('sheet-hidden');
-    // Forza snap peek per avere una posizione pulita
-    window._sheetSetSnap('peek');
+// Alias per compatibilità
+window._sheetHide = function() { window._sheetClose(true); };
+window._sheetShow = function() { window._sheetOpen(true); };
+
+// Vecchia _sheetSetSnap — redirect per compatibilità
+window._sheetSetSnap = function(snap, animate = true) {
+    if (snap === 'half' || snap === 'full') window._sheetOpen(animate);
+    else window._sheetClose(animate);
+};
+
+// Aggiorna aspetto toggle button
+function _sheetUpdateToggleBtn(isOpen) {
+    const icon  = document.getElementById('map-list-toggle-icon');
+    const label = document.getElementById('map-list-toggle-label');
+    const btn   = document.getElementById('map-list-toggle');
+    if (isOpen) {
+        if (icon)  { icon.textContent = 'close'; icon.style.color = 'white'; }
+        if (label) { label.textContent = 'Chiudi'; label.style.color = 'white'; }
+        if (btn)   btn.style.background = '#264653';
+    } else {
+        if (icon)  { icon.textContent = 'list'; icon.style.color = ''; }
+        if (label) { label.textContent = 'Lista'; label.style.color = ''; }
+        if (btn)   btn.style.background = '';
+    }
+}
+
+// Toggle pubblico
+window.mapToggleList = function() {
+    if (window._sheetState === 'open') window._sheetClose();
+    else window._sheetOpen();
 };
 
 // ---------------------------------------------------------------------------
@@ -785,13 +848,16 @@ function _showMapToast(msg) {
 
 // Chip borgo → fly-to (non filtra)
 window.mapFlyTo = function(borgo, btnEl) {
-    // Stile chip
+    // Reset tutte a stato inattivo — glass su sfondo scuro
     document.querySelectorAll('.borgo-chip').forEach(b => {
-        b.classList.remove('active','bg-white','text-slate-700','border-white','shadow-md');
-        b.classList.add('bg-white/20','text-white','border-white/25','backdrop-blur');
+        b.classList.remove('active','bg-white','text-slate-800','shadow-md','border-white/50');
+        b.classList.add('text-white','border-white/15');
+        b.style.background = 'rgba(255,255,255,0.10)';
     });
-    btnEl.classList.add('active','bg-white','text-slate-700','border-white','shadow-md');
-    btnEl.classList.remove('bg-white/20','text-white','border-white/25','backdrop-blur');
+    // Chip attiva — solida bianca, testo scuro
+    btnEl.classList.add('active','bg-white','text-slate-800','shadow-md','border-white/50');
+    btnEl.classList.remove('text-white','border-white/15');
+    btnEl.style.background = '';
 
     // ── Visual feedback during flyTo ──
     const toastLabel = borgo === 'Tutti' ? '🌊 Tutti i borghi' : `📍 ${borgo}`;
@@ -819,14 +885,17 @@ window.mapSetCat = function(cat, btnEl) {
     window._mapActiveCat = cat;
     const cfg = CATEGORIE[cat] || null;
 
+    // Reset tutte a stato inattivo — glass su sfondo scuro
     document.querySelectorAll('.cat-toggle').forEach(b => {
-        b.classList.remove('active','text-white','border-transparent');
-        b.style.background = '';
-        b.classList.add('bg-white/20','border-white/20','text-white');
+        b.classList.remove('active','border-transparent');
+        b.classList.add('text-white/80','border-white/15');
+        b.style.background = 'rgba(255,255,255,0.10)';
     });
-    btnEl.classList.add('active','text-white','border-transparent');
-    btnEl.classList.remove('bg-white/20','border-white/20','text-white');
-    btnEl.style.background = cfg ? cfg.color : '#1e293b';
+    // Toggle attivo — sfondo colore categoria solido
+    btnEl.classList.add('active','border-transparent');
+    btnEl.classList.remove('text-white/80','border-white/15');
+    btnEl.style.background = cfg ? cfg.color : '#E76F51';
+    btnEl.style.color = 'white';
 
     window.mapCloseDetail();
     window._mapRenderMarkers();

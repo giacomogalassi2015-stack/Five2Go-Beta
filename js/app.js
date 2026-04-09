@@ -103,6 +103,22 @@ window.changeLanguage = function(langCode) {
 function _applyViewBodyStyle(view) {
     const body          = document.body;
     const centerBtn     = document.getElementById('center-lang-btn-wrapper');
+    const nav           = document.getElementById('bottom-nav');
+
+    // ── Navbar: nascosta sulla mappa, visibile altrove ──
+    if (nav) {
+        if (view === 'mappa') {
+            nav.style.transition = 'transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease';
+            nav.style.transform  = 'translateY(120%)';
+            nav.style.opacity    = '0';
+            nav.style.pointerEvents = 'none';
+        } else {
+            nav.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease';
+            nav.style.transform  = '';
+            nav.style.opacity    = '';
+            nav.style.pointerEvents = '';
+        }
+    }
 
     if (view === 'home') {
         body.style.backgroundColor = '#0d1f18';
@@ -129,10 +145,31 @@ function _cleanupPreviousView() {
     document.querySelectorAll('.smart-filter-bar-container').forEach(el => el.remove());
     window._destroyScrollFABs?.();
     window._cleanupHomeOverscroll?.();
+    // Cleanup mappa fullscreen: rimuove il contenitore fixed se presente
+    const mapRoot = document.getElementById('mappa-root');
+    if (mapRoot) mapRoot.remove();
     const chiccoFab = document.getElementById('chicco-fab-wrap');
     if (chiccoFab) chiccoFab.remove();
     window._closeChiccoCard();
 }
+
+/** Torna alla home dalla mappa fullscreen */
+window.mapGoBack = function() {
+    const nav = document.getElementById('bottom-nav');
+    if (nav) {
+        nav.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease';
+        nav.style.transform  = '';
+        nav.style.opacity    = '';
+        nav.style.pointerEvents = '';
+    }
+    // Torna alla home (o alla view precedente nella history)
+    const prevState = history.state;
+    if (prevState && prevState.view && prevState.view !== 'mappa') {
+        switchView(prevState.view);
+    } else {
+        switchView('home', document.querySelector('.nav-item[onclick*="home"]'));
+    }
+};
 
 /** Aggiorna stato attivo nella nav bar */
 function _setActiveNav(view, el) {
@@ -173,6 +210,7 @@ const _VIEW_RENDERERS = {
 
    
     servizi:  () => renderServicesGrid(),
+    mappa:    () => window.renderMappaInterattiva(),
     wishlist: () => window.renderWishlist(),
     itinerary:() => window.renderWishlist(),   // v1.0 redirect silenzioso
     ct_card:  () => window.renderCinqueTerreCard(),
@@ -278,13 +316,18 @@ function renderHome() {
         </div>
       </div>
 
-      <div class="home-actions" style="display: flex; gap: 12px; width: 100%; justify-content: center; padding-bottom: 60px;">
+      <div class="home-actions" style="display: flex; gap: 10px; width: 100%; justify-content: center; padding-bottom: 60px;">
         
         <button class="home-pill home-pill--heart" style="flex: 1;" onclick="window.switchView('wishlist')">
           <span class="material-icons home-pill-icon">favorite</span>
           <span class="home-pill-label">${C.wishlistLabel}</span>
           <span class="home-pill-badge" data-home-badge="wishlist"
                 style="${wlCount > 0 ? '' : 'display:none'}">${wlCount}</span>
+        </button>
+
+        <button class="home-pill" style="flex: 1;" onclick="window.switchView('mappa')">
+          <span class="material-icons home-pill-icon" style="color:#2A9D8F;">map</span>
+          <span class="home-pill-label">${C.mapLabel}</span>
         </button>
         
         <button id="bump-lang-trigger" class="home-pill" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="window._toggleBumpLangPanel()">
