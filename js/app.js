@@ -1,4 +1,3 @@
-
 const content = document.getElementById('app-content');
 window.pendingMaps = [];
 
@@ -2448,44 +2447,79 @@ window.eseguiRicercaBus = async function() {
 window.eseguiRicercaTraghetto = async function() {
     const selPart = document.getElementById('selPartenzaFerry');
     const selArr  = document.getElementById('selArrivoFerry');
+    const selData = document.getElementById('selDataFerry');
     const selOra  = document.getElementById('selOraFerry');
     const resultsContainer = document.getElementById('ferryResultsContainer');
     const nextCard         = document.getElementById('nextFerryCard');
     const list             = document.getElementById('otherFerryList');
     if (!selPart.value || !selArr.value || !selOra.value) return;
 
+    // ── Caso 1: Corniglia non ha un molo ──
+    // Check client-side, zero latenza — il turista capisce subito perché.
+    if (selPart.value === 'corniglia' || selArr.value === 'corniglia') {
+        resultsContainer.style.display = 'block';
+        list.innerHTML = '';
+        nextCard.innerHTML = `<div class="text-center py-6 text-white">
+            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm border border-white/30">
+                <span class="material-icons text-3xl">location_off</span>
+            </div>
+            <strong class="block text-xl mb-1">Corniglia</strong>
+            <div class="opacity-90 text-sm px-4 leading-relaxed">${window.t('ferry_no_corniglia')}</div>
+        </div>`;
+        setTimeout(() => resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        return;
+    }
+
     resultsContainer.style.display = 'block';
     nextCard.innerHTML = `<div class="flex flex-col items-center justify-center py-8"><span class="material-icons spin text-3xl mb-2 opacity-80">sync</span><span class="text-sm font-bold uppercase tracking-widest opacity-80">${window.t('loading')}</span></div>`;
     list.innerHTML = '';
     setTimeout(() => resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 
-    const startCol   = selPart.value;
-    const endCol     = selArr.value;
-    const timeFilter = selOra.value;
+    // Chiama la RPC next_departures (nuova struttura DB normalizzata)
+    const { data, error } = await window.supabaseClient.rpc('next_departures', {
+        from_stop:   selPart.value,
+        to_stop:     selArr.value,
+        check_date:  selData.value,
+        check_time:  selOra.value + ':00',   // TIME vuole hh:mm:ss
+        max_results: 10
+    });
 
-    const { data, error } = await window.supabaseClient
-        .from('Orari_traghetti').select(`id, direzione, validita, "${startCol}", "${endCol}"`);
+    if (error || !data?.length) {
+        // ── Caso 2: diagnostica — la fermata è servita oggi? ──
+        // Rifacciamo la query con orario 00:00 per capire se esistono
+        // corse in QUALUNQUE momento della giornata per questa tratta.
+        const { data: allDay } = await window.supabaseClient.rpc('next_departures', {
+            from_stop:   selPart.value,
+            to_stop:     selArr.value,
+            check_date:  selData.value,
+            check_time:  '00:00:00',
+            max_results: 1
+        });
+        const stopNotServed = !allDay || allDay.length === 0;
+        const errIcon = stopNotServed ? 'event_busy' : 'directions_boat';
+        const errMsg  = stopNotServed
+            ? window.t('ferry_stop_not_served')
+            : window.t('bus_try_change');
 
-    const validRuns = (data || [])
-        .filter(row => {
-            const tS = row[startCol], tE = row[endCol];
-            return tS && tE && tS < tE && tS >= timeFilter;
-        })
-        .sort((a, b) => a[startCol].localeCompare(b[startCol]));
-
-    if (error || !validRuns.length) {
-        nextCard.innerHTML = `<div class="text-center py-6 text-white"><div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm border border-white/30"><span class="material-icons text-3xl">directions_boat</span></div><strong class="block text-xl mb-1">${window.t('bus_not_found')}</strong><div class="opacity-80 text-sm">Controlla se la tratta è diretta.</div></div>`;
+        nextCard.innerHTML = `<div class="text-center py-6 text-white">
+            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm border border-white/30">
+                <span class="material-icons text-3xl">${errIcon}</span>
+            </div>
+            <strong class="block text-xl mb-1">${window.t('bus_not_found')}</strong>
+            <div class="opacity-90 text-sm px-4 leading-relaxed">${errMsg}</div>
+        </div>`;
         return;
     }
 
-    const primo      = validRuns[0];
-    const successivi = validRuns.slice(1);
+    const primo      = data[0];
+    const successivi = data.slice(1);
+    const fmtTime    = t => (t || '').slice(0, 5);  // "09:35:00" → "09:35"
 
-    nextCard.innerHTML = `<div class="flex justify-between items-start mb-6"><span class="text-[11px] font-bold uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-lg bg-black/5">${window.t('next_departure')}</span><span></span></div><div class="flex items-end justify-between relative z-10"><div><div class="text-6xl font-serif font-bold text-white leading-none tracking-tight drop-shadow-md mb-1">${primo[startCol].slice(0,5)}</div><div class="text-sm font-bold text-cyan-100 uppercase tracking-widest pl-1">${window.t('departure')}</div></div><div class="text-right pb-1"><div class="text-2xl font-bold text-white/90 leading-none">${primo[endCol].slice(0,5)}</div><div class="text-[11px] font-bold text-cyan-100 uppercase tracking-widest opacity-80">${window.t('arrival')}</div></div></div><div class="mt-6 pt-4 border-t border-white/20 flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-icons text-white/80 text-sm">explore</span><span class="text-xs font-bold text-white uppercase tracking-wide">${window.t('direction_dir')} ${primo.direzione || window.t('coast')}</span></div></div><span class="material-icons absolute -right-6 -bottom-6 text-[140px] text-white opacity-10 rotate-[-10deg] pointer-events-none">sailing</span>`;
+    nextCard.innerHTML = `<div class="flex justify-between items-start mb-6"><span class="text-[11px] font-bold uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-lg bg-black/5">${window.t('next_departure')}</span><span></span></div><div class="flex items-end justify-between relative z-10"><div><div class="text-6xl font-serif font-bold text-white leading-none tracking-tight drop-shadow-md mb-1">${fmtTime(primo.departure_time)}</div><div class="text-sm font-bold text-cyan-100 uppercase tracking-widest pl-1">${window.t('departure')}</div></div><div class="text-right pb-1"><div class="text-2xl font-bold text-white/90 leading-none">${fmtTime(primo.arrival_time)}</div><div class="text-[11px] font-bold text-cyan-100 uppercase tracking-widest opacity-80">${window.t('arrival')}</div></div></div><div class="mt-6 pt-4 border-t border-white/20 flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-icons text-white/80 text-sm">explore</span><span class="text-xs font-bold text-white uppercase tracking-wide">${primo.route_name_it || ''}</span></div></div><span class="material-icons absolute -right-6 -bottom-6 text-[140px] text-white opacity-10 rotate-[-10deg] pointer-events-none">sailing</span>`;
 
     list.innerHTML = successivi.length === 0
         ? `<div class="text-center text-slate-400 text-xs py-4 font-bold uppercase tracking-widest">${window.t('last_run_day')}</div>`
-        : successivi.map(run => `<div class="group flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-md hover:border-cyan-100 cursor-default"><div class="flex items-center gap-4"><div class="flex flex-col"><span class="text-xl font-bold text-slate-700 leading-none group-hover:text-cyan-600 transition-colors">${run[startCol].slice(0,5)}</span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">${window.t('departure')}</span></div><span class="material-icons text-slate-400 text-sm opacity-40">arrow_forward</span><div class="flex flex-col"><span class="text-lg font-bold text-slate-500 leading-none">${run[endCol].slice(0,5)}</span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">${window.t('arrival')}</span></div></div><div class="bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm group-hover:bg-cyan-50 group-hover:border-cyan-100 transition-colors"><span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-cyan-600">Ferry</span></div></div>`).join('');
+        : successivi.map(run => `<div class="group flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-md hover:border-cyan-100 cursor-default"><div class="flex items-center gap-4"><div class="flex flex-col"><span class="text-xl font-bold text-slate-700 leading-none group-hover:text-cyan-600 transition-colors">${fmtTime(run.departure_time)}</span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">${window.t('departure')}</span></div><span class="material-icons text-slate-400 text-sm opacity-40">arrow_forward</span><div class="flex flex-col"><span class="text-lg font-bold text-slate-500 leading-none">${fmtTime(run.arrival_time)}</span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">${window.t('arrival')}</span></div></div><div class="bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm group-hover:bg-cyan-50 group-hover:border-cyan-100 transition-colors"><span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-cyan-600">Ferry</span></div></div>`).join('');
 };
 
 window.apriTrenitalia = function() { window.open('https://www.trenitalia.com', '_blank'); };
