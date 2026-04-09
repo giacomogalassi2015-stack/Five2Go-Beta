@@ -563,6 +563,59 @@
             background: rgba(255,255,255,0.30);
         }
 
+        /* ══════════════════════════════════════════════════════════
+           OVERSCROLL PEEK — Nav bar "sveglia" alla fine della home
+           Quando l'utente swipa verso l'alto dalla landing page,
+           la nav bar rivela tutte le label per invitare all'esplorazione.
+           Usato SOLO sulla home view, attivato via JS touch handler.
+           ══════════════════════════════════════════════════════════ */
+
+        /* Transizione base della nav — sempre attiva per smooth reset */
+        #bottom-nav {
+            transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1),
+                        box-shadow 0.4s ease;
+        }
+
+        /* Stato peek: nav si alza leggermente e prende presenza */
+        #bottom-nav.nav-peek {
+            transform: translateY(-6px);
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.06),
+                        0 8px 32px rgba(0,0,0,0.18);
+        }
+
+        /* Icone non-attive: salgono + ingrandiscono (come l'attiva) */
+        #bottom-nav.nav-peek .nav-item:not(.active) .material-icons {
+            transform: translateY(-8px) scale(1.1);
+            color: #64748b;  /* slate-500 — più visibile di slate-400 */
+            transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1),
+                        color 0.3s ease;
+        }
+
+        /* Label non-attive: appaiono con stagger via transition-delay */
+        #bottom-nav.nav-peek .nav-item:not(.active) .nav-label {
+            opacity: 1;
+            color: #64748b;
+            transition: opacity 0.35s ease;
+        }
+        /* Stagger: ogni label appare con un leggero ritardo per effetto "onda" */
+        #bottom-nav.nav-peek .nav-item:nth-child(2):not(.active) .nav-label { transition-delay: 0.04s; }
+        #bottom-nav.nav-peek .nav-item:nth-child(3):not(.active) .nav-label { transition-delay: 0.08s; }
+        #bottom-nav.nav-peek .nav-item:nth-child(4):not(.active) .nav-label { transition-delay: 0.12s; }
+
+        /* Quando nav-peek viene rimosso, le label svaniscono rapidamente */
+        #bottom-nav:not(.nav-peek) .nav-item:not(.active) .nav-label {
+            transition: opacity 0.2s ease;
+        }
+        #bottom-nav:not(.nav-peek) .nav-item:not(.active) .material-icons {
+            transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.05s,
+                        color 0.3s ease;
+        }
+
+        /* Elasticità del contenuto — applicata via JS inline transform */
+        #app-content.overscroll-active {
+            will-change: transform;
+        }
+
         /* ── Actions: 3 pill glass in basso ── */
         .home-actions {
             padding: 0 16px 28px;
