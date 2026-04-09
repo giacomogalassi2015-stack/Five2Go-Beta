@@ -1626,7 +1626,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateNavBar?.();
     switchView('home');
     window._initPullToRefresh();
-    window._showLangTooltipIfFirstVisit();
 });
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -2130,51 +2129,6 @@ window._closeBumpLangPanel = function() {
     }
     backdrop?.parentNode?.removeChild(backdrop);
     document.getElementById('bump-lang-trigger')?.setAttribute('aria-expanded', 'false');
-};
-
-// ─────────────────────────────────────────────────────────────────────────
-//  TOOLTIP FIRST-VISIT LINGUA
-// ─────────────────────────────────────────────────────────────────────────
-window._showLangTooltipIfFirstVisit = function() {
-    var STORAGE_KEY = 'five2go_lang_tooltip_seen';
-    if (localStorage.getItem(STORAGE_KEY)) return;
-
-    setTimeout(function() {
-        var trigger = document.getElementById('bump-lang-trigger');
-        if (!trigger) return;
-
-        var pulse = document.createElement('span');
-        pulse.className = 'lang-pulse-ring';
-        pulse.id = 'lang-pulse-ring';
-        var inner = trigger.querySelector('.lang-btn-inner');
-        if (inner) { inner.style.position = 'relative'; inner.appendChild(pulse); }
-        else        { trigger.style.position = 'relative'; trigger.appendChild(pulse); }
-
-        var tooltip = document.createElement('div');
-        tooltip.className = 'lang-first-tooltip';
-        tooltip.id = 'lang-first-tooltip';
-        tooltip.setAttribute('role', 'status');
-        tooltip.setAttribute('aria-live', 'polite');
-        tooltip.innerHTML = '<span class="material-icons">translate</span><span>Change language · Cambia lingua</span>';
-        document.body.appendChild(tooltip);
-
-        var dismissed = false;
-        function dismiss() {
-            if (dismissed) return;
-            dismissed = true;
-            localStorage.setItem(STORAGE_KEY, '1');
-            var tt = document.getElementById('lang-first-tooltip');
-            if (tt) { tt.style.animation = 'tooltipFadeOut 0.25s ease forwards'; setTimeout(function() { tt.parentNode?.removeChild(tt); }, 260); }
-            var pr = document.getElementById('lang-pulse-ring');
-            pr?.parentNode?.removeChild(pr);
-        }
-
-        tooltip.addEventListener('click', function() { dismiss(); window._toggleBumpLangPanel(); });
-        var autoTimer = setTimeout(dismiss, 6000);
-
-        var origToggle = window._toggleBumpLangPanel;
-        window._toggleBumpLangPanel = function() { dismiss(); clearTimeout(autoTimer); origToggle(); };
-    }, 1800);
 };
 
 // ─────────────────────────────────────────────────────────────────────────
