@@ -144,7 +144,7 @@ function _applyViewBodyStyle(view) {
 function _cleanupPreviousView() {
     document.querySelectorAll('.smart-filter-bar-container').forEach(el => el.remove());
     window._destroyScrollFABs?.();
-    window._cleanupHomeOverscroll?.();
+    window._cleanupOverscrollPeek?.();
     // Cleanup mappa fullscreen: rimuove il contenitore fixed se presente
     const mapRoot = document.getElementById('mappa-root');
     if (mapRoot) mapRoot.remove();
@@ -355,40 +355,28 @@ function renderHome() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-//  HOME OVERSCROLL → NAV PEEK
-//  Quando il turista è sulla landing page e swipa verso l'alto (cerca
-//  contenuto sotto che non c'è), diamo:
-//    1) Feedback elastico (rubber-band) sul contenuto — "la pagina finisce qui"
-//    2) La nav bar rivela tutte le label — "ma puoi esplorare queste sezioni!"
-//
-//  Perché: sulla home non c'è niente sotto, e non tutti gli utenti capiscono
-//  che la nav bar in basso è la navigazione principale. Questo gesto
-//  trasforma un momento di "stallo" in un invito all'esplorazione.
-//
-//  Meccanica touch:
-//    - touchstart: salva Y iniziale, controlla se siamo al fondo dello scroll
-//    - touchmove:  se al fondo + dito sale → translateY con damping ×0.3
-//                  oltre 40px di pull → attiva nav-peek
-//    - touchend:   spring-back animato, nav-peek resta ~2s poi svanisce
+//  OVERSCROLL → NAV PEEK (usato su TUTTE le view)
+//  Quando l'utente arriva in fondo allo scroll e continua a tirare:
+//    1) Feedback elastico (rubber-band) sul contenuto
+//    2) La nav bar rivela tutte le label delle sezioni
 // ─────────────────────────────────────────────────────────────────────────
-function _initHomeOverscroll() {
+function _initOverscrollPeek() {
     const content = document.getElementById('app-content');
     const nav     = document.getElementById('bottom-nav');
     if (!content || !nav) return;
 
-    // Cleanup precedente (se renderHome viene chiamata più volte)
-    window._cleanupHomeOverscroll?.();
+    // Cleanup precedente
+    window._cleanupOverscrollPeek?.();
 
     let startY       = 0;
     let isAtBottom    = false;
     let pulling       = false;
     let pullDistance   = 0;
     let peekTimeout   = null;
-    const THRESHOLD   = 40;   // px di pull prima di attivare nav-peek
-    const DAMPING     = 0.3;  // rubber-band: più tiri, più resiste
+    const THRESHOLD   = 40;
+    const DAMPING     = 0.3;
 
     function onTouchStart(e) {
-        // Siamo al fondo della scroll area? (con 2px di tolleranza per subpixel)
         isAtBottom = (content.scrollHeight - content.scrollTop - content.clientHeight) < 2;
         if (!isAtBottom) return;
         startY   = e.touches[0].clientY;
@@ -399,10 +387,9 @@ function _initHomeOverscroll() {
     function onTouchMove(e) {
         if (!isAtBottom) return;
         const currentY = e.touches[0].clientY;
-        const delta    = startY - currentY; // positivo = dito sale = pull verso l'alto
+        const delta    = startY - currentY;
 
         if (delta <= 0) {
-            // Dito va verso il basso = niente (è lo scroll up classico)
             if (pulling) _resetPull();
             return;
         }
@@ -410,17 +397,14 @@ function _initHomeOverscroll() {
         pulling = true;
         pullDistance = delta;
 
-        // Rubber-band: translateY negativo (contenuto sale) con damping
         const pull = Math.round(delta * DAMPING);
-        const maxPull = 60; // cap a 60px per non esagerare
+        const maxPull = 60;
         const clampedPull = Math.min(pull, maxPull);
         content.style.transform = `translateY(-${clampedPull}px)`;
         content.classList.add('overscroll-active');
 
-        // Superata la soglia → attiva nav-peek
         if (delta > THRESHOLD && !nav.classList.contains('nav-peek')) {
             nav.classList.add('nav-peek');
-            // Haptic feedback su dispositivi che lo supportano
             if (navigator.vibrate) navigator.vibrate(8);
         }
     }
@@ -429,8 +413,6 @@ function _initHomeOverscroll() {
         if (!pulling) return;
         _springBack();
 
-        // Se il peek è stato attivato, mantienilo per 2s poi rimuovilo
-        // così l'utente ha tempo di leggere le label
         if (nav.classList.contains('nav-peek')) {
             clearTimeout(peekTimeout);
             peekTimeout = setTimeout(() => {
@@ -444,17 +426,14 @@ function _initHomeOverscroll() {
     }
 
     function _springBack() {
-        // CSS transition gestisce l'animazione di ritorno (elastic easing)
         content.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
         content.style.transform  = '';
-        // Cleanup transition dopo che è finita
         const onEnd = () => {
             content.style.transition = '';
             content.classList.remove('overscroll-active');
             content.removeEventListener('transitionend', onEnd);
         };
         content.addEventListener('transitionend', onEnd, { once: true });
-        // Fallback se transitionend non scatta (es. transform era già '')
         setTimeout(onEnd, 600);
     }
 
@@ -465,13 +444,11 @@ function _initHomeOverscroll() {
         pullDistance = 0;
     }
 
-    // Registra touch listeners — passive:false per poter fare preventDefault se servisse
     content.addEventListener('touchstart', onTouchStart, { passive: true });
     content.addEventListener('touchmove',  onTouchMove,  { passive: true });
     content.addEventListener('touchend',   onTouchEnd,   { passive: true });
 
-    // Cleanup function per quando si cambia view
-    window._cleanupHomeOverscroll = function() {
+    window._cleanupOverscrollPeek = function() {
         content.removeEventListener('touchstart', onTouchStart);
         content.removeEventListener('touchmove',  onTouchMove);
         content.removeEventListener('touchend',   onTouchEnd);
@@ -480,9 +457,12 @@ function _initHomeOverscroll() {
         content.classList.remove('overscroll-active');
         nav.classList.remove('nav-peek');
         clearTimeout(peekTimeout);
-        window._cleanupHomeOverscroll = null;
+        window._cleanupOverscrollPeek = null;
     };
 }
+
+// Alias per compatibilità (la home la chiamava così)
+function _initHomeOverscroll() { _initOverscrollPeek(); }
 
 // ─────────────────────────────────────────────────────────────────────────
 //  SUBMENU (barra laterale a scomparsa)
@@ -541,6 +521,7 @@ window.renderSubMenu = function(options, defaultTable) {
     }, 3000);
 
     window._initScrollFABs?.();
+    _initOverscrollPeek();
 };
 
 window.toggleSideMenu = function() {
@@ -1199,6 +1180,8 @@ window.renderServicesGrid = async function() {
             </button>
         </div>
     </div>`;
+
+    _initOverscrollPeek();
 };
 
 window.renderSimpleList = function(tableName) {
