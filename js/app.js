@@ -490,63 +490,61 @@ function _initHomeOverscroll() {
 window.renderSubMenu = function(options, defaultTable) {
     window.currentMenuOptions = options;
 
-    const colorMap = {
-        orange: 'bg-white text-ct-terracotta border-orange-100 active:border-ct-terracotta shadow-sm',
-        yellow: 'bg-white text-yellow-700   border-yellow-100 active:border-ct-yellow shadow-sm',
-        red:    'bg-white text-red-800      border-red-100    active:border-red-400 shadow-sm',
-        blue:   'bg-white text-ct-blue      border-teal-100   active:border-ct-blue shadow-sm',
-        green:  'bg-white text-ct-green     border-green-100  active:border-ct-green shadow-sm',
+    // Colori originali dal vecchio side menu — white base con testo/bordo colorato
+    const chipColors = {
+        orange: { base: 'bg-white text-ct-terracotta border-orange-100', ring: 'ring-ct-terracotta' },
+        yellow: { base: 'bg-white text-yellow-700 border-yellow-100',    ring: 'ring-yellow-500' },
+        red:    { base: 'bg-white text-red-800 border-red-100',          ring: 'ring-red-400' },
+        blue:   { base: 'bg-white text-ct-blue border-teal-100',         ring: 'ring-ct-blue' },
+        green:  { base: 'bg-white text-ct-green border-green-100',       ring: 'ring-ct-green' },
     };
 
-    const buttonsHtml = options.map((opt, index) => {
-        const theme = colorMap[opt.color] || colorMap.blue;
-        const icon  = opt.icon || 'star';
-        return `
-        <button class="btn-pop-menu w-full px-3 py-2.5 rounded-2xl flex items-center gap-3 border transition-all duration-300 transform ${theme}"
-            data-table="${opt.table}" data-index="${index}"
-            onclick="window.loadTableData('${opt.table}', this); window.toggleSideMenu(false);">
-            <span class="material-icons text-xl opacity-80">${icon}</span>
-            <span class="text-xs font-bold uppercase tracking-wide text-left flex-1">${opt.label}</span>
+    const chipsHtml = options.map((opt, index) => {
+        const c    = chipColors[opt.color] || chipColors.blue;
+        const icon = opt.icon || 'star';
+        return `<button class="nav-tab-chip flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border shadow-sm transition-all active:scale-95 ${c.base}"
+            data-table="${opt.table}" data-index="${index}" data-ring="${c.ring}"
+            onclick="window.loadTableData('${opt.table}', this)">
+            <span class="material-icons text-sm opacity-80">${icon}</span>
+            <span>${opt.label}</span>
         </button>`;
     }).join('');
 
+    const dotsHtml = options.map((_, i) =>
+        `<span class="nav-tab-dot w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === 0 ? 'bg-slate-600 w-3' : 'bg-slate-300'}" data-dot="${i}"></span>`
+    ).join('');
+
     const content = document.getElementById('app-content');
     content.innerHTML = `
-    <div id="side-category-menu" class="fixed top-28 left-0 z-[80] flex transition-transform duration-300"
-         style="transform:translateX(0px);">
-        <div id="side-menu-panel"
-             class="bg-white/95 backdrop-blur-xl shadow-floating rounded-r-3xl p-3 flex flex-col gap-3 border-y border-r border-slate-200 min-w-[150px]">
-            ${buttonsHtml}
+    <div id="nav-tab-bar" class="z-[60] bg-ct-sand/95 backdrop-blur-lg border-b border-stone-200/50 pb-2 pt-2 -mx-4 px-4"
+         style="-webkit-backdrop-filter:blur(16px);">
+        <div class="overflow-x-auto no-scrollbar"
+             style="touch-action:pan-x; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; padding:6px 0;">
+            <div class="flex gap-2" style="width:fit-content; margin:0 auto; padding:0 8px;">
+                ${chipsHtml}
+            </div>
         </div>
-        <button onclick="window.toggleSideMenu()"
-                class="bg-white/95 backdrop-blur-xl shadow-[4px_4px_10px_rgba(0,0,0,0.1)] border-y border-r border-slate-200 rounded-r-2xl w-10 h-16 flex items-center justify-center -ml-1 mt-6 active:scale-95 transition-all outline-none touch-manipulation">
-            <span id="side-menu-arrow"
-                  class="material-icons text-slate-500 transition-transform duration-300"
-                  style="transform:rotate(180deg);">chevron_right</span>
-        </button>
+        <div class="flex items-center justify-center gap-1.5 pt-1.5">
+            ${dotsHtml}
+            <span class="text-[9px] font-semibold text-slate-400 ml-1.5 uppercase tracking-wider" id="swipe-hint">\u2190 swipe \u2192</span>
+        </div>
     </div>
-    <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-200 ease-out pt-6 px-2"></div>`;
+    <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-200 ease-out pt-3 px-2"></div>`;
 
     const defaultBtn = content.querySelector(`button[data-table="${defaultTable}"]`)
-                    || content.querySelector('.btn-pop-menu');
+                    || content.querySelector('.nav-tab-chip');
     if (defaultBtn) loadTableData(defaultBtn.getAttribute('data-table'), defaultBtn);
 
-    setTimeout(() => window.toggleSideMenu(false), 1500);
+    setTimeout(() => {
+        const hint = document.getElementById('swipe-hint');
+        if (hint) { hint.style.transition = 'opacity 0.5s'; hint.style.opacity = '0'; setTimeout(() => hint.remove(), 600); }
+    }, 3000);
+
     window._initScrollFABs?.();
 };
 
-window.toggleSideMenu = function(forceState) {
-    const menu  = document.getElementById('side-category-menu');
-    const panel = document.getElementById('side-menu-panel');
-    const arrow = document.getElementById('side-menu-arrow');
-    if (!menu || !panel) return;
-
-    const isClosed   = menu.style.transform.includes('translateX(-');
-    const shouldOpen = forceState !== undefined ? forceState : isClosed;
-    const panelWidth = panel.offsetWidth;
-
-    menu.style.transform = shouldOpen ? 'translateX(0px)' : `translateX(-${panelWidth - 2}px)`;
-    if (arrow) arrow.style.transform = shouldOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+window.toggleSideMenu = function() {
+    // Stub per compatibilità — il side menu non esiste più
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -635,17 +633,31 @@ window.loadTableData = async function(tableName, btnEl) {
     // Risolve bottone se chiamato dallo swipe (btnEl === null)
     if (!btnEl) btnEl = document.querySelector(`button[data-table="${tableName}"]`);
 
-    // Reset stile tutti i bottoni
+    // ── Reset tutte le chip ──
+    document.querySelectorAll('.nav-tab-chip').forEach(b => {
+        const idx = parseInt(b.dataset.index);
+        b.classList.remove('ring-2', 'ring-offset-1', 'scale-105', 'shadow-md');
+        b.style.opacity = '0.7';
+        // Reset dot
+        const dot = document.querySelector(`.nav-tab-dot[data-dot="${idx}"]`);
+        if (dot) { dot.className = 'nav-tab-dot w-1.5 h-1.5 rounded-full transition-all duration-300 bg-slate-300'; }
+    });
+    // Fallback per vecchio side menu (btn-pop-menu) se ancora presente
     document.querySelectorAll('.btn-pop-menu').forEach(b => {
         b.classList.remove('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105', 'shadow-md');
         b.style.opacity = '0.7';
     });
 
-    // Attiva stile bottone corrente
+    // ── Attiva chip corrente — ring colorato + opacity piena ──
     if (btnEl) {
-        btnEl.classList.add('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105', 'shadow-md');
+        const ringClass = btnEl.dataset.ring || 'ring-stone-300';
+        btnEl.classList.add('ring-2', 'ring-offset-1', ringClass, 'scale-105', 'shadow-md');
         btnEl.style.opacity = '1';
         btnEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        // Attiva dot corrispondente
+        const idx = parseInt(btnEl.dataset.index);
+        const dot = document.querySelector(`.nav-tab-dot[data-dot="${idx}"]`);
+        if (dot) { dot.className = 'nav-tab-dot w-3 h-1.5 rounded-full transition-all duration-300 bg-slate-600'; }
     }
 
     // Fade content
