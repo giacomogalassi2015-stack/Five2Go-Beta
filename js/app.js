@@ -699,7 +699,7 @@ window.loadTableData = async function(tableName, btnEl) {
             renderHorizontalFilterView(data, 'Paesi', subContent, window.spiaggiaRenderer, 'lat_sp', 'long_sp');
             break;
         case 'Prodotti':
-            subContent.innerHTML = `<div class="grid grid-cols-2 gap-3.5 pb-24 animate-fade pt-2">
+            subContent.innerHTML = `<div class="grid grid-cols-2 gap-3.5 pb-20 animate-fade pt-2">
                 ${data.map(p => window.prodottoRenderer(p)).join('')}
             </div>`;
             break;
@@ -713,7 +713,7 @@ window.loadTableData = async function(tableName, btnEl) {
             renderHorizontalFilterView(data, 'difficolta_cai', subContent, window.sentieroRenderer);
             break;
         case 'Farmacie':
-            subContent.innerHTML = `<div class="flex flex-col gap-3 pb-24 animate-fade pt-2">
+            subContent.innerHTML = `<div class="flex flex-col gap-3 pb-20 animate-fade pt-2">
                 ${data.map(i => window.farmacieRenderer(i)).join('')}
             </div>`;
             break;
@@ -877,7 +877,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
                 <div class="p-3 overflow-x-auto no-scrollbar flex gap-2" id="chips-${filterId}"></div>
             </div>
         </div>
-        <div id="dynamic-list" class="flex flex-col gap-3 pb-24 animate-fade min-h-[50vh]"></div>`;
+        <div id="dynamic-list" class="flex flex-col gap-3 pb-20 animate-fade min-h-[50vh]"></div>`;
 
     const chipContainer = container.querySelector(`#chips-${filterId}`);
     const listContainer = container.querySelector('#dynamic-list');
@@ -997,7 +997,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
                 </div>
             </div>
         </div>
-        <div id="dynamic-list" class="flex flex-col gap-3 pb-24 animate-fade min-h-[50vh]"></div>`;
+        <div id="dynamic-list" class="flex flex-col gap-3 pb-20 animate-fade min-h-[50vh]"></div>`;
 
     const c1        = container.querySelector(`#row1-${filterId}`);
     const c2        = container.querySelector(`#row2-${filterId}`);
