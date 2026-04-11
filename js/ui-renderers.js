@@ -255,7 +255,7 @@ window.attrazioniRenderer = function(item) {
         themeColor: themeColor,
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
-            ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
+            ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon}, 'attrazione')`) : ''}
         `
     });
 };
@@ -282,7 +282,7 @@ window.spiaggiaRenderer = function(item) {
         themeColor: 'blue',
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
-            ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
+            ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon}, 'spiaggia')`) : ''}
         `
     });
 };
@@ -451,9 +451,10 @@ window.numeriUtiliRenderer = (n) => {
     });
 };
 
-window.openMapBtn = function(e, lat, lon) {
+window.openMapBtn = function(e, lat, lon, cat) {
     if (!e) return;
     e.stopPropagation(); e.preventDefault();
-    // Usa maps.google.com diretto — funziona su tutti i browser/OS aprendo l'app nativa
-    window.open(`https://www.google.com/maps?q=${lat},${lon}`, '_blank');
+    // Apre la mappa proprietaria Five2Go, vola alla posizione e pre-filtra la categoria
+    window._mapFlyToTarget = { lat, lon, cat: cat || null };
+    window.switchView('mappa');
 };

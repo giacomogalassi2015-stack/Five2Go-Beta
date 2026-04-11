@@ -154,7 +154,7 @@ function _cleanupPreviousView() {
     window._closeChiccoCard();
 }
 
-/** Torna alla home dalla mappa fullscreen */
+/** Torna alla view da cui l'utente ha aperto la mappa */
 window.mapGoBack = function() {
     const nav = document.getElementById('bottom-nav');
     if (nav) {
@@ -163,10 +163,13 @@ window.mapGoBack = function() {
         nav.style.opacity    = '';
         nav.style.pointerEvents = '';
     }
-    // Torna alla home (o alla view precedente nella history)
-    const prevState = history.state;
-    if (prevState && prevState.view && prevState.view !== 'mappa') {
-        switchView(prevState.view);
+
+    const returnView = window._mapReturnView || null;
+    window._mapReturnView = null;
+
+    if (returnView) {
+        const navBtn = document.querySelector(`.nav-item[onclick*="${returnView}"]`);
+        switchView(returnView, navBtn);
     } else {
         switchView('home', document.querySelector('.nav-item[onclick*="home"]'));
     }
@@ -225,6 +228,11 @@ const _VIEW_RENDERERS = {
 window.switchView = async function(view, el) {
     const content = document.getElementById('app-content');
     if (!content) return;
+
+    // Salva la view corrente prima di navigare alla mappa, per il ritorno
+    if (view === 'mappa' && window.currentViewName && window.currentViewName !== 'mappa') {
+        window._mapReturnView = window.currentViewName;
+    }
 
     // Reset scroll istantaneo
     content.style.scrollBehavior = 'auto';
@@ -317,18 +325,13 @@ function renderHome() {
         </div>
       </div>
 
-      <div class="home-actions" style="display: flex; gap: 10px; width: 100%; justify-content: center; padding-bottom: 60px;">
+      <div class="home-actions" style="display: flex; gap: 12px; width: 100%; justify-content: center; padding-bottom: 60px;">
         
         <button class="home-pill home-pill--heart" style="flex: 1;" onclick="window.switchView('wishlist')">
           <span class="material-icons home-pill-icon">favorite</span>
           <span class="home-pill-label">${C.wishlistLabel}</span>
           <span class="home-pill-badge" data-home-badge="wishlist"
                 style="${wlCount > 0 ? '' : 'display:none'}">${wlCount}</span>
-        </button>
-
-        <button class="home-pill" style="flex: 1;" onclick="window.switchView('mappa')">
-          <span class="material-icons home-pill-icon" style="color:#2A9D8F;">map</span>
-          <span class="home-pill-label">${C.mapLabel}</span>
         </button>
         
         <button id="bump-lang-trigger" class="home-pill" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="window._toggleBumpLangPanel()">
@@ -1999,30 +2002,38 @@ function _injectChiccoFAB() {
     document.body.appendChild(fab);
 
     // ── Speech bubble di benvenuto ──
-    // La bubble è un elemento separato posizionato sopra Chicco,
-    // appesa al body (non al FAB) così non interferisce col tap su Chicco.
-    // Al click sulla bubble stessa → apre Chicco (come se fosse un'estensione del FAB).
-    const WELCOME_KEY = 'f2g_chicco_welcomed';
-    const isFirstVisit = !sessionStorage.getItem(WELCOME_KEY);
-    if (isFirstVisit) sessionStorage.setItem(WELCOME_KEY, '1');
+    // Due livelli:
+    //   - localStorage 'f2g_chicco_ever' → prima visita IN ASSOLUTO = benvenuto caloroso
+    //   - sessionStorage 'f2g_chicco_session' → primo atterraggio di QUESTA SESSIONE = messaggio fascia oraria
+    // La bubble appare SOLO all'atterraggio sulla landing page (da URL/browser),
+    // MAI quando si naviga tra le view interne della PWA.
+    const EVER_KEY    = 'f2g_chicco_ever';
+    const SESSION_KEY = 'f2g_chicco_session';
+    const alreadyGreetedThisSession = sessionStorage.getItem(SESSION_KEY);
 
-    const bubbleKey = isFirstVisit
-        ? 'chicco_bubble_welcome'
-        : _getChiccoBubbleKeyByTime();
+    if (!alreadyGreetedThisSession) {
+        // È il primo atterraggio di questa sessione
+        const isFirstEver = !localStorage.getItem(EVER_KEY);
+        const bubbleKey = isFirstEver
+            ? 'chicco_bubble_welcome'       // prima volta in assoluto → benvenuto caloroso
+            : _getChiccoBubbleKeyByTime();  // sessione successiva → fascia oraria
 
-    // Rimuovi eventuale bubble precedente
-    document.getElementById('chicco-bubble')?.remove();
+        if (isFirstEver) localStorage.setItem(EVER_KEY, '1');
+        sessionStorage.setItem(SESSION_KEY, '1');
 
-    const bubble = document.createElement('div');
-    bubble.className = 'chicco-bubble';
-    bubble.id = 'chicco-bubble';
-    bubble.textContent = window.t(bubbleKey);
-    // Click sulla bubble = click su Chicco
-    bubble.addEventListener('click', () => window.toggleChicco());
-    document.body.appendChild(bubble);
+        // Rimuovi eventuale bubble precedente
+        document.getElementById('chicco-bubble')?.remove();
 
-    // Auto-dismiss dopo 6.5s (1.5s delay CSS + 5s visibile)
-    window._chiccoBubbleTimer = setTimeout(() => _dismissChiccoBubble(), 6500);
+        const bubble = document.createElement('div');
+        bubble.className = 'chicco-bubble';
+        bubble.id = 'chicco-bubble';
+        bubble.textContent = window.t(bubbleKey);
+        bubble.addEventListener('click', () => window.toggleChicco());
+        document.body.appendChild(bubble);
+
+        // Auto-dismiss dopo 6.5s (1.5s delay CSS + 5s visibile)
+        window._chiccoBubbleTimer = setTimeout(() => _dismissChiccoBubble(), 6500);
+    }
 }
 
 /** Restituisce la chiave chicco_bubble_* in base all'ora locale */

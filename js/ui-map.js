@@ -20,8 +20,6 @@ const BORGHI_BOUNDS = {
 };
 
 const CATEGORIE = {
-    vino:       { icon:"wine_bar",       label:"Vino",       color:"#C0392B", pill:"bg-red-100 text-red-700 border-red-200",            markerBg:"#FFF0EE", markerBorder:"#E74C3C" },
-    aperitivo:  { icon:"local_bar",      label:"Aperitivo",  color:"#D97706", pill:"bg-amber-100 text-amber-700 border-amber-200",      markerBg:"#FFFBEB", markerBorder:"#F59E0B" },
     spiaggia:   { icon:"beach_access",   label:"Spiaggia",   color:"#0369A1", pill:"bg-sky-100 text-sky-700 border-sky-200",            markerBg:"#EFF6FF", markerBorder:"#38BDF8" },
     attrazione: { icon:"account_balance",label:"Attrazioni", color:"#15803D", pill:"bg-emerald-100 text-emerald-700 border-emerald-200", markerBg:"#ECFDF5", markerBorder:"#34D399" },
 };
@@ -31,20 +29,14 @@ const BORGHI_COLORS = {
     Corniglia:"#C9A600",   Vernazza:"#264653", Monterosso:"#606C38"
 };
 
-// Mock data
+// Mock data (fallback se Supabase non risponde)
 const MOCK_DATA = [
-    { id:1,  nome:"Cantina Buranco",        borgo:"Monterosso",  categoria:"vino",       lat:44.1465, lon:9.6548, descrizione:"Cantina storica con degustazioni affacciate sul mare." },
-    { id:2,  nome:"Il Frantoio",            borgo:"Riomaggiore", categoria:"vino",       lat:44.0995, lon:9.7390, descrizione:"Olio e vino di produzione locale, piccola bottega nel centro storico." },
-    { id:3,  nome:"Bar Centrale",           borgo:"Manarola",    categoria:"aperitivo",  lat:44.1072, lon:9.7285, descrizione:"Aperitivo con vista mozzafiato sul porticciolo di Manarola." },
-    { id:4,  nome:"Enoteca Internazionale", borgo:"Vernazza",    categoria:"vino",       lat:44.1355, lon:9.6845, descrizione:"Selezione di vini locali e nazionali, taglieri e stuzzichini." },
-    { id:5,  nome:"Spiaggia Fegina",        borgo:"Monterosso",  categoria:"spiaggia",   lat:44.1490, lon:9.6520, descrizione:"La spiaggia più grande delle Cinque Terre, attrezzata con lettini." },
-    { id:6,  nome:"Spiaggia di Corniglia",  borgo:"Corniglia",   categoria:"spiaggia",   lat:44.1150, lon:9.7200, descrizione:"Spiaggia di ciottoli, acque cristalline e poco affollata." },
-    { id:7,  nome:"Torre Aurora",           borgo:"Vernazza",    categoria:"attrazione", lat:44.1358, lon:9.6840, descrizione:"Torre medievale con vista panoramica sul golfo di Vernazza." },
-    { id:8,  nome:"Via dell'Amore",         borgo:"Riomaggiore", categoria:"attrazione", lat:44.1010, lon:9.7370, descrizione:"Il sentiero romantico che collega Riomaggiore a Manarola." },
-    { id:9,  nome:"Bar Il Porticciolo",     borgo:"Riomaggiore", categoria:"aperitivo",  lat:44.1000, lon:9.7385, descrizione:"Aperitivo sul mare, ottimi cocktail e focaccia." },
-    { id:10, nome:"Punta Bonfiglio",        borgo:"Manarola",    categoria:"attrazione", lat:44.1060, lon:9.7270, descrizione:"Terrazza panoramica naturale, tramonto imperdibile." },
-    { id:11, nome:"Bar Matteo",             borgo:"Corniglia",   categoria:"aperitivo",  lat:44.1210, lon:9.7148, descrizione:"Aperitivo tranquillo nel borgo più silenzioso delle Cinque Terre." },
-    { id:12, nome:"Spiaggia Guvano",        borgo:"Corniglia",   categoria:"spiaggia",   lat:44.1180, lon:9.7130, descrizione:"Spiaggia selvaggia raggiungibile a piedi, acque turchesi." },
+    { id:1,  nome:"Spiaggia Fegina",        borgo:"Monterosso",  categoria:"spiaggia",   lat:44.1490, lon:9.6520, descrizione:"La spiaggia più grande delle Cinque Terre." },
+    { id:2,  nome:"Spiaggia di Corniglia",  borgo:"Corniglia",   categoria:"spiaggia",   lat:44.1150, lon:9.7200, descrizione:"Spiaggia di ciottoli, acque cristalline." },
+    { id:3,  nome:"Torre Aurora",           borgo:"Vernazza",    categoria:"attrazione", lat:44.1358, lon:9.6840, descrizione:"Torre medievale con vista sul golfo." },
+    { id:4,  nome:"Via dell'Amore",         borgo:"Riomaggiore", categoria:"attrazione", lat:44.1010, lon:9.7370, descrizione:"Il sentiero romantico tra Riomaggiore e Manarola." },
+    { id:5,  nome:"Punta Bonfiglio",        borgo:"Manarola",    categoria:"attrazione", lat:44.1060, lon:9.7270, descrizione:"Terrazza panoramica, tramonto imperdibile." },
+    { id:6,  nome:"Spiaggia Guvano",        borgo:"Corniglia",   categoria:"spiaggia",   lat:44.1180, lon:9.7130, descrizione:"Spiaggia selvaggia, acque turchesi." },
 ];
 
 // ---------------------------------------------------------------------------
@@ -515,6 +507,44 @@ window.renderMappaInterattiva = async function() {
             }
         });
     }
+
+    // Fly-to target: quando l'utente arriva dal bottone mappa di una card spiaggia/attrazione
+    if (window._mapFlyToTarget) {
+        const { lat, lon, cat } = window._mapFlyToTarget;
+        window._mapFlyToTarget = null; // consuma — non ri-applicare al prossimo accesso
+
+        // Nascondi il bottom bar (lista/gps/info) — entrata contestuale, non serve
+        const bottomBar = document.getElementById('map-bottom-bar');
+        if (bottomBar) bottomBar.style.display = 'none';
+
+        requestAnimationFrame(() => {
+            // Pre-filtra la categoria se specificata
+            if (cat) {
+                const btn = document.querySelector(`.cat-toggle[data-cat="${cat}"]`);
+                if (btn) {
+                    window.mapSetCat(cat, btn);
+                } else {
+                    window._mapActiveCat = cat;
+                    window._mapRenderMarkers();
+                    window._mapUpdateListFromBounds();
+                }
+            }
+
+            if (window._mapLeaflet) {
+                window._mapLeaflet.flyTo([lat, lon], 17, { duration: 0.8 });
+                // Cerca il POI più vicino e apri il detail
+                setTimeout(() => {
+                    const closest = window._mapAllData.reduce((best, item) => {
+                        const dist = Math.abs(item.lat - lat) + Math.abs(item.lon - lon);
+                        return (!best || dist < best.dist) ? { item, dist } : best;
+                    }, null);
+                    if (closest && closest.dist < 0.001) {
+                        window.mapOpenDetail(closest.item);
+                    }
+                }, 900);
+            }
+        });
+    }
 };
 
 // ---------------------------------------------------------------------------
@@ -572,12 +602,45 @@ window._mapInit = async function() {
 window._mapLoadData = async function() {
     if (window._mapAllData && window._mapAllData.length > 0) return;
     try {
-        const { data, error } = await window.supabaseClient.from('Luoghi_mappa').select('*');
-        if (error) throw error;
-        window._mapAllData = data || [];
-        // data loaded: window._mapAllData.length records
+        // Fetch parallelo da Spiagge e Attrazioni
+        const [spRes, atRes] = await Promise.all([
+            window.supabaseClient.from('Spiagge').select('*'),
+            window.supabaseClient.from('Attrazioni').select('*')
+        ]);
+        if (spRes.error) throw spRes.error;
+        if (atRes.error) throw atRes.error;
+
+        const spiagge = (spRes.data || [])
+            .filter(s => s.lat_sp && s.long_sp)
+            .map(s => ({
+                id:          s.id,
+                nome:        window.dbCol(s, 'Nome') || s.Nome || 'Spiaggia',
+                borgo:       window.dbCol(s, 'Paesi') || s.Paesi || '',
+                categoria:   'spiaggia',
+                lat:         parseFloat(s.lat_sp),
+                lon:         parseFloat(s.long_sp),
+                descrizione: window.dbCol(s, 'Tipo') || '',
+                _src:        'Spiagge',
+                _raw:        s
+            }));
+
+        const attrazioni = (atRes.data || [])
+            .filter(a => a.lat_at && a.long_at)
+            .map(a => ({
+                id:          a.POI_ID || a.id,
+                nome:        window.dbCol(a, 'Attrazioni') || window.dbCol(a, 'Titolo') || 'Attrazione',
+                borgo:       window.dbCol(a, 'Paese') || a.Paese || '',
+                categoria:   'attrazione',
+                lat:         parseFloat(a.lat_at),
+                lon:         parseFloat(a.long_at),
+                descrizione: window.dbCol(a, 'Label') || '',
+                _src:        'Attrazioni',
+                _raw:        a
+            }));
+
+        window._mapAllData = [...spiagge, ...attrazioni];
     } catch(err) {
-        console.error("❌ Supabase errore Luoghi_mappa:", err.message);
+        console.error("❌ Mappa — errore fetch Spiagge/Attrazioni:", err.message);
         window._mapAllData = [];
     }
 };
@@ -1036,11 +1099,25 @@ window.mapOpenDetail = function(item) {
         metaEl.style.display = metaHtml ? '' : 'none';
     }
 
-    // CTA → apre il modal completo
+    // CTA → apre il modal specifico (Spiagge o attrazione) e chiude il banner
     if (ctaBtn) {
         ctaBtn.onclick = () => {
-            const safePayload = encodeURIComponent(JSON.stringify(item)).replace(/'/g, '%27');
-            window.openModal('luogo_mappa', safePayload);
+            if (item._src === 'Spiagge' && item._raw) {
+                // Apri modale spiaggia con il record originale
+                const safePayload = encodeURIComponent(JSON.stringify(item._raw)).replace(/'/g, '%27');
+                window.mapCloseDetail();
+                window.openModal('Spiagge', safePayload);
+            } else if (item._src === 'Attrazioni' && item._raw) {
+                // Apri modale attrazione con il POI_ID
+                const poiId = item._raw.POI_ID || item._raw.id;
+                window.mapCloseDetail();
+                window.openModal('attrazione', String(poiId));
+            } else {
+                // Fallback generico
+                const safePayload = encodeURIComponent(JSON.stringify(item)).replace(/'/g, '%27');
+                window.mapCloseDetail();
+                window.openModal('luogo_mappa', safePayload);
+            }
         };
     }
 
@@ -1201,8 +1278,10 @@ window.mapToggleLegend = function() {
 window.mapCloseDetail = function() {
     const sheet = document.getElementById('map-detail-sheet');
     if (sheet) sheet.classList.add('hidden');
-    // Ripristina il list sheet
-    window._sheetShow();
+    // Ripristina bottom bar (poteva essere nascosta dall'entrata contestuale da card)
+    const bottomBar = document.getElementById('map-bottom-bar');
+    if (bottomBar) bottomBar.style.display = '';
+    // La lista NON si riapre automaticamente — l'utente la apre esplicitamente col bottone Lista
 };
 
 // Cleanup quando si lascia la vista
