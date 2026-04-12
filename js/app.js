@@ -1108,9 +1108,9 @@ window.renderServicesGrid = async function() {
     const ferryImg = window.getSmartUrl('Battello','', 600);
 
     targetEl.innerHTML = `
-    <div class="flex flex-col gap-3 pb-32 animate-pop">
+    <div class="flex flex-col gap-4 pb-32 animate-pop" style="perspective:800px;">
 
-        <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-300 touch-manipulation shadow-soft"
+        <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised"
              style="height:150px" onclick="openModal('transport','bus')">
             <img src="${busImg}" class="absolute inset-0 w-full h-full object-cover scale-[1.02]" onerror="this.style.display='none'">
             <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
@@ -1123,7 +1123,7 @@ window.renderServicesGrid = async function() {
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-300 touch-manipulation shadow-soft"
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised"
                  style="height:150px" onclick="openModal('transport','train')">
                 <img src="${trainImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
                 <div class="absolute inset-0 bg-black/20"></div>
@@ -1134,7 +1134,7 @@ window.renderServicesGrid = async function() {
                     <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-md">${window.t('label_train')}</h3>
                 </div>
             </div>
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-300 touch-manipulation shadow-soft"
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised"
                  style="height:150px" onclick="openModal('transport','ferry')">
                 <img src="${ferryImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
                 <div class="absolute inset-0 bg-black/20"></div>
@@ -1147,7 +1147,7 @@ window.renderServicesGrid = async function() {
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-300 touch-manipulation"
+        <div class="bg-white rounded-2xl flex items-center gap-4 p-4 cursor-pointer touch-manipulation svc-raised-flat"
              onclick="renderSimpleList('Numeri_utili')">
             <div class="w-12 h-12 rounded-2xl bg-ct-service flex items-center justify-center shrink-0 shadow-sm">
                 <span class="material-icons text-xl text-white">phonelink_ring</span>
@@ -1155,10 +1155,10 @@ window.renderServicesGrid = async function() {
             <div class="flex-1 min-w-0">
                 <h3 class="font-serif font-bold text-primary text-base leading-tight">${window.t('menu_num')}</h3>
             </div>
-            <span class="material-icons text-slate-300 text-xl">chevron_right</span>
+            <span class="material-icons text-slate-300 text-xl svc-chevron">chevron_right</span>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-300 touch-manipulation"
+        <div class="bg-white rounded-2xl flex items-center gap-4 p-4 cursor-pointer touch-manipulation svc-raised-flat"
              onclick="renderSimpleList('Farmacie')">
             <div class="w-12 h-12 rounded-2xl bg-ct-health flex items-center justify-center shrink-0 shadow-sm">
                 <span class="material-icons text-xl text-white">medical_services</span>
@@ -1166,11 +1166,11 @@ window.renderServicesGrid = async function() {
             <div class="flex-1 min-w-0">
                 <h3 class="font-serif font-bold text-primary text-base leading-tight">${window.t('menu_pharm')}</h3>
             </div>
-            <span class="material-icons text-slate-300 text-xl">chevron_right</span>
+            <span class="material-icons text-slate-300 text-xl svc-chevron">chevron_right</span>
         </div>
 
         <div class="grid grid-cols-2 gap-3 mb-4">
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-300 touch-manipulation shadow-soft border border-slate-100/70 flex flex-col justify-between p-4"
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised flex flex-col justify-between p-4"
                  style="height:140px" onclick="window.switchView('ct_card')">
                 <div class="absolute inset-0" style="background:linear-gradient(145deg,#3D4246 0%,#5E7A8C 55%,#7097A8 100%)"></div>
                 <div class="absolute bottom-0 left-0 right-0 h-1" style="background:linear-gradient(90deg,#E9C46A,#D6CFC1)"></div>
@@ -1182,7 +1182,7 @@ window.renderServicesGrid = async function() {
                 </div>
             </div>
 
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-300 touch-manipulation shadow-soft border border-slate-100/70 flex flex-col justify-between p-4"
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised flex flex-col justify-between p-4"
                  style="height:140px" onclick="window.switchView('treno_card')">
                 <div class="absolute inset-0" style="background:linear-gradient(145deg,#5C4440 0%,#8B5E5E 50%,#C98A5F 100%)"></div>
                 <div class="absolute bottom-0 left-0 right-0 h-1" style="background:linear-gradient(90deg,#E9C46A,#D6CFC1)"></div>
