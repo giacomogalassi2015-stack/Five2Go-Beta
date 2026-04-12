@@ -67,8 +67,8 @@ window.getModalContent = function(type, payload, item) {
 
         // Logic color based on IT
         const tipoIT = String(window.valIT(item, 'Tipo')).toLowerCase();
-        let colorText = 'text-ct-terracotta'; 
-        let bgBadge = 'bg-ct-terracotta-light text-ct-terracotta';
+        let colorText = 'text-ct-wine'; 
+        let bgBadge = 'bg-ct-wine-light text-ct-wine';
         let displayType = window.t('wine_red');
 
         if (tipoIT.includes('bianco')) { 
@@ -156,7 +156,7 @@ window.getModalContent = function(type, payload, item) {
 
             <div class="flex flex-col gap-3 mb-6">
                 ${linkGpx ? `
-                <a href="${linkGpx}" download="${nomeSentiero || 'percorso'}.gpx" target="_blank" class="flex items-center justify-center gap-2 w-full py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 active:scale-95 transition-transform">
+                <a href="${linkGpx}" download="${nomeSentiero || 'percorso'}.gpx" target="_blank" class="flex items-center justify-center gap-2 w-full py-3 bg-ct-sage text-white font-bold rounded-2xl shadow-soft active:scale-95 transition-transform">
                     <span class="material-icons">file_download</span> ${window.t('btn_download_gpx')}
                 </a>` : `
                 <div class="flex items-center justify-center gap-2 w-full py-3 bg-red-50 text-red-500 font-bold rounded-xl border border-red-100">
@@ -191,7 +191,7 @@ window.getModalContent = function(type, payload, item) {
     contentHtml = `
         <div class="relative w-full bg-white min-h-[400px]">
 
-            <div class="bg-gradient-to-br from-ct-green to-[#4a5d2b] p-8 pb-12 relative overflow-hidden">
+            <div class="bg-gradient-to-br from-ct-sage to-[#5a7050] p-8 pb-12 relative overflow-hidden">
                 <div class="absolute -right-6 -top-6 opacity-20 transform rotate-12">
                     <span class="material-icons text-[150px] text-white">hiking</span>
                 </div>
@@ -208,17 +208,17 @@ window.getModalContent = function(type, payload, item) {
             <div class="px-6 relative z-20 -mt-8">
                 <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/60 p-4 border border-slate-100 grid grid-cols-3 divide-x divide-slate-100">
                     <div class="flex flex-col items-center justify-center text-center px-1">
-                        <span class="material-icons text-ct-green text-xl mb-1">schedule</span>
+                        <span class="material-icons text-ct-sage text-xl mb-1">schedule</span>
                         <span class="text-sm font-extrabold text-slate-700 leading-none">${dur}</span>
                         <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">${window.t('trail_duration_label')}</span>
                     </div>
                     <div class="flex flex-col items-center justify-center text-center px-1">
-                        <span class="material-icons text-ct-green text-xl mb-1">straighten</span>
+                        <span class="material-icons text-ct-sage text-xl mb-1">straighten</span>
                         <span class="text-sm font-extrabold text-slate-700 leading-none">${dist}</span>
                         <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">${window.t('trail_length_label')}</span>
                     </div>
                     <div class="flex flex-col items-center justify-center text-center px-1">
-                        <span class="material-icons text-ct-green text-xl mb-1">signal_cellular_alt</span>
+                        <span class="material-icons text-ct-sage text-xl mb-1">signal_cellular_alt</span>
                         <span class="text-sm font-extrabold text-slate-700 leading-none truncate w-full">${diff.slice(0,8)}</span>
                         <span class="text-[11px] font-bold text-slate-400 uppercase mt-1">${window.t('trail_level_label')}</span>
                     </div>
@@ -265,13 +265,13 @@ window.getModalContent = function(type, payload, item) {
                     <div class="flex flex-col gap-2">
                         <a href="http://www.parconazionale5terre.it/sentieri-outdoor.php"
                            target="_blank" rel="noopener"
-                           class="inline-flex items-center gap-2 text-ct-green font-bold text-sm underline underline-offset-2 active:opacity-70">
+                           class="inline-flex items-center gap-2 text-ct-sage font-bold text-sm underline underline-offset-2 active:opacity-70">
                             <span class="material-icons text-base">open_in_new</span>
                             ${window.t('trail_source1_label')}
                         </a>
                         <a href="https://www.cailaspezia.it/"
                            target="_blank" rel="noopener"
-                           class="inline-flex items-center gap-2 text-ct-green font-bold text-sm underline underline-offset-2 active:opacity-70">
+                           class="inline-flex items-center gap-2 text-ct-sage font-bold text-sm underline underline-offset-2 active:opacity-70">
                             <span class="material-icons text-base">open_in_new</span>
                             ${window.t('trail_source2_label')}
                         </a>
@@ -337,14 +337,14 @@ window.getModalContent = function(type, payload, item) {
             <div class="p-8 ${img ? '-mt-12 relative z-10' : ''}">
                 <div class="${img ? 'bg-white p-6 rounded-2xl shadow-lg' : ''}">
                     <h2 class="font-serif text-2xl font-bold text-slate-800 mb-2 leading-tight">${titolo}</h2>
-                    <div class="w-12 h-1 bg-ct-terracotta rounded-full mb-4"></div>
+                    <div class="w-12 h-1 bg-ct-shore rounded-full mb-4"></div>
 
                     ${curiosita ? `
-                    <div class="bg-amber-50 border-l-4 border-amber-300 p-4 rounded-r-xl mb-6">
-                        <div class="text-xs font-bold text-amber-800 uppercase mb-1 flex items-center gap-1">
+                    <div class="bg-ct-yellow-light border-l-4 border-ct-yellow p-4 rounded-r-xl mb-6">
+                        <div class="text-xs font-bold text-ct-terracotta uppercase mb-1 flex items-center gap-1">
                             <span class="material-icons text-sm">lightbulb</span> ${window.t('label_curiosity')}
                         </div>
-                        <div class="text-amber-900 italic text-sm leading-relaxed">${curiosita}</div>
+                        <div class="text-primary italic text-sm leading-relaxed">${curiosita}</div>
                     </div>` : ''}
                     
                     <p class="text-slate-600 text-lg leading-relaxed text-justify">${desc || window.t('desc_missing')}</p>
@@ -369,7 +369,7 @@ window.getModalContent = function(type, payload, item) {
 
             <!-- Hero image -->
             <div class="relative h-52 w-full overflow-hidden">
-                <img src="${trainImgUrl}" class="w-full h-full object-cover" onerror="this.parentElement.style.background='#E76F51'">
+                <img src="${trainImgUrl}" class="w-full h-full object-cover" onerror="this.parentElement.style.background='#C98A5F'">
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/30 to-transparent"></div>
                 <div class="absolute bottom-0 left-0 p-5 w-full">
                     <span class="text-[10px] font-black uppercase tracking-widest text-white/70 block mb-1">Cinque Terre Express</span>
@@ -388,15 +388,15 @@ window.getModalContent = function(type, payload, item) {
                     <div class="space-y-2.5">
                         <div class="flex justify-between items-center">
                             <span class="text-slate-600 text-sm font-medium">La Spezia ↔ Riomaggiore</span>
-                            <span class="text-ct-terracotta font-bold text-sm bg-white px-3 py-0.5 rounded-xl border border-orange-100 shadow-sm">7 min</span>
+                            <span class="text-ct-terracotta font-bold text-sm bg-white px-3 py-0.5 rounded-xl border border-ct-terracotta/20">7 min</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-slate-600 text-sm font-medium">${window.t('between_villages')}</span>
-                            <span class="text-ct-terracotta font-bold text-sm bg-white px-3 py-0.5 rounded-xl border border-orange-100 shadow-sm">2–4 min</span>
+                            <span class="text-ct-terracotta font-bold text-sm bg-white px-3 py-0.5 rounded-xl border border-ct-terracotta/20">2–4 min</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-slate-600 text-sm font-medium">Monterosso ↔ Levanto</span>
-                            <span class="text-ct-terracotta font-bold text-sm bg-white px-3 py-0.5 rounded-xl border border-orange-100 shadow-sm">5 min</span>
+                            <span class="text-ct-terracotta font-bold text-sm bg-white px-3 py-0.5 rounded-xl border border-ct-terracotta/20">5 min</span>
                         </div>
                     </div>
                 </div>
@@ -406,7 +406,7 @@ window.getModalContent = function(type, payload, item) {
 
                 <!-- CTA -->
                 <button onclick="window.apriTrenitalia()"
-                    class="w-full py-4 rounded-2xl bg-ct-terracotta text-white font-bold text-base shadow-md active:scale-[0.98] transition-all touch-manipulation flex items-center justify-center gap-2">
+                    class="w-full py-4 rounded-2xl bg-ct-service text-white font-bold text-base shadow-soft active:scale-[0.98] transition-all touch-manipulation flex items-center justify-center gap-2">
                     <span>${window.t('train_cta')}</span>
                     <span class="material-icons text-sm">open_in_new</span>
                 </button>
@@ -440,7 +440,7 @@ window.getModalContent = function(type, payload, item) {
             nextCardGrad:   'from-ct-yellow to-orange-400',
         } : {
             img:            ferryImgUrl,
-            accentBg:       'bg-ct-blue',
+            accentBg:       'bg-ct-service',
             accentFrom:     'from-teal-700',
             accentTo:       'to-ct-blue',
             markerColor:    'bg-cyan-500',
@@ -468,7 +468,7 @@ window.getModalContent = function(type, payload, item) {
 
             <!-- ── Hero image with gradient ── -->
             <div class="relative h-48 w-full overflow-hidden">
-                <img src="${cfg.img}" class="w-full h-full object-cover" onerror="this.parentElement.style.background='#2A9D8F'">
+                <img src="${cfg.img}" class="w-full h-full object-cover" onerror="this.parentElement.style.background='#7097A8'">
                 <div class="absolute inset-0 bg-gradient-to-t ${cfg.gradientOverlay} to-transparent"></div>
                 <div class="absolute bottom-0 left-0 p-5 w-full">
                     <span class="text-[10px] font-black uppercase tracking-widest text-white/70 block mb-1">${cfg.label}</span>
@@ -592,12 +592,12 @@ window.getModalContent = function(type, payload, item) {
         const paesi = window.dbCol(item, 'Paesi');
         contentHtml = `
             <div class="p-6 text-center">
-                <div class="w-16 h-16 bg-ct-green-light rounded-full flex items-center justify-center mx-auto mb-4 text-ct-green">
+                <div class="w-16 h-16 bg-ct-health-light rounded-full flex items-center justify-center mx-auto mb-4 text-ct-health">
                     <span class="material-icons text-3xl">local_pharmacy</span>
                 </div>
                 <h2 class="font-serif text-2xl font-bold text-slate-800 mb-2">${nome}</h2>
                 <p class="text-slate-500 mb-6 flex items-center justify-center gap-1 font-medium"><span class="material-icons text-sm">place</span> ${item.Indirizzo || item.Paesi || ''}</p>
-                <a href="tel:${item.Numero || item.Telefono}" class="inline-flex items-center justify-center gap-2 bg-ct-green text-white py-3 px-8 rounded-full font-bold shadow-lg shadow-ct-green/20 active:scale-95 transition-transform">
+                <a href="tel:${item.Numero || item.Telefono}" class="inline-flex items-center justify-center gap-2 bg-ct-health text-white py-3 px-8 rounded-full font-bold shadow-lg shadow-ct-health/20 active:scale-95 transition-transform">
                     <span class="material-icons">call</span> Chiama
                 </a>
             </div>`;
@@ -615,8 +615,8 @@ window.getModalContent = function(type, payload, item) {
         };
         const catCfg  = cfg[item.categoria] || cfg.attrazione;
         const borgCol = {
-            Riomaggiore:'#E76F51', Manarola:'#2A9D8F',
-            Corniglia:'#C9A600',   Vernazza:'#264653', Monterosso:'#606C38'
+            Riomaggiore:'#C98A5F', Manarola:'#7097A8',
+            Corniglia:'#C9A600',   Vernazza:'#5E7A8C', Monterosso:'#768E6B'
         }[item.borgo] || '#264653';
 
         const hasPhoto = !!item.foto;
@@ -710,7 +710,7 @@ window.getModalContent = function(type, payload, item) {
                         <div>
                             <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Telefono</div>
                             <a href="tel:${item.telefono}"
-                                class="text-sm font-bold text-ct-blue active:opacity-70">${item.telefono}</a>
+                                class="text-sm font-bold text-ct-shore active:opacity-70">${item.telefono}</a>
                         </div>
                     </div>` : ''}
                 </div>` : ''}
@@ -727,7 +727,7 @@ window.getModalContent = function(type, payload, item) {
                 <!-- Azioni: Google Maps -->
                 ${item.link_maps ? `
                 <a href="${item.link_maps}" target="_blank" rel="noopener"
-                    class="flex items-center justify-center gap-2 w-full py-3.5 bg-ct-blue text-white font-bold rounded-2xl shadow-md active:scale-95 transition-transform text-sm">
+                    class="flex items-center justify-center gap-2 w-full py-3.5 bg-ct-shore text-white font-bold rounded-2xl shadow-soft active:scale-95 transition-transform text-sm">
                     <span class="material-icons text-lg">directions</span>
                     Indicazioni stradali
                 </a>` : ''}

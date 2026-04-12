@@ -473,11 +473,11 @@ window.renderSubMenu = function(options, defaultTable) {
 
     // Colori per le card del selettore
     const cardStyles = {
-        orange: { gradient: 'from-amber-50 to-orange-50', border: 'border-orange-100', iconBg: 'bg-ct-terracotta/10', iconColor: 'text-ct-terracotta' },
-        yellow: { gradient: 'from-yellow-50 to-amber-50', border: 'border-yellow-100', iconBg: 'bg-yellow-500/10',     iconColor: 'text-yellow-700' },
-        red:    { gradient: 'from-rose-50 to-red-50',     border: 'border-red-100',    iconBg: 'bg-red-500/10',        iconColor: 'text-red-700' },
-        blue:   { gradient: 'from-sky-50 to-teal-50',     border: 'border-teal-100',   iconBg: 'bg-ct-blue/10',        iconColor: 'text-ct-blue' },
-        green:  { gradient: 'from-emerald-50 to-green-50',border: 'border-green-100',  iconBg: 'bg-ct-green/10',       iconColor: 'text-ct-green' },
+        orange: { gradient: 'from-ct-terracotta-light to-orange-50/30', border: 'border-ct-terracotta/15', iconBg: 'bg-ct-terracotta/10', iconColor: 'text-ct-terracotta' },
+        yellow: { gradient: 'from-ct-yellow-light to-amber-50/30',     border: 'border-ct-yellow/15',     iconBg: 'bg-ct-yellow/10',     iconColor: 'text-ct-yellow' },
+        red:    { gradient: 'from-ct-wine-light to-rose-50/30',        border: 'border-ct-wine/15',       iconBg: 'bg-ct-wine/10',       iconColor: 'text-ct-wine' },
+        blue:   { gradient: 'from-ct-shore-light to-sky-50/30',        border: 'border-ct-shore/15',      iconBg: 'bg-ct-shore/10',      iconColor: 'text-ct-shore' },
+        green:  { gradient: 'from-ct-sage-light to-emerald-50/30',     border: 'border-ct-sage/15',       iconBg: 'bg-ct-sage/10',       iconColor: 'text-ct-sage' },
     };
 
     const cardsHtml = options.map(opt => {
@@ -519,11 +519,11 @@ window._openSubTable = function(tableName) {
 
     // Colori per le mini-tab in fondo
     const tabColors = {
-        orange: { active: 'bg-ct-terracotta/10 text-ct-terracotta border-ct-terracotta/30', inactive: 'bg-white text-slate-400 border-slate-100' },
-        yellow: { active: 'bg-yellow-50 text-yellow-700 border-yellow-200',   inactive: 'bg-white text-slate-400 border-slate-100' },
-        red:    { active: 'bg-rose-50 text-red-700 border-red-200',            inactive: 'bg-white text-slate-400 border-slate-100' },
-        blue:   { active: 'bg-sky-50 text-ct-blue border-ct-blue/30',          inactive: 'bg-white text-slate-400 border-slate-100' },
-        green:  { active: 'bg-emerald-50 text-ct-green border-green-200',      inactive: 'bg-white text-slate-400 border-slate-100' },
+        orange: { active: 'bg-ct-terracotta/10 text-ct-terracotta border-ct-terracotta/20', inactive: 'bg-white text-slate-400 border-slate-100' },
+        yellow: { active: 'bg-ct-yellow/10 text-ct-yellow border-ct-yellow/20',             inactive: 'bg-white text-slate-400 border-slate-100' },
+        red:    { active: 'bg-ct-wine/10 text-ct-wine border-ct-wine/20',                   inactive: 'bg-white text-slate-400 border-slate-100' },
+        blue:   { active: 'bg-ct-shore/10 text-ct-shore border-ct-shore/20',                inactive: 'bg-white text-slate-400 border-slate-100' },
+        green:  { active: 'bg-ct-sage/10 text-ct-sage border-ct-sage/20',                   inactive: 'bg-white text-slate-400 border-slate-100' },
     };
 
     const footerTabsHtml = options.map(opt => {
@@ -553,7 +553,7 @@ window._openSubTable = function(tableName) {
         </div>
 
         <!-- Contenuto lista -->
-        <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-200 ease-out px-2"></div>
+        <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-300 ease-out px-2"></div>
 
         <!-- Footer: navigazione tra le schede sorelle -->
         <div class="px-2 pt-4 pb-20">
@@ -1110,7 +1110,7 @@ window.renderServicesGrid = async function() {
     targetEl.innerHTML = `
     <div class="flex flex-col gap-3 pb-32 animate-pop">
 
-        <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft"
+        <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-300 touch-manipulation shadow-soft"
              style="height:150px" onclick="openModal('transport','bus')">
             <img src="${busImg}" class="absolute inset-0 w-full h-full object-cover scale-[1.02]" onerror="this.style.display='none'">
             <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
@@ -1123,7 +1123,7 @@ window.renderServicesGrid = async function() {
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-150 touch-manipulation shadow-soft"
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-300 touch-manipulation shadow-soft"
                  style="height:150px" onclick="openModal('transport','train')">
                 <img src="${trainImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
                 <div class="absolute inset-0 bg-black/20"></div>
@@ -1134,7 +1134,7 @@ window.renderServicesGrid = async function() {
                     <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-md">${window.t('label_train')}</h3>
                 </div>
             </div>
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-150 touch-manipulation shadow-soft"
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-300 touch-manipulation shadow-soft"
                  style="height:150px" onclick="openModal('transport','ferry')">
                 <img src="${ferryImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
                 <div class="absolute inset-0 bg-black/20"></div>
@@ -1147,47 +1147,47 @@ window.renderServicesGrid = async function() {
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation"
+        <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-300 touch-manipulation"
              onclick="renderSimpleList('Numeri_utili')">
-            <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-ct-service flex items-center justify-center shrink-0 shadow-sm">
                 <span class="material-icons text-xl text-white">phonelink_ring</span>
             </div>
             <div class="flex-1 min-w-0">
-                <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_num')}</h3>
+                <h3 class="font-serif font-bold text-primary text-base leading-tight">${window.t('menu_num')}</h3>
             </div>
             <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation"
+        <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-300 touch-manipulation"
              onclick="renderSimpleList('Farmacie')">
-            <div class="w-12 h-12 rounded-xl bg-ct-green flex items-center justify-center shrink-0 shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-ct-health flex items-center justify-center shrink-0 shadow-sm">
                 <span class="material-icons text-xl text-white">medical_services</span>
             </div>
             <div class="flex-1 min-w-0">
-                <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_pharm')}</h3>
+                <h3 class="font-serif font-bold text-primary text-base leading-tight">${window.t('menu_pharm')}</h3>
             </div>
             <span class="material-icons text-slate-300 text-xl">chevron_right</span>
         </div>
 
         <div class="grid grid-cols-2 gap-3 mb-4">
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft border border-slate-100/70 flex flex-col justify-between p-4"
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-300 touch-manipulation shadow-soft border border-slate-100/70 flex flex-col justify-between p-4"
                  style="height:140px" onclick="window.switchView('ct_card')">
-                <div class="absolute inset-0" style="background:linear-gradient(140deg,#0d3b2e 0%,#1a7a6a 60%,#2A9D8F 100%)"></div>
-                <div class="absolute bottom-0 left-0 right-0 h-1.5" style="background:linear-gradient(90deg,#E9C46A,#E76F51,#2A9D8F)"></div>
+                <div class="absolute inset-0" style="background:linear-gradient(145deg,#3D4246 0%,#5E7A8C 55%,#7097A8 100%)"></div>
+                <div class="absolute bottom-0 left-0 right-0 h-1" style="background:linear-gradient(90deg,#E9C46A,#D6CFC1)"></div>
                 <div class="relative z-10">
-                    <div class="w-10 h-10 mb-2.5 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/25">
+                    <div class="w-10 h-10 mb-2.5 rounded-xl bg-white/12 backdrop-blur flex items-center justify-center border border-white/20">
                         <span class="material-icons text-xl text-white">card_membership</span>
                     </div>
                     <h3 class="font-serif text-base font-bold text-white leading-tight drop-shadow-sm">Cinque Terre Card</h3>
                 </div>
             </div>
 
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft border border-slate-100/70 flex flex-col justify-between p-4"
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-300 touch-manipulation shadow-soft border border-slate-100/70 flex flex-col justify-between p-4"
                  style="height:140px" onclick="window.switchView('treno_card')">
-                <div class="absolute inset-0" style="background:linear-gradient(140deg,#33181c 0%,#be123c 60%,#e11d48 100%)"></div>
-                <div class="absolute bottom-0 left-0 right-0 h-1.5" style="background:linear-gradient(90deg,#fcd34d,#f97316,#e11d48)"></div>
+                <div class="absolute inset-0" style="background:linear-gradient(145deg,#5C4440 0%,#8B5E5E 50%,#C98A5F 100%)"></div>
+                <div class="absolute bottom-0 left-0 right-0 h-1" style="background:linear-gradient(90deg,#E9C46A,#D6CFC1)"></div>
                 <div class="relative z-10">
-                    <div class="w-10 h-10 mb-2.5 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/25">
+                    <div class="w-10 h-10 mb-2.5 rounded-xl bg-white/12 backdrop-blur flex items-center justify-center border border-white/20">
                         <span class="material-icons text-xl text-white">train</span>
                     </div>
                     <h3 class="font-serif text-base font-bold text-white leading-tight drop-shadow-sm">Cinque Terre Treno</h3>
@@ -1245,7 +1245,7 @@ const _TRAIN_VIRTUAL = [
 const _SEARCH_SECTIONS = [
     {
         table: 'Ristoranti', view: 'cibo', label: 'Ristoranti', icon: 'restaurant',
-        color: '#E76F51', bg: '#FFEDE1',
+        color: '#C98A5F', bg: '#F5E6D8',
         getId:     item => item.id,
         getName:   item => window.dbCol(item, 'Nome') || 'Ristorante',
         getSub:    item => window.dbCol(item, 'Paesi') || '',
@@ -1253,7 +1253,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: 'Attrazioni', view: 'outdoor', label: 'Attrazioni', icon: 'attractions',
-        color: '#2A9D8F', bg: '#E0F7FA',
+        color: '#768E6B', bg: '#E8EDE5',
         getId:     item => item.POI_ID || item.id,
         getName:   item => window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo') || 'Attrazione',
         getSub:    item => window.dbCol(item, 'Paese') || '',
@@ -1261,7 +1261,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: 'Spiagge', view: 'outdoor', label: 'Spiagge', icon: 'beach_access',
-        color: '#0369A1', bg: '#EFF6FF',
+        color: '#7097A8', bg: '#E4EEF2',
         getId:     item => item.id,
         getName:   item => window.dbCol(item, 'Spiagge') || window.dbCol(item, 'Nome') || 'Spiaggia',
         getSub:    item => window.dbCol(item, 'Paesi') || '',
@@ -1269,7 +1269,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: 'Prodotti', view: 'cibo', label: 'Prodotti', icon: 'lunch_dining',
-        color: '#C2410C', bg: '#FFF3E0',
+        color: '#C98A5F', bg: '#F5E6D8',
         getId:     item => item.id,
         getName:   item => window.dbCol(item, 'Prodotti') || window.dbCol(item, 'Nome') || 'Prodotto',
         getSub:    () => '',
@@ -1277,7 +1277,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: 'Vini', view: 'cibo', label: 'Vini', icon: 'wine_bar',
-        color: '#9B2226', bg: '#FFF0EE',
+        color: '#8B5E5E', bg: '#F2E8E8',
         getId:     item => item.id || item.ID,
         getName:   item => item.Nome || 'Vino',
         getSub:    item => item.Produttore || '',
@@ -1285,7 +1285,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: 'Farmacie', view: 'servizi', label: 'Farmacie', icon: 'local_pharmacy',
-        color: '#606C38', bg: '#ECFCCB',
+        color: '#8DAA91', bg: '#E6EEE7',
         getId:     item => item.id,
         getName:   item => _safeStr(item.Nome) || 'Farmacia',
         getSub:    item => _safeStr(item.Paesi) || item.Indirizzo || '',
@@ -1317,7 +1317,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: '_train', view: 'servizi', virtual: true, data: _TRAIN_VIRTUAL,
-        label: 'Treni', icon: 'train', color: '#E76F51', bg: '#FFEDE1',
+        label: 'Treni', icon: 'train', color: '#5E7A8C', bg: '#E1E9EE',
         getId:     item => item.id,
         getName:   item => item.Nome,
         getSub:    item => item.Sottotitolo,
@@ -1541,7 +1541,7 @@ window._flashCard = function(id, fallbackName, attempt) {
 
     // Flash ring — solo outline (nessun boxShadow per evitare artefatti Safari)
     target.style.transition    = 'outline 0.2s';
-    target.style.outline       = '3px solid #E76F51';
+    target.style.outline       = '3px solid #C98A5F';
     target.style.outlineOffset = '3px';
     setTimeout(() => {
         target.style.outline = '3px solid transparent';
@@ -1780,7 +1780,7 @@ window.GeoModal = {
                 <h2 style="text-align:center;font-family:'Roboto Slab',serif;font-size:1.3rem;font-weight:700;color:#264653;margin:0 0 10px;">${config.title}</h2>
                 <p style="text-align:center;font-size:0.88rem;color:#64748b;line-height:1.6;margin:0 0 ${config.subBody ? '8px' : '24px'};">${config.body}</p>
                 ${config.subBody ? `<p style="text-align:center;font-size:0.78rem;color:#94a3b8;line-height:1.5;margin:0 0 24px;">${config.subBody}</p>` : ''}
-                ${config.hint   ? `<div id="geo-browser-hint" style="display:none;background:#F4F1DE;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:0.78rem;color:#606C38;font-weight:600;text-align:center;line-height:1.5;">📍 ${config.hint}</div>` : ''}
+                ${config.hint   ? `<div id="geo-browser-hint" style="display:none;background:#F5F1E1;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:0.78rem;color:#768E6B;font-weight:600;text-align:center;line-height:1.5;">📍 ${config.hint}</div>` : ''}
                 <div style="display:flex;flex-direction:column;gap:10px;">${actionsHtml}</div>
             </div>`;
 
@@ -1814,7 +1814,7 @@ window.GeoModal = {
 function _showGeoRequestModal(onGranted, onDenied) {
     window.GeoModal.show({
         iconName: 'my_location',
-        iconBg:   'linear-gradient(135deg,#E76F51,#c0392b)',
+        iconBg:   'linear-gradient(135deg,#C98A5F,#9E7B6B)',
         title:    window.t('geo_title'),
         body:     window.t('geo_desc'),
         subBody:  window.t('geo_privacy'),
@@ -2216,7 +2216,7 @@ window._toggleBumpLangPanel = function() {
         if (isActive) {
             var check = document.createElement('span');
             check.className    = 'material-icons';
-            check.style.cssText= 'color:#606C38;font-size:18px;flex-shrink:0;';
+            check.style.cssText= 'color:#768E6B;font-size:18px;flex-shrink:0;';
             check.textContent  = 'check_circle';
             btn.appendChild(check);
         }
