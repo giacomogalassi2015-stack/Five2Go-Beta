@@ -46,12 +46,10 @@ window.addEventListener('popstate', function(e) {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-//  SWIPE GLOBALS
+//  SWIPE GLOBALS (legacy — mantenuti per compatibilità)
 // ─────────────────────────────────────────────────────────────────────────
 window.currentMenuOptions = [];
 window.currentActiveTable = null;
-window.touchStartX = 0;
-window.touchStartY = 0;
 
 // ─────────────────────────────────────────────────────────────────────────
 //  NAV / HEADER
@@ -473,57 +471,102 @@ function _initHomeOverscroll() { _initOverscrollPeek(); }
 window.renderSubMenu = function(options, defaultTable) {
     window.currentMenuOptions = options;
 
-    // Colori originali dal vecchio side menu — white base con testo/bordo colorato
-    const chipColors = {
-        orange: { base: 'bg-white text-ct-terracotta border-orange-100', ring: 'ring-ct-terracotta' },
-        yellow: { base: 'bg-white text-yellow-700 border-yellow-100',    ring: 'ring-yellow-500' },
-        red:    { base: 'bg-white text-red-800 border-red-100',          ring: 'ring-red-400' },
-        blue:   { base: 'bg-white text-ct-blue border-teal-100',         ring: 'ring-ct-blue' },
-        green:  { base: 'bg-white text-ct-green border-green-100',       ring: 'ring-ct-green' },
+    // Colori per le card del selettore
+    const cardStyles = {
+        orange: { gradient: 'from-amber-50 to-orange-50', border: 'border-orange-100', iconBg: 'bg-ct-terracotta/10', iconColor: 'text-ct-terracotta' },
+        yellow: { gradient: 'from-yellow-50 to-amber-50', border: 'border-yellow-100', iconBg: 'bg-yellow-500/10',     iconColor: 'text-yellow-700' },
+        red:    { gradient: 'from-rose-50 to-red-50',     border: 'border-red-100',    iconBg: 'bg-red-500/10',        iconColor: 'text-red-700' },
+        blue:   { gradient: 'from-sky-50 to-teal-50',     border: 'border-teal-100',   iconBg: 'bg-ct-blue/10',        iconColor: 'text-ct-blue' },
+        green:  { gradient: 'from-emerald-50 to-green-50',border: 'border-green-100',  iconBg: 'bg-ct-green/10',       iconColor: 'text-ct-green' },
     };
 
-    const chipsHtml = options.map((opt, index) => {
-        const c    = chipColors[opt.color] || chipColors.blue;
+    const cardsHtml = options.map(opt => {
+        const s = cardStyles[opt.color] || cardStyles.blue;
         const icon = opt.icon || 'star';
-        return `<button class="nav-tab-chip flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border shadow-sm transition-all active:scale-95 ${c.base}"
-            data-table="${opt.table}" data-index="${index}" data-ring="${c.ring}"
-            onclick="window.loadTableData('${opt.table}', this)">
-            <span class="material-icons text-sm opacity-80">${icon}</span>
-            <span>${opt.label}</span>
+        return `
+        <button class="w-full bg-gradient-to-br ${s.gradient} rounded-2xl ${s.border} border shadow-sm p-5 flex items-center gap-4 active:scale-[0.97] transition-all touch-manipulation text-left"
+            onclick="window._openSubTable('${opt.table}')">
+            <div class="w-14 h-14 rounded-2xl ${s.iconBg} flex items-center justify-center shrink-0">
+                <span class="material-icons text-2xl ${s.iconColor}">${icon}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h3 class="font-bold text-slate-800 text-base">${opt.label}</h3>
+            </div>
+            <span class="material-icons text-slate-300 text-lg shrink-0">chevron_right</span>
         </button>`;
     }).join('');
 
-    const dotsHtml = options.map((_, i) =>
-        `<span class="nav-tab-dot w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === 0 ? 'bg-slate-600 w-3' : 'bg-slate-300'}" data-dot="${i}"></span>`
-    ).join('');
+    const content = document.getElementById('app-content');
+    content.innerHTML = `
+    <div class="animate-fade pb-20 pt-2 px-1">
+        <div class="flex flex-col gap-3">
+            ${cardsHtml}
+        </div>
+    </div>`;
+
+    _initOverscrollPeek();
+};
+
+/** Apre una tabella dal pre-selettore — back button in alto, tab di navigazione in fondo alla lista */
+window._openSubTable = function(tableName) {
+    const options = window.currentMenuOptions;
+    if (!options) return;
+
+    // Trova label e view corrente per il back button
+    const currentView = window.currentViewName; // 'cibo' o 'outdoor'
+    const currentOpt = options.find(o => o.table === tableName);
+    const currentLabel = currentOpt ? currentOpt.label : tableName;
+
+    // Colori per le mini-tab in fondo
+    const tabColors = {
+        orange: { active: 'bg-ct-terracotta/10 text-ct-terracotta border-ct-terracotta/30', inactive: 'bg-white text-slate-400 border-slate-100' },
+        yellow: { active: 'bg-yellow-50 text-yellow-700 border-yellow-200',   inactive: 'bg-white text-slate-400 border-slate-100' },
+        red:    { active: 'bg-rose-50 text-red-700 border-red-200',            inactive: 'bg-white text-slate-400 border-slate-100' },
+        blue:   { active: 'bg-sky-50 text-ct-blue border-ct-blue/30',          inactive: 'bg-white text-slate-400 border-slate-100' },
+        green:  { active: 'bg-emerald-50 text-ct-green border-green-200',      inactive: 'bg-white text-slate-400 border-slate-100' },
+    };
+
+    const footerTabsHtml = options.map(opt => {
+        const c = tabColors[opt.color] || tabColors.blue;
+        const isActive = opt.table === tableName;
+        const cls = isActive
+            ? c.active + ' shadow-sm pointer-events-none'
+            : c.inactive + ' cursor-pointer';
+        return `<button class="flex-1 flex flex-col items-center justify-center gap-1 py-3 rounded-xl border transition-all active:scale-95 touch-manipulation ${cls}"
+            ${isActive ? 'disabled' : `onclick="window._openSubTable('${opt.table}')"`}>
+            <span class="material-icons text-lg">${opt.icon || 'star'}</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide">${opt.label}</span>
+            ${isActive ? '<span class="w-1 h-1 rounded-full bg-current mt-0.5"></span>' : ''}
+        </button>`;
+    }).join('');
 
     const content = document.getElementById('app-content');
     content.innerHTML = `
-    <div id="nav-tab-bar" class="z-[60] bg-ct-sand/95 backdrop-blur-lg border-b border-stone-200/50 pb-2 pt-2 -mx-4 px-4"
-         style="-webkit-backdrop-filter:blur(16px);">
-        <div class="overflow-x-auto no-scrollbar"
-             style="touch-action:pan-x; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; padding:6px 0;">
-            <div class="flex gap-2" style="width:fit-content; margin:0 auto; padding:0 8px;">
-                ${chipsHtml}
+    <div class="animate-fade">
+        <!-- Back button + titolo -->
+        <div class="flex items-center gap-3 pt-1 pb-3 px-1">
+            <button onclick="window.switchView('${currentView}')"
+                class="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-slate-100 active:scale-90 transition-all touch-manipulation shrink-0">
+                <span class="material-icons text-slate-600 text-lg">arrow_back</span>
+            </button>
+            <h2 class="font-serif text-xl font-bold text-slate-800">${currentLabel}</h2>
+        </div>
+
+        <!-- Contenuto lista -->
+        <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-200 ease-out px-2"></div>
+
+        <!-- Footer: navigazione tra le schede sorelle -->
+        <div class="px-2 pt-4 pb-20">
+            <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest text-center mb-2">${window.t('explore_also')}</p>
+            <div class="flex gap-2">
+                ${footerTabsHtml}
             </div>
         </div>
-        <div class="flex items-center justify-center gap-1.5 pt-1.5">
-            ${dotsHtml}
-            <span class="text-[9px] font-semibold text-slate-400 ml-1.5 uppercase tracking-wider" id="swipe-hint">\u2190 swipe \u2192</span>
-        </div>
-    </div>
-    <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-200 ease-out pt-3 px-2"></div>`;
+    </div>`;
 
-    const defaultBtn = content.querySelector(`button[data-table="${defaultTable}"]`)
-                    || content.querySelector('.nav-tab-chip');
-    if (defaultBtn) loadTableData(defaultBtn.getAttribute('data-table'), defaultBtn);
+    // Carica i dati nella sotto-vista
+    loadTableData(tableName, null);
 
-    setTimeout(() => {
-        const hint = document.getElementById('swipe-hint');
-        if (hint) { hint.style.transition = 'opacity 0.5s'; hint.style.opacity = '0'; setTimeout(() => hint.remove(), 600); }
-    }, 3000);
-
-    window._initScrollFABs?.();
     _initOverscrollPeek();
 };
 
@@ -538,7 +581,7 @@ window._initScrollFABs = function() {
     window._destroyScrollFABs();
 
     const appContent = document.getElementById('app-content');
-    const tabBar     = document.getElementById('nav-tab-bar');
+    const tabBar     = document.getElementById('sub-tab-bar') || document.getElementById('nav-tab-bar');
     if (!appContent || !tabBar) return;
 
     const fabWrap = document.createElement('div');
@@ -614,36 +657,6 @@ window.loadTableData = async function(tableName, btnEl) {
 
     window._haptic?.(5);
 
-    // Risolve bottone se chiamato dallo swipe (btnEl === null)
-    if (!btnEl) btnEl = document.querySelector(`button[data-table="${tableName}"]`);
-
-    // ── Reset tutte le chip ──
-    document.querySelectorAll('.nav-tab-chip').forEach(b => {
-        const idx = parseInt(b.dataset.index);
-        b.classList.remove('ring-2', 'ring-offset-1', 'scale-105', 'shadow-md');
-        b.style.opacity = '0.7';
-        // Reset dot
-        const dot = document.querySelector(`.nav-tab-dot[data-dot="${idx}"]`);
-        if (dot) { dot.className = 'nav-tab-dot w-1.5 h-1.5 rounded-full transition-all duration-300 bg-slate-300'; }
-    });
-    // Fallback per vecchio side menu (btn-pop-menu) se ancora presente
-    document.querySelectorAll('.btn-pop-menu').forEach(b => {
-        b.classList.remove('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105', 'shadow-md');
-        b.style.opacity = '0.7';
-    });
-
-    // ── Attiva chip corrente — ring colorato + opacity piena ──
-    if (btnEl) {
-        const ringClass = btnEl.dataset.ring || 'ring-stone-300';
-        btnEl.classList.add('ring-2', 'ring-offset-1', ringClass, 'scale-105', 'shadow-md');
-        btnEl.style.opacity = '1';
-        btnEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        // Attiva dot corrispondente
-        const idx = parseInt(btnEl.dataset.index);
-        const dot = document.querySelector(`.nav-tab-dot[data-dot="${idx}"]`);
-        if (dot) { dot.className = 'nav-tab-dot w-3 h-1.5 rounded-full transition-all duration-300 bg-slate-600'; }
-    }
-
     // Fade content
     subContent.style.opacity = '0.5';
     setTimeout(() => { subContent.style.opacity = '1'; }, 200);
@@ -702,7 +715,9 @@ window.loadTableData = async function(tableName, btnEl) {
             renderHorizontalFilterView(data, 'Paesi', subContent, window.spiaggiaRenderer, 'lat_sp', 'long_sp');
             break;
         case 'Prodotti':
-            subContent.innerHTML = `<div class="grid grid-cols-2 gap-3.5 pb-20 animate-fade pt-2">
+            window._currentFilteredList = data;
+            window._currentCardRenderer = window.prodottoRenderer;
+            subContent.innerHTML = `<div class="grid grid-cols-2 gap-3.5 animate-fade pt-2">
                 ${data.map(p => window.prodottoRenderer(p)).join('')}
             </div>`;
             break;
@@ -716,7 +731,7 @@ window.loadTableData = async function(tableName, btnEl) {
             renderHorizontalFilterView(data, 'difficolta_cai', subContent, window.sentieroRenderer);
             break;
         case 'Farmacie':
-            subContent.innerHTML = `<div class="flex flex-col gap-3 pb-20 animate-fade pt-2">
+            subContent.innerHTML = `<div class="flex flex-col gap-3 animate-fade pt-2">
                 ${data.map(i => window.farmacieRenderer(i)).join('')}
             </div>`;
             break;
@@ -742,6 +757,10 @@ window.loadTableData = async function(tableName, btnEl) {
  * @param {number}      [batchSize=10]
  */
 window.IncrementalRenderer = function(container, items, cardRenderer, batchSize = 10) {
+    // ── Esponi la lista corrente per il modal-swipe ──
+    window._currentFilteredList = items || [];
+    window._currentCardRenderer = cardRenderer || null;
+
     // Disconnetti observer precedente salvato sul container
     if (container._incObs) {
         container._incObs.disconnect();
@@ -880,7 +899,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
                 <div class="p-3 overflow-x-auto no-scrollbar flex gap-2" id="chips-${filterId}"></div>
             </div>
         </div>
-        <div id="dynamic-list" class="flex flex-col gap-3 pb-20 animate-fade min-h-[50vh]"></div>`;
+        <div id="dynamic-list" class="flex flex-col gap-3 animate-fade min-h-[50vh]"></div>`;
 
     const chipContainer = container.querySelector(`#chips-${filterId}`);
     const listContainer = container.querySelector('#dynamic-list');
@@ -1000,7 +1019,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
                 </div>
             </div>
         </div>
-        <div id="dynamic-list" class="flex flex-col gap-3 pb-20 animate-fade min-h-[50vh]"></div>`;
+        <div id="dynamic-list" class="flex flex-col gap-3 animate-fade min-h-[50vh]"></div>`;
 
     const c1        = container.querySelector(`#row1-${filterId}`);
     const c2        = container.querySelector(`#row2-${filterId}`);
@@ -1671,32 +1690,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-//  SWIPE GESTURE (tab switching)
+//  SWIPE GESTURE — rimosso: ora lo swipe avviene dentro i modali dettaglio
+//  (vedi ModalSwiper in ui-modal.js)
 // ─────────────────────────────────────────────────────────────────────────
-document.addEventListener('touchstart', (e) => {
-    window.touchStartX = e.changedTouches[0].screenX;
-    window.touchStartY = e.changedTouches[0].screenY;
-}, { passive: true });
-
-document.addEventListener('touchend', (e) => {
-    if (!document.getElementById('sub-content')) return;
-    if (!window.currentMenuOptions?.length) return;
-
-    const xDiff = e.changedTouches[0].screenX - window.touchStartX;
-    const yDiff = e.changedTouches[0].screenY - window.touchStartY;
-
-    if (Math.abs(yDiff) > Math.abs(xDiff)) return;   // scroll verticale
-    if (Math.abs(xDiff) < 60) return;                  // soglia minima
-
-    const currentIndex = window.currentMenuOptions.findIndex(o => o.table === window.currentActiveTable);
-    if (currentIndex === -1) return;
-
-    const nextIndex = xDiff > 0
-        ? (currentIndex > 0 ? currentIndex - 1 : -1)
-        : (currentIndex < window.currentMenuOptions.length - 1 ? currentIndex + 1 : -1);
-
-    if (nextIndex !== -1) loadTableData(window.currentMenuOptions[nextIndex].table, null);
-}, { passive: true });
 
 window.apriTrenitalia = function() { window.open('https://www.trenitalia.com', '_blank'); };
 

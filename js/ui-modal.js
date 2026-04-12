@@ -3,7 +3,18 @@ try {
     if (!document.getElementById('f2g-modal-styles')) {
         const _s = document.createElement('style');
         _s.id = 'f2g-modal-styles';
-        _s.textContent = '@keyframes modalSheetUp{from{opacity:0;transform:translateY(40px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes modalSheetDown{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(100%)}}@keyframes modalBackdropOut{from{opacity:1}to{opacity:0}}.modal-sheet-enter{animation:modalSheetUp .32s cubic-bezier(.2,.8,.2,1) both}.modal-sheet-exit{animation:modalSheetDown .25s ease-in both}.modal-backdrop-exit{animation:modalBackdropOut .2s ease-in both}';
+        _s.textContent = '@keyframes modalSheetUp{from{opacity:0;transform:translateY(40px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes modalSheetDown{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(100%)}}@keyframes modalBackdropOut{from{opacity:1}to{opacity:0}}.modal-sheet-enter{animation:modalSheetUp .32s cubic-bezier(.2,.8,.2,1) both}.modal-sheet-exit{animation:modalSheetDown .25s ease-in both}.modal-backdrop-exit{animation:modalBackdropOut .2s ease-in both}'
+        + '@keyframes msSlideInLeft{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:translateX(0)}}'
+        + '@keyframes msSlideInRight{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}'
+        + '.ms-slide-left{animation:msSlideInLeft .28s cubic-bezier(.2,.8,.2,1) both}'
+        + '.ms-slide-right{animation:msSlideInRight .28s cubic-bezier(.2,.8,.2,1) both}'
+        + '.ms-arrow{position:absolute;top:50%;z-index:30;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.18);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:#fff;border:1px solid rgba(255,255,255,0.2);cursor:pointer;transition:opacity .3s,transform .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}'
+        + '.ms-arrow:active{transform:translateY(-50%) scale(0.9)}'
+        + '.ms-arrow--left{left:8px;transform:translateY(-50%)}'
+        + '.ms-arrow--right{right:8px;transform:translateY(-50%)}'
+        + '.ms-arrow--hidden{opacity:0;pointer-events:none}'
+        + '.ms-counter{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:25;background:rgba(0,0,0,0.35);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.06em;padding:3px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);pointer-events:none;transition:opacity .3s}'
+        ;
         document.head.appendChild(_s);
     }
 } catch(e) { /* CSP o browser vecchio — le animazioni degradano graziosamente */ }
@@ -12,12 +23,271 @@ try {
 window._dismissModal = function(overlay) {
     if (!overlay || overlay._dismissing) return;
     overlay._dismissing = true;
+    // Cleanup swiper se attivo
+    if (overlay._swiperCleanup) overlay._swiperCleanup();
     const sheet = overlay.querySelector('.modal-sheet');
     if (sheet) { sheet.classList.add('modal-sheet-exit'); }
     overlay.classList.add('modal-backdrop-exit');
     const cleanup = () => { try { overlay.remove(); } catch(e){} };
     overlay.addEventListener('animationend', cleanup, { once: true });
     setTimeout(cleanup, 400); // fallback sicurezza
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+//  MODAL SWIPER — Swipe orizzontale tra items dentro il modale
+//  Pattern: Instagram stories, Google Maps cards, Airbnb listing gallery
+// ─────────────────────────────────────────────────────────────────────────
+/**
+ * Attacca lo swipe orizzontale + frecce ad un overlay modale aperto.
+ *
+ * @param {HTMLElement} overlay   — il .fixed overlay del modale
+ * @param {Array}       items     — lista filtrata corrente (stessi oggetti del DB)
+ * @param {number}      startIdx  — indice dell'item attualmente visualizzato
+ * @param {string}      modalType — tipo modale (es. 'ristorante','product','Vini'…)
+ */
+window._attachModalSwiper = function(overlay, items, startIdx, modalType) {
+    if (!overlay || !items || items.length <= 1) return;
+
+    let currentIdx = startIdx;
+    const total = items.length;
+
+    // ── Mappa tipo modale → come generare il payload per openModal ──
+    // Ogni tipo usa un pattern diverso (safeObj vs safeId)
+    const _payloadForItem = (item, type) => {
+        switch (type) {
+            case 'ristorante': case 'restaurant':
+            case 'Spiagge':
+            case 'product':
+            case 'sentieroInfo':
+                return encodeURIComponent(JSON.stringify(item)).replace(/'/g, '%27');
+            case 'Vini': case 'wine':
+                return String(item.id || item.ID);
+            case 'attrazione': case 'Attrazioni':
+                return String(item.POI_ID || item.id);
+            default:
+                return encodeURIComponent(JSON.stringify(item)).replace(/'/g, '%27');
+        }
+    };
+
+    // ── Inietta frecce + counter nell'overlay ──
+    const sheet = overlay.querySelector('.modal-sheet');
+    if (!sheet) return;
+
+    const arrowLeft  = document.createElement('button');
+    arrowLeft.className = `ms-arrow ms-arrow--left ${currentIdx === 0 ? 'ms-arrow--hidden' : ''}`;
+    arrowLeft.innerHTML = '<span class="material-icons" style="font-size:20px;">chevron_left</span>';
+    arrowLeft.setAttribute('aria-label', 'Previous');
+
+    const arrowRight = document.createElement('button');
+    arrowRight.className = `ms-arrow ms-arrow--right ${currentIdx >= total - 1 ? 'ms-arrow--hidden' : ''}`;
+    arrowRight.innerHTML = '<span class="material-icons" style="font-size:20px;">chevron_right</span>';
+    arrowRight.setAttribute('aria-label', 'Next');
+
+    const counter = document.createElement('div');
+    counter.className = 'ms-counter';
+    counter.textContent = `${currentIdx + 1} / ${total}`;
+
+    overlay.appendChild(arrowLeft);
+    overlay.appendChild(arrowRight);
+    overlay.appendChild(counter);
+
+    // ── Aggiorna UI frecce + counter ──
+    function _updateNav() {
+        arrowLeft.classList.toggle('ms-arrow--hidden',  currentIdx <= 0);
+        arrowRight.classList.toggle('ms-arrow--hidden', currentIdx >= total - 1);
+        counter.textContent = `${currentIdx + 1} / ${total}`;
+    }
+
+    // ── Naviga ad un item con animazione slide ──
+    function _navigateTo(newIdx, direction) {
+        if (newIdx < 0 || newIdx >= total || newIdx === currentIdx) return;
+        currentIdx = newIdx;
+
+        // Rigenera il contenuto del modale per il nuovo item
+        const newItem = items[newIdx];
+        const newPayload = _payloadForItem(newItem, modalType);
+
+        // Per Vini/Attrazioni l'item va cercato in currentTableData
+        let itemForModal = null;
+        if (['Vini','wine','Attrazioni','attrazione'].includes(modalType)) {
+            itemForModal = newItem; // Lo passiamo direttamente
+        }
+
+        const content = window.getModalContent(modalType, newPayload, itemForModal);
+        if (!content || !content.html) return;
+
+        // Report button
+        let reportBtnHtml = '';
+        const reportableTypes = ['ristorante','restaurant','product','Vini','wine','attrazione','Attrazioni','Spiagge','sentieroInfo'];
+        if (reportableTypes.includes(modalType) && window.renderReportBtn) {
+            let itemName = '', itemId = '';
+            try {
+                if (itemForModal) {
+                    itemName = window.dbCol(itemForModal, 'Nome') || window.dbCol(itemForModal, 'Attrazioni') || '';
+                    itemId = String(itemForModal.id || itemForModal.ID || itemForModal.POI_ID || '');
+                } else {
+                    const parsed = JSON.parse(decodeURIComponent(newPayload));
+                    itemName = window.dbCol(parsed, 'Nome') || window.dbCol(parsed, 'Prodotti') || parsed.nome || '';
+                    itemId = String(parsed.id || parsed.poi_id || '');
+                }
+            } catch(e) {}
+            reportBtnHtml = `<div class="px-5 pb-4 flex justify-start">${window.renderReportBtn(modalType, itemId, itemName)}</div>`;
+        }
+
+        const _closeLabel = (window.t ? window.t('close_label') : 'Close');
+        const slideClass = direction === 'left' ? 'ms-slide-left' : 'ms-slide-right';
+
+        let modalClass = content.class || 'modal-sheet bg-white w-full max-w-md rounded-t-[1.75rem] md:rounded-[2rem] shadow-2xl overflow-hidden relative overflow-y-auto h-[92vh] h-[92dvh]';
+        if (!modalClass.includes('modal-sheet')) modalClass = 'modal-sheet ' + modalClass;
+
+        // Rimuovi il vecchio sheet
+        const oldSheet = overlay.querySelector('.modal-sheet');
+        if (oldSheet) oldSheet.remove();
+
+        // Crea il nuovo sheet con animazione slide
+        const newSheet = document.createElement('div');
+        newSheet.className = `${modalClass} ${slideClass} transform transition-all scale-100`;
+        newSheet.innerHTML = `
+            <button class="absolute top-3 right-4 z-20 w-9 h-9 bg-slate-100/90 backdrop-blur rounded-full flex items-center justify-center text-slate-500 shadow-sm active:scale-90 transition-transform cursor-pointer touch-manipulation" onclick="window._dismissModal(this.closest('.fixed'))" aria-label="${_closeLabel}">
+                <span class="material-icons" style="font-size:18px;">close</span>
+            </button>
+            ${content.html}
+            ${reportBtnHtml}`;
+
+        // Inserisci prima delle frecce
+        overlay.insertBefore(newSheet, arrowLeft);
+
+        if (content.onRender && typeof content.onRender === 'function') {
+            setTimeout(() => content.onRender(), 50);
+        }
+
+        _updateNav();
+        window._haptic?.(5);
+
+        // ── Scroll sync: porta la card corrispondente in vista nella lista ──
+        _syncListScroll(newIdx, newItem);
+    }
+
+    // ── Scroll sync con la lista sotto ──
+    function _syncListScroll(idx, item) {
+        // Trova la card corrispondente nel DOM della lista
+        const listContainer = document.getElementById('dynamic-list');
+        if (!listContainer) return;
+
+        const cards = listContainer.querySelectorAll('.master-card, [data-card-id]');
+        if (!cards.length) return;
+
+        // Cerca per data-card-id o per indice posizionale
+        const itemId = String(item?.id || item?.ID || item?.POI_ID || item?.poi_id || '');
+        let targetCard = null;
+
+        if (itemId) {
+            targetCard = listContainer.querySelector(`[data-card-id="${itemId}"]`);
+        }
+        if (!targetCard && cards[idx]) {
+            targetCard = cards[idx];
+        }
+
+        if (targetCard) {
+            // scrollIntoView smooth — centra la card nel viewport
+            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Flash visivo leggero per indicare quale card è quella attiva
+            targetCard.style.transition = 'box-shadow 0.3s ease, transform 0.3s ease';
+            targetCard.style.boxShadow = '0 0 0 3px rgba(233,196,106,0.5)';
+            targetCard.style.transform = 'scale(1.01)';
+            setTimeout(() => {
+                targetCard.style.boxShadow = '';
+                targetCard.style.transform = '';
+            }, 800);
+        }
+    }
+
+    // ── Click frecce ──
+    arrowLeft.onclick = (e) => {
+        e.stopPropagation();
+        _navigateTo(currentIdx - 1, 'left');
+    };
+    arrowRight.onclick = (e) => {
+        e.stopPropagation();
+        _navigateTo(currentIdx + 1, 'right');
+    };
+
+    // ── Touch swipe orizzontale sul modale ──
+    let _sStartX = 0, _sStartY = 0, _swiping = false, _sDeltaX = 0;
+    const SWIPE_THRESHOLD = 50;    // px minimi per attivare lo swipe
+    const ANGLE_LOCK = 1.2;        // rapporto dy/dx sotto il quale è "orizzontale"
+
+    function _onTouchStart(e) {
+        _sStartX = e.touches[0].clientX;
+        _sStartY = e.touches[0].clientY;
+        _swiping = false;
+        _sDeltaX = 0;
+    }
+
+    function _onTouchMove(e) {
+        const dx = e.touches[0].clientX - _sStartX;
+        const dy = e.touches[0].clientY - _sStartY;
+
+        // Lock: deve essere un gesto prevalentemente orizzontale
+        if (!_swiping && Math.abs(dx) > 15 && Math.abs(dx) > Math.abs(dy) * ANGLE_LOCK) {
+            _swiping = true;
+        }
+
+        if (_swiping) {
+            _sDeltaX = dx;
+            // Feedback visivo: leggero spostamento del sheet
+            const currentSheet = overlay.querySelector('.modal-sheet');
+            if (currentSheet) {
+                const dampedX = dx * 0.3;
+                currentSheet.style.transform = `translateX(${dampedX}px)`;
+                currentSheet.style.transition = 'none';
+            }
+        }
+    }
+
+    function _onTouchEnd() {
+        if (!_swiping) return;
+        _swiping = false;
+
+        const currentSheet = overlay.querySelector('.modal-sheet');
+        if (currentSheet) {
+            currentSheet.style.transition = 'transform 0.2s ease';
+            currentSheet.style.transform = '';
+        }
+
+        if (Math.abs(_sDeltaX) > SWIPE_THRESHOLD) {
+            if (_sDeltaX > 0) {
+                // Swipe verso destra → item precedente
+                _navigateTo(currentIdx - 1, 'left');
+            } else {
+                // Swipe verso sinistra → item successivo
+                _navigateTo(currentIdx + 1, 'right');
+            }
+        }
+        _sDeltaX = 0;
+    }
+
+    overlay.addEventListener('touchstart', _onTouchStart, { passive: true });
+    overlay.addEventListener('touchmove',  _onTouchMove,  { passive: true });
+    overlay.addEventListener('touchend',   _onTouchEnd,   { passive: true });
+
+    // ── Keyboard nav (accessibilità desktop) ──
+    function _onKeyNav(e) {
+        if (e.key === 'ArrowLeft')  { e.preventDefault(); _navigateTo(currentIdx - 1, 'left'); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); _navigateTo(currentIdx + 1, 'right'); }
+    }
+    document.addEventListener('keydown', _onKeyNav);
+
+    // ── Cleanup function (chiamata da _dismissModal) ──
+    overlay._swiperCleanup = function() {
+        overlay.removeEventListener('touchstart', _onTouchStart);
+        overlay.removeEventListener('touchmove',  _onTouchMove);
+        overlay.removeEventListener('touchend',   _onTouchEnd);
+        document.removeEventListener('keydown', _onKeyNav);
+    };
+
+    _updateNav();
 };
 
 window.openModal = async function(type, payload) {
@@ -133,11 +403,16 @@ window.openModal = async function(type, payload) {
         reportBtnHtml = `<div class="px-5 pb-4 flex justify-start">${window.renderReportBtn(type, itemId, itemName)}</div>`;
     }
 
-    // Content Container: bottom-sheet auto-sizing mobile, centered card desktop
-    // L'altezza si adatta al contenuto con max-h-[85vh] — schede piccole
-    // (farmacia) restano piccole, schede grandi (ristorante) usano più spazio.
-    let modalClass = content.class || 'modal-sheet bg-white w-full max-w-md rounded-t-[1.75rem] md:rounded-[2rem] shadow-2xl overflow-hidden relative overflow-y-auto' +
-        ' ' + 'max-h-[85vh] max-h-[85dvh]';
+    // Content Container: bottom-sheet
+    // Tipi swipabili → altezza fissa 92vh per evitare "saltelli" durante lo swipe
+    // Altri tipi → altezza dinamica che si adatta al contenuto
+    const _swipeableForHeight = ['ristorante','restaurant','product','Vini','wine','attrazione','Attrazioni','Spiagge','sentieroInfo'];
+    const isSwipeable = _swipeableForHeight.includes(type);
+    const heightClasses = isSwipeable
+        ? 'h-[92vh] h-[92dvh]'                    // fisso: catalogo sfogliabile
+        : 'max-h-[85vh] max-h-[85dvh]';           // dinamico: si adatta al contenuto
+
+    let modalClass = content.class || `modal-sheet bg-white w-full max-w-md rounded-t-[1.75rem] md:rounded-[2rem] shadow-2xl overflow-hidden relative overflow-y-auto ${heightClasses}`;
     if (!modalClass.includes('modal-sheet')) modalClass = 'modal-sheet ' + modalClass;
 
     const _closeLabel = (window.t ? window.t('close_label') : 'Close');
@@ -153,6 +428,61 @@ window.openModal = async function(type, payload) {
 
     if (content.onRender && typeof content.onRender === 'function') {
         setTimeout(() => content.onRender(), 50);
+    }
+
+    // ── MODAL SWIPER: attacca navigazione swipe se siamo in una lista ──
+    const _swipeableTypes = ['ristorante','restaurant','product','Vini','wine','attrazione','Attrazioni','Spiagge','sentieroInfo'];
+    console.log('[ModalSwiper] type:', type, '| in swipeableTypes:', _swipeableTypes.includes(type), '| filteredList length:', window._currentFilteredList?.length);
+    if (_swipeableTypes.includes(type) && window._currentFilteredList?.length > 1) {
+        const list = window._currentFilteredList;
+
+        // Trova l'indice dell'item corrente nella lista filtrata
+        let foundIdx = -1;
+
+        if (['Vini','wine'].includes(type)) {
+            // Payload = ID diretto (stringa)
+            foundIdx = list.findIndex(it => String(it.id ?? it.ID ?? '') === String(payload));
+
+        } else if (['attrazione','Attrazioni'].includes(type)) {
+            // Payload = POI_ID o id diretto (stringa)
+            foundIdx = list.findIndex(it => String(it.POI_ID ?? it.id ?? '') === String(payload));
+
+        } else {
+            // Ristoranti, Spiagge, Prodotti, Sentieri: payload = JSON encoded dell'intero oggetto
+            let parsedPayload = null;
+            try { parsedPayload = JSON.parse(decodeURIComponent(payload)); } catch(e) { /* payload non decodificabile */ }
+
+            if (parsedPayload) {
+                // Strategia 1: match per id numerico/stringa
+                const pId = parsedPayload.id ?? parsedPayload.poi_id ?? null;
+                if (pId != null) {
+                    foundIdx = list.findIndex(it => {
+                        const itId = it.id ?? it.poi_id ?? null;
+                        return itId != null && String(itId) === String(pId);
+                    });
+                }
+
+                // Strategia 2 (fallback): match per Nome IT — gli id potrebbero non esistere nella tabella Prodotti
+                if (foundIdx === -1) {
+                    const pNome = window.valIT(parsedPayload, 'Nome') || window.valIT(parsedPayload, 'Prodotti') || '';
+                    if (pNome) {
+                        foundIdx = list.findIndex(it => {
+                            const itNome = window.valIT(it, 'Nome') || window.valIT(it, 'Prodotti') || '';
+                            return itNome && itNome === pNome;
+                        });
+                    }
+                }
+            }
+        }
+
+        if (foundIdx >= 0) {
+            console.log('[ModalSwiper] ✅ Attached at index', foundIdx, '/', list.length);
+            setTimeout(() => {
+                window._attachModalSwiper(modal, list, foundIdx, type);
+            }, 100);
+        } else {
+            console.warn('[ModalSwiper] ❌ Item not found in list. type:', type, '| payload (first 100):', String(payload).substring(0, 100), '| list[0] sample:', JSON.stringify(list[0]).substring(0, 100));
+        }
     }
 };
 
