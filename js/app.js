@@ -1694,6 +1694,64 @@ document.addEventListener('DOMContentLoaded', async () => {
 //  (vedi ModalSwiper in ui-modal.js)
 // ─────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────
+//  PINCH-ZOOM AUTO-RESET
+//  L'utente può zoomare (WCAG 2.1 SC 1.4.4), ma al rilascio la viewport
+//  torna dolcemente a scala 1x dopo un breve delay.
+//  Usa la VisualViewport API (supportata da tutti i browser moderni).
+//  Fallback: su browser senza VisualViewport non fa nulla (zoom normale).
+// ─────────────────────────────────────────────────────────────────────────
+(function _initZoomAutoReset() {
+    const vv = window.visualViewport;
+    if (!vv) return; // Browser senza VisualViewport API — noop
+
+    let _zoomResetTimer = null;
+    let _isZoomed = false;
+
+    // Monitora cambiamenti di scala
+    vv.addEventListener('resize', () => {
+        const scale = vv.scale;
+
+        if (scale > 1.05) {
+            // L'utente sta zoomando — cancella eventuali timer di reset
+            _isZoomed = true;
+            clearTimeout(_zoomResetTimer);
+        }
+    });
+
+    // Al rilascio del pinch (touchend con 0 tocchi attivi)
+    document.addEventListener('touchend', (e) => {
+        if (!_isZoomed) return;
+        // Solo quando tutte le dita sono state rilasciate
+        if (e.touches.length > 0) return;
+
+        clearTimeout(_zoomResetTimer);
+        _zoomResetTimer = setTimeout(() => {
+            if (vv.scale <= 1.05) {
+                _isZoomed = false;
+                return; // Già a scala normale
+            }
+
+            // Reset smooth: il meta viewport non supporta transizioni,
+            // quindi usiamo un trucco: modifichiamo il meta viewport
+            // per forzare il reset e lasciamo che il browser animi.
+            const metaVP = document.querySelector('meta[name="viewport"]');
+            if (metaVP) {
+                // Forza scala 1 con transizione del browser
+                metaVP.setAttribute('content',
+                    'width=device-width, initial-scale=1.0, maximum-scale=1.0');
+
+                // Dopo il reset, ri-abilita il pinch zoom
+                setTimeout(() => {
+                    metaVP.setAttribute('content',
+                        'width=device-width, initial-scale=1.0');
+                    _isZoomed = false;
+                }, 400);
+            }
+        }, 350); // 350ms di delay — tempo per leggere prima del reset
+    }, { passive: true });
+})();
+
 window.apriTrenitalia = function() { window.open('https://www.trenitalia.com', '_blank'); };
 
 // ─────────────────────────────────────────────────────────────────────────
