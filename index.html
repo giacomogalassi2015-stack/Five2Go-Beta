@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Five2Go</title>
 
     <!-- PWA Manifest + meta cross-browser -->
@@ -93,10 +93,11 @@
             position: fixed;
             background-color: #F5F1E1;
             color: #3D4246;
-            /* touch-action:manipulation consente pinch-zoom (accessibilità)
-               ma previene il double-tap zoom che causa delay e problemi UX.
-               Era touch-action:none che bloccava TUTTO → violazione WCAG 2.1 SC 1.4.4 */
-            touch-action: manipulation;
+            /* touch-action: pan-x pan-y consente lo scroll in ogni direzione
+               ma blocca il pinch-zoom nativo. Il pinch è gestito via JS
+               su #app-content con transform:scale() e auto-reset elastico.
+               Questo permette il controllo totale su zoom + reset animato. */
+            touch-action: pan-x pan-y;
             /* Fix scroll rimbalzante su Firefox Android */
             overscroll-behavior: none;
             /* Rimuove il flash grigio al tap su Android Chrome */
@@ -614,12 +615,32 @@
             border-left: 1px solid rgba(255,255,255,0.10);
             transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1),
                         box-shadow 0.4s ease;
-            /* Leggero respiro: la card "vive" */
-            animation: svcBreathe 4s ease-in-out infinite;
+            /* 3 respiri (12s) + pausa (28s) = ciclo 40s
+               I 3 respiri occupano il primo 30% della timeline.
+               Il restante 70% è pausa ferma a -4px. */
+            animation: svcBreathe 40s ease-in-out infinite;
         }
         @keyframes svcBreathe {
-            0%, 100% { transform: translateY(-4px); }
-            50%      { transform: translateY(-6px); }
+            /* Respiro 1 */
+            0%   { transform: translateY(-4px);
+                   box-shadow: 0 2px 3px rgba(0,0,0,0.12), 0 8px 16px -2px rgba(0,0,0,0.18), 0 20px 44px -8px rgba(0,0,0,0.14), 0 32px 60px -12px rgba(0,0,0,0.08); }
+            5%   { transform: translateY(-7px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.10), 0 12px 24px -2px rgba(0,0,0,0.20), 0 28px 56px -8px rgba(0,0,0,0.16), 0 40px 72px -12px rgba(0,0,0,0.10); }
+            10%  { transform: translateY(-4px);
+                   box-shadow: 0 2px 3px rgba(0,0,0,0.12), 0 8px 16px -2px rgba(0,0,0,0.18), 0 20px 44px -8px rgba(0,0,0,0.14), 0 32px 60px -12px rgba(0,0,0,0.08); }
+            /* Respiro 2 */
+            15%  { transform: translateY(-7px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.10), 0 12px 24px -2px rgba(0,0,0,0.20), 0 28px 56px -8px rgba(0,0,0,0.16), 0 40px 72px -12px rgba(0,0,0,0.10); }
+            20%  { transform: translateY(-4px);
+                   box-shadow: 0 2px 3px rgba(0,0,0,0.12), 0 8px 16px -2px rgba(0,0,0,0.18), 0 20px 44px -8px rgba(0,0,0,0.14), 0 32px 60px -12px rgba(0,0,0,0.08); }
+            /* Respiro 3 */
+            25%  { transform: translateY(-7px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.10), 0 12px 24px -2px rgba(0,0,0,0.20), 0 28px 56px -8px rgba(0,0,0,0.16), 0 40px 72px -12px rgba(0,0,0,0.10); }
+            30%  { transform: translateY(-4px);
+                   box-shadow: 0 2px 3px rgba(0,0,0,0.12), 0 8px 16px -2px rgba(0,0,0,0.18), 0 20px 44px -8px rgba(0,0,0,0.14), 0 32px 60px -12px rgba(0,0,0,0.08); }
+            /* Pausa: ferme al 70% restante */
+            100% { transform: translateY(-4px);
+                   box-shadow: 0 2px 3px rgba(0,0,0,0.12), 0 8px 16px -2px rgba(0,0,0,0.18), 0 20px 44px -8px rgba(0,0,0,0.14), 0 32px 60px -12px rgba(0,0,0,0.08); }
         }
         .svc-raised:active {
             /* Premuta dentro lo schermo */
@@ -643,11 +664,29 @@
             border-left: 1px solid rgba(255,255,255,0.5);
             transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1),
                         box-shadow 0.4s ease;
-            animation: svcBreathFlat 4.5s ease-in-out infinite;
+            animation: svcBreathFlat 45s ease-in-out infinite;
         }
         @keyframes svcBreathFlat {
-            0%, 100% { transform: translateY(-3px); }
-            50%      { transform: translateY(-5px); }
+            /* Respiro 1 */
+            0%   { transform: translateY(-3px);
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.07), 0 8px 20px -2px rgba(0,0,0,0.12), 0 18px 40px -8px rgba(0,0,0,0.08), 0 28px 52px -12px rgba(0,0,0,0.05); }
+            4.5% { transform: translateY(-6px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.06), 0 12px 28px -2px rgba(0,0,0,0.14), 0 24px 50px -8px rgba(0,0,0,0.10), 0 36px 64px -12px rgba(0,0,0,0.06); }
+            9%   { transform: translateY(-3px);
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.07), 0 8px 20px -2px rgba(0,0,0,0.12), 0 18px 40px -8px rgba(0,0,0,0.08), 0 28px 52px -12px rgba(0,0,0,0.05); }
+            /* Respiro 2 */
+            13.5%{ transform: translateY(-6px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.06), 0 12px 28px -2px rgba(0,0,0,0.14), 0 24px 50px -8px rgba(0,0,0,0.10), 0 36px 64px -12px rgba(0,0,0,0.06); }
+            18%  { transform: translateY(-3px);
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.07), 0 8px 20px -2px rgba(0,0,0,0.12), 0 18px 40px -8px rgba(0,0,0,0.08), 0 28px 52px -12px rgba(0,0,0,0.05); }
+            /* Respiro 3 */
+            22.5%{ transform: translateY(-6px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.06), 0 12px 28px -2px rgba(0,0,0,0.14), 0 24px 50px -8px rgba(0,0,0,0.10), 0 36px 64px -12px rgba(0,0,0,0.06); }
+            27%  { transform: translateY(-3px);
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.07), 0 8px 20px -2px rgba(0,0,0,0.12), 0 18px 40px -8px rgba(0,0,0,0.08), 0 28px 52px -12px rgba(0,0,0,0.05); }
+            /* Pausa */
+            100% { transform: translateY(-3px);
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.07), 0 8px 20px -2px rgba(0,0,0,0.12), 0 18px 40px -8px rgba(0,0,0,0.08), 0 28px 52px -12px rgba(0,0,0,0.05); }
         }
         .svc-raised-flat:active {
             transform: translateY(3px) scale(0.97);

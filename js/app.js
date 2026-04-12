@@ -1111,7 +1111,7 @@ window.renderServicesGrid = async function() {
     <div class="flex flex-col gap-4 pb-32 animate-pop" style="perspective:800px;">
 
         <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised"
-             style="height:150px" onclick="openModal('transport','bus')">
+             style="height:150px; animation-delay:0s;" onclick="openModal('transport','bus')">
             <img src="${busImg}" class="absolute inset-0 w-full h-full object-cover scale-[1.02]" onerror="this.style.display='none'">
             <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
             <div class="absolute inset-0 p-5 flex flex-col justify-between z-10">
@@ -1124,7 +1124,7 @@ window.renderServicesGrid = async function() {
 
         <div class="grid grid-cols-2 gap-3">
             <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised"
-                 style="height:150px" onclick="openModal('transport','train')">
+                 style="height:150px; animation-delay:0.6s;" onclick="openModal('transport','train')">
                 <img src="${trainImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
                 <div class="absolute inset-0 bg-black/20"></div>
                 <div class="absolute inset-0 p-4 flex flex-col justify-between z-10">
@@ -1135,7 +1135,7 @@ window.renderServicesGrid = async function() {
                 </div>
             </div>
             <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised"
-                 style="height:150px" onclick="openModal('transport','ferry')">
+                 style="height:150px; animation-delay:1.2s;" onclick="openModal('transport','ferry')">
                 <img src="${ferryImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
                 <div class="absolute inset-0 bg-black/20"></div>
                 <div class="absolute inset-0 p-4 flex flex-col justify-between z-10">
@@ -1148,6 +1148,7 @@ window.renderServicesGrid = async function() {
         </div>
 
         <div class="bg-white rounded-2xl flex items-center gap-4 p-4 cursor-pointer touch-manipulation svc-raised-flat"
+             style="animation-delay:1.8s;"
              onclick="renderSimpleList('Numeri_utili')">
             <div class="w-12 h-12 rounded-2xl bg-ct-service flex items-center justify-center shrink-0 shadow-sm">
                 <span class="material-icons text-xl text-white">phonelink_ring</span>
@@ -1159,6 +1160,7 @@ window.renderServicesGrid = async function() {
         </div>
 
         <div class="bg-white rounded-2xl flex items-center gap-4 p-4 cursor-pointer touch-manipulation svc-raised-flat"
+             style="animation-delay:2.4s;"
              onclick="renderSimpleList('Farmacie')">
             <div class="w-12 h-12 rounded-2xl bg-ct-health flex items-center justify-center shrink-0 shadow-sm">
                 <span class="material-icons text-xl text-white">medical_services</span>
@@ -1171,7 +1173,7 @@ window.renderServicesGrid = async function() {
 
         <div class="grid grid-cols-2 gap-3 mb-4">
             <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised flex flex-col justify-between p-4"
-                 style="height:140px" onclick="window.switchView('ct_card')">
+                 style="height:140px; animation-delay:3s;" onclick="window.switchView('ct_card')">
                 <div class="absolute inset-0" style="background:linear-gradient(145deg,#3D4246 0%,#5E7A8C 55%,#7097A8 100%)"></div>
                 <div class="absolute bottom-0 left-0 right-0 h-1" style="background:linear-gradient(90deg,#E9C46A,#D6CFC1)"></div>
                 <div class="relative z-10">
@@ -1183,7 +1185,7 @@ window.renderServicesGrid = async function() {
             </div>
 
             <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised flex flex-col justify-between p-4"
-                 style="height:140px" onclick="window.switchView('treno_card')">
+                 style="height:140px; animation-delay:3.6s;" onclick="window.switchView('treno_card')">
                 <div class="absolute inset-0" style="background:linear-gradient(145deg,#5C4440 0%,#8B5E5E 50%,#C98A5F 100%)"></div>
                 <div class="absolute bottom-0 left-0 right-0 h-1" style="background:linear-gradient(90deg,#E9C46A,#D6CFC1)"></div>
                 <div class="relative z-10">
@@ -1695,61 +1697,116 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────
-//  PINCH-ZOOM AUTO-RESET
-//  L'utente può zoomare (WCAG 2.1 SC 1.4.4), ma al rilascio la viewport
-//  torna dolcemente a scala 1x dopo un breve delay.
-//  Usa la VisualViewport API (supportata da tutti i browser moderni).
-//  Fallback: su browser senza VisualViewport non fa nulla (zoom normale).
+//  PINCH-ZOOM AUTO-RESET (v2 — gestione manuale, Safari iOS compatibile)
+//
+//  Il pinch-zoom nativo del browser è bloccato via CSS (touch-action:pan-x pan-y
+//  su html,body). Al suo posto, gestiamo il pinch manualmente su #app-content:
+//    1. Due dita → calcoliamo la scala e applichiamo transform:scale()
+//    2. Il contenuto si ingrandisce attorno al punto medio tra le dita
+//    3. Al rilascio → dopo 350ms la scala torna a 1x con transizione elastica
+//
+//  Perché non il pinch nativo?
+//  Safari iOS ignora le modifiche dinamiche a maximum-scale nel meta viewport,
+//  rendendo impossibile il reset programmato. Gestendolo via CSS transform
+//  abbiamo il controllo totale, cross-browser.
 // ─────────────────────────────────────────────────────────────────────────
-(function _initZoomAutoReset() {
-    const vv = window.visualViewport;
-    if (!vv) return; // Browser senza VisualViewport API — noop
+(function _initPinchZoom() {
+    const target = document.getElementById('app-content');
+    if (!target) return;
 
-    let _zoomResetTimer = null;
-    let _isZoomed = false;
+    let _startDist    = 0;     // distanza iniziale tra le due dita
+    let _currentScale = 1;     // scala corrente applicata
+    let _pinching     = false; // pinch in corso
+    let _resetTimer   = null;
+    const MAX_SCALE   = 2.5;   // limite massimo zoom
+    const MIN_SCALE   = 1;     // non si può rimpicciolire sotto 1x
 
-    // Monitora cambiamenti di scala
-    vv.addEventListener('resize', () => {
-        const scale = vv.scale;
+    // Distanza euclidea tra due touch
+    function _dist(t1, t2) {
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
 
-        if (scale > 1.05) {
-            // L'utente sta zoomando — cancella eventuali timer di reset
-            _isZoomed = true;
-            clearTimeout(_zoomResetTimer);
+    // Punto medio tra due touch (per transform-origin)
+    function _midpoint(t1, t2) {
+        return {
+            x: (t1.clientX + t2.clientX) / 2,
+            y: (t1.clientY + t2.clientY) / 2
+        };
+    }
+
+    target.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            _pinching = true;
+            _startDist = _dist(e.touches[0], e.touches[1]);
+            clearTimeout(_resetTimer);
+
+            // Disabilita transizione durante il pinch (deve seguire il dito)
+            target.style.transition = 'none';
+
+            // Imposta transform-origin al punto medio tra le dita
+            const rect = target.getBoundingClientRect();
+            const mid  = _midpoint(e.touches[0], e.touches[1]);
+            const ox   = ((mid.x - rect.left) / rect.width)  * 100;
+            const oy   = ((mid.y - rect.top)  / rect.height) * 100;
+            target.style.transformOrigin = `${ox}% ${oy}%`;
         }
-    });
-
-    // Al rilascio del pinch (touchend con 0 tocchi attivi)
-    document.addEventListener('touchend', (e) => {
-        if (!_isZoomed) return;
-        // Solo quando tutte le dita sono state rilasciate
-        if (e.touches.length > 0) return;
-
-        clearTimeout(_zoomResetTimer);
-        _zoomResetTimer = setTimeout(() => {
-            if (vv.scale <= 1.05) {
-                _isZoomed = false;
-                return; // Già a scala normale
-            }
-
-            // Reset smooth: il meta viewport non supporta transizioni,
-            // quindi usiamo un trucco: modifichiamo il meta viewport
-            // per forzare il reset e lasciamo che il browser animi.
-            const metaVP = document.querySelector('meta[name="viewport"]');
-            if (metaVP) {
-                // Forza scala 1 con transizione del browser
-                metaVP.setAttribute('content',
-                    'width=device-width, initial-scale=1.0, maximum-scale=1.0');
-
-                // Dopo il reset, ri-abilita il pinch zoom
-                setTimeout(() => {
-                    metaVP.setAttribute('content',
-                        'width=device-width, initial-scale=1.0');
-                    _isZoomed = false;
-                }, 400);
-            }
-        }, 350); // 350ms di delay — tempo per leggere prima del reset
     }, { passive: true });
+
+    target.addEventListener('touchmove', (e) => {
+        if (!_pinching || e.touches.length !== 2) return;
+
+        const newDist = _dist(e.touches[0], e.touches[1]);
+        const ratio   = newDist / _startDist;
+
+        // Scala con damping per sensazione naturale
+        let newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, ratio));
+
+        // Damping oltre 2x — diventa più difficile zoomare ulteriormente
+        if (newScale > 2) {
+            newScale = 2 + (newScale - 2) * 0.3;
+        }
+
+        _currentScale = newScale;
+        target.style.transform = `scale(${_currentScale})`;
+    }, { passive: true });
+
+    target.addEventListener('touchend', (e) => {
+        if (!_pinching) return;
+
+        // Il pinch finisce quando rimangono meno di 2 dita
+        if (e.touches.length < 2) {
+            _pinching = false;
+
+            // Se scala è quasi 1x, resetta subito
+            if (_currentScale < 1.08) {
+                _snapBack();
+                return;
+            }
+
+            // Altrimenti, delay → poi reset elastico
+            clearTimeout(_resetTimer);
+            _resetTimer = setTimeout(_snapBack, 350);
+        }
+    }, { passive: true });
+
+    function _snapBack() {
+        // Transizione elastica per il ritorno
+        target.style.transition = 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1)';
+        target.style.transform  = 'scale(1)';
+        _currentScale = 1;
+
+        // Cleanup dopo la transizione
+        const _onEnd = () => {
+            target.style.transition = '';
+            target.style.transformOrigin = '';
+            target.removeEventListener('transitionend', _onEnd);
+        };
+        target.addEventListener('transitionend', _onEnd, { once: true });
+        // Fallback sicurezza
+        setTimeout(_onEnd, 600);
+    }
 })();
 
 window.apriTrenitalia = function() { window.open('https://www.trenitalia.com', '_blank'); };
