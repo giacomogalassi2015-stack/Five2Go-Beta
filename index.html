@@ -93,11 +93,11 @@
             position: fixed;
             background-color: #F5F1E1;
             color: #3D4246;
-            /* touch-action: pan-x pan-y consente lo scroll in ogni direzione
-               ma blocca il pinch-zoom nativo. Il pinch è gestito via JS
-               su #app-content con transform:scale() e auto-reset elastico.
-               Questo permette il controllo totale su zoom + reset animato. */
-            touch-action: pan-x pan-y;
+            /* touch-action:manipulation consente scroll e pinch-zoom nativo
+               ma previene il double-tap zoom. Il pinch nativo viene intercettato
+               e bloccato via JS (preventDefault su touchmove a 2 dita)
+               per applicare il nostro zoom CSS con auto-reset elastico. */
+            touch-action: manipulation;
             /* Fix scroll rimbalzante su Firefox Android */
             overscroll-behavior: none;
             /* Rimuove il flash grigio al tap su Android Chrome */

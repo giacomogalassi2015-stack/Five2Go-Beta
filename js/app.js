@@ -39,6 +39,16 @@ window.addEventListener('popstate', function(e) {
     if (state?.view) {
         const navBtn = document.querySelector(`.nav-item[onclick*="${state.view}"]`);
         switchView(state.view, navBtn);
+
+        // Se lo stato ha un subTable, riapri la sottotabella dopo il render del menu
+        if (state.subTable && window._openSubTable) {
+            // Piccolo delay per lasciare che switchView renderizzi il menu
+            setTimeout(() => {
+                window._historyNav = false; // Evita di ri-pushare lo stato
+                window._openSubTable(state.subTable);
+                window._historyNav = true;
+            }, 50);
+        }
     } else {
         switchView('home', document.querySelector('.nav-item[onclick*="home"]'));
     }
@@ -512,8 +522,14 @@ window._openSubTable = function(tableName) {
     const options = window.currentMenuOptions;
     if (!options) return;
 
+    // ── History: pusha stato con subTable per il back button ──
+    const parentView = window.currentViewName; // 'cibo' o 'outdoor'
+    if (window._historyNav) {
+        history.pushState({ view: parentView, subTable: tableName }, '', `#/${parentView}/${tableName}`);
+    }
+
     // Trova label e view corrente per il back button
-    const currentView = window.currentViewName; // 'cibo' o 'outdoor'
+    const currentView = parentView;
     const currentOpt = options.find(o => o.table === tableName);
     const currentLabel = currentOpt ? currentOpt.label : tableName;
 
@@ -1697,38 +1713,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────
-//  PINCH-ZOOM AUTO-RESET (v2 — gestione manuale, Safari iOS compatibile)
+//  PINCH-ZOOM AUTO-RESET (v3 — Safari iOS compatibile)
 //
-//  Il pinch-zoom nativo del browser è bloccato via CSS (touch-action:pan-x pan-y
-//  su html,body). Al suo posto, gestiamo il pinch manualmente su #app-content:
-//    1. Due dita → calcoliamo la scala e applichiamo transform:scale()
-//    2. Il contenuto si ingrandisce attorno al punto medio tra le dita
-//    3. Al rilascio → dopo 350ms la scala torna a 1x con transizione elastica
+//  Safari iOS ignora touch-action:pan-x pan-y per il pinch E ignora
+//  user-scalable=no dal meta viewport. L'unico modo per bloccare il pinch
+//  nativo è chiamare preventDefault() sul touchmove a 2 dita.
 //
-//  Perché non il pinch nativo?
-//  Safari iOS ignora le modifiche dinamiche a maximum-scale nel meta viewport,
-//  rendendo impossibile il reset programmato. Gestendolo via CSS transform
-//  abbiamo il controllo totale, cross-browser.
+//  Flusso:
+//    1. touchstart con 2 dita → salva distanza iniziale
+//    2. touchmove con 2 dita → preventDefault() blocca zoom nativo,
+//       calcoliamo scala e applichiamo transform:scale() su #app-content
+//    3. touchend → dopo 350ms, transizione elastica a scale(1)
 // ─────────────────────────────────────────────────────────────────────────
 (function _initPinchZoom() {
     const target = document.getElementById('app-content');
     if (!target) return;
 
-    let _startDist    = 0;     // distanza iniziale tra le due dita
-    let _currentScale = 1;     // scala corrente applicata
-    let _pinching     = false; // pinch in corso
+    let _startDist    = 0;
+    let _currentScale = 1;
+    let _pinching     = false;
     let _resetTimer   = null;
-    const MAX_SCALE   = 2.5;   // limite massimo zoom
-    const MIN_SCALE   = 1;     // non si può rimpicciolire sotto 1x
+    const MAX_SCALE   = 2.5;
 
-    // Distanza euclidea tra due touch
     function _dist(t1, t2) {
         const dx = t1.clientX - t2.clientX;
         const dy = t1.clientY - t2.clientY;
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    // Punto medio tra due touch (per transform-origin)
     function _midpoint(t1, t2) {
         return {
             x: (t1.clientX + t2.clientX) / 2,
@@ -1736,16 +1748,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    target.addEventListener('touchstart', (e) => {
+    // ── touchstart: salva stato iniziale ──
+    document.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
             _pinching = true;
             _startDist = _dist(e.touches[0], e.touches[1]);
             clearTimeout(_resetTimer);
 
-            // Disabilita transizione durante il pinch (deve seguire il dito)
             target.style.transition = 'none';
 
-            // Imposta transform-origin al punto medio tra le dita
             const rect = target.getBoundingClientRect();
             const mid  = _midpoint(e.touches[0], e.touches[1]);
             const ox   = ((mid.x - rect.left) / rect.width)  * 100;
@@ -1754,58 +1765,53 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }, { passive: true });
 
-    target.addEventListener('touchmove', (e) => {
+    // ── touchmove: BLOCCA il pinch nativo + applica il nostro zoom ──
+    // DEVE essere { passive: false } per poter chiamare preventDefault()
+    document.addEventListener('touchmove', (e) => {
         if (!_pinching || e.touches.length !== 2) return;
 
+        // ★ Questo blocca il pinch-zoom nativo di Safari iOS
+        e.preventDefault();
+
         const newDist = _dist(e.touches[0], e.touches[1]);
-        const ratio   = newDist / _startDist;
+        let newScale = newDist / _startDist;
 
-        // Scala con damping per sensazione naturale
-        let newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, ratio));
-
-        // Damping oltre 2x — diventa più difficile zoomare ulteriormente
-        if (newScale > 2) {
-            newScale = 2 + (newScale - 2) * 0.3;
-        }
+        // Clamp + damping
+        newScale = Math.max(1, Math.min(MAX_SCALE, newScale));
+        if (newScale > 2) newScale = 2 + (newScale - 2) * 0.3;
 
         _currentScale = newScale;
         target.style.transform = `scale(${_currentScale})`;
-    }, { passive: true });
+    }, { passive: false });  // ← passive:false è OBBLIGATORIO per preventDefault
 
-    target.addEventListener('touchend', (e) => {
+    // ── touchend: delay → snapBack elastico ──
+    document.addEventListener('touchend', (e) => {
         if (!_pinching) return;
-
-        // Il pinch finisce quando rimangono meno di 2 dita
         if (e.touches.length < 2) {
             _pinching = false;
 
-            // Se scala è quasi 1x, resetta subito
             if (_currentScale < 1.08) {
                 _snapBack();
                 return;
             }
 
-            // Altrimenti, delay → poi reset elastico
             clearTimeout(_resetTimer);
             _resetTimer = setTimeout(_snapBack, 350);
         }
     }, { passive: true });
 
     function _snapBack() {
-        // Transizione elastica per il ritorno
-        target.style.transition = 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1)';
+        target.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
         target.style.transform  = 'scale(1)';
         _currentScale = 1;
 
-        // Cleanup dopo la transizione
         const _onEnd = () => {
             target.style.transition = '';
             target.style.transformOrigin = '';
             target.removeEventListener('transitionend', _onEnd);
         };
         target.addEventListener('transitionend', _onEnd, { once: true });
-        // Fallback sicurezza
-        setTimeout(_onEnd, 600);
+        setTimeout(_onEnd, 500);
     }
 })();
 
