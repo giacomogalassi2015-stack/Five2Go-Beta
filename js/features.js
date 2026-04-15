@@ -1,23 +1,17 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //  Five2Go — features.js
-//  Wishlist · Itinerary · Cinque Terre Card
+//  Wishlist · Cinque Terre Card · Segnalazioni
 //
-//  Questo file implementa le feature "sticky" dell'app:
-//    1. WL           — Wishlist manager (localStorage, persistente offline)
-//    2. ITINERARY    — Itinerary manager (localStorage, persistente offline)
-//    3. renderHeartBtn / toggleHeart    — cuoricino su ogni card
-//    4. renderPlanBtn  / togglePlan     — pulsante "aggiungi al piano"
-//    5. _updateHomeBadges               — aggiorna i contatori sulla home
-//    6. renderWishlist                  — pagina "I miei Preferiti"
-//    7. renderItinerary                 — pagina "Il mio Itinerario"
-//    8. renderCinqueTerreCard           — pagina info Cinque Terre Card
+//  Feature principali:
+//    1. WL                    — Wishlist manager (localStorage)
+//    2. renderHeartBtn/toggle — cuoricino su ogni card
+//    3. _updateHomeBadges     — contatori sulla home
+//    4. renderWishlist        — pagina "I miei Preferiti"
+//    5. renderCinqueTerreCard — pagina info CT Card
+//    6. Segnalazioni          — report errori utente
 //
-//  Tutte le funzioni sono esposte su window per compatibilità con i renderer
-//  già esistenti in ui-renderers.js e app.js.
-//
-//  STORAGE KEYS:
-//    f2g_wishlist   → Array di oggetti { wl_id, wl_type, wl_name, wl_sub, wl_modal_type, wl_modal_payload }
-//    f2g_itinerary  → Array di oggetti { itin_id, itin_type, itin_name, itin_sub, itin_modal_type, itin_modal_payload }
+//  STORAGE KEY: f2g_wishlist
+// ═══════════════════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════════════
 
 
@@ -133,45 +127,14 @@ window.WL = {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  2. ITINERARY MANAGER
+//  ITINERARY — disabilitato in V1.0 (pianificato per V2)
+//  window.ITINERARY, renderItinerary, renderPlanBtn, togglePlan rimossi.
+//  Stubs mantenuti per sicurezza:
 // ─────────────────────────────────────────────────────────────────────────────
-window.ITINERARY = {
-    _key: 'f2g_itinerary',
-
-    get() {
-        try { return JSON.parse(localStorage.getItem(this._key) || '[]'); }
-        catch { return []; }
-    },
-
-    _save(arr) {
-        try { localStorage.setItem(this._key, JSON.stringify(arr)); }
-        catch (e) {
-            console.warn('[ITINERARY] localStorage write failed:', e);
-            window._showStorageToast && window._showStorageToast();
-        }
-    },
-
-    /** Aggiunge se non già presente. Ritorna true se aggiunto. */
-    add(item) {
-        const list = this.get();
-        if (!this.has(item.itin_id)) { list.push(item); this._save(list); return true; }
-        return false;
-    },
-
-    remove(id) { this._save(this.get().filter(i => i.itin_id !== String(id))); },
-    has(id) { return this.get().some(i => i.itin_id === String(id)); },
-
-    /** Sposta un elemento da fromIdx a toIdx (per il riordinamento manuale) */
-    move(fromIdx, toIdx) {
-        const list = this.get();
-        if (fromIdx < 0 || toIdx < 0 || fromIdx >= list.length || toIdx >= list.length) return;
-        const [item] = list.splice(fromIdx, 1);
-        list.splice(toIdx, 0, item);
-        this._save(list);
-    },
-
-    clear() { localStorage.removeItem(this._key); }
-};
+window.ITINERARY = { get() { return []; }, _save() {}, add() { return false; }, remove() {}, has() { return false; }, move() {}, clear() {} };
+window.renderPlanBtn = function() { return ''; };
+window.togglePlan    = function() {};
+window.renderItinerary = function() { window.renderWishlist(); };
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -303,22 +266,6 @@ window.toggleHeart = function(btn, encoded) {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  4. PLAN BUTTON — Itinerary add sulle card
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * V1.0: renderPlanBtn e togglePlan DISABILITATI
- * Il pulsante "Aggiungi al Piano" è stato rimosso da tutte le card
- * per ridurre il carico cognitivo dell'utente nella prima release.
- * Il codice ITINERARY manager (sopra) resta dormiente per V2.
- *
- * @param {Object} itinItem — ignorato in V1.0
- * @returns {string} stringa vuota — nessun bottone renderizzato
- */
-window.renderPlanBtn = function(/* itinItem */) { return ''; };
-window.togglePlan    = function() { /* no-op V1.0 */ };
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  5. BADGE UPDATER
@@ -332,7 +279,6 @@ window._updateHomeBadges = function() {
         wlBadge.textContent = count;
         wlBadge.style.display = count > 0 ? 'flex' : 'none';
     }
-    // V1.0: badge itinerario rimosso dalla home — pill itinerario disabilitata
 };
 
 
@@ -481,184 +427,6 @@ window._openWlModal = function(modalType, payload) {
     if (typeof window.openModal === 'function') window.openModal(modalType, payload);
 };
 
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  7. ITINERARY PAGE
-// ─────────────────────────────────────────────────────────────────────────────
-window.renderItinerary = function() {
-    const content = document.getElementById('app-content');
-    if (!content) return;
-    const items = window.ITINERARY.get();
-    const lang  = window.currentLang || 'it';
-
-    const L = {
-        it: { title: 'Il mio Itinerario', empty: 'Nessuna tappa aggiunta.', emptyHint: "Premi 📋 sulle card per costruire il tuo percorso giornaliero — rimane salvato tra una sessione e l'altra.", clearAll: 'Svuota', openBtn: 'Apri', removeBtn: 'Rimuovi', step: 'Tappa', dayPlan: 'Piano del giorno', count_one: 'tappa', count_many: 'tappe', move_up: 'Sposta su', move_down: 'Sposta giù' },
-        en: { title: 'My Itinerary', empty: 'No stops yet.', emptyHint: 'Tap 📋 on any card to build your daily itinerary — stays saved between sessions.', clearAll: 'Clear all', openBtn: 'Open', removeBtn: 'Remove', step: 'Stop', dayPlan: 'Day plan', count_one: 'stop', count_many: 'stops', move_up: 'Move up', move_down: 'Move down' },
-        fr: { title: 'Mon Itinéraire', empty: 'Aucune étape.', emptyHint: 'Appuyez sur 📋 pour construire votre itinéraire.', clearAll: 'Tout effacer', openBtn: 'Voir', removeBtn: 'Supprimer', step: 'Étape', dayPlan: 'Plan du jour', count_one: 'étape', count_many: 'étapes', move_up: 'Monter', move_down: 'Descendre' },
-        de: { title: 'Meine Route', empty: 'Keine Stopps.', emptyHint: 'Tippe auf 📋 um deine Tagesroute zu erstellen.', clearAll: 'Alle löschen', openBtn: 'Öffnen', removeBtn: 'Entfernen', step: 'Stopp', dayPlan: 'Tagesplan', count_one: 'Stopp', count_many: 'Stopps', move_up: 'Hoch', move_down: 'Runter' },
-        es: { title: 'Mi Itinerario', empty: 'Sin paradas.', emptyHint: 'Pulsa 📋 para construir tu itinerario del día.', clearAll: 'Limpiar', openBtn: 'Ver', removeBtn: 'Quitar', step: 'Parada', dayPlan: 'Plan del día', count_one: 'parada', count_many: 'paradas', move_up: 'Subir', move_down: 'Bajar' },
-        zh: { title: '我的行程', empty: '还没有站点。', emptyHint: '点击 📋 来规划您的每日行程。', clearAll: '清空', openBtn: '查看', removeBtn: '移除', step: '站', dayPlan: '每日计划', count_one: '站', count_many: '站', move_up: '上移', move_down: '下移' }
-    }[lang] || { title: 'My Itinerary', empty: 'No stops yet.', emptyHint: 'Tap 📋 on cards to build your day.', clearAll: 'Clear all', openBtn: 'Open', removeBtn: 'Remove', step: 'Stop', dayPlan: 'Day plan', count_one: 'stop', count_many: 'stops', move_up: 'Up', move_down: 'Down' };
-
-    // Colori per tipo
-    const TYPE_COLORS = {
-        ristorante: 'bg-ct-terracotta text-white',
-        attrazione: 'bg-ct-blue text-white',
-        spiaggia:   'bg-sky-500 text-white',
-        sentiero:   'bg-ct-green text-white',
-        vino:       'bg-red-500 text-white',
-        prodotto:   'bg-green-600 text-white'
-    };
-    const TYPE_ICONS = {
-        ristorante: 'restaurant', attrazione: 'attractions',
-        spiaggia: 'beach_access', sentiero: 'hiking',
-        vino: 'wine_bar', prodotto: 'eco'
-    };
-
-    const countLabel = items.length === 1 ? `1 ${L.count_one}` : `${items.length} ${L.count_many}`;
-
-    let html = `<div class="animate-fade pb-20">
-        <!-- Header -->
-        <div class="flex items-start justify-between mb-6 pt-2">
-            <div>
-                <h2 class="font-serif text-3xl font-bold text-slate-800 leading-tight">
-                    <span class="text-amber-400">🗺</span> ${L.title}
-                </h2>
-                <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1.5">${countLabel}</p>
-            </div>
-            ${items.length > 0 ? `<button
-                onclick="window._clearItinerary()"
-                class="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-3 py-2 rounded-xl
-                       hover:bg-rose-50 hover:text-rose-500 active:scale-95 transition-all touch-manipulation
-                       border border-transparent hover:border-rose-100">
-                ${L.clearAll}
-            </button>` : ''}
-        </div>`;
-
-    if (items.length === 0) {
-        html += `<div class="flex flex-col items-center justify-center py-20 text-center">
-            <div class="w-24 h-24 bg-amber-50 rounded-full flex items-center justify-center mb-6 border-2 border-amber-100">
-                <span class="material-icons text-5xl text-amber-200">map</span>
-            </div>
-            <p class="font-bold text-slate-600 text-lg mb-2">${L.empty}</p>
-            <p class="text-sm text-slate-400 max-w-xs leading-relaxed">${L.emptyHint}</p>
-        </div>`;
-    } else {
-        html += `<div class="flex flex-col gap-2.5" id="itinerary-list">`;
-
-        items.forEach((item, idx) => {
-            const colorCls = TYPE_COLORS[item.itin_type] || 'bg-slate-500 text-white';
-            const iconName = TYPE_ICONS[item.itin_type]  || 'place';
-            const hasModal = item.itin_modal_type && item.itin_modal_payload;
-            const isFirst  = idx === 0;
-            const isLast   = idx === items.length - 1;
-
-            html += `<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden itin-card animate-pop" data-itin-id="${item.itin_id}">
-                <!-- Main row -->
-                <div class="flex items-stretch">
-                    <!-- Numero tappa con colore tipo -->
-                    <div class="w-14 ${colorCls} flex flex-col items-center justify-center shrink-0 py-4 gap-1">
-                        <span class="material-icons text-sm opacity-70">${iconName}</span>
-                        <span class="font-black text-2xl leading-none">${idx + 1}</span>
-                    </div>
-                    <!-- Contenuto -->
-                    <div class="flex-1 p-4 flex items-center gap-3 min-w-0">
-                        <div class="flex-1 min-w-0">
-                            <h3 class="font-bold text-slate-800 text-sm leading-snug truncate">${item.itin_name}</h3>
-                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide truncate mt-0.5">${item.itin_sub || ''}</p>
-                        </div>
-                        <!-- Azioni -->
-                        <div class="flex items-center gap-1.5 shrink-0">
-                            ${hasModal ? `<button
-                                onclick="window._openItinModal('${item.itin_modal_type}', '${item.itin_modal_payload}')"
-                                class="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center active:scale-90 transition-all touch-manipulation"
-                                aria-label="${L.openBtn}">
-                                <span class="material-icons text-ct-blue text-sm">open_in_new</span>
-                            </button>` : ''}
-                            <button
-                                onclick="window._removeItinItem('${item.itin_id}', this)"
-                                class="w-9 h-9 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center active:scale-90 transition-all touch-manipulation"
-                                aria-label="${L.removeBtn}">
-                                <span class="material-icons text-red-400 text-sm">close</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <!-- Footer con riordinamento -->
-                <div class="border-t border-slate-50 flex items-center justify-between px-4 py-2 bg-slate-50/50">
-                    <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">${L.step} ${idx + 1} / ${items.length}</span>
-                    <div class="flex gap-1.5">
-                        ${!isFirst ? `<button
-                            onclick="window._moveItinItem(${idx}, ${idx - 1})"
-                            class="w-7 h-7 rounded-lg bg-white border border-slate-150 shadow-sm flex items-center justify-center active:scale-90 touch-manipulation"
-                            aria-label="${L.move_up}">
-                            <span class="material-icons text-slate-400 text-sm">arrow_upward</span>
-                        </button>` : ''}
-                        ${!isLast ? `<button
-                            onclick="window._moveItinItem(${idx}, ${idx + 1})"
-                            class="w-7 h-7 rounded-lg bg-white border border-slate-150 shadow-sm flex items-center justify-center active:scale-90 touch-manipulation"
-                            aria-label="${L.move_down}">
-                            <span class="material-icons text-slate-400 text-sm">arrow_downward</span>
-                        </button>` : ''}
-                    </div>
-                </div>
-            </div>`;
-        });
-
-        html += `</div>`;
-    }
-
-    html += `</div>`;
-    content.innerHTML = html;
-};
-
-// Helper: svuota itinerario CON CONFERMA
-window._clearItinerary = function() {
-    window._showConfirmDialog(
-        window.t('confirm_clear_title') || 'Sei sicuro?',
-        window.t('confirm_clear_itinerary') || 'Tutte le tappe verranno rimosse.',
-        function() {
-            window.ITINERARY.clear();
-            window.renderItinerary();
-            window._updateHomeBadges();
-        }
-    );
-};
-
-window._removeItinItem = function(id, btn) {
-    const card = btn.closest('.itin-card');
-    if (card) {
-        card.style.transition = 'opacity 0.22s ease, transform 0.22s ease';
-        card.style.opacity = '0';
-        card.style.transform = 'translateX(50px)';
-    }
-    setTimeout(() => {
-        window.ITINERARY.remove(id);
-        // Aggiorna visivamente eventuali pulsanti Piano visibili nelle card
-        document.querySelectorAll(`[data-itin-id="${id}"]`).forEach(el => {
-            if (el.classList.contains('itin-plan-btn')) {
-                const icon    = el.querySelector('.material-icons');
-                const wrapper = el.querySelector('.h-11');
-                const label   = el.querySelector('span:last-child');
-                el.classList.remove('itin-active');
-                if (icon)    { icon.textContent = 'add_circle_outline'; icon.classList.replace('text-amber-500', 'text-slate-400'); }
-                if (wrapper) { wrapper.classList.remove('bg-amber-50', 'border-amber-100'); wrapper.classList.add('bg-slate-50', 'border-slate-200'); }
-                if (label)   { if (label.classList.contains('text-amber-500')) label.classList.replace('text-amber-500', 'text-slate-400'); }
-            }
-        });
-        window.renderItinerary();
-        window._updateHomeBadges();
-    }, 230);
-};
-
-window._moveItinItem = function(fromIdx, toIdx) {
-    window.ITINERARY.move(fromIdx, toIdx);
-    window.renderItinerary();
-};
-
-window._openItinModal = function(modalType, payload) {
-    if (typeof window.openModal === 'function') window.openModal(modalType, payload);
-};
 
 
 // ─────────────────────────────────────────────────────────────────────────────

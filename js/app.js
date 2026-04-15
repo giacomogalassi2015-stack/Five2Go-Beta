@@ -1,4 +1,3 @@
-const content = document.getElementById('app-content');
 window.pendingMaps = [];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -139,7 +138,7 @@ function _applyViewBodyStyle(view) {
             body.style.backgroundPosition = 'center 40%';
         }
     } else {
-        body.style.backgroundColor    = '#F4F1DE';
+        body.style.backgroundColor    = '#F5F1E1';
         body.style.backgroundImage    = '';
         body.style.backgroundSize     = '';
         body.style.backgroundPosition = '';
@@ -228,9 +227,6 @@ const _VIEW_RENDERERS = {
     ct_card:  () => window.renderCinqueTerreCard(),
     treno_card: () => window.renderCinqueTerreTrenoCard(),
 
-    mappe_monumenti: () => renderSubMenu([
-        { label: window.t('menu_map'), table: 'Mappe' }
-    ], 'Mappe'),
 };
 
 window.switchView = async function(view, el) {
@@ -362,7 +358,7 @@ function renderHome() {
     }
 
     _injectChiccoFAB();
-    _initHomeOverscroll();
+    _initOverscrollPeek();
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -472,8 +468,7 @@ function _initOverscrollPeek() {
     };
 }
 
-// Alias per compatibilità (la home la chiamava così)
-function _initHomeOverscroll() { _initOverscrollPeek(); }
+
 
 // ─────────────────────────────────────────────────────────────────────────
 //  SUBMENU (barra laterale a scomparsa)
@@ -586,9 +581,7 @@ window._openSubTable = function(tableName) {
     _initOverscrollPeek();
 };
 
-window.toggleSideMenu = function() {
-    // Stub per compatibilità — il side menu non esiste più
-};
+
 
 // ─────────────────────────────────────────────────────────────────────────
 //  FAB FLOTTANTI (scroll-to-top + filtro)
@@ -684,17 +677,6 @@ window.loadTableData = async function(tableName, btnEl) {
             : `<div class="py-20 flex flex-col items-center justify-center gap-4">
                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-ct-terracotta"></div>
                </div>`;
-    }
-
-    // Caso speciale Mappe (iframe)
-    if (tableName === 'Mappe') {
-        subContent.innerHTML = `
-            <div class="rounded-2xl overflow-hidden shadow-soft border-2 border-white animate-fade"
-                 style="height:70vh;height:70dvh;">
-                <iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1"
-                        width="100%" height="100%" style="border:0;"></iframe>
-            </div>`;
-        return;
     }
 
     // Fetch dati (con cache)
@@ -873,19 +855,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
     const labelAll  = window.t('label_all');
     const hasNearMe = !!(latKey && lonKey);
 
-// Determina azione mappa contestuale
-    const isRistorantiView = filterKey === 'Paesi' && cardRenderer === window.ristoranteRenderer;
-    const isVinoView       = filterKey === 'Tipo'  && cardRenderer === window.vinoRenderer;
-    const isSpiaggiaView   = filterKey === 'Paesi' && cardRenderer === window.spiaggiaRenderer;
-
-    let mapAction = null; // <-- FONDAMENTALE: dichiara la variabile come null qui
-
-    const secondaryBtnHtml = mapAction
-        ? `<button class="shrink-0 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl w-[50px] flex items-center justify-center transition-all active:scale-95 self-stretch"
-               onclick="window.${mapAction}?.()" aria-label="Mappa">
-               <span class="material-icons">explore</span>
-           </button>`
-        : (hasNearMe
+    const secondaryBtnHtml = hasNearMe
             ? `<button id="${nearMeId}"
                    class="near-me-btn ${window._nearMeEnabled ? 'active-near-me' : ''}"
                    title="${window.currentLang === 'it' ? 'Ordina per distanza' : 'Sort by distance'}"
@@ -894,7 +864,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
                    onclick="window.toggleNearMe('${nearMeId}', function(){ window.applySingleSmartFilter('__ALL__','${filterId}',false); })">
                    <span class="material-icons text-sm">near_me</span>
                </button>`
-            : '');
+            : '';
 
     container.innerHTML = `
         <div class="smart-filter-bar-container -mx-4 px-4 pb-3 relative">
@@ -986,15 +956,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     const labelAllFem  = window.t('label_all_fem');
     const btnClose     = window.t('btn_close_show');
     const hasNearMe    = !!(latKey && lonKey);
-    const isAttrazioni = cardRenderer === window.attrazioniRenderer;
-    const mapAction    = null; // <-- Disabilitato (era: isAttrazioni ? '_openMapAttrazione' : null)
-
-    const secondaryBtnHtml = mapAction
-        ? `<button class="shrink-0 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl w-[50px] flex items-center justify-center transition-all active:scale-95 self-stretch"
-               onclick="window.${mapAction}?.()" aria-label="Mappa">
-               <span class="material-icons">explore</span>
-           </button>`
-        : (hasNearMe
+    const secondaryBtnHtml = hasNearMe
             ? `<button id="${nearMeId}"
                    class="near-me-btn ${window._nearMeEnabled ? 'active-near-me' : ''}"
                    title="${window.currentLang === 'it' ? 'Ordina per distanza' : 'Sort by distance'}"
@@ -1003,7 +965,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
                    onclick="window.toggleNearMe('${nearMeId}', function(){ window.applyDoubleSmartFilter(0,null,'${filterId}'); })">
                    <span class="material-icons text-sm">near_me</span>
                </button>`
-            : '');
+            : '';
 
     container.innerHTML = `
         <div class="smart-filter-bar-container -mx-4 px-4 pb-3 relative">
@@ -1708,11 +1670,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-//  SWIPE GESTURE — rimosso: ora lo swipe avviene dentro i modali dettaglio
-//  (vedi ModalSwiper in ui-modal.js)
-// ─────────────────────────────────────────────────────────────────────────
-
-// ─────────────────────────────────────────────────────────────────────────
 //  PINCH-ZOOM AUTO-RESET (v3 — Safari iOS compatibile)
 //
 //  Safari iOS ignora touch-action:pan-x pan-y per il pinch E ignora
@@ -1957,8 +1914,7 @@ function _showGeoErrorModal(title, message) {
     });
 }
 
-// Alias privato mantenuto per retrocompatibilità interna
-function _dismissGeoModal() { window.GeoModal.dismiss(); }
+
 
 // ─────────────────────────────────────────────────────────────────────────
 //  GPS PERMISSION + TRACKING
@@ -2043,9 +1999,7 @@ function _startGeoWatch(btn, map) {
     window.GeoTracker.start('sentieri', ({ lat, lng, accuracy, isFirst }) => {
         _dismissGeoBanner();
         if (isFirst) {
-            window.userMarker?.let?.(m => map.removeLayer(m));
-            window.userAccuracyCircle?.let?.(c => map.removeLayer(c));
-            // Compatibilità vanilla: rimuovi se esistono
+            // Rimuovi marker precedenti se esistono
             if (window.userMarker)         { map.removeLayer(window.userMarker);         window.userMarker = null; }
             if (window.userAccuracyCircle) { map.removeLayer(window.userAccuracyCircle); window.userAccuracyCircle = null; }
 
@@ -2088,13 +2042,7 @@ function _dismissGeoBanner() {
     if (b) { b.style.opacity = '0'; setTimeout(() => b.remove(), 300); }
 }
 
-function _showGeoError(btn, msg) {
-    _showGeoErrorModal('Errore GPS', msg);
-    if (btn) {
-        btn.innerHTML = '<span class="material-icons">my_location</span> GPS';
-        btn.style.backgroundColor = '#29B6F6';
-    }
-}
+
 
 // ─────────────────────────────────────────────────────────────────────────
 //  CHICCO — Mascotte meteo con animazione Lottie
@@ -2315,12 +2263,12 @@ window._toggleBumpLangPanel = function() {
 
         var btn = document.createElement('button');
         btn.style.cssText = 'width:100%;display:flex;align-items:center;gap:14px;padding:13px 20px;text-align:left;border:none;cursor:pointer;'
-            + 'background:' + (isActive ? '#F4F1DE' : 'transparent') + ';'
+            + 'background:' + (isActive ? '#F5F1E1' : 'transparent') + ';'
             + '-webkit-tap-highlight-color:transparent;'
             + (isFirst ? 'border-radius:20px 20px 4px 4px;' : isLast ? 'border-radius:4px 4px 20px 20px;' : '');
 
-        btn.addEventListener('mouseenter', function() { this.style.background = isActive ? '#F4F1DE' : '#f8fafc'; });
-        btn.addEventListener('mouseleave', function() { this.style.background = isActive ? '#F4F1DE' : 'transparent'; });
+        btn.addEventListener('mouseenter', function() { this.style.background = isActive ? '#F5F1E1' : '#f8fafc'; });
+        btn.addEventListener('mouseleave', function() { this.style.background = isActive ? '#F5F1E1' : 'transparent'; });
         btn.addEventListener('click', (function(code) { return function() { changeLanguage(code); window._closeBumpLangPanel(); }; })(l.code));
 
         var flagSpan  = document.createElement('span');
@@ -2432,7 +2380,7 @@ window._initPullToRefresh = function() {
             if (label) label.textContent = window.t?.('ptr_loading') || 'Aggiornamento...';
             setTimeout(function() {
                 var table = window.currentActiveTable;
-                if (table && table !== 'Mappe' && window.appCache) {
+                if (table && window.appCache) {
                     delete window.appCache[table];
                     window._invalidateUniqueValCache();   // ← invalida cache filtri
                     loadTableData(table, null);
@@ -2475,7 +2423,7 @@ window.initBusMap = function(fermate) {
 
     fermate.forEach(f => {
         if (!f.LAT || !f.LONG) return;
-        L.marker([f.LAT, f.LONG], { icon: busIcon }).addTo(map)
+        const marker = L.marker([f.LAT, f.LONG], { icon: busIcon })
             .bindPopup(`
             <div style="text-align:center;min-width:160px;font-family:inherit;">
                 <div style="font-weight:800;font-size:0.9rem;color:#1e293b;margin-bottom:10px;line-height:1.2;">${f.NOME_FERMATA}</div>
@@ -2486,7 +2434,7 @@ window.initBusMap = function(fermate) {
                         style="flex:1;background:#dc2626;color:white;border:none;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;">↓ ${labelArrivo}</button>
                 </div>
             </div>`);
-        markersGroup.addLayer;
+        markersGroup.addLayer(marker);
     });
     map.addLayer(markersGroup);
 

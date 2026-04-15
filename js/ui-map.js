@@ -298,7 +298,7 @@ window.renderMappaInterattiva = async function() {
     await window._mapLoadData();
 
     content.innerHTML = `
-    <div id="mappa-root" style="position:fixed; inset:0; z-index:40; overflow:hidden; background:#F4F1DE;">
+    <div id="mappa-root" style="position:fixed; inset:0; z-index:40; overflow:hidden; background:#F5F1E1;">
 
         <!-- ══════════════════════════════════════════════════════
              MAP HEADER — Teal gradient con profondità marina

@@ -27,16 +27,6 @@ window.escapeHtml = function(str) {
         .replace(/'/g,  '&#39;');
 };
 
-/** Wrapper: dbCol + escapeHtml. Per template HTML. */
-window.safeCol = function(item, field) {
-    return window.escapeHtml(window.dbCol(item, field));
-};
-
-/** Wrapper: valIT + escapeHtml. Per template HTML. */
-window.safeValIT = function(item, field) {
-    return window.escapeHtml(window.valIT(item, field));
-};
-
 window.currentLang = localStorage.getItem('app_lang') || 'it';
 window.currentViewName = 'home';
 
@@ -225,7 +215,7 @@ trail_source2_label: "Sito CAI La Spezia",
             chicco_map_8: "🐟 Il giovedì a Riomaggiore c'è il mercatino locale. Acciughe, pesto fresco e limoncino artigianale.",
         // ── Conferma svuota ──
         confirm_clear_title: "Sei sicuro?", confirm_clear_wishlist: "Tutti i tuoi preferiti verranno rimossi.",
-        confirm_clear_itinerary: "Tutte le tappe verranno rimosse.", confirm_yes: "Sì, svuota", confirm_no: "Annulla",
+        confirm_yes: "Sì, svuota", confirm_no: "Annulla",
         // ── Geo modal ──
         geo_title: "Dove sei?", geo_desc: "Per mostrarti la tua posizione e trovare i posti più vicini, Five2Go ha bisogno di accedere alla posizione.",
         geo_privacy: "🔒 La tua posizione viene usata solo in questa sessione e non viene mai salvata.",
@@ -399,7 +389,7 @@ trail_source2_label: "CAI La Spezia Website",
             chicco_map_7: "🍸 Monterosso has the biggest beach. The bars along the promenade serve spritz with a view of the medieval tower.",
             chicco_map_8: "🐟 On Thursdays in Riomaggiore there's a local market. Anchovies, fresh pesto and artisan limoncino.",
         confirm_clear_title: "Are you sure?", confirm_clear_wishlist: "All your favourites will be removed.",
-        confirm_clear_itinerary: "All stops will be removed.", confirm_yes: "Yes, clear", confirm_no: "Cancel",
+        confirm_yes: "Yes, clear", confirm_no: "Cancel",
         geo_title: "Where are you?", geo_desc: "To show your position and find the nearest places, Five2Go needs your location.",
         geo_privacy: "🔒 Your location is used only now and is never saved or shared.",
         geo_hint: "After tapping «Allow», look for the request in the browser bar above and approve.",
@@ -570,7 +560,7 @@ trail_source2_label: "Site Web CAI La Spezia",
             chicco_map_7: "🍸 Monterosso a la plus grande plage. Les bars servent des spritz avec vue sur la tour médiévale.",
             chicco_map_8: "🐟 Le jeudi à Riomaggiore il y a un marché local. Anchois, pesto frais et limoncino artisanal.",
         confirm_clear_title: "Êtes-vous sûr ?", confirm_clear_wishlist: "Tous vos favoris seront supprimés.",
-        confirm_clear_itinerary: "Toutes les étapes seront supprimées.", confirm_yes: "Oui, vider", confirm_no: "Annuler",
+        confirm_yes: "Oui, vider", confirm_no: "Annuler",
         geo_title: "Où êtes-vous ?", geo_desc: "Pour afficher votre position et trouver les arrêts les plus proches.",
         geo_privacy: "🔒 Votre position n'est utilisée que maintenant et n'est jamais enregistrée.",
         geo_hint: "Après avoir appuyé sur «Autoriser», cherchez la demande dans la barre du navigateur.",
@@ -742,7 +732,7 @@ trail_source2_label: "CAI La Spezia Webseite",
             chicco_map_7: "🍸 Monterosso hat den größten Strand. Die Bars an der Promenade servieren Spritz mit Blick auf den mittelalterlichen Turm.",
             chicco_map_8: "🐟 Donnerstags in Riomaggiore gibt es einen lokalen Markt. Sardellen, frisches Pesto und handgemachten Limoncino.",
         confirm_clear_title: "Bist du sicher?", confirm_clear_wishlist: "Alle Favoriten werden entfernt.",
-        confirm_clear_itinerary: "Alle Stopps werden entfernt.", confirm_yes: "Ja, löschen", confirm_no: "Abbrechen",
+        confirm_yes: "Ja, löschen", confirm_no: "Abbrechen",
         geo_title: "Wo bist du?", geo_desc: "Um deine Position anzuzeigen und die nächsten Orte zu finden.",
         geo_privacy: "🔒 Dein Standort wird nur jetzt verwendet und niemals gespeichert.",
         geo_hint: "Tippe auf «Erlauben» und bestätige dann in der Browserleiste oben.",
@@ -914,7 +904,7 @@ trail_source2_label: "Sitio Web CAI La Spezia",
             chicco_map_7: "🍸 Monterosso tiene la playa más grande. Los bares sirven spritz con vista a la torre medieval.",
             chicco_map_8: "🐟 Los jueves en Riomaggiore hay un mercadillo local. Anchoas, pesto fresco y limoncino artesanal.",
         confirm_clear_title: "¿Estás seguro?", confirm_clear_wishlist: "Todos tus favoritos serán eliminados.",
-        confirm_clear_itinerary: "Todas las paradas serán eliminadas.", confirm_yes: "Sí, limpiar", confirm_no: "Cancelar",
+        confirm_yes: "Sí, limpiar", confirm_no: "Cancelar",
         geo_title: "¿Dónde estás?", geo_desc: "Para mostrarte tu posición y encontrar los lugares más cercanos.",
         geo_privacy: "🔒 Tu ubicación se usa solo ahora y nunca se guarda ni comparte.",
         geo_hint: "Tras pulsar «Permitir», busca la solicitud en la barra del navegador.",
@@ -1085,7 +1075,7 @@ trail_source2_label: "CAI La Spezia 网站",
             chicco_map_7: "🍸 蒙泰罗索有最大的海滩，海滨酒吧供应Spritz，可欣赏中世纪塔楼。",
             chicco_map_8: "🐟 每逢周四，里奥马焦雷有本地集市：鳀鱼、新鲜罗勒酱和手工柠檬酒。",
         confirm_clear_title: "确定吗？", confirm_clear_wishlist: "所有收藏将被移除。",
-        confirm_clear_itinerary: "所有站点将被移除。", confirm_yes: "是，清空", confirm_no: "取消",
+        confirm_yes: "是，清空", confirm_no: "取消",
         geo_title: "你在哪里？", geo_desc: "为了在地图上显示你的位置并找到最近的站点。",
         geo_privacy: "🔒 你的位置仅在此次使用，不会被保存或分享。",
         geo_hint: "点击«允许»后，请在浏览器顶部栏确认请求。",
@@ -1148,15 +1138,9 @@ window.valIT = function(item, field) {
     return value;
 };
 
-// Nota: questa definizione viene sovrascritta da app.js (caricato dopo).
-// Mantenuta come fallback di sicurezza con chiave localStorage coerente.
-window.changeLanguage = function(langCode) {
-    window.currentLang = langCode;
-    localStorage.setItem('app_lang', langCode); // chiave unificata con app.js
-    location.reload();
-};
+// changeLanguage: definita in app.js (caricato dopo)
 
-// getLangText: rimosso (non usato — sostituito da window.dbCol e window.t)
+
 
 function getEasterDate(year) {
     const a = year % 19;
@@ -1197,7 +1181,7 @@ function isItalianHoliday(dateObj) {
     return false;
 }
 
-// getLangText era qui — rimossa perché mai utilizzata nel codebase attuale.
+
 
 const TRIVIA_KEYS = [
     "trivia_1", "trivia_2", "trivia_3", "trivia_4", "trivia_5", 
