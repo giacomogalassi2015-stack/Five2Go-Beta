@@ -1,6 +1,45 @@
-// ════════════════════════════════════════════════════
-//  SKELETON LOADERS
-// ════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+//  ui-renderers.js — TEMPLATE DELLE CARD (PRIMARIO)
+//
+//  Contiene tutti i "renderer": funzioni che prendono un oggetto dal database
+//  e restituiscono l'HTML di una card per quella categoria.
+//
+//  Ogni renderer è una funzione che riceve un item e restituisce una stringa HTML.
+//  Le card usano tutte il template renderMasterCard() come base comune.
+//
+//  RENDERER DISPONIBILI (ognuno esposto su window):
+//    ristoranteRenderer  → Card ristorante con foto, paese, bottoni mappa/tel
+//    attrazioniRenderer  → Card attrazione con foto, paese, categoria
+//    spiaggiaRenderer    → Card spiaggia con foto, paese, bottone mappa
+//    prodottoRenderer    → Card prodotto (griglia 2 colonne, senza foto grande)
+//    vinoRenderer        → Card vino (layout orizzontale speciale)
+//    sentieroRenderer    → Card sentiero con mini-mappa GPX Leaflet
+//    farmacieRenderer    → Card farmacia (layout compatto con telefono)
+//    numeriUtiliRenderer → Card numero utile (layout compatto con telefono)
+//
+//  TEMPLATE BASE:
+//    renderMasterCard()  → Card con foto hero, titolo, bottoni azione
+//    renderWineCard()    → Card orizzontale per vini
+//    renderUtilityCard() → Card compatta per farmacie e numeri utili
+//    getCandyBtn()       → Bottone ghost con bordo colorato (Mappa, Tel, Info)
+//
+//  DIPENDENZE:
+//    data-logic.js  → window.dbCol(), window.valIT(), window.t(),
+//                     window.getSmartUrl(), window.escapeHtml()
+//    features.js    → window.renderHeartBtnOverlay() per il cuoricino wishlist
+//    ui-modal.js    → openModal() chiamata dall'onclick delle card
+//    app.js         → window.pendingMaps[] per le mini-mappe GPX dei sentieri
+//
+//  USATO DA:
+//    app.js Sezione 9 → loadTableData() passa i dati a questi renderer
+//    app.js Sezione 11 → la ricerca globale usa getName/getSub per i risultati
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ───────────────────────────────────────────────────────────────────────
+//  SKELETON LOADERS (TERZIARIO)
+//  Animazioni di caricamento "pulsanti" che appaiono mentre i dati
+//  vengono scaricati dal database. Ogni tabella ha il suo layout skeleton.
+// ───────────────────────────────────────────────────────────────────────
 window.renderSkeletonList = function(tableName) {
     if (tableName === 'Vini') {
         return Array(4).fill(0).map(() => `
@@ -52,10 +91,12 @@ window.renderSkeletonList = function(tableName) {
     </div>`).join('');
 };
 
-/** HELPER: GHOST BTN — bottoni con solo bordo + icona colorata.
- *  Al tocco si riempiono brevemente col colore (feedback tattile).
- *  Rounded-2xl (16px) per coerenza con le card.
- *  Min 44px touch target via py-2.5 + px-3.5. */
+// ───────────────────────────────────────────────────────────────────────
+//  BOTTONE "CANDY" — bottone trasparente con bordo colorato e icona.
+//  Usato nella barra azioni di ogni card (Mappa, Tel, Info).
+//  Al tocco si riempie brevemente del colore (feedback tattile).
+//  Min 44px touch target per accessibilità mobile (WCAG).
+// ───────────────────────────────────────────────────────────────────────
 function getCandyBtn(icon, label, color, onclick) {
     const colors = {
         'map':     'text-ct-shore border-ct-shore/40 active:bg-ct-shore active:text-white',
@@ -76,6 +117,13 @@ function getCandyBtn(icon, label, color, onclick) {
         ${label ? `<span class="text-[11px] font-bold uppercase tracking-wide">${label}</span>` : ''}
     </button>`;
 }
+// ───────────────────────────────────────────────────────────────────────
+//  MASTER CARD — Template base per ristoranti, attrazioni, spiagge.
+//  Due varianti:
+//    - CON immagine: foto hero + titolo sovrapposto + barra azioni
+//    - SENZA immagine: sfondo gradiente con icona grande + titolo sotto
+//  La barra azioni in basso ha: chip paese (sinistra) + bottoni (destra)
+// ───────────────────────────────────────────────────────────────────────
 function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml, heartOverlayHtml }) {
     const esc = window.escapeHtml || (s => s);
     title = esc(title); subText = esc(subText); label = esc(label);
@@ -140,6 +188,7 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
     }
 }
 
+// WINE CARD — Layout orizzontale speciale per i vini (miniatura + info a destra)
 function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, themeColor, buttonsHtml, heartOverlayHtml }) {
     const esc = window.escapeHtml || (s => s);
     title = esc(title); typeLabel = esc(typeLabel); producer = esc(producer); grapes = esc(grapes);
@@ -181,6 +230,7 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
     </div>`;
 }
 
+// UTILITY CARD — Layout compatto per farmacie e numeri utili (icona + nome + telefono)
 function renderUtilityCard({ id, icon, title, subtitle, phone, color }) {
     const esc = window.escapeHtml || (s => s);
     title = esc(title); subtitle = esc(subtitle);
@@ -207,6 +257,8 @@ function renderUtilityCard({ id, icon, title, subtitle, phone, color }) {
 
 // --- RENDERERS ---
 
+// RISTORANTE — Card con foto, paese, bottoni Mappa e Tel
+// Apre il modale 'ristorante' al tap. Usata da: loadTableData('Ristoranti')
 window.ristoranteRenderer = (r) => {
     const nome = window.dbCol(r, 'Nome') || 'Ristorante';
     const nomeIT = window.valIT(r, 'Nome'); 
@@ -235,6 +287,8 @@ window.ristoranteRenderer = (r) => {
     });
 };
 
+// ATTRAZIONE — Card con foto, paese, categoria (es. Cultura, Sacro, Panorama)
+// Apre il modale 'attrazione' al tap. Usata da: loadTableData('Attrazioni')
 window.attrazioniRenderer = function(item) {
     const safeId = item.POI_ID || item.id;
     const titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
@@ -267,6 +321,8 @@ window.attrazioniRenderer = function(item) {
     });
 };
 
+// SPIAGGIA — Card con foto e bottone Mappa che vola alla posizione GPS
+// Apre il modale 'Spiagge' al tap. Usata da: loadTableData('Spiagge')
 window.spiaggiaRenderer = function(item) {
     const safeObj = encodeURIComponent(JSON.stringify(item)).replace(/'/g, "%27");
     const nome = window.dbCol(item, 'Nome');
@@ -294,6 +350,8 @@ window.spiaggiaRenderer = function(item) {
     });
 };
 
+// PRODOTTO — Card nella griglia 2 colonne (foto + nome, nessun bottone azione)
+// Apre il modale 'product' al tap. Usata da: loadTableData('Prodotti')
 window.prodottoRenderer = (p) => {
     const titolo   = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
     const titoloIT = window.valIT(p, 'Prodotti')  || window.valIT(p, 'Nome');
@@ -318,6 +376,8 @@ window.prodottoRenderer = (p) => {
     });
 };
 
+// VINO — Card orizzontale con tipologia (Rosso/Bianco/Passito), uve, produttore
+// Apre il modale 'Vini' al tap. Usata da: loadTableData('Vini')
 window.vinoRenderer = function(item) {
     const safeId = item.id || item.ID; 
     const nome = item.Nome || 'Vino';
@@ -350,6 +410,10 @@ window.vinoRenderer = function(item) {
     });
 };
 
+// SENTIERO — Card con mini-mappa GPX Leaflet, durata, distanza, bottoni Mappa/Info
+// La mini-mappa viene caricata lazy tramite window.pendingMaps + initPendingMaps()
+// Apre: openTechMap() per mappa grande, openModal('sentieroInfo') per dettagli
+// Usata da: loadTableData('Sentieri')
 window.sentieroRenderer = (s) => {
     const uniqueId = 'k-map-' + (s.poi_id || Math.floor(Math.random() * 99999));
     const nome = s.nome || s.Titolo || 'Sentiero';
@@ -395,6 +459,8 @@ window.sentieroRenderer = (s) => {
     </div>`;
 };
 
+// FARMACIA — Card compatta con icona verde, nome, indirizzo, bottone telefono
+// Usata da: loadTableData('Farmacie')
 window.farmacieRenderer = (f) => {
     // Estrazione sicura per il Nome (previene l'effetto [object Object])
     let nome = f.Nome; 
@@ -432,6 +498,9 @@ window.farmacieRenderer = (f) => {
     });
 };
 
+// NUMERO UTILE — Card compatta con icona contestuale (polizia, emergenza, ecc.)
+// L'icona e il colore cambiano in base al nome (es. "Carabinieri" → icona polizia)
+// Usata da: loadTableData('Numeri_utili')
 window.numeriUtiliRenderer = (n) => {
     let nome = n.Nome; 
     try { 
@@ -458,6 +527,10 @@ window.numeriUtiliRenderer = (n) => {
     });
 };
 
+// Bottone "Mappa" nelle card: apre la mappa interattiva e vola alla posizione GPS.
+// Passa le coordinate e la categoria per pre-filtrare i marker.
+// Chiamata da: onclick dei bottoni Mappa nelle card ristoranti, spiagge, attrazioni
+// Dipendenze: app.js → switchView('mappa'), ui-map.js legge window._mapFlyToTarget
 window.openMapBtn = function(e, lat, lon, cat) {
     if (!e) return;
     e.stopPropagation(); e.preventDefault();

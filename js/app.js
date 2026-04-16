@@ -1,8 +1,45 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  app.js — CUORE DELL'APP (PRIMARIO)
+//
+//  Questo file gestisce TUTTO il flusso principale dell'applicazione:
+//    - Navigazione tra le pagine (home, cibo, outdoor, servizi, mappa, ecc.)
+//    - Pulsante indietro del telefono (History API)
+//    - Caricamento dati dal database (Supabase)
+//    - Ricerca globale
+//    - Mascotte Chicco (meteo)
+//    - Trasporti (bus, treni, traghetti)
+//
+//  DIPENDENZE (caricati PRIMA di questo file):
+//    data-logic.js  → window.t(), window.dbCol(), window.getSmartUrl(),
+//                     window.supabaseClient, window.appCache, window.currentLang
+//    ui-renderers.js → tutti i *Renderer (ristoranteRenderer, vinoRenderer, ecc.)
+//    ui-modal-contents.js → window.getModalContent()
+//    ui-modal.js    → window.openModal(), window._dismissModal()
+//    ui-map.js      → window.renderMappaInterattiva()
+//    features.js    → window.WL, window.renderWishlist(),
+//                     window.renderCinqueTerreCard(), window.renderHeartBtnOverlay(),
+//                     window.renderReportBtn()
+//
+//  CHI USA QUESTO FILE:
+//    index.html     → i bottoni della navbar chiamano switchView()
+//                   → la search bar chiama window._searchDebounced()
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Array globale per le mini-mappe GPX nei sentieri (usato da initPendingMaps)
 window.pendingMaps = [];
 
-// ─────────────────────────────────────────────────────────────────────────
-//  HISTORY ROUTER
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 1 — NAVIGAZIONE E HISTORY (PRIMARIO)
+//
+//  Gestisce il pulsante "indietro" del telefono.
+//  Quando l'utente preme indietro, chiude i modali aperti oppure
+//  torna alla pagina precedente.
+//
+//  Come funziona:
+//    1. Ogni volta che apri una pagina → pushState aggiunge un "punto" alla storia
+//    2. Quando premi indietro → popstate controlla cosa c'era prima e ci torna
+//    3. _historyNav evita loop: si disattiva durante la navigazione programmatica
+// ═══════════════════════════════════════════════════════════════════════════
 window._historyNav = true;
 
 window._pushViewState = function(view) {
@@ -54,21 +91,40 @@ window.addEventListener('popstate', function(e) {
     window._historyNav = true;
 });
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SWIPE GLOBALS (legacy — mantenuti per compatibilità)
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 2 — VARIABILI GLOBALI DI STATO
+//
+//  Queste variabili tengono traccia di dove si trova l'utente nell'app.
+//  Sono usate da più file per sapere quale menu/tabella è attiva.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Lista delle opzioni del sottomenu corrente (cibo o outdoor)
+// Usata da: _openSubTable() per costruire le tab di navigazione in basso
 window.currentMenuOptions = [];
+
+// Nome della tabella Supabase attualmente visualizzata (es. "Ristoranti", "Spiagge")
+// Usata da: pull-to-refresh per sapere cosa ricaricare
 window.currentActiveTable = null;
 
-// ─────────────────────────────────────────────────────────────────────────
-//  NAV / HEADER
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 3 — BARRA DI NAVIGAZIONE E LINGUA (SECONDARIO)
+//
+//  Funzioni che aggiornano i testi e le icone della navbar in fondo allo schermo.
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per le traduzioni
+//    data-logic.js → window.AVAILABLE_LANGS per la lista lingue
+//    data-logic.js → window.currentLang per la lingua corrente
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Pulisce l'header (era usato per un menu superiore, ora vuoto) e aggiorna la bandierina lingua
 function setupHeaderElements() {
     const header = document.querySelector('header');
     if (header) header.innerHTML = '';
     updateLangIconInNavBar();
 }
 
+// Traduce le 4 label della navbar nella lingua corrente
 function updateNavBar() {
     const labels = document.querySelectorAll('.nav-label');
     if (labels.length >= 4) {
@@ -79,6 +135,7 @@ function updateNavBar() {
     }
 }
 
+// Aggiorna la bandierina emoji nella barra di navigazione (bump button)
 function updateLangIconInNavBar() {
     const flagEl = document.getElementById('nav-lang-flag');
     if (flagEl) {
@@ -87,6 +144,8 @@ function updateLangIconInNavBar() {
     }
 }
 
+// Cambia lingua: salva in localStorage, aggiorna navbar, ri-renderizza la pagina corrente
+// Chiamata da: bump lang panel (home pill) e nav center bump button
 window.changeLanguage = function(langCode) {
     window.currentLang = langCode;
     localStorage.setItem('app_lang', langCode);
@@ -102,11 +161,31 @@ window.changeLanguage = function(langCode) {
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SWITCH VIEW — dispatch map (elimina catena if/else)
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 4 — SWITCH VIEW (PRIMARIO — il "cervello" della navigazione)
+//
+//  switchView() è LA funzione principale dell'app. Ogni volta che l'utente
+//  preme un bottone della navbar o naviga, passa tutto da qui.
+//
+//  Flusso:
+//    1. Resetta lo scroll in cima
+//    2. Pulisce la view precedente (rimuove filtri, FAB, mappa, Chicco)
+//    3. Applica lo stile del body (sfondo foto per home, colore sabbia per il resto)
+//    4. Evidenzia il bottone attivo nella navbar
+//    5. Chiama il renderer giusto dalla mappa _VIEW_RENDERERS
+//
+//  _VIEW_RENDERERS è una mappa nome→funzione: per aggiungere una nuova pagina
+//  basta aggiungere una riga qui.
+//
+//  Dipendenze:
+//    data-logic.js → window.getSmartUrl() per lo sfondo home
+//    features.js   → window.renderWishlist(), window.renderCinqueTerreCard()
+//    ui-map.js     → window.renderMappaInterattiva()
+// ═══════════════════════════════════════════════════════════════════════════
 
-/** Applica stili body + background per ogni view */
+// Applica sfondo e stili del body in base alla pagina.
+// Home = foto di Manarola fullscreen. Altre pagine = sfondo sabbia.
+// Nasconde la navbar nella vista mappa.
 function _applyViewBodyStyle(view) {
     const body          = document.body;
     const centerBtn     = document.getElementById('center-lang-btn-wrapper');
@@ -147,7 +226,8 @@ function _applyViewBodyStyle(view) {
     }
 }
 
-/** Pulisce DOM della view precedente */
+// Rimuove tutti gli elementi della pagina precedente prima di mostrare quella nuova.
+// Senza questo, i filtri, FAB e la mappa resterebbero sovrapposti.
 function _cleanupPreviousView() {
     document.querySelectorAll('.smart-filter-bar-container').forEach(el => el.remove());
     window._destroyScrollFABs?.();
@@ -161,7 +241,8 @@ function _cleanupPreviousView() {
     window._closeChiccoCard();
 }
 
-/** Torna alla view da cui l'utente ha aperto la mappa */
+// Torna dalla mappa alla pagina precedente. Usata dal bottone "←" nella mappa.
+// Chiamata da: ui-map.js (bottone back nella mappa interattiva)
 window.mapGoBack = function() {
     const nav = document.getElementById('bottom-nav');
     if (nav) {
@@ -182,14 +263,14 @@ window.mapGoBack = function() {
     }
 };
 
-/** Aggiorna stato attivo nella nav bar */
+// Evidenzia il bottone corretto nella navbar (aggiunge la classe "active")
 function _setActiveNav(view, el) {
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     const target = el ?? document.querySelector(`.nav-item[onclick*="${view}"]`);
     target?.classList.add('active');
 }
 
-/** Fades out the splash overlay (solo prima volta) */
+// Nasconde lo schermo bianco iniziale con un fade-out (solo al primo caricamento)
 function _fadeSplash() {
     const overlay = document.getElementById('splash-overlay');
     if (overlay && !overlay.classList.contains('fade-out')) {
@@ -200,10 +281,8 @@ function _fadeSplash() {
     }
 }
 
-/**
- * Dispatch map: view → renderer function.
- * Aggiungere una nuova view = aggiungere una riga qui.
- */
+// MAPPA PAGINE: ogni nome di view → la funzione che la renderizza.
+// Per aggiungere una nuova pagina, basta aggiungere una riga qui.
 const _VIEW_RENDERERS = {
     home: () => { renderHome(); _fadeSplash(); },
 
@@ -269,9 +348,25 @@ window.switchView = async function(view, el) {
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  RENDER HOME
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 5 — HOME PAGE (PRIMARIO)
+//
+//  Costruisce la landing page: titolo "Five2Go", barra di ricerca,
+//  pulsanti Preferiti e Lingua, e inietta la mascotte Chicco.
+//
+//  Elementi creati:
+//    - Hero con titolo e tagline tradotta
+//    - Search bar globale (chiama _searchDebounced al digitare)
+//    - Pill "Preferiti" con badge contatore (da WL manager in features.js)
+//    - Pill cambio lingua (apre _toggleBumpLangPanel)
+//    - Backdrop per chiudere la ricerca
+//    - Chicco FAB (mascotte meteo, vedi Sezione 12)
+//    - Overscroll peek (vedi Sezione 6)
+//
+//  Dipendenze:
+//    features.js   → window.WL.get() per conteggio preferiti
+//    data-logic.js → window.currentLang, window.t()
+// ═══════════════════════════════════════════════════════════════════════════
 function renderHome() {
     const content = document.getElementById('app-content');
     if (!content) return;
@@ -361,12 +456,20 @@ function renderHome() {
     _initOverscrollPeek();
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  OVERSCROLL → NAV PEEK (usato su TUTTE le view)
-//  Quando l'utente arriva in fondo allo scroll e continua a tirare:
-//    1) Feedback elastico (rubber-band) sul contenuto
-//    2) La nav bar rivela tutte le label delle sezioni
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 6 — OVERSCROLL PEEK (TERZIARIO — effetto visuale)
+//
+//  Quando l'utente arriva in fondo allo scroll e continua a tirare verso l'alto:
+//    1. Il contenuto si sposta leggermente (rubber-band, come iOS nativo)
+//    2. La navbar mostra TUTTE le label per invitare a esplorare le altre sezioni
+//    3. Dopo 2 secondi, la navbar torna normale
+//
+//  Funziona su TUTTE le view, non solo la home.
+//  Usa eventi touch nativi (touchstart, touchmove, touchend).
+//
+//  Dipendenze: nessuna (puro DOM/CSS)
+//  Usata da: renderHome(), renderSubMenu(), _openSubTable(), renderServicesGrid()
+// ═══════════════════════════════════════════════════════════════════════════
 function _initOverscrollPeek() {
     const content = document.getElementById('app-content');
     const nav     = document.getElementById('bottom-nav');
@@ -470,9 +573,23 @@ function _initOverscrollPeek() {
 
 
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SUBMENU (barra laterale a scomparsa)
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 7 — SOTTOMENU E TABELLE (PRIMARIO)
+//
+//  Quando l'utente preme "Cibo" o "Outdoor", non va direttamente ai dati:
+//  vede prima un menu con 3 card (es. Prodotti / Vini / Ristoranti).
+//
+//  renderSubMenu() → Mostra le card di scelta (primo livello)
+//  _openSubTable() → Quando premi una card, carica i dati dal DB (secondo livello)
+//                    Mostra un back button + tab di navigazione tra le voci sorelle
+//
+//  Flusso: Navbar → switchView('cibo') → renderSubMenu() → tap card →
+//          _openSubTable('Ristoranti') → loadTableData('Ristoranti')
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per le traduzioni delle etichette
+//    Sezione 9     → loadTableData() per caricare i dati dal DB
+// ═══════════════════════════════════════════════════════════════════════════
 window.renderSubMenu = function(options, defaultTable) {
     window.currentMenuOptions = options;
 
@@ -512,7 +629,8 @@ window.renderSubMenu = function(options, defaultTable) {
     _initOverscrollPeek();
 };
 
-/** Apre una tabella dal pre-selettore — back button in alto, tab di navigazione in fondo alla lista */
+// Apre una sotto-tabella: mostra back button, contenuto dati, e tab per navigare
+// tra le voci sorelle (es. da "Ristoranti" puoi andare a "Vini" o "Prodotti")
 window._openSubTable = function(tableName) {
     const options = window.currentMenuOptions;
     if (!options) return;
@@ -583,9 +701,20 @@ window._openSubTable = function(tableName) {
 
 
 
-// ─────────────────────────────────────────────────────────────────────────
-//  FAB FLOTTANTI (scroll-to-top + filtro)
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 8 — FAB FLOTTANTI (TERZIARIO — UX enhancement)
+//
+//  Due bottoni rotondi che appaiono quando scrolli giù in una lista:
+//    - FAB Filtro (scuro): scrolla in cima e apre il pannello filtri
+//    - FAB Scroll-to-top (bianco): riporta in cima alla lista
+//
+//  Appaiono solo dopo che l'utente ha scrollato oltre la filter bar.
+//  Pattern ispirato da Google Maps, Zalando, Deliveroo.
+//
+//  Dipendenze: nessuna (puro DOM)
+//  Usata da: NON più attivamente chiamata (era in loadTableData, ora rimossa)
+//  Nota: _initScrollFABs viene ancora esposta su window per uso futuro
+// ═══════════════════════════════════════════════════════════════════════════
 window._initScrollFABs = function() {
     window._destroyScrollFABs();
 
@@ -649,9 +778,37 @@ window._destroyScrollFABs = function() {
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  LOAD TABLE DATA
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 9 — CARICAMENTO DATI E FILTRI (PRIMARIO)
+//
+//  loadTableData() carica i dati dal database Supabase e li passa
+//  al renderer corretto per ogni tabella.
+//
+//  Flusso:
+//    1. Mostra skeleton loader (animazione di caricamento)
+//    2. Controlla se i dati sono già in cache (window.appCache)
+//    3. Se no, fetch da Supabase e salva in cache
+//    4. Passa i dati al renderer appropriato tramite un switch/case
+//
+//  SISTEMA FILTRI:
+//    renderHorizontalFilterView()       → filtro singolo (es. per Paese)
+//    renderDoubleHorizontalFilterView() → filtro doppio (es. Paese + Categoria)
+//
+//    I filtri creano chip cliccabili. Quando l'utente preme un chip:
+//    → applySingleSmartFilter() o applyDoubleSmartFilter() filtra la lista
+//    → IncrementalRenderer() renderizza solo i primi 10 risultati
+//    → Al scroll, un IntersectionObserver carica i successivi (lazy loading)
+//
+//  INCREMENTAL RENDERER:
+//    Renderizza le card a batch di 10 per non bloccare il telefono.
+//    Un "sentinel" invisibile in fondo alla lista triggera il caricamento
+//    del batch successivo quando diventa visibile (IntersectionObserver).
+//
+//  Dipendenze:
+//    data-logic.js   → window.supabaseClient, window.appCache, window.dbCol()
+//    ui-renderers.js → tutti i *Renderer (ristoranteRenderer, vinoRenderer, ecc.)
+//    features.js     → window.sortByDistance() per ordinamento Near Me
+// ═══════════════════════════════════════════════════════════════════════════
 window.loadTableData = async function(tableName, btnEl) {
     const mainContainer = document.getElementById('app-content');
     if (mainContainer) {
@@ -741,19 +898,20 @@ window.loadTableData = async function(tableName, btnEl) {
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  INCREMENTAL RENDERER FACTORY (DRY: sostituisce ~80 righe duplicate)
-// ─────────────────────────────────────────────────────────────────────────
-/**
- * Renderizza una lista in modo incrementale tramite IntersectionObserver.
- * Sostituisce il codice duplicato in renderHorizontalFilterView e
- * renderDoubleHorizontalFilterView.
- *
- * @param {HTMLElement} container    - elemento lista target
- * @param {Array}       items        - dataset filtrato (già ordinato)
- * @param {Function}    cardRenderer - item => HTML string
- * @param {number}      [batchSize=10]
- */
+// ───────────────────────────────────────────────────────────────────────
+//  INCREMENTAL RENDERER (SECONDARIO — performance)
+//
+//  Renderizza una lista di card in batch da 10 per evitare di bloccare
+//  il browser su liste lunghe (+50 elementi). Un elemento invisibile
+//  ("sentinel") in fondo alla lista viene osservato: quando l'utente
+//  scrolla vicino, carica il batch successivo.
+//
+//  Salva la lista corrente in window._currentFilteredList per consentire
+//  al ModalSwiper (ui-modal.js) di navigare avanti/indietro tra gli item.
+//
+//  Dipendenze: nessuna (IntersectionObserver nativo)
+//  Usata da: applySingleSmartFilter(), applyDoubleSmartFilter(), loadTableData()
+// ───────────────────────────────────────────────────────────────────────
 window.IncrementalRenderer = function(container, items, cardRenderer, batchSize = 10) {
     // ── Esponi la lista corrente per il modal-swipe ──
     window._currentFilteredList = items || [];
@@ -809,9 +967,12 @@ window.IncrementalRenderer = function(container, items, cardRenderer, batchSize 
     container._incObs = obs;
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SMART FILTER — valori unici (con memoizzazione)
-// ─────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  CACHE VALORI UNICI PER FILTRI (TERZIARIO — performance)
+//  Calcola i valori distinti di una colonna (es. tutti i Paesi) e li memorizza
+//  per non ricalcolarli ogni volta che l'utente apre un filtro.
+//  La cache si invalida al pull-to-refresh (window._invalidateUniqueValCache).
+// ───────────────────────────────────────────────────────────────────────
 const _uniqueValCache = new Map();
 
 function getUniqueValues(allData, key, customOrder = []) {
@@ -843,9 +1004,12 @@ function getUniqueValues(allData, key, customOrder = []) {
 // Invalida cache al pull-to-refresh o cambio dati
 window._invalidateUniqueValCache = function() { _uniqueValCache.clear(); };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  HORIZONTAL FILTER VIEW (filtro singolo)
-// ─────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  FILTRO SINGOLO (SECONDARIO)
+//  Mostra una barra con chip cliccabili per filtrare per una colonna
+//  (es. filtra Ristoranti per Paese). Include anche il pulsante "Near Me"
+//  per ordinare per distanza se la tabella ha coordinate GPS.
+// ───────────────────────────────────────────────────────────────────────
 function renderHorizontalFilterView(allData, filterKey, container, cardRenderer, latKey, lonKey) {
     const tags      = getUniqueValues(allData, filterKey, ['Tutti','Riomaggiore','Manarola','Corniglia','Vernazza','Monterosso']);
     const filterId  = `filter-${Math.random().toString(36).substr(2, 9)}`;
@@ -942,9 +1106,11 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
     window.applySingleSmartFilter('__ALL__', filterId);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  DOUBLE HORIZONTAL FILTER VIEW (filtro doppio: paese + categoria)
-// ─────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  FILTRO DOPPIO (SECONDARIO)
+//  Come il filtro singolo, ma con DUE righe di chip (es. Paese + Categoria).
+//  Usato solo per le Attrazioni che hanno sia il borgo che la tipologia.
+// ───────────────────────────────────────────────────────────────────────
 function renderDoubleHorizontalFilterView(allData, filtersConfig, container, cardRenderer, latKey, lonKey) {
     const values1   = getUniqueValues(allData, filtersConfig.primary.key, filtersConfig.primary.customOrder);
     const values2   = getUniqueValues(allData, filtersConfig.secondary.key);
@@ -1058,9 +1224,8 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     executeFilter();
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  TOGGLE SMART FILTER (panel apri/chiudi)
-// ─────────────────────────────────────────────────────────────────────────
+// Apre/chiude il pannello filtri (animazione expand/collapse)
+// Chiamata da: bottone filtro nella filter bar
 window.toggleSmartFilter = function(panelId, triggerId) {
     const panel = document.getElementById(panelId);
     const icon  = document.querySelector(`#${triggerId} .material-icons:last-child`);
@@ -1073,9 +1238,21 @@ window.toggleSmartFilter = function(panelId, triggerId) {
     if (icon) icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SERVICES GRID
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 10 — GRIGLIA SERVIZI (PRIMARIO)
+//
+//  La pagina "Servizi" non ha sottomenu: mostra direttamente una griglia
+//  con card per Bus, Treno, Battello, Numeri Utili, Farmacie, CT Card, CT Treno.
+//  Le card hanno un effetto 3D "raised" (definito in index.html CSS).
+//
+//  renderSimpleList() è usata per Numeri Utili e Farmacie: mostra un back
+//  button e carica i dati con loadTableData().
+//
+//  Dipendenze:
+//    data-logic.js   → window.t(), window.getSmartUrl()
+//    ui-modal.js     → openModal('transport', 'bus'|'train'|'ferry')
+//    Sezione 9       → loadTableData(), renderSimpleList()
+// ═══════════════════════════════════════════════════════════════════════════
 window.renderServicesGrid = async function() {
     const targetEl = document.getElementById('app-content');
     document.querySelectorAll('.smart-filter-bar-container').forEach(el => el.remove());
@@ -1209,9 +1386,30 @@ window.toggleTicketInfo = function() {
     document.getElementById('ticket-info-box')?.classList.toggle('hidden');
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  GLOBAL SEARCH
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 11 — RICERCA GLOBALE (PRIMARIO)
+//
+//  La barra di ricerca nella home cerca in TUTTE le tabelle contemporaneamente:
+//  Ristoranti, Attrazioni, Spiagge, Prodotti, Vini, Farmacie, Numeri Utili,
+//  e anche i "virtuali" Bus/Traghetti/Treni.
+//
+//  Flusso:
+//    1. L'utente digita → _searchDebounced() aspetta 280ms (debounce)
+//    2. _runSearch() cerca in tutte le tabelle in cache
+//    3. I risultati appaiono in un bottom-sheet raggruppati per categoria
+//    4. Tap su un risultato → _searchNavigateTo() naviga alla pagina giusta,
+//       apre la tabella corretta, scrolla alla card e la evidenzia con un flash
+//
+//  PREFETCH: al primo caricamento, le tabelle vengono pre-caricate in background
+//  (requestIdleCallback) così la ricerca è istantanea.
+//
+//  _SEARCH_SECTIONS è la configurazione: ogni riga definisce una tabella,
+//  come estrarre nome/sottotitolo, e come aprire il modale al tap.
+//
+//  Dipendenze:
+//    data-logic.js → window.supabaseClient, window.appCache, window.dbCol()
+//    ui-modal.js   → openModal() per aprire i dettagli dal risultato
+// ═══════════════════════════════════════════════════════════════════════════
 const _BUS_VIRTUAL = [
     { _virtual: true, id: 'bus',   Nome: 'Orari Bus',       Alias: 'bus orari autobus ctbus',                    Sottotitolo: 'Cerca connessioni tra borghi' },
 ];
@@ -1571,9 +1769,21 @@ window._searchNavigateTo = async function(secIdx, hitIdx) {
     setTimeout(() => sec.openModal(item), 300);
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  LOADING FEEDBACK + NETWORK ERROR
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 12 — LOADING, OFFLINE E INIT (PRIMARIO)
+//
+//  Gestisce il primo caricamento dell'app:
+//    1. Mostra step di loading ("Connessione...", "Caricamento dati...", "Pronto!")
+//    2. Se offline con Service Worker → mostra banner "Offline" e usa la cache
+//    3. Se offline senza SW → mostra errore "Connessione assente" con bottone Riprova
+//    4. Quando tutto è pronto → renderizza la home e attiva pull-to-refresh
+//
+//  Il DOMContentLoaded alla fine del file è il PUNTO DI INGRESSO dell'app.
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per i testi di loading tradotti
+//    Sezione 4     → switchView('home') per mostrare la prima pagina
+// ═══════════════════════════════════════════════════════════════════════════
 function setLoadingStep(msg) {
     const el = document.getElementById('loading-step');
     if (el) el.textContent = msg;
@@ -1629,9 +1839,11 @@ function _saveOnlineTimestamp() {
     try { localStorage.setItem('f2g_last_online', new Date().toISOString()); } catch(e) {}
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  DOM CONTENT LOADED — INIT
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  PUNTO DI INGRESSO — viene eseguito quando la pagina HTML è pronta.
+//  Questo è il "main()" dell'app: controlla la connessione, mostra il loading,
+//  e poi renderizza la home page.
+// ═══════════════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
     const netErrorTimer = setTimeout(() => {
         if (document.getElementById('loading-step')) showNetworkError();
@@ -1669,19 +1881,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     window._initPullToRefresh();
 });
 
-// ─────────────────────────────────────────────────────────────────────────
-//  PINCH-ZOOM AUTO-RESET (v3 — Safari iOS compatibile)
+// ───────────────────────────────────────────────────────────────────────
+//  PINCH-ZOOM CON AUTO-RESET (TERZIARIO — UX mobile)
 //
-//  Safari iOS ignora touch-action:pan-x pan-y per il pinch E ignora
-//  user-scalable=no dal meta viewport. L'unico modo per bloccare il pinch
-//  nativo è chiamare preventDefault() sul touchmove a 2 dita.
+//  Intercetta il pinch a 2 dita su Safari iOS (che ignora user-scalable=no)
+//  e applica uno zoom CSS controllato che torna a scala 1 dopo 350ms.
+//  Senza questo, Safari ingrandirebbe la pagina in modo permanente.
 //
-//  Flusso:
-//    1. touchstart con 2 dita → salva distanza iniziale
-//    2. touchmove con 2 dita → preventDefault() blocca zoom nativo,
-//       calcoliamo scala e applichiamo transform:scale() su #app-content
-//    3. touchend → dopo 350ms, transizione elastica a scale(1)
-// ─────────────────────────────────────────────────────────────────────────
+//  Dipendenze: nessuna (puro DOM/touch events)
+// ───────────────────────────────────────────────────────────────────────
 (function _initPinchZoom() {
     const target = document.getElementById('app-content');
     if (!target) return;
@@ -1828,9 +2036,33 @@ window.initPendingMaps = function() {
 window.userMarker         = null;
 window.userAccuracyCircle = null;
 
-// ─────────────────────────────────────────────────────────────────────────
-//  GEO MODAL FACTORY (DRY: elimina ~120 righe duplicate)
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 13 — GEO MODAL E GPS (SECONDARIO)
+//
+//  Sistema di permessi e tracciamento GPS, usato da:
+//    - Sentieri (bottone GPS nella mappa tecnica)
+//    - Bus (auto-localizzazione sulla mappa fermate)
+//    - Near Me (ordinamento per distanza nelle liste)
+//    - Mappa interattiva (posizione utente su ui-map.js)
+//
+//  GeoModal è un bottom-sheet generico per chiedere permessi o mostrare errori.
+//  GeoTracker (definito più in basso) è un singleton pub/sub che gestisce
+//  un solo watchPosition condiviso tra tutti i consumatori.
+//
+//  Flusso permessi:
+//    1. _requestGeoPermission() controlla lo stato (granted/denied/prompt)
+//    2. Se "prompt" → mostra GeoModal per chiedere il permesso
+//    3. Se "granted" → chiama il callback onGranted
+//    4. Se "denied" → mostra modale di errore con istruzioni
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per i testi tradotti dei modali
+//  Usata da:
+//    toggleGPS() (bottone GPS nei sentieri)
+//    initBusMap() (mappa bus)
+//    ui-map.js → per il tracking sulla mappa interattiva
+//    features.js → toggleNearMe() per ordinamento per distanza
+// ═══════════════════════════════════════════════════════════════════════════
 window.GeoModal = {
     show(config) {
         this.dismiss();
@@ -1916,9 +2148,11 @@ function _showGeoErrorModal(title, message) {
 
 
 
-// ─────────────────────────────────────────────────────────────────────────
-//  GPS PERMISSION + TRACKING
-// ─────────────────────────────────────────────────────────────────────────
+// Richiede il permesso GPS all'utente. Gestisce 3 casi:
+//   - "granted" → chiama onGranted subito
+//   - "denied" → mostra errore (l'utente deve andare nelle impostazioni del browser)
+//   - "prompt" → mostra il modale di richiesta con spiegazione
+// Fallback iOS Safari: usa localStorage perché Safari non supporta Permissions API
 window._requestGeoPermission = async function(onGranted, onDenied) {
     if (!navigator.geolocation) {
         _showGeoErrorModal(window.t('geo_blocked_title'), window.t('geo_unsupported'));
@@ -2044,9 +2278,30 @@ function _dismissGeoBanner() {
 
 
 
-// ─────────────────────────────────────────────────────────────────────────
-//  CHICCO — Mascotte meteo con animazione Lottie
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 14 — CHICCO MASCOTTE METEO (SECONDARIO — COMPONENTE PROTETTO)
+//
+//  Chicco è un grappolo d'uva animato che appare sulla home page.
+//  Al tap mostra una card con meteo in tempo reale + curiosità sulle Cinque Terre.
+//
+//  Componenti:
+//    - FAB: bottone rotondo in basso a sinistra (immagine statica Cloudinary)
+//    - Lottie: animazione che parte al primo tap (caricata lazy)
+//    - Speech bubble: messaggio di benvenuto (primo accesso / fascia oraria)
+//    - Card meteo: pannello con temperatura, umidità, stato mare + consiglio
+//
+//  Logica bubble:
+//    - Prima visita IN ASSOLUTO (localStorage 'f2g_chicco_ever') → benvenuto caloroso
+//    - Prima visita di QUESTA SESSIONE (sessionStorage) → messaggio per fascia oraria
+//    - Visite successive nella stessa sessione → nessuna bubble
+//
+//  ATTENZIONE: Chicco è un componente protetto. Non modificare senza conferma.
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per i messaggi, window.getChiccoRealTimeAdvice() per il meteo
+//    Lottie Web (CDN) → window.lottie per le animazioni
+//    Cloudinary → immagine statica chicco_wxxwbm.png e animazione chicco.json
+// ═══════════════════════════════════════════════════════════════════════════
 const CHICCO_STATIC_URL = 'https://res.cloudinary.com/dkg0jfady/image/upload/v1770990643/chicco_wxxwbm.png';
 const CHICCO_LOTTIE_URL = 'https://res.cloudinary.com/dkg0jfady/raw/upload/chicco.json';
 
@@ -2247,9 +2502,17 @@ window._closeChiccoCard = function() {
     backdrop?.remove();
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  BUMP LANG PANEL
-// ─────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  PANNELLO CAMBIO LINGUA (SECONDARIO)
+//
+//  Popup che appare dal pulsante lingua nella home page.
+//  Mostra le 6 lingue disponibili con bandierina, nome e check sulla attiva.
+//  Al tap su una lingua → changeLanguage() aggiorna tutto.
+//
+//  Dipendenze:
+//    data-logic.js → window.AVAILABLE_LANGS, window.currentLang
+//    Sezione 3     → changeLanguage()
+// ───────────────────────────────────────────────────────────────────────
 window._toggleBumpLangPanel = function() {
     if (document.getElementById('bump-lang-panel')) { window._closeBumpLangPanel(); return; }
 
@@ -2314,9 +2577,18 @@ window._closeBumpLangPanel = function() {
     document.getElementById('bump-lang-trigger')?.setAttribute('aria-expanded', 'false');
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  PULL-TO-REFRESH
-// ─────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  PULL-TO-REFRESH (SECONDARIO)
+//
+//  Quando l'utente tira verso il basso dalla cima della pagina:
+//    1. Appare una freccia animata con testo "Tira per aggiornare"
+//    2. Se tira abbastanza (65px) e rilascia → ricarica i dati della tabella corrente
+//    3. Invalida la cache filtri e ricarica dal database
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per i testi
+//    Sezione 9     → loadTableData() per ricaricare i dati
+// ───────────────────────────────────────────────────────────────────────
 window._initPullToRefresh = function() {
     var container = document.getElementById('app-content');
     if (!container || container._ptrAttached) return;
@@ -2395,9 +2667,32 @@ window._initPullToRefresh = function() {
     }, { passive: true });
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  BUS MAP
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 15 — TRASPORTI: BUS, TRAGHETTI, TRENI (SECONDARIO)
+//
+//  Queste funzioni gestiscono la ricerca orari per i 3 mezzi di trasporto.
+//  Sono chiamate dai modali in ui-modal-contents.js (sezione transport).
+//
+//  BUS:
+//    initBusMap()         → Crea la mappa Leaflet con le fermate (marker cliccabili)
+//    setBusStop()         → Imposta partenza/arrivo quando l'utente clicca un marker
+//    handleBusSelectionChange() → Aggiorna le destinazioni disponibili
+//    eseguiRicercaBus()   → Chiama la RPC Supabase 'trova_bus' e mostra i risultati
+//
+//  TRAGHETTI:
+//    eseguiRicercaTraghetto() → Chiama la RPC 'next_departures'
+//                               Caso speciale: Corniglia non ha molo → messaggio ad hoc
+//
+//  TRENI:
+//    apriTrenitalia()     → Apre il sito Trenitalia in un nuovo tab
+//
+//  Dipendenze:
+//    data-logic.js         → window.supabaseClient (RPC calls), window.t(),
+//                            isItalianHoliday() per badge feriale/festivo
+//    Leaflet.js (CDN)      → L.map, L.marker per la mappa bus
+//    ui-modal-contents.js  → genera l'HTML dei form di ricerca
+//    Sezione 13            → GPS per auto-localizzazione sulla mappa bus
+// ═══════════════════════════════════════════════════════════════════════════
 window.initBusMap = function(fermate) {
     const mapContainer = document.getElementById('bus-map');
     if (!mapContainer) return;

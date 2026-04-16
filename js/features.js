@@ -1,36 +1,62 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  Five2Go — features.js
-//  Wishlist · Cinque Terre Card · Segnalazioni
+//  features.js — WISHLIST, CT CARD E SEGNALAZIONI (PRIMARIO)
 //
-//  Feature principali:
-//    1. WL                    — Wishlist manager (localStorage)
-//    2. renderHeartBtn/toggle — cuoricino su ogni card
-//    3. _updateHomeBadges     — contatori sulla home
-//    4. renderWishlist        — pagina "I miei Preferiti"
-//    5. renderCinqueTerreCard — pagina info CT Card
-//    6. Segnalazioni          — report errori utente
+//  Gestisce le funzionalità "persistenti" che restano salvate tra le sessioni:
+//    - Wishlist (preferiti) con cuoricino su ogni card
+//    - Pagina "I miei Preferiti"
+//    - Pagina info "Cinque Terre Card" con simulatore prezzi
+//    - Pagina info "Cinque Terre Treno Card"
+//    - Sistema segnalazioni errori (report a Supabase)
 //
-//  STORAGE KEY: f2g_wishlist
-// ═══════════════════════════════════════════════════════════════════════════
+//  ESPORTA SU WINDOW:
+//    window.WL               → Manager wishlist (get/add/remove/has/toggle)
+//    window.renderHeartBtn() → Genera il bottone cuoricino per una card
+//    window.renderHeartBtnOverlay() → Versione overlay per card con foto
+//    window.toggleHeart()    → Toggle cuoricino (con animazione + haptic)
+//    window._updateHomeBadges() → Aggiorna il contatore sulla home
+//    window.renderWishlist() → Pagina "I miei Preferiti"
+//    window.renderCinqueTerreCard()     → Pagina CT Card
+//    window.renderCinqueTerreTrenoCard() → Pagina CT Treno Card
+//    window.renderReportBtn() → Bottone "Segnala problema" nei modali
+//    window._haptic()        → Vibrazione feedback per azioni importanti
+//    window._showConfirmDialog() → Dialog di conferma (usato da "Svuota tutto")
+//    window.GeoTracker       → Singleton GPS pub/sub (usato da mappa, bus, near me)
+//    window.toggleNearMe()   → Ordinamento per distanza nelle liste
+//    window.sortByDistance()  → Ordina una lista per distanza GPS
+//
+//  STORAGE: localStorage chiave 'f2g_wishlist'
+//
+//  DIPENDENZE:
+//    data-logic.js → window.t(), window.dbCol(), window.supabaseClient
+//    ui-modal.js   → window.openModal() per aprire dettagli dalla wishlist
+//    app.js        → switchView() per la navigazione
+//
+//  USATO DA:
+//    ui-renderers.js → renderHeartBtnOverlay() nei template card
+//    app.js          → renderWishlist(), renderCinqueTerreCard() da switchView
+//    app.js          → GeoTracker da GPS/bus/mappa
+//    ui-modal.js     → renderReportBtn() nei modali dettaglio
 // ═══════════════════════════════════════════════════════════════════════════
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  0. HAPTIC FEEDBACK — Micro-vibrazione per azioni importanti
-//     navigator.vibrate() è supportato da tutti i browser Android moderni.
-//     Su iOS Safari non è supportato ma non lancia errori (safe to call).
-//     Il check evita crash su browser desktop senza API.
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  VIBRAZIONE FEEDBACK (TERZIARIO)
+//  Micro-vibrazione al tap su azioni importanti (cuoricino, filtro, ecc.)
+//  Funziona su Android. Su iOS non fa nulla ma non crasha.
+//  Usata da: toggleHeart(), toggleSmartFilter(), _selectReportOpt()
+// ───────────────────────────────────────────────────────────────────────
 window._haptic = function(ms) {
     try { if (navigator.vibrate) navigator.vibrate(ms || 10); } catch(e) {}
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  CONFIRM DIALOG — Bottom-sheet di conferma branded
-//  Sostituisce window.confirm() che è brutto, bloccante e non stilizzabile.
-//  Uso: window._showConfirmDialog(titolo, messaggio, onConfirm)
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  DIALOG DI CONFERMA (TERZIARIO)
+//  Bottom-sheet con "Sei sicuro?" + bottoni Annulla/Conferma.
+//  Sostituisce il brutto window.confirm() nativo del browser.
+//  Usata da: "Svuota tutto" nella wishlist
+//  Dipendenze: data-logic.js → window.t() per i testi dei bottoni
+// ───────────────────────────────────────────────────────────────────────
 window._showConfirmDialog = function(title, message, onConfirm) {
     const existing = document.getElementById('f2g-confirm-overlay');
     if (existing) existing.remove();
@@ -68,9 +94,11 @@ window._showConfirmDialog = function(title, message, onConfirm) {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  STORAGE TOAST — Feedback visivo se localStorage è pieno
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  TOAST STORAGE PIENO (TERZIARIO)
+//  Mostra un avviso se localStorage è pieno (raro, ma possibile su Safari iOS).
+//  Usata da: WL._save() quando il salvataggio fallisce
+// ───────────────────────────────────────────────────────────────────────
 window._showStorageToast = function() {
     // Evita toast multipli ravvicinati
     if (document.getElementById('storage-full-toast')) return;
@@ -85,9 +113,24 @@ window._showStorageToast = function() {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  1. WISHLIST MANAGER
-// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  WISHLIST MANAGER (PRIMARIO)
+//
+//  Gestisce la lista dei preferiti dell'utente in localStorage.
+//  Ogni item ha: wl_id, wl_type, wl_name, wl_sub, wl_modal_type, wl_modal_payload
+//
+//  Metodi:
+//    WL.get()        → restituisce l'array dei preferiti
+//    WL.add(item)    → aggiunge se non già presente
+//    WL.remove(id)   → rimuove per ID
+//    WL.has(id)      → controlla se un ID è nei preferiti (true/false)
+//    WL.toggle(item) → aggiunge o rimuove. Restituisce true se aggiunto.
+//
+//  NOTA SAFARI iOS: localStorage può essere cancellato dopo ~7 giorni di
+//  inattività se la PWA non è installata sulla home screen.
+//
+//  Usata da: toggleHeart(), renderWishlist(), _updateHomeBadges(), renderHome()
+// ═══════════════════════════════════════════════════════════════════════════
 window.WL = {
     _key: 'f2g_wishlist',
 
@@ -126,20 +169,32 @@ window.WL = {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  ITINERARY — disabilitato in V1.0 (pianificato per V2)
-//  window.ITINERARY, renderItinerary, renderPlanBtn, togglePlan rimossi.
-//  Stubs mantenuti per sicurezza:
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  ITINERARY — Stub V1.0 (disabilitato, pianificato per V2)
+//  Tutti i metodi sono no-op per evitare crash se qualche vecchio codice li chiama.
+// ───────────────────────────────────────────────────────────────────────
 window.ITINERARY = { get() { return []; }, _save() {}, add() { return false; }, remove() {}, has() { return false; }, move() {}, clear() {} };
 window.renderPlanBtn = function() { return ''; };
 window.togglePlan    = function() {};
 window.renderItinerary = function() { window.renderWishlist(); };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  3. HEART BUTTON — Wishlist toggle sulle card
-// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  CUORICINO WISHLIST (PRIMARIO)
+//
+//  Tre funzioni che lavorano insieme:
+//    renderHeartBtn(wlItem)          → Genera un bottone cuore sotto la card
+//    renderHeartBtnOverlay(wlItem)   → Genera un cuore sovrapposto alla foto
+//    toggleHeart(btn, encoded)       → Al tap: aggiunge/rimuove dai preferiti
+//                                      con animazione pop + vibrazione
+//
+//  L'item wishlist (wlItem) contiene:
+//    wl_id, wl_type, wl_name, wl_sub, wl_modal_type, wl_modal_payload
+//  Questi dati servono per riaprire il modale dalla pagina preferiti.
+//
+//  Usata da: tutti i renderer in ui-renderers.js
+//  Dipendenze: WL manager (sopra), _haptic(), _updateHomeBadges()
+// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Genera l'HTML del pulsante cuore da inserire nel buttonsHtml delle card.
@@ -267,10 +322,11 @@ window.toggleHeart = function(btn, encoded) {
 
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  5. BADGE UPDATER
-//     Aggiorna i contatori visibili sui pulsanti Home (Preferiti / Itinerario)
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  BADGE CONTATORE HOME (TERZIARIO)
+//  Aggiorna il numerino sulla pill "Preferiti" nella home page.
+//  Chiamata dopo ogni toggleHeart() e dopo "Svuota tutto".
+// ───────────────────────────────────────────────────────────────────────
 window._updateHomeBadges = function() {
     const wlBadge = document.querySelector('[data-home-badge="wishlist"]');
 
@@ -282,9 +338,18 @@ window._updateHomeBadges = function() {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  6. WISHLIST PAGE
-// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGINA PREFERITI (PRIMARIO)
+//
+//  Mostra tutti gli item salvati con cuoricino, con possibilità di:
+//    - Aprire il modale dettaglio (tap sulla card)
+//    - Rimuovere singoli item (bottone X con animazione slide-out)
+//    - Svuotare tutto (con dialog di conferma)
+//  Se vuota, mostra un messaggio con istruzioni per l'utente.
+//
+//  Chiamata da: app.js → switchView('wishlist') e switchView('itinerary')
+//  Dipendenze: WL manager, ui-modal.js → openModal()
+// ═══════════════════════════════════════════════════════════════════════════
 window.renderWishlist = function() {
     const content = document.getElementById('app-content');
     if (!content) return;
@@ -429,10 +494,22 @@ window._openWlModal = function(modalType, payload) {
 
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  8. CINQUE TERRE CARD PAGE
-//     Info sulla tessera del Parco Nazionale: prezzi, acquisto, sentieri inclusi
-// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  CINQUE TERRE CARD (SECONDARIO)
+//
+//  Pagina informativa sulla tessera del Parco Nazionale delle Cinque Terre.
+//  Include:
+//    - Spiegazione di cosa include la card (sentieri, bus, WiFi, ecc.)
+//    - Calendario interattivo con fasce di prezzo (A=bassa, B=media, C=alta)
+//    - Simulatore prezzo: scegli durata, data, tipo viaggiatore → prezzo stimato
+//
+//  8a. renderCinqueTerreCard() → Pagina principale con info e simulatore
+//  8b. Calendario fasce        → Dataset dal PDF ufficiale PN5T 2026
+//  8c. Simulatore prezzo       → Calcolo basato su durata × fascia × tipologia
+//
+//  Chiamata da: app.js → switchView('ct_card')
+//  Dipendenze: data-logic.js → window.t(), window.currentLang
+// ═══════════════════════════════════════════════════════════════════════════
 window.renderCinqueTerreCard = function() {
     const content = document.getElementById('app-content');
     if (!content) return;
@@ -1154,12 +1231,12 @@ window.renderCinqueTerreTrenoCard = function() {
     </div>`;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  8b. CINQUE TERRE CARD — CALENDARIO FASCE INTERATTIVO
-//  Dataset estratto dal PDF ufficiale PN5T 2026 (Carte Multiservizi 1 giorno).
-//  Fascia per giorno: A=verde (bassa), B=giallo (media), C=rosso (alta).
-//  Periodo: 14 marzo - 1 novembre 2026.
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  CALENDARIO FASCE CT CARD (TERZIARIO)
+//  Dataset dal PDF ufficiale PN5T 2026. Periodo: 14 marzo - 1 novembre.
+//  Ogni giorno ha una fascia: A (verde/bassa), B (giallo/media), C (rosso/alta).
+//  Usato dal simulatore prezzo per calcolare il costo in base alla data scelta.
+// ───────────────────────────────────────────────────────────────────────
 
 (function() {
     // Default = A (verde). Override solo B e C.
@@ -1432,11 +1509,11 @@ window._ctCalNav = function(dir) {
     window._renderCTCalendar();
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  8c. SIMULATORE PREZZO MS CARD
-//  Permette ai turisti di simulare il costo della Cinque Terre Treno MS Card
-//  selezionando durata, data di inizio e tipologia acquirente.
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  SIMULATORE PREZZO CT CARD (TERZIARIO)
+//  L'utente sceglie: durata (1/2/3 giorni) → data inizio → tipo viaggiatore
+//  Il simulatore calcola il prezzo basandosi sulla fascia del calendario.
+// ───────────────────────────────────────────────────────────────────────
 
 /** Cambia durata card (1/2/3 giorni) → aggiorna calendario + reset selezione */
 window._ctSimSwitchCard = function(days) {
@@ -1671,9 +1748,23 @@ window._ctSimCalcPrice = function() {
     setTimeout(() => resultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  9. NEAR ME — Ordinamento per distanza (geolocalizzazione)
-// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  NEAR ME — ORDINAMENTO PER DISTANZA (SECONDARIO)
+//
+//  Quando l'utente preme il bottone "Near Me" nella filter bar,
+//  la lista viene riordinata dal più vicino al più lontano.
+//
+//  Flusso:
+//    1. toggleNearMe() → chiede il permesso GPS (se non già dato)
+//    2. GeoTracker (sotto) ottiene la posizione
+//    3. sortByDistance() calcola la distanza in km per ogni item
+//    4. La lista viene ri-filtrata con il nuovo ordinamento
+//
+//  Dipendenze:
+//    GeoTracker (sotto) → per ottenere la posizione GPS
+//    app.js Sezione 13  → _requestGeoPermission() per il permesso
+//    app.js Sezione 9   → i filtri richiamano sortByDistance()
+// ═══════════════════════════════════════════════════════════════════════════
 // Toggle state: true = ordina per distanza, false = ordine originale
 window._nearMeEnabled = false;
 // Cached user position (aggiornata via GeoTracker singleton)
@@ -1777,34 +1868,26 @@ window.sortByDistance = function(items, latKey, lonKey) {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  10. SEGNALAZIONI — "Segnala un problema" su ogni card/modal
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEGNALAZIONI — "SEGNALA UN PROBLEMA" (SECONDARIO)
 //
-//  Tabella Supabase richiesta: "Segnalazioni"
-//  Colonne: id (bigint, identity), created_at (timestamptz, default now()),
-//           item_type (text), item_id (text), item_name (text),
-//           report_type (text), note (text), lang (text)
+//  Permette all'utente di segnalare errori sui dati (ristorante chiuso,
+//  indirizzo sbagliato, sentiero bloccato, ecc.)
 //
-//  RLS: abilitare e creare SOLO una policy INSERT per il ruolo anon.
-//  Nessuna policy SELECT/UPDATE/DELETE → i turisti non possono leggere/cancellare.
+//  Flusso:
+//    1. renderReportBtn() genera il bottoncino nei modali dettaglio
+//    2. Al tap si apre un bottom-sheet con 4 opzioni + campo note
+//    3. _submitReport() invia la segnalazione alla tabella Supabase "Segnalazioni"
+//    4. Rate limiting client-side: max 3 segnalazioni al minuto (sessionStorage)
 //
-//  SQL da eseguire su Supabase Dashboard → SQL Editor:
-//  ──────────────────────────────────────────────────
-//  CREATE TABLE IF NOT EXISTS "Segnalazioni" (
-//    id bigint generated always as identity primary key,
-//    created_at timestamptz default now(),
-//    item_type text not null,
-//    item_id text,
-//    item_name text,
-//    report_type text not null,
-//    note text default '',
-//    lang text default 'it'
-//  );
-//  ALTER TABLE "Segnalazioni" ENABLE ROW LEVEL SECURITY;
-//  CREATE POLICY "anon_can_insert" ON "Segnalazioni"
-//    FOR INSERT TO anon WITH CHECK (true);
-//  ──────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+//  Tabella Supabase necessaria: "Segnalazioni"
+//  Colonne: id, created_at, item_type, item_id, item_name, report_type, note, lang
+//  RLS: solo INSERT per il ruolo anon (i turisti non possono leggere/cancellare)
+//
+//  Dipendenze:
+//    data-logic.js → window.supabaseClient, window.t()
+//  Usata da: ui-modal.js → aggiunge renderReportBtn() nei modali reportabili
+// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Genera il bottoncino "Segnala" da inserire nelle card o nei modali.

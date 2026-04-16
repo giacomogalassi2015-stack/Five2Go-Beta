@@ -1,3 +1,35 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  ui-modal-contents.js — CONTENUTO DEI MODALI (PRIMARIO)
+//
+//  Contiene la funzione getModalContent(type, payload) che genera l'HTML
+//  per ogni tipo di bottom-sheet. È il "catalogo" dei template modali.
+//
+//  TIPI SUPPORTATI:
+//    'ristorante'/'restaurant' → Dettagli ristorante (foto, descrizione, mappa, tel)
+//    'product'                 → Dettagli prodotto (foto, descrizione, ideale per)
+//    'Vini'/'wine'             → Dettagli vino (fetch da Supabase per ID, uve, gradi, abbinamenti)
+//    'attrazione'/'Attrazioni' → Dettagli attrazione (fetch da Supabase per POI_ID)
+//    'Spiagge'                 → Dettagli spiaggia (foto, descrizione, come arrivare)
+//    'sentieroInfo'            → Scheda sentiero (stats, regole, fonti ufficiali)
+//    'transport'               → Form ricerca trasporti (bus/train/ferry)
+//
+//  COME FUNZIONA:
+//    1. openModal() in ui-modal.js chiama getModalContent(type, payload)
+//    2. Questa funzione restituisce { html, class?, onRender? }
+//    3. ui-modal.js inserisce l'HTML nel bottom-sheet
+//    4. Se c'è onRender(), viene chiamata dopo il rendering (per mappe, fetch, ecc.)
+//
+//  DIPENDENZE:
+//    data-logic.js → window.t(), window.dbCol(), window.valIT(), window.getSmartUrl(),
+//                    window.supabaseClient, window.FERRY_STOPS, isItalianHoliday()
+//    features.js   → window.renderHeartBtnOverlay() per il cuoricino
+//    Leaflet.js    → per le mini-mappe nelle card spiaggia/attrazione
+//
+//  USATO DA: ui-modal.js → openModal()
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Funzione principale: riceve il tipo di modale e il payload (dati),
+// restituisce l'HTML da inserire nel bottom-sheet.
 window.getModalContent = function(type, payload, item) {
     
     let contentHtml = '';

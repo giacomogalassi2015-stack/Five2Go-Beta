@@ -1,21 +1,57 @@
-// 1. CONFIGURAZIONE SUPABASE
+// ═══════════════════════════════════════════════════════════════════════════
+//  data-logic.js — DATI, TRADUZIONI E SERVIZI (PRIMARIO)
+//
+//  Questo è il PRIMO file caricato. Fornisce a tutti gli altri file:
+//    - Connessione al database (Supabase)
+//    - Sistema di traduzione (6 lingue)
+//    - Generazione URL immagini (Cloudinary)
+//    - Meteo in tempo reale (API Open-Meteo)
+//    - Utility per festivi italiani (per badge bus feriale/festivo)
+//
+//  ESPORTA SU WINDOW (usato dagli altri file):
+//    window.supabaseClient  → connessione al database
+//    window.appCache        → cache dati in memoria (evita fetch ripetuti)
+//    window.currentLang     → lingua corrente ('it','en','fr','de','es','zh')
+//    window.t(key)          → restituisce il testo tradotto per la chiave
+//    window.dbCol(item,key) → estrae un campo multilingua dal database
+//    window.valIT(item,key) → estrae un campo nella versione italiana (per URL immagini)
+//    window.getSmartUrl()   → genera URL Cloudinary ottimizzato per mobile
+//    window.escapeHtml()    → protegge da XSS nei template HTML
+//    window.AVAILABLE_LANGS → lista delle 6 lingue [{code,label,flag}]
+//    window.FERRY_STOPS     → fermate traghetto per il form di ricerca
+//    window.getChiccoRealTimeAdvice() → meteo + curiosità per la mascotte
+//
+//  CHI USA QUESTO FILE: tutti gli altri file JS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ───────────────────────────────────────────────────────────────────────
+//  CONNESSIONE DATABASE (Supabase)
+//  La chiave è "anon" (pubblica) — i dati sono protetti da Row Level Security.
+// ───────────────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://ydrpicezcwtfwdqpihsb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcnBpY2V6Y3d0ZndkcXBpaHNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNTQzMDAsImV4cCI6MjA4MzYzMDMwMH0.c89-gAZ8Pgp5Seq89BYRraTG-qqmP03LUCl1KqG9bOg';
 
-// RENDIAMO SUPABASE GLOBALE
+// Client Supabase disponibile globalmente per tutti i file
 window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// INIZIALIZZAZIONE CACHE
+// Cache in memoria: dopo il primo fetch, i dati restano qui per non ri-scaricarli
+// Invalidata dal pull-to-refresh (app.js Sezione 15)
 window.appCache = {};
+
+// ───────────────────────────────────────────────────────────────────────
+//  CLOUDINARY — Servizio immagini
+//  Tutte le foto dell'app sono su Cloudinary. getSmartUrl() genera l'URL
+//  con ridimensionamento automatico, formato WebP, e qualità ottimizzata.
+// ───────────────────────────────────────────────────────────────────────
 
 const CLOUDINARY_CLOUD_NAME = 'dkg0jfady';
 const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/`;
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  ESCAPE HTML — Protezione XSS
-//  Sanitizza stringhe prima di inserirle in innerHTML.
-//  Converte i 5 caratteri pericolosi (&<>"') in entità HTML.
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  SICUREZZA — Protezione XSS
+//  Converte caratteri pericolosi (<, >, ", ecc.) in entità HTML sicure.
+//  Usata da: ui-renderers.js in tutti i template delle card
+// ───────────────────────────────────────────────────────────────────────────
 window.escapeHtml = function(str) {
     if (str == null) return '';
     if (typeof str !== 'string') str = String(str);
@@ -27,10 +63,11 @@ window.escapeHtml = function(str) {
         .replace(/'/g,  '&#39;');
 };
 
+// Lingua corrente — letta da localStorage (persiste tra sessioni)
 window.currentLang = localStorage.getItem('app_lang') || 'it';
 window.currentViewName = 'home';
 
-// 3. CONFIGURAZIONE LINGUE
+// Le 6 lingue supportate — usate dal pannello cambio lingua (app.js Sezione 14)
 window.AVAILABLE_LANGS = [
     { code: 'it', label: 'IT', flag: '🇮🇹' },
     { code: 'en', label: 'EN', flag: '🇬🇧' },
@@ -40,9 +77,18 @@ window.AVAILABLE_LANGS = [
     { code: 'zh', label: 'CN', flag: '🇨🇳' }
 ];
 
-// ==========================================================
-// UI-LANGUAGE.JS: DIZIONARIO COMPLETO (Interfaccia + Meteo)
-// ==========================================================
+// ═══════════════════════════════════════════════════════════════════════════
+//  DIZIONARIO TRADUZIONI — Tutti i testi dell'interfaccia in 6 lingue
+//
+//  Ogni chiave (es. "loading", "btn_map", "menu_rest") è usata in tutta l'app
+//  tramite window.t('chiave') che restituisce il testo nella lingua corrente.
+//
+//  Per aggiungere una nuova stringa:
+//    1. Aggiungi la chiave in TUTTI e 6 i blocchi lingua (it, en, fr, de, es, zh)
+//    2. Usa window.t('nuova_chiave') nel codice
+//
+//  Usata da: TUTTI i file JS
+// ═══════════════════════════════════════════════════════════════════════════
 
 const UI_TEXT = {
     it: {
@@ -1105,12 +1151,22 @@ window.FERRY_STOPS = [
     { id: 'levanto',     label: 'Levanto' }
 ];
 
-// 5. HELPER FUNCTIONS GLOBALI
+// ═══════════════════════════════════════════════════════════════════════════
+//  FUNZIONI HELPER GLOBALI (PRIMARIO)
+//  Queste sono le funzioni più usate in tutta l'app.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Restituisce il testo tradotto per una chiave. Se la chiave non esiste, la restituisce tal quale.
+// Esempio: window.t('btn_map') → "Mappa" (in italiano) o "Map" (in inglese)
 window.t = function(key) {
     const langDict = UI_TEXT[window.currentLang] || UI_TEXT['it'];
     return langDict[key] || key;
 };
 
+// Estrae un campo dal database nella lingua corrente.
+// I campi multilingua in Supabase sono salvati come oggetto {it:"...", en:"...", fr:"..."}
+// Questa funzione restituisce il valore nella lingua giusta, con fallback all'italiano.
+// Esempio: window.dbCol(ristorante, 'Nome') → "The best restaurant" (se lang='en')
 window.dbCol = function(item, field) {
     if (!item || !item[field]) return '';
     let value = item[field];
@@ -1120,6 +1176,10 @@ window.dbCol = function(item, field) {
     return value;
 };
 
+// Genera l'URL Cloudinary ottimizzato per un'immagine.
+// Applica: ridimensionamento, formato auto (WebP), qualità eco, no retina 2x.
+// Il nome viene usato come path Cloudinary (le foto si chiamano come l'elemento).
+// Esempio: window.getSmartUrl('Manarola', '', 900) → URL della foto di Manarola larga 900px
 window.getSmartUrl = function(name, folder = '', width = 600) {
     if (!name) return 'https://via.placeholder.com/600x400?text=No+Image';
     const safeName = encodeURIComponent(name.trim()); 
@@ -1129,6 +1189,9 @@ window.getSmartUrl = function(name, folder = '', width = 600) {
     return `${CLOUDINARY_BASE_URL}/w_${width},c_fill,g_auto,f_auto,q_auto:eco,dpr_1.0,fl_progressive/${folderPath}${safeName}`;
 };
 
+// Come dbCol, ma restituisce SEMPRE la versione italiana.
+// Serve per generare URL Cloudinary (le foto hanno nomi italiani)
+// e per confronti interni dove la lingua dell'utente non conta.
 window.valIT = function(item, field) {
     if (!item || !item[field]) return '';
     let value = item[field];
@@ -1142,6 +1205,14 @@ window.valIT = function(item, field) {
 
 
 
+// ───────────────────────────────────────────────────────────────────────
+//  FESTIVI ITALIANI (TERZIARIO)
+//  Usata da: app.js Sezione 15 (trasporti) per mostrare il badge
+//  "FESTIVO" o "FERIALE" nella ricerca orari bus.
+//  Calcola Pasqua e Pasquetta con l'algoritmo di Gauss.
+// ───────────────────────────────────────────────────────────────────────
+
+// Calcola la data di Pasqua per un anno dato (algoritmo di Gauss)
 function getEasterDate(year) {
     const a = year % 19;
     const b = Math.floor(year / 100);
@@ -1162,6 +1233,7 @@ function getEasterDate(year) {
     return new Date(year, month, day);
 }
 
+// Restituisce true se una data è festiva in Italia (domenica, feste fisse, Pasquetta)
 function isItalianHoliday(dateObj) {
     const d = dateObj.getDate();
     const m = dateObj.getMonth() + 1; 
@@ -1183,6 +1255,23 @@ function isItalianHoliday(dateObj) {
 
 
 
+// ───────────────────────────────────────────────────────────────────────
+//  CHICCO METEO E CURIOSITÀ (SECONDARIO)
+//
+//  getChiccoRealTimeAdvice() viene chiamata quando l'utente tocca Chicco.
+//  Chiama l'API Open-Meteo (gratuita, no API key) per le Cinque Terre
+//  e restituisce: icona meteo, temperatura, umidità, stato mare + una curiosità random.
+//
+//  La risposta viene cachata 15 minuti per evitare fetch ripetuti.
+//
+//  TRIVIA_KEYS: 26 curiosità sulle Cinque Terre (tradotte nel dizionario)
+//  MAP_CHICCO_KEYS: 8 frasi specifiche per quando Chicco è sulla mappa
+//
+//  Dipendenze: API Open-Meteo (fetch HTTP), window.t() per le traduzioni
+//  Usata da: app.js Sezione 14 (toggleChicco → card meteo)
+// ───────────────────────────────────────────────────────────────────────
+
+// Chiavi delle curiosità random (i testi sono nel dizionario UI_TEXT)
 const TRIVIA_KEYS = [
     "trivia_1", "trivia_2", "trivia_3", "trivia_4", "trivia_5", 
     "trivia_6", "trivia_7", "trivia_8", "trivia_9", "trivia_10", 
@@ -1191,14 +1280,14 @@ const TRIVIA_KEYS = [
     "trivia_21", "trivia_22", "trivia_23", "trivia_24", "trivia_25", "trivia_26"
 ];
 
+// Frasi di Chicco specifiche per la vista mappa
 const MAP_CHICCO_KEYS = [
     "chicco_map_1", "chicco_map_2", "chicco_map_3", "chicco_map_4",
     "chicco_map_5", "chicco_map_6", "chicco_map_7", "chicco_map_8"
 ];
 
-// ── Cache meteo in memoria (TTL 15 minuti) ────────────────────────
-// Evita fetch ripetuti ad ogni tap su Chicco nella stessa sessione.
-// In caso di errore la cache viene invalidata così al prossimo tap riprova.
+// Cache meteo in memoria: evita di richiamare l'API ad ogni tap su Chicco.
+// Si resetta dopo 15 minuti (WEATHER_TTL_MS) o in caso di errore.
 let _weatherCache   = null;
 let _weatherCacheTs = 0;
 const WEATHER_TTL_MS = 15 * 60 * 1000; // 15 minuti

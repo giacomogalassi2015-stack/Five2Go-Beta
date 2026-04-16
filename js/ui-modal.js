@@ -1,4 +1,40 @@
-// ── CSS Keyframes per animazioni modale (iniettate una volta sola) ────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  ui-modal.js — SISTEMA MODALE (PRIMARIO)
+//
+//  Gestisce tutti i pannelli dettaglio che si aprono dal basso (bottom-sheet):
+//    - Dettagli ristorante, prodotto, vino, attrazione, spiaggia, sentiero
+//    - Trasporti (bus, treno, traghetto)
+//    - Mappa tecnica del sentiero con profilo altimetrico
+//
+//  FUNZIONI PRINCIPALI:
+//    openModal(type, payload)   → Apre un bottom-sheet con il contenuto giusto
+//    _dismissModal(overlay)     → Chiude il modale con animazione
+//    _attachModalSwiper()       → Aggiunge swipe sinistro/destro per sfogliare le card
+//    openTechMap(safeObj)        → Apre la mappa tecnica fullscreen di un sentiero
+//    closeModal()               → Chiude la mappa tecnica
+//
+//  MODAL SWIPER:
+//    Quando apri un ristorante/spiaggia/ecc. da una lista filtrata, puoi
+//    fare swipe a sinistra/destra per vedere il precedente/successivo.
+//    Come Instagram Stories o Google Maps cards.
+//    Usa window._currentFilteredList (impostato da IncrementalRenderer in app.js).
+//
+//  DIPENDENZE:
+//    ui-modal-contents.js → window.getModalContent(type, payload) genera l'HTML
+//    data-logic.js        → window.t(), window.dbCol(), window.valIT()
+//    app.js               → window._pushModalState() per il pulsante indietro
+//    features.js          → window.renderReportBtn() per il bottone segnalazione
+//    Leaflet.js (CDN)     → per la mappa tecnica dei sentieri
+//    leaflet-elevation    → per il profilo altimetrico
+//
+//  USATO DA:
+//    ui-renderers.js → onclick delle card chiama openModal()
+//    app.js          → popstate chiama _dismissModal() per il pulsante indietro
+//    app.js          → ricerca globale chiama openModal() al tap su un risultato
+// ═══════════════════════════════════════════════════════════════════════════
+
+// CSS per le animazioni del modale (slide-up, slide-down, swipe left/right, frecce)
+// Iniettate una volta sola nel <head> al primo caricamento
 try {
     if (!document.getElementById('f2g-modal-styles')) {
         const _s = document.createElement('style');
@@ -19,7 +55,8 @@ try {
     }
 } catch(e) { /* CSP o browser vecchio — le animazioni degradano graziosamente */ }
 
-// ── Helper: dismiss animato riusabile (esposto per popstate in app.js) ───
+// Chiude un modale con animazione slide-down + fade-out del backdrop.
+// Esposta su window perché viene chiamata anche da app.js (pulsante indietro)
 window._dismissModal = function(overlay) {
     if (!overlay || overlay._dismissing) return;
     overlay._dismissing = true;
@@ -33,18 +70,18 @@ window._dismissModal = function(overlay) {
     setTimeout(cleanup, 400); // fallback sicurezza
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  MODAL SWIPER — Swipe orizzontale tra items dentro il modale
-//  Pattern: Instagram stories, Google Maps cards, Airbnb listing gallery
-// ─────────────────────────────────────────────────────────────────────────
-/**
- * Attacca lo swipe orizzontale + frecce ad un overlay modale aperto.
- *
- * @param {HTMLElement} overlay   — il .fixed overlay del modale
- * @param {Array}       items     — lista filtrata corrente (stessi oggetti del DB)
- * @param {number}      startIdx  — indice dell'item attualmente visualizzato
- * @param {string}      modalType — tipo modale (es. 'ristorante','product','Vini'…)
- */
+// ───────────────────────────────────────────────────────────────────────
+//  MODAL SWIPER — Navigazione orizzontale tra elementi (SECONDARIO)
+//
+//  Aggiunge frecce ← → e swipe touch per sfogliare gli item dentro il modale.
+//  Quando l'utente fa swipe o preme una freccia:
+//    1. Chiude il modale corrente
+//    2. Apre il modale dell'item precedente/successivo con animazione slide
+//
+//  Dipendenze:
+//    app.js → window._currentFilteredList (la lista filtrata corrente)
+//    app.js → window._currentCardRenderer (il renderer della card corrente)
+// ───────────────────────────────────────────────────────────────────────
 window._attachModalSwiper = function(overlay, items, startIdx, modalType) {
     if (!overlay || !items || items.length <= 1) return;
 
@@ -486,7 +523,20 @@ window.openModal = async function(type, payload) {
     }
 };
 
-// FIXED: Funzione TechMap con classi Tailwind (Z-Index alto e HCI Layout)
+// ───────────────────────────────────────────────────────────────────────
+//  MAPPA TECNICA SENTIERO — Fullscreen con profilo altimetrico (SECONDARIO)
+//
+//  Apre una pagina fullscreen con:
+//    - Stats in alto (distanza, durata, dislivello, altitudine max)
+//    - Mappa Leaflet con traccia GPX rossa
+//    - Profilo altimetrico interattivo (leaflet-elevation)
+//    - Bottoni: GPS tracking, download GPX, chiudi
+//
+//  Dipendenze:
+//    Leaflet.js + leaflet-gpx + leaflet-elevation (CDN)
+//    data-logic.js → window.t() per le etichette tradotte
+//    app.js Sezione 13 → toggleGPS() per il tracking GPS sulla mappa
+// ───────────────────────────────────────────────────────────────────────
 window.openTechMap = function(safeObj) {
     try {
         const s = JSON.parse(decodeURIComponent(safeObj));
@@ -617,6 +667,7 @@ window.openTechMap = function(safeObj) {
 
     } catch (e) { console.error("Errore TechMap:", e); }
 };
+// Mostra/nasconde il grafico altimetrico nella mappa tecnica
 window.toggleElevationChart = function() {
     const elDiv = document.getElementById('elevation-div');
     const btn = document.getElementById('btn-toggle-ele');
@@ -652,6 +703,7 @@ window.toggleElevationChart = function() {
     }
 };
 
+// Scarica il file GPX del sentiero (apre il link in un nuovo tab)
 window.downloadGPX = function(url) {
     if(!url) return;
     const link = document.createElement('a');
@@ -664,6 +716,8 @@ window.downloadGPX = function(url) {
 
 // toggleGPS: implementazione in app.js — usa _requestGeoPermission + modal branded
 
+// Chiude la mappa tecnica fullscreen (rimuove overlay + pulisce GPS)
+// Chiamata da: bottone X nella mappa tecnica, pulsante indietro (popstate)
 window.closeModal = function() {
     const m = document.getElementById('tech-modal-overlay');
     if (m) m.remove();

@@ -1,6 +1,43 @@
-// ---------------------------------------------------------------------------
-// CONFIG
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════════════
+//  ui-map.js — MAPPA INTERATTIVA FULLSCREEN (PRIMARIO)
+//
+//  La vista "Mappa" dell'app: una mappa Leaflet fullscreen con tutti i punti
+//  di interesse delle Cinque Terre (spiagge, attrazioni) come marker colorati.
+//
+//  FUNZIONALITÀ:
+//    - Marker categorizzati per tipo (spiaggia=blu, attrazione=verde)
+//    - Filtri per borgo (5 pill in alto) e categoria (spiaggia/attrazione)
+//    - Cluster automatico dei marker vicini
+//    - Popup card al tap su un marker (con bottone "Dettagli" → apre modale)
+//    - Posizione GPS dell'utente (cerchio blu pulsante)
+//    - Chicco mascotte anche sulla mappa
+//    - Fly-to automatico quando si arriva dalla card di un luogo specifico
+//    - Bottone "indietro" per tornare alla vista precedente
+//
+//  ARCHITETTURA:
+//    renderMappaInterattiva() → crea il contenitore fullscreen fixed
+//    _initMap()               → inizializza Leaflet, carica dati da Supabase (tabella Luoghi_mappa)
+//    _renderMarkers()         → crea i marker filtrati
+//    _buildPopupCard()        → genera l'HTML del popup al tap
+//    _updateFilterUI()        → aggiorna i contatori nei filtri
+//
+//  DIPENDENZE:
+//    data-logic.js → window.supabaseClient (tabella Luoghi_mappa),
+//                    window.t(), window.dbCol(), window.getSmartUrl()
+//    app.js        → window.mapGoBack() per il bottone indietro
+//    app.js        → window._mapFlyToTarget per il fly-to da una card
+//    app.js        → GeoTracker per la posizione GPS
+//    ui-modal.js   → openModal() per aprire i dettagli dal popup
+//    Leaflet.js    → L.map, L.marker, L.tileLayer (CDN)
+//
+//  USATO DA:
+//    app.js → _VIEW_RENDERERS.mappa chiama window.renderMappaInterattiva()
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ───────────────────────────────────────────────────────────────────────
+//  CONFIGURAZIONE MAPPA
+//  Coordinate dei 5 borghi, zoom iniziale, categorie con colori/icone
+// ───────────────────────────────────────────────────────────────────────
 const MAP_CENTER    = [44.1030, 9.7290];
 const MAP_ZOOM      = 13;
 const BORGHI_ORDER  = ["Riomaggiore","Manarola","Corniglia","Vernazza","Monterosso"];
