@@ -537,4 +537,4 @@ window.openMapBtn = function(e, lat, lon, cat) {
     // Apre la mappa proprietaria Five2Go, vola alla posizione e pre-filtra la categoria
     window._mapFlyToTarget = { lat, lon, cat: cat || null };
     window.switchView('mappa');
-};
+}; 

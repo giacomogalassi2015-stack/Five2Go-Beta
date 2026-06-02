@@ -1365,6 +1365,6 @@ window.getChiccoRealTimeAdvice = async function() {
             btnLabel: null 
         };
     }
-};
+}; 
 
 // Fine data-logic.js

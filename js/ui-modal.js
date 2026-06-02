@@ -789,7 +789,7 @@ function initLeafletMap(divId, gpxUrl) {
         }
     }
     setTimeout(() => { map.invalidateSize(); }, 300);
-}
+} 
 
 // eseguiRicercaBus: implementazione canonica in app.js
 // eseguiRicercaTraghetto: implementazione canonica in app.js
@@ -799,5 +799,5 @@ function initLeafletMap(divId, gpxUrl) {
 // Tutte spostate in app.js (caricato dopo) che è la fonte canonica.
 // initBusMap, loadAllStops, handleBusSelectionChange,
 // setBusStop, toggleBusMap, handleBusSelectionChange,
-// initFerrySearch, handleFerrySelectionChange, flashInputFeedback
+// initFerrySearch, handleFerrySelectionChange, flashInputFeedback 
 // ─────────────────────────────────────────────────────────────

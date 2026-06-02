@@ -1345,4 +1345,4 @@ if (_origSwitchView) {
         }
         return _origSwitchView(view, el);
     };
-}
+} 

@@ -804,4 +804,4 @@ window.initFerrySearch = function() {
     selArr.disabled = false;
     // NOTA: NON aggiungiamo addEventListener qui — il <select> ha già onchange="handleFerrySelectionChange"
     // per evitare il doppio firing.
-};
+}; 

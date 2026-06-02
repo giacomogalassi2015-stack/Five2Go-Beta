@@ -2076,4 +2076,4 @@ window._submitReport = async function(itemType, itemId, itemName) {
             sendBtn.className = 'w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide bg-rose-500 text-white shadow-md cursor-pointer';
         }
     }
-};
+}; 
