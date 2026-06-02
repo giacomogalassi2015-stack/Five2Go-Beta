@@ -1,6 +1,43 @@
-// ---------------------------------------------------------------------------
-// CONFIG
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════════════
+//  ui-map.js — MAPPA INTERATTIVA FULLSCREEN (PRIMARIO)
+//
+//  La vista "Mappa" dell'app: una mappa Leaflet fullscreen con tutti i punti
+//  di interesse delle Cinque Terre (spiagge, attrazioni) come marker colorati.
+//
+//  FUNZIONALITÀ:
+//    - Marker categorizzati per tipo (spiaggia=blu, attrazione=verde)
+//    - Filtri per borgo (5 pill in alto) e categoria (spiaggia/attrazione)
+//    - Cluster automatico dei marker vicini
+//    - Popup card al tap su un marker (con bottone "Dettagli" → apre modale)
+//    - Posizione GPS dell'utente (cerchio blu pulsante)
+//    - Chicco mascotte anche sulla mappa
+//    - Fly-to automatico quando si arriva dalla card di un luogo specifico
+//    - Bottone "indietro" per tornare alla vista precedente
+//
+//  ARCHITETTURA:
+//    renderMappaInterattiva() → crea il contenitore fullscreen fixed
+//    _initMap()               → inizializza Leaflet, carica dati da Supabase (tabella Luoghi_mappa)
+//    _renderMarkers()         → crea i marker filtrati
+//    _buildPopupCard()        → genera l'HTML del popup al tap
+//    _updateFilterUI()        → aggiorna i contatori nei filtri
+//
+//  DIPENDENZE:
+//    data-logic.js → window.supabaseClient (tabella Luoghi_mappa),
+//                    window.t(), window.dbCol(), window.getSmartUrl()
+//    app.js        → window.mapGoBack() per il bottone indietro
+//    app.js        → window._mapFlyToTarget per il fly-to da una card
+//    app.js        → GeoTracker per la posizione GPS
+//    ui-modal.js   → openModal() per aprire i dettagli dal popup
+//    Leaflet.js    → L.map, L.marker, L.tileLayer (CDN)
+//
+//  USATO DA:
+//    app.js → _VIEW_RENDERERS.mappa chiama window.renderMappaInterattiva()
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ───────────────────────────────────────────────────────────────────────
+//  CONFIGURAZIONE MAPPA
+//  Coordinate dei 5 borghi, zoom iniziale, categorie con colori/icone
+// ───────────────────────────────────────────────────────────────────────
 const MAP_CENTER    = [44.1030, 9.7290];
 const MAP_ZOOM      = 13;
 const BORGHI_ORDER  = ["Riomaggiore","Manarola","Corniglia","Vernazza","Monterosso"];
@@ -20,8 +57,6 @@ const BORGHI_BOUNDS = {
 };
 
 const CATEGORIE = {
-    vino:       { icon:"wine_bar",       label:"Vino",       color:"#C0392B", pill:"bg-red-100 text-red-700 border-red-200",            markerBg:"#FFF0EE", markerBorder:"#E74C3C" },
-    aperitivo:  { icon:"local_bar",      label:"Aperitivo",  color:"#D97706", pill:"bg-amber-100 text-amber-700 border-amber-200",      markerBg:"#FFFBEB", markerBorder:"#F59E0B" },
     spiaggia:   { icon:"beach_access",   label:"Spiaggia",   color:"#0369A1", pill:"bg-sky-100 text-sky-700 border-sky-200",            markerBg:"#EFF6FF", markerBorder:"#38BDF8" },
     attrazione: { icon:"account_balance",label:"Attrazioni", color:"#15803D", pill:"bg-emerald-100 text-emerald-700 border-emerald-200", markerBg:"#ECFDF5", markerBorder:"#34D399" },
 };
@@ -31,20 +66,14 @@ const BORGHI_COLORS = {
     Corniglia:"#C9A600",   Vernazza:"#264653", Monterosso:"#606C38"
 };
 
-// Mock data
+// Mock data (fallback se Supabase non risponde)
 const MOCK_DATA = [
-    { id:1,  nome:"Cantina Buranco",        borgo:"Monterosso",  categoria:"vino",       lat:44.1465, lon:9.6548, descrizione:"Cantina storica con degustazioni affacciate sul mare." },
-    { id:2,  nome:"Il Frantoio",            borgo:"Riomaggiore", categoria:"vino",       lat:44.0995, lon:9.7390, descrizione:"Olio e vino di produzione locale, piccola bottega nel centro storico." },
-    { id:3,  nome:"Bar Centrale",           borgo:"Manarola",    categoria:"aperitivo",  lat:44.1072, lon:9.7285, descrizione:"Aperitivo con vista mozzafiato sul porticciolo di Manarola." },
-    { id:4,  nome:"Enoteca Internazionale", borgo:"Vernazza",    categoria:"vino",       lat:44.1355, lon:9.6845, descrizione:"Selezione di vini locali e nazionali, taglieri e stuzzichini." },
-    { id:5,  nome:"Spiaggia Fegina",        borgo:"Monterosso",  categoria:"spiaggia",   lat:44.1490, lon:9.6520, descrizione:"La spiaggia più grande delle Cinque Terre, attrezzata con lettini." },
-    { id:6,  nome:"Spiaggia di Corniglia",  borgo:"Corniglia",   categoria:"spiaggia",   lat:44.1150, lon:9.7200, descrizione:"Spiaggia di ciottoli, acque cristalline e poco affollata." },
-    { id:7,  nome:"Torre Aurora",           borgo:"Vernazza",    categoria:"attrazione", lat:44.1358, lon:9.6840, descrizione:"Torre medievale con vista panoramica sul golfo di Vernazza." },
-    { id:8,  nome:"Via dell'Amore",         borgo:"Riomaggiore", categoria:"attrazione", lat:44.1010, lon:9.7370, descrizione:"Il sentiero romantico che collega Riomaggiore a Manarola." },
-    { id:9,  nome:"Bar Il Porticciolo",     borgo:"Riomaggiore", categoria:"aperitivo",  lat:44.1000, lon:9.7385, descrizione:"Aperitivo sul mare, ottimi cocktail e focaccia." },
-    { id:10, nome:"Punta Bonfiglio",        borgo:"Manarola",    categoria:"attrazione", lat:44.1060, lon:9.7270, descrizione:"Terrazza panoramica naturale, tramonto imperdibile." },
-    { id:11, nome:"Bar Matteo",             borgo:"Corniglia",   categoria:"aperitivo",  lat:44.1210, lon:9.7148, descrizione:"Aperitivo tranquillo nel borgo più silenzioso delle Cinque Terre." },
-    { id:12, nome:"Spiaggia Guvano",        borgo:"Corniglia",   categoria:"spiaggia",   lat:44.1180, lon:9.7130, descrizione:"Spiaggia selvaggia raggiungibile a piedi, acque turchesi." },
+    { id:1,  nome:"Spiaggia Fegina",        borgo:"Monterosso",  categoria:"spiaggia",   lat:44.1490, lon:9.6520, descrizione:"La spiaggia più grande delle Cinque Terre." },
+    { id:2,  nome:"Spiaggia di Corniglia",  borgo:"Corniglia",   categoria:"spiaggia",   lat:44.1150, lon:9.7200, descrizione:"Spiaggia di ciottoli, acque cristalline." },
+    { id:3,  nome:"Torre Aurora",           borgo:"Vernazza",    categoria:"attrazione", lat:44.1358, lon:9.6840, descrizione:"Torre medievale con vista sul golfo." },
+    { id:4,  nome:"Via dell'Amore",         borgo:"Riomaggiore", categoria:"attrazione", lat:44.1010, lon:9.7370, descrizione:"Il sentiero romantico tra Riomaggiore e Manarola." },
+    { id:5,  nome:"Punta Bonfiglio",        borgo:"Manarola",    categoria:"attrazione", lat:44.1060, lon:9.7270, descrizione:"Terrazza panoramica, tramonto imperdibile." },
+    { id:6,  nome:"Spiaggia Guvano",        borgo:"Corniglia",   categoria:"spiaggia",   lat:44.1180, lon:9.7130, descrizione:"Spiaggia selvaggia, acque turchesi." },
 ];
 
 // ---------------------------------------------------------------------------
@@ -63,26 +92,93 @@ const MOCK_DATA = [
             margin-right:12px !important; margin-bottom:12px !important;
         }
         #map-leaflet .leaflet-control-zoom a {
-            width:36px !important; height:36px !important; line-height:36px !important;
+            width:40px !important; height:40px !important; line-height:40px !important;
             font-size:18px !important; font-weight:800 !important;
-            color:#264653 !important; background:white !important; border:none !important;
+            color:#264653 !important; background:rgba(255,255,255,0.95) !important;
+            backdrop-filter:blur(12px) !important; border:none !important;
         }
-        #map-leaflet .leaflet-control-zoom a:hover { background:#F4F1DE !important; }
+        #map-leaflet .leaflet-control-zoom a:hover { background:white !important; }
 
-        /* Pin marker */
-        .map-pin-wrap { display:flex; flex-direction:column; align-items:center; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.25)); }
-        .map-pin-head {
-            width:40px; height:40px; border-radius:50% 50% 50% 4px;
-            transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; border:2.5px solid;
+        /* ── Marker dot compatto (stile Apple Maps) ──
+           Cerchio colorato con icona categoria. Nessun testo sulla mappa
+           per evitare sovrapposizione con i label delle vie.
+           Al tap → detail card in basso con tutte le info. */
+        .map-dot-marker {
+            width:30px; height:30px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            border:2.5px solid white;
+            box-shadow:0 2px 8px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.06);
+            cursor:pointer;
+            transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
         }
-        .map-pin-emoji { transform:rotate(45deg); line-height:1; }
-        .map-pin-tail  { width:3px; height:6px; border-radius:0 0 3px 3px; margin-top:-1px; opacity:0.5; }
+        .map-dot-marker:hover, .map-dot-marker:active {
+            transform:scale(1.25);
+            box-shadow:0 4px 16px rgba(0,0,0,0.3), 0 0 0 2px rgba(255,255,255,0.8);
+        }
+        .map-dot-marker .material-icons {
+            font-size:14px; color:white; line-height:1;
+            filter:drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+        }
 
-        /* Bottom sheet draggable */
+        /* ── Chip scroll containers — lock vertical scroll ── */
+        .chip-scroll-row {
+            display:flex; gap:8px;
+            overflow-x:auto; overflow-y:hidden;
+            -webkit-overflow-scrolling:touch;
+            touch-action: pan-x;          /* BLOCCA scroll verticale sulle chip */
+            overscroll-behavior-x: contain; /* non propaga alla mappa */
+            scrollbar-width:none;
+            margin:0 -16px; padding:0 16px;
+            /* Fade edges */
+            mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 24px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 24px), transparent 100%);
+        }
+        .chip-scroll-row::-webkit-scrollbar { display:none; }
+
+        /* ── Vignette overlay — incornicia la mappa ── */
+        #map-vignette {
+            position:absolute; inset:0; z-index:150;
+            pointer-events:none;
+            background:
+                radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.06) 100%);
+            mix-blend-mode:multiply;
+        }
+
+        /* ── Bottom controls — unified pill bar ── */
+        #map-bottom-bar {
+            position:absolute; z-index:600;
+            bottom:16px; left:50%; transform:translateX(-50%);
+            display:flex; align-items:center; gap:1px;
+            background:rgba(255,255,255,0.92);
+            backdrop-filter:blur(16px) saturate(160%);
+            -webkit-backdrop-filter:blur(16px) saturate(160%);
+            border-radius:50px;
+            box-shadow:0 4px 24px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.06);
+            border:1px solid rgba(255,255,255,0.6);
+            padding:4px;
+            transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #map-bottom-bar button {
+            display:flex; align-items:center; justify-content:center; gap:4px;
+            padding:8px 14px; border-radius:50px; border:none;
+            background:transparent; cursor:pointer;
+            font-size:11px; font-weight:800; color:#475569;
+            text-transform:uppercase; letter-spacing:0.06em;
+            transition:all 0.2s ease;
+            -webkit-tap-highlight-color:transparent;
+        }
+        #map-bottom-bar button:active { transform:scale(0.92); }
+        #map-bottom-bar button.bar-active {
+            background:#264653; color:white;
+            box-shadow:0 2px 8px rgba(38,70,83,0.3);
+        }
+        #map-bottom-bar .material-icons { font-size:16px; }
+
+        /* ── Bottom sheet ── */
         #map-sheet {
             position: fixed;
             left: 0; right: 0;
-            bottom: 76px;          /* sopra la navbar */
+            bottom: 0;
             z-index: 1000;
             touch-action: none;
             will-change: transform;
@@ -214,11 +310,8 @@ window._mapMarkers      = [];
 window._mapAllData      = [];
 window._mapActiveCat    = 'Tutte';
 
-// Bottom sheet stato: 'peek' | 'half' | 'full'
-window._sheetState      = 'peek';
-window._sheetSnapPeek   = 0;    // calcolati dopo mount
-window._sheetSnapHalf   = 0;
-window._sheetSnapFull   = 0;
+// Bottom sheet stato: 'open' | 'closed'
+window._sheetState      = 'closed';
 
 // GPS tracking state
 window._gpsWatchId      = null;   // ID del watchPosition
@@ -242,106 +335,125 @@ window.renderMappaInterattiva = async function() {
     await window._mapLoadData();
 
     content.innerHTML = `
-    <div id="mappa-root" style="position:relative; height:calc(100vh - 80px); height:calc(100dvh - 80px); overflow:hidden;">
+    <div id="mappa-root" style="position:fixed; inset:0; z-index:40; overflow:hidden; background:#F5F1E1;">
 
-        <div id="map-header"
-            style="position:absolute; top:0; left:0; right:0; z-index:500;"
-            class="bg-gradient-to-br from-[#1a6e64] via-ct-blue to-[#0e5a52] px-4 pt-4 pb-9 overflow-hidden">
+        <!-- ══════════════════════════════════════════════════════
+             MAP HEADER — Teal gradient con profondità marina
+             Il teal scuro (#264653) è il colore brand principale,
+             richiama il mare delle Cinque Terre e crea contrasto
+             ottimale con chip glass e testo bianco (WCAG AAA).
+             ══════════════════════════════════════════════════════ -->
+        <div id="map-header" style="position:absolute; top:0; left:0; right:0; z-index:600;">
 
-            <div class="absolute inset-0 pointer-events-none overflow-hidden">
-                <div class="absolute -top-6 -right-6 w-36 h-36 rounded-full bg-white/5"></div>
-                <div class="absolute -bottom-4 left-4 w-24 h-24 rounded-full bg-ct-terracotta/15"></div>
-                <div class="absolute top-3 left-1/2 w-3 h-3 rounded-full bg-ct-yellow/70"></div>
-                <svg class="absolute bottom-0 left-0 right-0 w-full h-8" viewBox="0 0 400 32" preserveAspectRatio="none">
-                    <path d="M0,16 C60,0 120,32 180,16 C240,0 300,32 360,16 L400,16 L400,32 L0,32 Z" fill="rgba(255,255,255,0.07)"/>
+            <!-- Sfondo: gradiente teal con depth e un accento caldo -->
+            <div style="position:absolute; inset:0;
+                        background: linear-gradient(165deg, #1a3a42 0%, #264653 40%, #2A5260 75%, #2d6b5e 100%);
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 12px 32px rgba(38,70,83,0.25);
+                        overflow:hidden;">
+                <!-- Bagliore sottile in alto a destra — effetto luce naturale -->
+                <div style="position:absolute; top:-30px; right:-20px; width:140px; height:140px;
+                            border-radius:50%; background:radial-gradient(circle, rgba(233,196,106,0.12) 0%, transparent 70%);
+                            pointer-events:none;"></div>
+                <!-- Onda sottile al bordo inferiore -->
+                <svg style="position:absolute; bottom:0; left:0; right:0; height:6px;" viewBox="0 0 400 6" preserveAspectRatio="none">
+                    <path d="M0,3 C80,0 160,6 240,3 C320,0 400,6 400,3 L400,6 L0,6 Z" fill="rgba(255,255,255,0.06)"/>
                 </svg>
             </div>
 
-            <div class="relative z-10 flex items-start justify-between mb-3">
-                <div>
-                    <div class="flex items-center gap-2 mb-0.5">
-                        
-                        <h1 class="font-serif text-xl font-bold text-white tracking-tight drop-shadow-sm">Esplora i Borghi</h1>
+            <!-- Contenuto header -->
+            <div style="position:relative; z-index:1; padding: env(safe-area-inset-top, 12px) 16px 12px 16px;">
+
+                <!-- Riga top: back + titolo + counter -->
+                <div class="flex items-center gap-3 mb-3">
+                    <button id="map-back-btn" onclick="window.mapGoBack()"
+                        class="flex items-center justify-center w-9 h-9 rounded-xl active:scale-90 transition-all flex-shrink-0"
+                        style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.15);
+                               -webkit-tap-highlight-color:transparent; backdrop-filter:blur(8px);">
+                        <span class="material-icons text-white" style="font-size:20px;">arrow_back</span>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                        <h1 class="font-serif text-[17px] font-bold text-white tracking-tight leading-none drop-shadow-sm">${window.t('map_title')}</h1>
+                        <p class="text-[11px] font-semibold mt-1 leading-none" style="color:rgba(255,255,255,0.55);">
+                            <span id="map-result-count" class="font-black" style="color:#E9C46A;">0</span> ${window.t('map_count_label')}
+                        </p>
                     </div>
-                    <p class="text-white/60 text-[11px] font-medium pl-1">
-                        <span id="map-result-count" class="font-black text-white">0</span> posti in vista
-                    </p>
+                </div>
+
+                <!-- Borgo chips — scroll orizzontale bloccato verticalmente -->
+                <div class="chip-scroll-row">
+                    <button data-borgo="Tutti"
+                        class="borgo-chip active flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-bold bg-white text-slate-800 shadow-md border border-white/50"
+                        onclick="window.mapFlyTo('Tutti', this)">
+                         Tutti
+                    </button>
+                    ${BORGHI_ORDER.map(b => {
+                        const col = BORGHI_COLORS[b] || '#264653';
+                        return `<button data-borgo="${b}"
+                            class="borgo-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-bold text-white border border-white/15"
+                            style="background:rgba(255,255,255,0.10); backdrop-filter:blur(8px);"
+                            onclick="window.mapFlyTo('${b}', this)">
+                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${col}; box-shadow:0 0 6px ${col}88;"></span>
+                            ${b}
+                        </button>`;
+                    }).join('')}
+                </div>
+
+                <!-- Category toggles — scroll orizzontale bloccato verticalmente -->
+                <div class="chip-scroll-row mt-2" style="gap:6px;">
+                    <button data-cat="Tutte"
+                        class="cat-toggle active flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold text-white border border-transparent shadow-sm"
+                        style="background:#E76F51;"
+                        onclick="window.mapSetCat('Tutte', this)">
+                         Tutte
+                    </button>
+                    ${Object.entries(CATEGORIE).map(([key,cfg]) => `
+                    <button data-cat="${key}"
+                        class="cat-toggle flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-white/80 border border-white/15"
+                        style="background:rgba(255,255,255,0.10); backdrop-filter:blur(8px);"
+                        onclick="window.mapSetCat('${key}', this)">
+                        <span class="material-icons text-[13px] leading-none" style="color:${cfg.color}; filter:brightness(1.3);">${cfg.icon}</span> ${cfg.label}
+                    </button>`).join('')}
                 </div>
             </div>
-
-            <div class="relative z-10 flex gap-2 overflow-x-auto no-scrollbar">
-                <button data-borgo="Tutti"
-                    class="borgo-chip active flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold bg-white text-slate-700 shadow-md border-2 border-white"
-                    onclick="window.mapFlyTo('Tutti', this)">
-                     Tutti
-                </button>
-                ${BORGHI_ORDER.map(b => {
-                    const col = BORGHI_COLORS[b] || '#264653';
-                    return `<button data-borgo="${b}"
-                        class="borgo-chip flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold bg-white/20 text-white border-2 border-white/25 backdrop-blur"
-                        onclick="window.mapFlyTo('${b}', this)">
-                        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${col}"></span>
-                        ${b}
-                    </button>`;
-                }).join('')}
-            </div>
-
-            <div class="relative z-10 mt-2.5 flex gap-1.5 overflow-x-auto no-scrollbar">
-                <button data-cat="Tutte"
-                    class="cat-toggle active flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-slate-800 text-white border-2 border-transparent"
-                    onclick="window.mapSetCat('Tutte', this)">
-                     Tutte
-                </button>
-                ${Object.entries(CATEGORIE).map(([key,cfg]) => `
-                <button data-cat="${key}"
-                    class="cat-toggle flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white/20 border-2 border-white/20 text-white backdrop-blur"
-                    onclick="window.mapSetCat('${key}', this)">
-                    <span class="material-icons text-[14px] leading-none">${cfg.icon}</span> ${cfg.label}
-                </button>`).join('')}
-            </div>
         </div>
 
+        <!-- Mappa Leaflet -->
         <div id="map-leaflet"
-            style="position:absolute; top:0; left:0; right:0; bottom:80px; z-index:100;">
+            style="position:absolute; top:0; left:0; right:0; bottom:0; z-index:100;">
         </div>
 
-        <div id="map-live-badge"
-            style="position:absolute; z-index:600; pointer-events:none; bottom:16px; right:12px;"
-            class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full px-2.5 py-1 shadow-md border border-slate-100">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></span>
-            <span class="text-[11px] font-black text-slate-700 uppercase tracking-widest">Live</span>
-        </div>
+        <!-- Vignette overlay — incornicia la mappa con profondità -->
+        <div id="map-vignette"></div>
 
-        <div style="position:absolute; z-index:600; bottom:96px; left:12px; display:flex; gap:8px; align-items:center;">
-
-            <button id="map-gps-btn"
-                onclick="window.mapToggleGPS()"
-                class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full pl-2.5 pr-3 py-1.5 shadow-md border border-slate-100 active:scale-95 transition-transform"
-                title="Mostra posizione GPS">
-                <span class="material-icons text-slate-600 text-sm" id="map-gps-icon">my_location</span>
-                <span class="text-[11px] font-black text-slate-600 uppercase tracking-widest" id="map-gps-label">GPS</span>
+        <!-- ── Bottom controls — barra unificata centrata (stile Uber/Google Maps) ── -->
+        <div id="map-bottom-bar">
+            <button id="map-list-toggle" onclick="window.mapToggleList()">
+                <span class="material-icons" id="map-list-toggle-icon">list</span>
+                <span id="map-list-toggle-label">Lista</span>
             </button>
-
-            <button id="map-legend-btn"
-                onclick="window.mapToggleLegend()"
-                class="flex items-center gap-1.5 bg-white/95 backdrop-blur rounded-full pl-2.5 pr-3 py-1.5 shadow-md border border-slate-100 active:scale-95 transition-transform">
-                <span class="material-icons text-slate-600 text-sm">info_outline</span>
-                <span class="text-[11px] font-black text-slate-600 uppercase tracking-widest">Legenda</span>
+            <button id="map-gps-btn" onclick="window.mapToggleGPS()" title="GPS">
+                <span class="material-icons" id="map-gps-icon">my_location</span>
+                <span id="map-gps-label">GPS</span>
+            </button>
+            <button id="map-legend-btn" onclick="window.mapToggleLegend()">
+                <span class="material-icons">info_outline</span>
+                <span>Info</span>
             </button>
         </div>
 
         <div id="map-legend-wrap"
-            style="position:absolute; z-index:600; bottom:132px; left:12px;">
+            style="position:absolute; z-index:600; bottom:64px; left:50%; transform:translateX(-50%);
+                   transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);">
             <button id="map-legend-btn-ghost" style="display:none;"></button>
             <div id="map-legend-panel"
-                class="hidden absolute bottom-0 left-0 bg-white/97 backdrop-blur rounded-2xl shadow-xl border border-slate-100 p-3 min-w-[140px]"
+                class="hidden bg-white/97 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-100 p-4 min-w-[180px]"
                 style="animation: slideUpSheet 0.2s cubic-bezier(0.2,0.8,0.2,1) forwards;">
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Legenda</div>
                 ${Object.entries(CATEGORIE).map(([k,c]) => `
-                <div class="flex items-center gap-2 py-1">
-                    <span class="material-icons text-[18px] leading-none" style="color:${c.color}">${c.icon}</span>
-                    <span class="text-xs font-bold text-slate-700">${c.label}</span>
-                    <span class="ml-auto w-3 h-3 rounded-full flex-shrink-0 border-2"
-                        style="background:${c.markerBg}; border-color:${c.markerBorder};"></span>
+                <div class="flex items-center gap-2.5 py-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${c.color};"></span>
+                    <span class="material-icons text-[16px] leading-none" style="color:${c.color}">${c.icon}</span>
+                    <span class="text-xs font-semibold text-slate-700">${c.label}</span>
                 </div>`).join('')}
             </div>
         </div>
@@ -366,7 +478,7 @@ window.renderMappaInterattiva = async function() {
 
         <div id="map-detail-sheet"
             class="hidden"
-            style="position:fixed; bottom:80px; left:0; right:0; z-index:1100; padding:0 12px;">
+            style="position:fixed; bottom:0; left:0; right:0; z-index:1100; padding:0 12px 12px;">
 
             <div id="map-detail-card"
                 class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden relative">
@@ -432,6 +544,44 @@ window.renderMappaInterattiva = async function() {
             }
         });
     }
+
+    // Fly-to target: quando l'utente arriva dal bottone mappa di una card spiaggia/attrazione
+    if (window._mapFlyToTarget) {
+        const { lat, lon, cat } = window._mapFlyToTarget;
+        window._mapFlyToTarget = null; // consuma — non ri-applicare al prossimo accesso
+
+        // Nascondi il bottom bar (lista/gps/info) — entrata contestuale, non serve
+        const bottomBar = document.getElementById('map-bottom-bar');
+        if (bottomBar) bottomBar.style.display = 'none';
+
+        requestAnimationFrame(() => {
+            // Pre-filtra la categoria se specificata
+            if (cat) {
+                const btn = document.querySelector(`.cat-toggle[data-cat="${cat}"]`);
+                if (btn) {
+                    window.mapSetCat(cat, btn);
+                } else {
+                    window._mapActiveCat = cat;
+                    window._mapRenderMarkers();
+                    window._mapUpdateListFromBounds();
+                }
+            }
+
+            if (window._mapLeaflet) {
+                window._mapLeaflet.flyTo([lat, lon], 17, { duration: 0.8 });
+                // Cerca il POI più vicino e apri il detail
+                setTimeout(() => {
+                    const closest = window._mapAllData.reduce((best, item) => {
+                        const dist = Math.abs(item.lat - lat) + Math.abs(item.lon - lon);
+                        return (!best || dist < best.dist) ? { item, dist } : best;
+                    }, null);
+                    if (closest && closest.dist < 0.001) {
+                        window.mapOpenDetail(closest.item);
+                    }
+                }, 900);
+            }
+        });
+    }
 };
 
 // ---------------------------------------------------------------------------
@@ -442,13 +592,11 @@ window._mapInit = async function() {
     const mapEl = document.getElementById('map-leaflet');
     if (!mapEl) return;
 
-    // Sposta mappa sotto l'header e limita al di sopra del sheet peek
+    // Sposta mappa sotto l'header
     const header  = document.getElementById('map-header');
-    const headerH = header ? header.offsetHeight : 160;
+    const headerH = header ? header.offsetHeight : 120;
     mapEl.style.top    = headerH + 'px';
-    // bottom già fissato a 80px nell'HTML (sheet peek); lo confermiamo via JS
-    // così fitBounds/flyToBounds terrà conto dell'area realmente visibile
-    mapEl.style.bottom = '80px';
+    mapEl.style.bottom = '0';
 
     const map = L.map('map-leaflet', {
         zoomControl: false, attributionControl: false,
@@ -491,12 +639,45 @@ window._mapInit = async function() {
 window._mapLoadData = async function() {
     if (window._mapAllData && window._mapAllData.length > 0) return;
     try {
-        const { data, error } = await window.supabaseClient.from('Luoghi_mappa').select('*');
-        if (error) throw error;
-        window._mapAllData = data || [];
-        // data loaded: window._mapAllData.length records
+        // Fetch parallelo da Spiagge e Attrazioni
+        const [spRes, atRes] = await Promise.all([
+            window.supabaseClient.from('Spiagge').select('*'),
+            window.supabaseClient.from('Attrazioni').select('*')
+        ]);
+        if (spRes.error) throw spRes.error;
+        if (atRes.error) throw atRes.error;
+
+        const spiagge = (spRes.data || [])
+            .filter(s => s.lat_sp && s.long_sp)
+            .map(s => ({
+                id:          s.id,
+                nome:        window.dbCol(s, 'Nome') || s.Nome || 'Spiaggia',
+                borgo:       window.dbCol(s, 'Paesi') || s.Paesi || '',
+                categoria:   'spiaggia',
+                lat:         parseFloat(s.lat_sp),
+                lon:         parseFloat(s.long_sp),
+                descrizione: window.dbCol(s, 'Tipo') || '',
+                _src:        'Spiagge',
+                _raw:        s
+            }));
+
+        const attrazioni = (atRes.data || [])
+            .filter(a => a.lat_at && a.long_at)
+            .map(a => ({
+                id:          a.POI_ID || a.id,
+                nome:        window.dbCol(a, 'Attrazioni') || window.dbCol(a, 'Titolo') || 'Attrazione',
+                borgo:       window.dbCol(a, 'Paese') || a.Paese || '',
+                categoria:   'attrazione',
+                lat:         parseFloat(a.lat_at),
+                lon:         parseFloat(a.long_at),
+                descrizione: window.dbCol(a, 'Label') || '',
+                _src:        'Attrazioni',
+                _raw:        a
+            }));
+
+        window._mapAllData = [...spiagge, ...attrazioni];
     } catch(err) {
-        console.error("❌ Supabase errore Luoghi_mappa:", err.message);
+        console.error("❌ Mappa — errore fetch Spiagge/Attrazioni:", err.message);
         window._mapAllData = [];
     }
 };
@@ -520,13 +701,10 @@ window._mapRenderMarkers = function() {
         const cfg  = CATEGORIE[item.categoria] || CATEGORIE.attrazione;
         const icon = L.divIcon({
             className: '',
-            html: `<div class="map-pin-wrap">
-                <div class="map-pin-head" style="background:${cfg.markerBg}; border-color:${cfg.markerBorder};">
-                    <span class="map-pin-emoji material-icons" style="font-size:20px; color:${cfg.color};">${cfg.icon}</span>
-                </div>
-                <div class="map-pin-tail" style="background:${cfg.markerBorder};"></div>
+            html: `<div class="map-dot-marker" style="background:${cfg.color};">
+                <span class="material-icons">${cfg.icon}</span>
             </div>`,
-            iconSize:[40,52], iconAnchor:[20,52], popupAnchor:[0,-54],
+            iconSize:[30,30], iconAnchor:[15,15],
         });
         const marker = L.marker([item.lat, item.lon], { icon, zIndexOffset:400 }).addTo(map);
         marker.on('click', e => {
@@ -624,85 +802,102 @@ window._mapUpdateListFromBounds = function() {
     listEl.innerHTML = html;
 };
 
+
 // ---------------------------------------------------------------------------
-// BOTTOM SHEET — DRAG & SNAP
+// BOTTOM SHEET — APPROCCIO IBRIDO
+// Due stati: aperto (altezza fissa ~50vh) o chiuso (nascosto).
+// Il drag serve SOLO per chiudere (swipe giù) — niente snap multipli.
+// I controlli bottom seguono la posizione dello sheet in tempo reale.
 // ---------------------------------------------------------------------------
+const SHEET_OPEN_RATIO = 0.50;
+
 window._sheetInit = function() {
     const sheet     = document.getElementById('map-sheet');
     const handleBar = document.getElementById('map-sheet-handle-bar');
     if (!sheet || !handleBar) return;
 
-    // Calcola altezze snap in base alla viewport
-    const viewH     = window.innerHeight;
-    const navH      = 76;   // navbar
-    const available = viewH - navH;
+    const viewH  = window.innerHeight;
+    const sheetH = Math.round(viewH * SHEET_OPEN_RATIO);
+    sheet.style.height = sheetH + 'px';
 
-    // peek: solo handle + header lista visibile (80px)
-    // half: metà schermo (~40%)
-    // full: quasi tutto (~85%)
-    window._sheetSnapPeek = available - 80;
-    window._sheetSnapHalf = available * 0.55;
-    window._sheetSnapFull = available * 0.12;
+    window._sheetOpenY  = 0;
+    window._sheetCloseY = sheetH + 20;
+    window._sheetH      = sheetH;
 
-    // Imposta altezza fissa del sheet
-    sheet.style.height = available + 'px';
+    // Parte nascosto — mappa pulita, il pulsante "Lista" lo apre
+    sheet.style.transform = `translateY(${window._sheetCloseY}px)`;
+    sheet.classList.add('sheet-hidden');
+    window._sheetState = 'closed';
 
-    // Posizione iniziale: peek
-    window._sheetSetSnap('peek', false);
+    // Helper: sincronizza posizione controlli con lo sheet
+    window._sheetSyncControls = function(sheetTranslateY) {
+        const bar    = document.getElementById('map-bottom-bar');
+        const legend = document.getElementById('map-legend-wrap');
+        const visibleH = Math.max(0, window._sheetH - sheetTranslateY);
+        const lift = visibleH > 10 ? visibleH + 8 : 0;
+        if (bar)    bar.style.transform = lift > 0 ? `translateX(-50%) translateY(-${lift}px)` : 'translateX(-50%)';
+        if (legend) legend.style.transform = lift > 0 ? `translateY(-${lift}px)` : '';
+    };
 
-    // ── TOUCH DRAG ──
-    let startY    = 0;
-    let startTr   = 0;
-    let currentTr = window._sheetSnapPeek;
+    // ── TOUCH DRAG — solo per chiudere (swipe giù) ──
+    let startY = 0, startTr = 0, dragging = false;
 
-    function getTr() {
-        const t = sheet.style.transform;
-        const m = t.match(/translateY\(([0-9.]+)px\)/);
-        return m ? parseFloat(m[1]) : currentTr;
+    function getSheetY() {
+        const m = sheet.style.transform.match(/translateY\(([0-9.-]+)px\)/);
+        return m ? parseFloat(m[1]) : window._sheetCloseY;
     }
 
     handleBar.addEventListener('touchstart', e => {
-        startY  = e.touches[0].clientY;
-        startTr = getTr();
+        if (window._sheetState !== 'open') return;
+        startY = e.touches[0].clientY;
+        startTr = getSheetY();
+        dragging = true;
         sheet.classList.add('is-dragging');
-    }, { passive:true });
+    }, { passive: true });
 
     handleBar.addEventListener('touchmove', e => {
-        const dy  = e.touches[0].clientY - startY;
-        const newTr = Math.max(window._sheetSnapFull, Math.min(window._sheetSnapPeek, startTr + dy));
-        sheet.style.transform = `translateY(${newTr}px)`;
-    }, { passive:true });
+        if (!dragging) return;
+        const dy = e.touches[0].clientY - startY;
+        const newY = Math.max(window._sheetOpenY, startTr + dy);
+        sheet.style.transform = `translateY(${newY}px)`;
+        window._sheetSyncControls(newY);
+    }, { passive: true });
 
-    handleBar.addEventListener('touchend', e => {
+    handleBar.addEventListener('touchend', () => {
+        if (!dragging) return;
+        dragging = false;
         sheet.classList.remove('is-dragging');
-        const tr   = getTr();
-        const midPH = (window._sheetSnapPeek + window._sheetSnapHalf) / 2;
-        const midHF = (window._sheetSnapHalf + window._sheetSnapFull) / 2;
-
-        if (tr > midPH)       window._sheetSetSnap('peek');
-        else if (tr > midHF)  window._sheetSetSnap('half');
-        else                  window._sheetSetSnap('full');
-    }, { passive:true });
+        const currentY = getSheetY();
+        if (currentY > window._sheetH * 0.3) {
+            window._sheetClose();
+        } else {
+            window._sheetOpen(true);
+        }
+    }, { passive: true });
 
     // ── MOUSE DRAG (desktop) ──
     handleBar.addEventListener('mousedown', e => {
-        startY  = e.clientY;
-        startTr = getTr();
+        if (window._sheetState !== 'open') return;
+        startY = e.clientY;
+        startTr = getSheetY();
+        dragging = true;
         sheet.classList.add('is-dragging');
-
         const onMove = ev => {
-            const dy    = ev.clientY - startY;
-            const newTr = Math.max(window._sheetSnapFull, Math.min(window._sheetSnapPeek, startTr + dy));
-            sheet.style.transform = `translateY(${newTr}px)`;
+            if (!dragging) return;
+            const dy = ev.clientY - startY;
+            const newY = Math.max(window._sheetOpenY, startTr + dy);
+            sheet.style.transform = `translateY(${newY}px)`;
+            window._sheetSyncControls(newY);
         };
         const onUp = () => {
+            dragging = false;
             sheet.classList.remove('is-dragging');
-            const tr   = getTr();
-            const midPH = (window._sheetSnapPeek + window._sheetSnapHalf) / 2;
-            const midHF = (window._sheetSnapHalf + window._sheetSnapFull) / 2;
-            if (tr > midPH)       window._sheetSetSnap('peek');
-            else if (tr > midHF)  window._sheetSetSnap('half');
-            else                  window._sheetSetSnap('full');
+            const currentY = getSheetY();
+            if (currentY > window._sheetH * 0.3) {
+                window._sheetClose();
+            } else {
+                window._sheetOpen(true);
+            }
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
         };
@@ -711,39 +906,64 @@ window._sheetInit = function() {
     });
 };
 
-window._sheetSetSnap = function(snap, animate = true) {
+// Apri sheet a posizione fissa
+window._sheetOpen = function(animate = true) {
     const sheet = document.getElementById('map-sheet');
     if (!sheet) return;
-    window._sheetState = snap;
-    const tr = {
-        peek: window._sheetSnapPeek,
-        half: window._sheetSnapHalf,
-        full: window._sheetSnapFull,
-    }[snap] ?? window._sheetSnapPeek;
-
+    sheet.classList.remove('sheet-hidden');
+    window._sheetState = 'open';
     if (!animate) sheet.style.transition = 'none';
-    sheet.style.transform = `translateY(${tr}px)`;
+    sheet.style.transform = `translateY(${window._sheetOpenY}px)`;
     if (!animate) setTimeout(() => sheet.style.transition = '', 50);
-
-    // Aggiusta padding mappa in base allo snap
+    window._sheetSyncControls?.(window._sheetOpenY);
+    _sheetUpdateToggleBtn(true);
     const map = window._mapLeaflet;
     if (map) setTimeout(() => map.invalidateSize(), 350);
 };
 
-// Slide il list sheet fuori dallo schermo (verso il basso)
-window._sheetHide = function() {
+// Chiudi sheet (slide fuori)
+window._sheetClose = function(animate = true) {
     const sheet = document.getElementById('map-sheet');
     if (!sheet) return;
-    sheet.classList.add('sheet-hidden');
+    window._sheetState = 'closed';
+    if (!animate) sheet.style.transition = 'none';
+    sheet.style.transform = `translateY(${window._sheetCloseY}px)`;
+    if (!animate) setTimeout(() => sheet.style.transition = '', 50);
+    setTimeout(() => { if (window._sheetState === 'closed') sheet.classList.add('sheet-hidden'); }, 400);
+    window._sheetSyncControls?.(window._sheetCloseY);
+    _sheetUpdateToggleBtn(false);
 };
 
-// Ripristina il list sheet alla posizione peek
-window._sheetShow = function() {
-    const sheet = document.getElementById('map-sheet');
-    if (!sheet) return;
-    sheet.classList.remove('sheet-hidden');
-    // Forza snap peek per avere una posizione pulita
-    window._sheetSetSnap('peek');
+// Alias per compatibilità
+window._sheetHide = function() { window._sheetClose(true); };
+window._sheetShow = function() { window._sheetOpen(true); };
+
+// Vecchia _sheetSetSnap — redirect per compatibilità
+window._sheetSetSnap = function(snap, animate = true) {
+    if (snap === 'half' || snap === 'full') window._sheetOpen(animate);
+    else window._sheetClose(animate);
+};
+
+// Aggiorna aspetto toggle button
+function _sheetUpdateToggleBtn(isOpen) {
+    const btn = document.getElementById('map-list-toggle');
+    const icon  = document.getElementById('map-list-toggle-icon');
+    const label = document.getElementById('map-list-toggle-label');
+    if (isOpen) {
+        if (icon)  icon.textContent = 'close';
+        if (label) label.textContent = 'Chiudi';
+        if (btn)   btn.classList.add('bar-active');
+    } else {
+        if (icon)  icon.textContent = 'list';
+        if (label) label.textContent = 'Lista';
+        if (btn)   btn.classList.remove('bar-active');
+    }
+}
+
+// Toggle pubblico
+window.mapToggleList = function() {
+    if (window._sheetState === 'open') window._sheetClose();
+    else window._sheetOpen();
 };
 
 // ---------------------------------------------------------------------------
@@ -785,13 +1005,16 @@ function _showMapToast(msg) {
 
 // Chip borgo → fly-to (non filtra)
 window.mapFlyTo = function(borgo, btnEl) {
-    // Stile chip
+    // Reset tutte a stato inattivo — glass su sfondo scuro
     document.querySelectorAll('.borgo-chip').forEach(b => {
-        b.classList.remove('active','bg-white','text-slate-700','border-white','shadow-md');
-        b.classList.add('bg-white/20','text-white','border-white/25','backdrop-blur');
+        b.classList.remove('active','bg-white','text-slate-800','shadow-md','border-white/50');
+        b.classList.add('text-white','border-white/15');
+        b.style.background = 'rgba(255,255,255,0.10)';
     });
-    btnEl.classList.add('active','bg-white','text-slate-700','border-white','shadow-md');
-    btnEl.classList.remove('bg-white/20','text-white','border-white/25','backdrop-blur');
+    // Chip attiva — solida bianca, testo scuro
+    btnEl.classList.add('active','bg-white','text-slate-800','shadow-md','border-white/50');
+    btnEl.classList.remove('text-white','border-white/15');
+    btnEl.style.background = '';
 
     // ── Visual feedback during flyTo ──
     const toastLabel = borgo === 'Tutti' ? '🌊 Tutti i borghi' : `📍 ${borgo}`;
@@ -819,14 +1042,17 @@ window.mapSetCat = function(cat, btnEl) {
     window._mapActiveCat = cat;
     const cfg = CATEGORIE[cat] || null;
 
+    // Reset tutte a stato inattivo — glass su sfondo scuro
     document.querySelectorAll('.cat-toggle').forEach(b => {
-        b.classList.remove('active','text-white','border-transparent');
-        b.style.background = '';
-        b.classList.add('bg-white/20','border-white/20','text-white');
+        b.classList.remove('active','border-transparent');
+        b.classList.add('text-white/80','border-white/15');
+        b.style.background = 'rgba(255,255,255,0.10)';
     });
-    btnEl.classList.add('active','text-white','border-transparent');
-    btnEl.classList.remove('bg-white/20','border-white/20','text-white');
-    btnEl.style.background = cfg ? cfg.color : '#1e293b';
+    // Toggle attivo — sfondo colore categoria solido
+    btnEl.classList.add('active','border-transparent');
+    btnEl.classList.remove('text-white/80','border-white/15');
+    btnEl.style.background = cfg ? cfg.color : '#E76F51';
+    btnEl.style.color = 'white';
 
     window.mapCloseDetail();
     window._mapRenderMarkers();
@@ -910,11 +1136,25 @@ window.mapOpenDetail = function(item) {
         metaEl.style.display = metaHtml ? '' : 'none';
     }
 
-    // CTA → apre il modal completo
+    // CTA → apre il modal specifico (Spiagge o attrazione) e chiude il banner
     if (ctaBtn) {
         ctaBtn.onclick = () => {
-            const safePayload = encodeURIComponent(JSON.stringify(item)).replace(/'/g, '%27');
-            window.openModal('luogo_mappa', safePayload);
+            if (item._src === 'Spiagge' && item._raw) {
+                // Apri modale spiaggia con il record originale
+                const safePayload = encodeURIComponent(JSON.stringify(item._raw)).replace(/'/g, '%27');
+                window.mapCloseDetail();
+                window.openModal('Spiagge', safePayload);
+            } else if (item._src === 'Attrazioni' && item._raw) {
+                // Apri modale attrazione con il POI_ID
+                const poiId = item._raw.POI_ID || item._raw.id;
+                window.mapCloseDetail();
+                window.openModal('attrazione', String(poiId));
+            } else {
+                // Fallback generico
+                const safePayload = encodeURIComponent(JSON.stringify(item)).replace(/'/g, '%27');
+                window.mapCloseDetail();
+                window.openModal('luogo_mappa', safePayload);
+            }
         };
     }
 
@@ -1075,8 +1315,10 @@ window.mapToggleLegend = function() {
 window.mapCloseDetail = function() {
     const sheet = document.getElementById('map-detail-sheet');
     if (sheet) sheet.classList.add('hidden');
-    // Ripristina il list sheet
-    window._sheetShow();
+    // Ripristina bottom bar (poteva essere nascosta dall'entrata contestuale da card)
+    const bottomBar = document.getElementById('map-bottom-bar');
+    if (bottomBar) bottomBar.style.display = '';
+    // La lista NON si riapre automaticamente — l'utente la apre esplicitamente col bottone Lista
 };
 
 // Cleanup quando si lascia la vista

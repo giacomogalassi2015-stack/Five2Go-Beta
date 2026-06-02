@@ -2,12 +2,12 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Five2Go</title>
 
     <!-- PWA Manifest + meta cross-browser -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#264653">
+    <meta name="theme-color" content="#3D4246">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Five2Go">
@@ -30,25 +30,54 @@
                         serif: ['"Roboto Slab"', 'serif'],
                     },
                     colors: {
-                        primary: '#264653',
-                        'ct-terracotta': '#E76F51',
-                        'ct-terracotta-light': '#FFEDE1',
-                        'ct-yellow': '#E9C46A',
-                        'ct-yellow-light': '#FFFBEB',
-                        'ct-blue': '#2A9D8F',
-                        'ct-blue-light': '#E0F7FA',
-                        'ct-green': '#606C38',
-                        'ct-green-light': '#ECFCCB',
-                        'ct-sand': '#F4F1DE',
+                        /* ── Palette Serenità Cinque Terre ──
+                           Ogni colore è pensato per evocare il territorio
+                           e ridurre la pressione cognitiva del turista. */
+
+                        primary: '#3D4246',              /* Ardesia scuro — testi principali */
+                        'primary-deep': '#264653',       /* Blu profondo legacy — header/nav accent */
+
+                        /* Cibo: terra, sole, convivialità */
+                        'ct-terracotta': '#C98A5F',      /* Terracotta polveroso — prodotti */
+                        'ct-terracotta-light': '#F5E6D8', /* Terracotta sfumato — bg card */
+                        'ct-yellow': '#E9C46A',          /* Ocra pallido — ristoranti */
+                        'ct-yellow-light': '#FBF5E4',    /* Ocra sfumato — bg card */
+                        'ct-wine': '#8B5E5E',            /* Borgogna spento — vini */
+                        'ct-wine-light': '#F2E8E8',      /* Borgogna sfumato — bg card */
+
+                        /* Outdoor: macchia mediterranea, mare calmo */
+                        'ct-sage': '#768E6B',            /* Verde salvia — sentieri, attrazioni */
+                        'ct-sage-light': '#E8EDE5',      /* Salvia sfumato — bg card */
+                        'ct-shore': '#7097A8',           /* Azzurro cenere — spiagge */
+                        'ct-shore-light': '#E4EEF2',     /* Azzurro sfumato — bg card */
+
+                        /* Servizi: cura, affidabilità */
+                        'ct-health': '#8DAA91',          /* Verde veronese — farmacie, emergenza */
+                        'ct-health-light': '#E6EEE7',    /* Verde veronese sfumato */
+                        'ct-service': '#5E7A8C',         /* Blu oltremare opaco — treno, trekking */
+                        'ct-service-light': '#E1E9EE',   /* Blu oltremare sfumato */
+
+                        /* Neutri */
+                        'ct-sand': '#F5F1E1',            /* Sabbia — sfondo globale */
+                        'ct-cream-dark': '#D6CFC1',      /* Crema scuro — bordi soft, info btn */
                         surface: '#FFFFFF',
+
+                        /* Legacy aliases (per non rompere nulla) */
+                        'ct-blue': '#7097A8',            /* Rimappato → shore */
+                        'ct-blue-light': '#E4EEF2',
+                        'ct-green': '#768E6B',           /* Rimappato → sage */
+                        'ct-green-light': '#E8EDE5',
                     },
                     boxShadow: {
-                        'soft': '0 4px 20px -5px rgba(0,0,0,0.1)',
-                        'floating': '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
+                        'soft': '0 4px 20px -5px rgba(0,0,0,0.08)',
+                        'floating': '0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04)',
                     },
                     borderRadius: {
                         '3xl': '1.5rem',
                         '4xl': '2.5rem',
+                    },
+                    transitionDuration: {
+                        DEFAULT: '300ms',
                     }
                 }
             }
@@ -62,11 +91,12 @@
             margin: 0; padding: 0;
             overflow: hidden;
             position: fixed;
-            background-color: #F4F1DE;
-            color: #264653;
-            /* touch-action:manipulation consente pinch-zoom (accessibilità)
-               ma previene il double-tap zoom che causa delay e problemi UX.
-               Era touch-action:none che bloccava TUTTO → violazione WCAG 2.1 SC 1.4.4 */
+            background-color: #F5F1E1;
+            color: #3D4246;
+            /* touch-action:manipulation consente scroll e pinch-zoom nativo
+               ma previene il double-tap zoom. Il pinch nativo viene intercettato
+               e bloccato via JS (preventDefault su touchmove a 2 dita)
+               per applicare il nostro zoom CSS con auto-reset elastico. */
             touch-action: manipulation;
             /* Fix scroll rimbalzante su Firefox Android */
             overscroll-behavior: none;
@@ -176,7 +206,7 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: #264653;
+            background: #3D4246;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -188,70 +218,6 @@
             font-size: 11px;
             color: #fff;
             line-height: 1;
-        }
-
-        /* ── PULSE prima visita ── */
-        @keyframes langPulseRing {
-            0%   { transform: scale(1);   opacity: 0.5; }
-            70%  { transform: scale(1.6); opacity: 0; }
-            100% { transform: scale(1.6); opacity: 0; }
-        }
-        .lang-pulse-ring {
-            position: absolute;
-            inset: -4px;
-            border-radius: 50%;
-            border: 2.5px solid #264653;
-            animation: langPulseRing 1.8s cubic-bezier(0.4,0,0.2,1) infinite;
-            pointer-events: none;
-        }
-
-        /* ── TOOLTIP prima visita ── */
-        .lang-first-tooltip {
-            position: fixed;
-            bottom: 106px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9010;
-            background: #264653;
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.01em;
-            padding: 10px 18px;
-            border-radius: 14px;
-            white-space: nowrap;
-            box-shadow: 0 4px 20px rgba(38,70,83,0.35);
-            animation: tooltipFadeIn 0.35s cubic-bezier(0.2,0.8,0.2,1) forwards;
-            pointer-events: auto;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .lang-first-tooltip::after {
-            content: '';
-            position: absolute;
-            bottom: -7px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 14px;
-            height: 14px;
-            background: #264653;
-            border-radius: 0 0 3px 0;
-            transform: translateX(-50%) rotate(45deg);
-        }
-        .lang-first-tooltip .material-icons {
-            font-size: 16px;
-            opacity: 0.85;
-        }
-        @keyframes tooltipFadeIn {
-            from { opacity: 0; transform: translateX(-50%) translateY(8px) scale(0.92); }
-            to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-        }
-        @keyframes tooltipFadeOut {
-            from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-            to   { opacity: 0; transform: translateX(-50%) translateY(8px) scale(0.92); }
         }
 
         #bump-lang-panel {
@@ -295,7 +261,7 @@
         /* Splash → Home fade transition */
         #splash-overlay {
             position: fixed; inset: 0; z-index: 200;
-            background: #F4F1DE;
+            background: #F5F1E1;
             pointer-events: none;
             transition: opacity 0.55s cubic-bezier(0.4,0,0.2,1);
         }
@@ -333,7 +299,7 @@
         /* Fix 2: Fallback opaco per browser senza backdrop-filter (Firefox < 103, alcuni Android) */
         @supports not (backdrop-filter: blur(1px)) {
             #bottom-nav { background: rgba(255,255,255,0.98) !important; }
-            .nav-sticky-header { background: #F4F1DE !important; }
+            .nav-sticky-header { background: #F5F1E1 !important; }
             #search-results-sheet { background: #ffffff !important; }
             .smart-filter-bar-container button { background: rgba(255,255,255,0.98) !important; }
         }
@@ -342,12 +308,12 @@
            I FAB flottanti sostituiscono lo sticky: zero bug visivi,
            più spazio verticale, UX thumb-friendly */
         .nav-sticky-header {
-            background: #F4F1DE;
+            background: #F5F1E1;
         }
 
        /* ── Filter bar: statica e riallineata in alto ── */
         .smart-filter-bar-container {
-            background: #F4F1DE;
+            background: #F5F1E1;
             padding-top: 0px;
             padding-bottom: 8px;
             margin-top: -12px; /* Compensa il padding predefinito (pt-4) del main */
@@ -400,10 +366,10 @@
         }
         .fab-btn--top {
             background: white;
-            color: #264653;
+            color: #3D4246;
         }
         .fab-btn--filter {
-            background: #264653;
+            background: #3D4246;
             color: white;
         }
 
@@ -562,6 +528,182 @@
             background: rgba(255,255,255,0.30);
         }
 
+        /* ══════════════════════════════════════════════════════════
+           OVERSCROLL PEEK — Nav bar "sveglia" alla fine della home
+           Quando l'utente swipa verso l'alto dalla landing page,
+           la nav bar rivela tutte le label per invitare all'esplorazione.
+           Usato SOLO sulla home view, attivato via JS touch handler.
+           ══════════════════════════════════════════════════════════ */
+
+        /* Transizione base della nav — sempre attiva per smooth reset */
+        #bottom-nav {
+            transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1),
+                        box-shadow 0.5s ease;
+        }
+
+        /* Stato peek: nav si solleva con glow sottile */
+        #bottom-nav.nav-peek {
+            transform: translateY(-12px);
+            box-shadow: 0 -2px 30px rgba(112,151,168,0.15),
+                        0 8px 40px rgba(0,0,0,0.18);
+        }
+
+        /* ── TUTTE le icone: pop 3D verso l'utente ── */
+        #bottom-nav.nav-peek .nav-item .material-icons {
+            transform: translateY(-10px) scale(1.25);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+            transition: transform 0.45s cubic-bezier(0.34,1.56,0.64,1),
+                        filter 0.4s ease,
+                        color 0.3s ease;
+        }
+        /* Icone non-attive: diventano visibili */
+        #bottom-nav.nav-peek .nav-item:not(.active) .material-icons {
+            color: #64748b;
+        }
+        /* Stagger sulle icone: onda dal centro verso i lati */
+        #bottom-nav.nav-peek .nav-item:nth-child(1) .material-icons { transition-delay: 0.06s; }
+        #bottom-nav.nav-peek .nav-item:nth-child(2) .material-icons { transition-delay: 0.03s; }
+        #bottom-nav.nav-peek .nav-item:nth-child(3) .material-icons { transition-delay: 0.03s; }
+        #bottom-nav.nav-peek .nav-item:nth-child(4) .material-icons { transition-delay: 0.06s; }
+
+        /* Label non-attive: appaiono con stagger via transition-delay */
+        #bottom-nav.nav-peek .nav-item:not(.active) .nav-label {
+            opacity: 1;
+            color: #64748b;
+            transition: opacity 0.35s ease;
+        }
+        /* Stagger label: onda leggera */
+        #bottom-nav.nav-peek .nav-item:nth-child(2):not(.active) .nav-label { transition-delay: 0.05s; }
+        #bottom-nav.nav-peek .nav-item:nth-child(3):not(.active) .nav-label { transition-delay: 0.08s; }
+        #bottom-nav.nav-peek .nav-item:nth-child(4):not(.active) .nav-label { transition-delay: 0.11s; }
+
+        /* ── Reset: quando nav-peek viene rimosso ── */
+        #bottom-nav:not(.nav-peek) .nav-item:not(.active) .nav-label {
+            transition: opacity 0.2s ease;
+        }
+        #bottom-nav:not(.nav-peek) .nav-item .material-icons {
+            filter: none;
+            transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.05s,
+                        filter 0.3s ease,
+                        color 0.3s ease;
+        }
+
+        /* Elasticità del contenuto — applicata via JS inline transform */
+        #app-content.overscroll-active {
+            will-change: transform;
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           SERVICES GRID — 3D Raised Cards
+           Le card sembrano fisicamente sollevate dalla superficie.
+           Al tocco si "premono" dentro lo schermo.
+           ══════════════════════════════════════════════════════════ */
+
+        /* Card con immagine (bus, treno, ferry, CT Card, CT Treno) */
+        .svc-raised {
+            /* Sollevate dalla superficie a riposo */
+            transform: translateY(-4px);
+            /* Ombra a 4 strati: contatto + corpo + profondità + ambiente */
+            box-shadow:
+                0 2px 3px rgba(0,0,0,0.12),
+                0 8px 16px -2px rgba(0,0,0,0.18),
+                0 20px 44px -8px rgba(0,0,0,0.14),
+                0 32px 60px -12px rgba(0,0,0,0.08);
+            /* Bordo luminoso: luce dall'alto */
+            border-top: 1.5px solid rgba(255,255,255,0.25);
+            border-left: 1px solid rgba(255,255,255,0.10);
+            transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1),
+                        box-shadow 0.4s ease;
+            /* 3 respiri (12s) + pausa (28s) = ciclo 40s
+               I 3 respiri occupano il primo 30% della timeline.
+               Il restante 70% è pausa ferma a -4px. */
+            animation: svcBreathe 40s ease-in-out infinite;
+        }
+        @keyframes svcBreathe {
+            /* Respiro 1 */
+            0%   { transform: translateY(-4px);
+                   box-shadow: 0 2px 3px rgba(0,0,0,0.12), 0 8px 16px -2px rgba(0,0,0,0.18), 0 20px 44px -8px rgba(0,0,0,0.14), 0 32px 60px -12px rgba(0,0,0,0.08); }
+            5%   { transform: translateY(-7px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.10), 0 12px 24px -2px rgba(0,0,0,0.20), 0 28px 56px -8px rgba(0,0,0,0.16), 0 40px 72px -12px rgba(0,0,0,0.10); }
+            10%  { transform: translateY(-4px);
+                   box-shadow: 0 2px 3px rgba(0,0,0,0.12), 0 8px 16px -2px rgba(0,0,0,0.18), 0 20px 44px -8px rgba(0,0,0,0.14), 0 32px 60px -12px rgba(0,0,0,0.08); }
+            /* Respiro 2 */
+            15%  { transform: translateY(-7px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.10), 0 12px 24px -2px rgba(0,0,0,0.20), 0 28px 56px -8px rgba(0,0,0,0.16), 0 40px 72px -12px rgba(0,0,0,0.10); }
+            20%  { transform: translateY(-4px);
+                   box-shadow: 0 2px 3px rgba(0,0,0,0.12), 0 8px 16px -2px rgba(0,0,0,0.18), 0 20px 44px -8px rgba(0,0,0,0.14), 0 32px 60px -12px rgba(0,0,0,0.08); }
+            /* Respiro 3 */
+            25%  { transform: translateY(-7px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.10), 0 12px 24px -2px rgba(0,0,0,0.20), 0 28px 56px -8px rgba(0,0,0,0.16), 0 40px 72px -12px rgba(0,0,0,0.10); }
+            30%  { transform: translateY(-4px);
+                   box-shadow: 0 2px 3px rgba(0,0,0,0.12), 0 8px 16px -2px rgba(0,0,0,0.18), 0 20px 44px -8px rgba(0,0,0,0.14), 0 32px 60px -12px rgba(0,0,0,0.08); }
+            /* Pausa: ferme al 70% restante */
+            100% { transform: translateY(-4px);
+                   box-shadow: 0 2px 3px rgba(0,0,0,0.12), 0 8px 16px -2px rgba(0,0,0,0.18), 0 20px 44px -8px rgba(0,0,0,0.14), 0 32px 60px -12px rgba(0,0,0,0.08); }
+        }
+        .svc-raised:active {
+            /* Premuta dentro lo schermo */
+            transform: translateY(4px) scale(0.96);
+            box-shadow:
+                0 1px 2px rgba(0,0,0,0.12),
+                0 2px 6px rgba(0,0,0,0.08);
+            animation: none;
+        }
+
+        /* Card bianche (numeri utili, farmacie) */
+        .svc-raised-flat {
+            transform: translateY(-3px);
+            box-shadow:
+                0 2px 4px rgba(0,0,0,0.07),
+                0 8px 20px -2px rgba(0,0,0,0.12),
+                0 18px 40px -8px rgba(0,0,0,0.08),
+                0 28px 52px -12px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.03);
+            border-top: 1.5px solid rgba(255,255,255,0.9);
+            border-left: 1px solid rgba(255,255,255,0.5);
+            transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1),
+                        box-shadow 0.4s ease;
+            animation: svcBreathFlat 45s ease-in-out infinite;
+        }
+        @keyframes svcBreathFlat {
+            /* Respiro 1 */
+            0%   { transform: translateY(-3px);
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.07), 0 8px 20px -2px rgba(0,0,0,0.12), 0 18px 40px -8px rgba(0,0,0,0.08), 0 28px 52px -12px rgba(0,0,0,0.05); }
+            4.5% { transform: translateY(-6px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.06), 0 12px 28px -2px rgba(0,0,0,0.14), 0 24px 50px -8px rgba(0,0,0,0.10), 0 36px 64px -12px rgba(0,0,0,0.06); }
+            9%   { transform: translateY(-3px);
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.07), 0 8px 20px -2px rgba(0,0,0,0.12), 0 18px 40px -8px rgba(0,0,0,0.08), 0 28px 52px -12px rgba(0,0,0,0.05); }
+            /* Respiro 2 */
+            13.5%{ transform: translateY(-6px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.06), 0 12px 28px -2px rgba(0,0,0,0.14), 0 24px 50px -8px rgba(0,0,0,0.10), 0 36px 64px -12px rgba(0,0,0,0.06); }
+            18%  { transform: translateY(-3px);
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.07), 0 8px 20px -2px rgba(0,0,0,0.12), 0 18px 40px -8px rgba(0,0,0,0.08), 0 28px 52px -12px rgba(0,0,0,0.05); }
+            /* Respiro 3 */
+            22.5%{ transform: translateY(-6px);
+                   box-shadow: 0 3px 5px rgba(0,0,0,0.06), 0 12px 28px -2px rgba(0,0,0,0.14), 0 24px 50px -8px rgba(0,0,0,0.10), 0 36px 64px -12px rgba(0,0,0,0.06); }
+            27%  { transform: translateY(-3px);
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.07), 0 8px 20px -2px rgba(0,0,0,0.12), 0 18px 40px -8px rgba(0,0,0,0.08), 0 28px 52px -12px rgba(0,0,0,0.05); }
+            /* Pausa */
+            100% { transform: translateY(-3px);
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.07), 0 8px 20px -2px rgba(0,0,0,0.12), 0 18px 40px -8px rgba(0,0,0,0.08), 0 28px 52px -12px rgba(0,0,0,0.05); }
+        }
+        .svc-raised-flat:active {
+            transform: translateY(3px) scale(0.97);
+            box-shadow:
+                0 1px 2px rgba(0,0,0,0.06),
+                0 2px 4px rgba(0,0,0,0.04);
+            animation: none;
+        }
+
+        /* Chevron che pulsa per invitare al tap */
+        .svc-raised-flat .svc-chevron {
+            animation: svcChevronPulse 2s ease-in-out infinite;
+        }
+        @keyframes svcChevronPulse {
+            0%, 100% { transform: translateX(0); opacity: 0.35; }
+            50%      { transform: translateX(4px); opacity: 0.8; }
+        }
+
         /* ── Actions: 3 pill glass in basso ── */
         .home-actions {
             padding: 0 16px 28px;
@@ -616,7 +758,7 @@
         .home-pill-badge {
             position: absolute;
             top: -5px; right: -2px;
-            background: #E76F51;
+            background: #C98A5F;
             color: #fff;
             font-family: "Plus Jakarta Sans", sans-serif;
             font-size: 9px;
@@ -629,15 +771,11 @@
             justify-content: center;
             padding: 0 4px;
             line-height: 1;
-            box-shadow: 0 2px 8px rgba(231,111,81,0.60);
+            box-shadow: 0 2px 8px rgba(201,138,95,0.45);
             border: 1.5px solid rgba(255,255,255,0.30);
         }
 
-        /* ── Alias retrocompatibilità ── */
-        .home-quick-row     { display: none !important; }
-        .home-section-label { display: none !important; }
-        .home-grid          { display: none !important; }
-        [data-home-badge]   { }
+
 
        /* ══════════════════════════════════════════════════════════
            CHICCO — Mascotte "seduta sulla barra"
@@ -695,6 +833,57 @@
             filter: drop-shadow(0 3px 8px rgba(0,0,0,0.25));
         }
 
+        /* ── Speech bubble di benvenuto ──
+           Posizionata fixed sopra il FAB di Chicco.
+           Appesa al body, non al FAB — così non blocca il tap.
+           Cliccabile: tap sulla bubble = tap su Chicco. */
+        .chicco-bubble {
+            position: fixed;
+            bottom: 164px;   /* Chicco FAB bottom(82px) + FAB height(76px) + gap(6px) */
+            left: 14px;
+            z-index: 101;    /* Sopra il FAB (z:100) */
+            background: white;
+            color: #3D4246;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.35;
+            padding: 10px 14px;
+            border-radius: 16px 16px 16px 4px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.08);
+            max-width: 220px;
+            white-space: normal;
+            pointer-events: auto;
+            cursor: pointer;
+            /* Animazione entrata: appare dopo un delay */
+            opacity: 0;
+            animation: chicco-bubble-in 0.45s cubic-bezier(0.34,1.56,0.64,1) 1.5s forwards;
+        }
+        /* Triangolino del fumetto — punta verso Chicco */
+        .chicco-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 16px;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 0 0 0 3px;
+            transform: rotate(-45deg);
+            box-shadow: -2px 2px 4px rgba(0,0,0,0.06);
+        }
+        /* Uscita: si dissolve */
+        .chicco-bubble.bubble-out {
+            animation: chicco-bubble-out 0.3s ease forwards !important;
+        }
+        @keyframes chicco-bubble-in {
+            0%   { opacity: 0; transform: translateY(6px) scale(0.9); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes chicco-bubble-out {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(4px) scale(0.95); }
+        }
+
         /* Card meteo espansa */
         .chicco-card {
             position: fixed;
@@ -737,10 +926,10 @@
         .chicco-card-advice {
             font-size: 13px;
             font-weight: 600;
-            color: #264653;
+            color: #3D4246;
             line-height: 1.5;
             padding: 12px 14px;
-            background: #F4F1DE;
+            background: #F5F1E1;
             border-radius: 12px;
             border-left: 3px solid #E9C46A;
         }
@@ -778,8 +967,8 @@
             -webkit-tap-highlight-color: transparent;
         }
         .near-me-btn.active-near-me {
-            background: #2A9D8F;
-            border-color: #2A9D8F;
+            background: #7097A8;
+            border-color: #7097A8;
             color: white;
         }
 
@@ -793,7 +982,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: #264653;
+            background: #3D4246;
             color: rgba(255,255,255,0.92);
             padding: 7px 16px;
             border-radius: 50px;
@@ -882,7 +1071,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 </head>
 
-<body class="text-slate-700 antialiased pb-28">
+<body class="text-primary antialiased pb-28">
 <div id="splash-overlay"></div>
 <header class="fixed top-0 left-0 right-0 z-50 pointer-events-none"></header>
 
@@ -923,20 +1112,20 @@
 
 <nav id="bottom-nav" class="fixed bottom-4 left-4 right-4 h-16 bg-white/95 backdrop-blur-xl rounded-2xl shadow-floating flex justify-around items-center z-50 px-2 border border-white/50">
     <button class="nav-item group flex flex-col items-center justify-center w-14 h-full transition-all relative" onclick="switchView('home', this)">
-        <span class="material-icons text-[24px] text-slate-400 transition-all duration-300 group-[.active]:text-ct-green group-[.active]:-translate-y-2">home</span>
-        <span class="nav-label font-bold text-slate-400 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-green nav-label absolute bottom-2 uppercase tracking-wide">Home</span>
+        <span class="material-icons text-[24px] text-slate-400 transition-all duration-300 group-[.active]:text-ct-sage group-[.active]:-translate-y-2">home</span>
+        <span class="nav-label font-bold text-slate-400 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-sage nav-label absolute bottom-2 uppercase tracking-wide">Home</span>
     </button>
     <button class="nav-item group flex flex-col items-center justify-center w-14 h-full transition-all relative" onclick="switchView('cibo', this)">
         <span class="material-icons text-[22px] text-slate-400 transition-all duration-300 group-[.active]:text-ct-terracotta group-[.active]:-translate-y-2">restaurant</span>
         <span class="nav-label font-bold text-slate-400 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-terracotta nav-label absolute bottom-2 uppercase tracking-wide">Cibo</span>
     </button>
     <button class="nav-item group flex flex-col items-center justify-center w-14 h-full transition-all relative" onclick="switchView('outdoor', this)">
-        <span class="material-icons text-[22px] text-slate-400 transition-all duration-300 group-[.active]:text-ct-yellow group-[.active]:-translate-y-2">hiking</span>
-        <span class="nav-label font-bold text-slate-400 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-yellow nav-label absolute bottom-2 uppercase tracking-wide">Outdoor</span>
+        <span class="material-icons text-[22px] text-slate-400 transition-all duration-300 group-[.active]:text-ct-sage group-[.active]:-translate-y-2">hiking</span>
+        <span class="nav-label font-bold text-slate-400 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-sage nav-label absolute bottom-2 uppercase tracking-wide">Outdoor</span>
     </button>
     <button class="nav-item group flex flex-col items-center justify-center w-14 h-full transition-all relative" onclick="switchView('servizi', this)">
-        <span class="material-icons text-[22px] text-slate-400 transition-all duration-300 group-[.active]:text-ct-blue group-[.active]:-translate-y-2">grid_view</span>
-        <span class="nav-label font-bold text-slate-400 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-blue nav-label absolute bottom-2 uppercase tracking-wide">Servizi</span>
+        <span class="material-icons text-[22px] text-slate-400 transition-all duration-300 group-[.active]:text-ct-service group-[.active]:-translate-y-2">grid_view</span>
+        <span class="nav-label font-bold text-slate-400 opacity-0 group-[.active]:opacity-100 transition-opacity group-[.active]:text-ct-service nav-label absolute bottom-2 uppercase tracking-wide">Servizi</span>
     </button>
 </nav>
 

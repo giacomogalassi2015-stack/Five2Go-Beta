@@ -1,42 +1,62 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  Five2Go — features.js
-//  Wishlist · Itinerary · Cinque Terre Card
+//  features.js — WISHLIST, CT CARD E SEGNALAZIONI (PRIMARIO)
 //
-//  Questo file implementa le feature "sticky" dell'app:
-//    1. WL           — Wishlist manager (localStorage, persistente offline)
-//    2. ITINERARY    — Itinerary manager (localStorage, persistente offline)
-//    3. renderHeartBtn / toggleHeart    — cuoricino su ogni card
-//    4. renderPlanBtn  / togglePlan     — pulsante "aggiungi al piano"
-//    5. _updateHomeBadges               — aggiorna i contatori sulla home
-//    6. renderWishlist                  — pagina "I miei Preferiti"
-//    7. renderItinerary                 — pagina "Il mio Itinerario"
-//    8. renderCinqueTerreCard           — pagina info Cinque Terre Card
+//  Gestisce le funzionalità "persistenti" che restano salvate tra le sessioni:
+//    - Wishlist (preferiti) con cuoricino su ogni card
+//    - Pagina "I miei Preferiti"
+//    - Pagina info "Cinque Terre Card" con simulatore prezzi
+//    - Pagina info "Cinque Terre Treno Card"
+//    - Sistema segnalazioni errori (report a Supabase)
 //
-//  Tutte le funzioni sono esposte su window per compatibilità con i renderer
-//  già esistenti in ui-renderers.js e app.js.
+//  ESPORTA SU WINDOW:
+//    window.WL               → Manager wishlist (get/add/remove/has/toggle)
+//    window.renderHeartBtn() → Genera il bottone cuoricino per una card
+//    window.renderHeartBtnOverlay() → Versione overlay per card con foto
+//    window.toggleHeart()    → Toggle cuoricino (con animazione + haptic)
+//    window._updateHomeBadges() → Aggiorna il contatore sulla home
+//    window.renderWishlist() → Pagina "I miei Preferiti"
+//    window.renderCinqueTerreCard()     → Pagina CT Card
+//    window.renderCinqueTerreTrenoCard() → Pagina CT Treno Card
+//    window.renderReportBtn() → Bottone "Segnala problema" nei modali
+//    window._haptic()        → Vibrazione feedback per azioni importanti
+//    window._showConfirmDialog() → Dialog di conferma (usato da "Svuota tutto")
+//    window.GeoTracker       → Singleton GPS pub/sub (usato da mappa, bus, near me)
+//    window.toggleNearMe()   → Ordinamento per distanza nelle liste
+//    window.sortByDistance()  → Ordina una lista per distanza GPS
 //
-//  STORAGE KEYS:
-//    f2g_wishlist   → Array di oggetti { wl_id, wl_type, wl_name, wl_sub, wl_modal_type, wl_modal_payload }
-//    f2g_itinerary  → Array di oggetti { itin_id, itin_type, itin_name, itin_sub, itin_modal_type, itin_modal_payload }
+//  STORAGE: localStorage chiave 'f2g_wishlist'
+//
+//  DIPENDENZE:
+//    data-logic.js → window.t(), window.dbCol(), window.supabaseClient
+//    ui-modal.js   → window.openModal() per aprire dettagli dalla wishlist
+//    app.js        → switchView() per la navigazione
+//
+//  USATO DA:
+//    ui-renderers.js → renderHeartBtnOverlay() nei template card
+//    app.js          → renderWishlist(), renderCinqueTerreCard() da switchView
+//    app.js          → GeoTracker da GPS/bus/mappa
+//    ui-modal.js     → renderReportBtn() nei modali dettaglio
 // ═══════════════════════════════════════════════════════════════════════════
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  0. HAPTIC FEEDBACK — Micro-vibrazione per azioni importanti
-//     navigator.vibrate() è supportato da tutti i browser Android moderni.
-//     Su iOS Safari non è supportato ma non lancia errori (safe to call).
-//     Il check evita crash su browser desktop senza API.
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  VIBRAZIONE FEEDBACK (TERZIARIO)
+//  Micro-vibrazione al tap su azioni importanti (cuoricino, filtro, ecc.)
+//  Funziona su Android. Su iOS non fa nulla ma non crasha.
+//  Usata da: toggleHeart(), toggleSmartFilter(), _selectReportOpt()
+// ───────────────────────────────────────────────────────────────────────
 window._haptic = function(ms) {
     try { if (navigator.vibrate) navigator.vibrate(ms || 10); } catch(e) {}
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  CONFIRM DIALOG — Bottom-sheet di conferma branded
-//  Sostituisce window.confirm() che è brutto, bloccante e non stilizzabile.
-//  Uso: window._showConfirmDialog(titolo, messaggio, onConfirm)
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  DIALOG DI CONFERMA (TERZIARIO)
+//  Bottom-sheet con "Sei sicuro?" + bottoni Annulla/Conferma.
+//  Sostituisce il brutto window.confirm() nativo del browser.
+//  Usata da: "Svuota tutto" nella wishlist
+//  Dipendenze: data-logic.js → window.t() per i testi dei bottoni
+// ───────────────────────────────────────────────────────────────────────
 window._showConfirmDialog = function(title, message, onConfirm) {
     const existing = document.getElementById('f2g-confirm-overlay');
     if (existing) existing.remove();
@@ -74,9 +94,11 @@ window._showConfirmDialog = function(title, message, onConfirm) {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  STORAGE TOAST — Feedback visivo se localStorage è pieno
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  TOAST STORAGE PIENO (TERZIARIO)
+//  Mostra un avviso se localStorage è pieno (raro, ma possibile su Safari iOS).
+//  Usata da: WL._save() quando il salvataggio fallisce
+// ───────────────────────────────────────────────────────────────────────
 window._showStorageToast = function() {
     // Evita toast multipli ravvicinati
     if (document.getElementById('storage-full-toast')) return;
@@ -91,9 +113,24 @@ window._showStorageToast = function() {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  1. WISHLIST MANAGER
-// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  WISHLIST MANAGER (PRIMARIO)
+//
+//  Gestisce la lista dei preferiti dell'utente in localStorage.
+//  Ogni item ha: wl_id, wl_type, wl_name, wl_sub, wl_modal_type, wl_modal_payload
+//
+//  Metodi:
+//    WL.get()        → restituisce l'array dei preferiti
+//    WL.add(item)    → aggiunge se non già presente
+//    WL.remove(id)   → rimuove per ID
+//    WL.has(id)      → controlla se un ID è nei preferiti (true/false)
+//    WL.toggle(item) → aggiunge o rimuove. Restituisce true se aggiunto.
+//
+//  NOTA SAFARI iOS: localStorage può essere cancellato dopo ~7 giorni di
+//  inattività se la PWA non è installata sulla home screen.
+//
+//  Usata da: toggleHeart(), renderWishlist(), _updateHomeBadges(), renderHome()
+// ═══════════════════════════════════════════════════════════════════════════
 window.WL = {
     _key: 'f2g_wishlist',
 
@@ -132,51 +169,32 @@ window.WL = {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  2. ITINERARY MANAGER
-// ─────────────────────────────────────────────────────────────────────────────
-window.ITINERARY = {
-    _key: 'f2g_itinerary',
-
-    get() {
-        try { return JSON.parse(localStorage.getItem(this._key) || '[]'); }
-        catch { return []; }
-    },
-
-    _save(arr) {
-        try { localStorage.setItem(this._key, JSON.stringify(arr)); }
-        catch (e) {
-            console.warn('[ITINERARY] localStorage write failed:', e);
-            window._showStorageToast && window._showStorageToast();
-        }
-    },
-
-    /** Aggiunge se non già presente. Ritorna true se aggiunto. */
-    add(item) {
-        const list = this.get();
-        if (!this.has(item.itin_id)) { list.push(item); this._save(list); return true; }
-        return false;
-    },
-
-    remove(id) { this._save(this.get().filter(i => i.itin_id !== String(id))); },
-    has(id) { return this.get().some(i => i.itin_id === String(id)); },
-
-    /** Sposta un elemento da fromIdx a toIdx (per il riordinamento manuale) */
-    move(fromIdx, toIdx) {
-        const list = this.get();
-        if (fromIdx < 0 || toIdx < 0 || fromIdx >= list.length || toIdx >= list.length) return;
-        const [item] = list.splice(fromIdx, 1);
-        list.splice(toIdx, 0, item);
-        this._save(list);
-    },
-
-    clear() { localStorage.removeItem(this._key); }
-};
+// ───────────────────────────────────────────────────────────────────────
+//  ITINERARY — Stub V1.0 (disabilitato, pianificato per V2)
+//  Tutti i metodi sono no-op per evitare crash se qualche vecchio codice li chiama.
+// ───────────────────────────────────────────────────────────────────────
+window.ITINERARY = { get() { return []; }, _save() {}, add() { return false; }, remove() {}, has() { return false; }, move() {}, clear() {} };
+window.renderPlanBtn = function() { return ''; };
+window.togglePlan    = function() {};
+window.renderItinerary = function() { window.renderWishlist(); };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  3. HEART BUTTON — Wishlist toggle sulle card
-// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  CUORICINO WISHLIST (PRIMARIO)
+//
+//  Tre funzioni che lavorano insieme:
+//    renderHeartBtn(wlItem)          → Genera un bottone cuore sotto la card
+//    renderHeartBtnOverlay(wlItem)   → Genera un cuore sovrapposto alla foto
+//    toggleHeart(btn, encoded)       → Al tap: aggiunge/rimuove dai preferiti
+//                                      con animazione pop + vibrazione
+//
+//  L'item wishlist (wlItem) contiene:
+//    wl_id, wl_type, wl_name, wl_sub, wl_modal_type, wl_modal_payload
+//  Questi dati servono per riaprire il modale dalla pagina preferiti.
+//
+//  Usata da: tutti i renderer in ui-renderers.js
+//  Dipendenze: WL manager (sopra), _haptic(), _updateHomeBadges()
+// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Genera l'HTML del pulsante cuore da inserire nel buttonsHtml delle card.
@@ -303,27 +321,12 @@ window.toggleHeart = function(btn, encoded) {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  4. PLAN BUTTON — Itinerary add sulle card
-// ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * V1.0: renderPlanBtn e togglePlan DISABILITATI
- * Il pulsante "Aggiungi al Piano" è stato rimosso da tutte le card
- * per ridurre il carico cognitivo dell'utente nella prima release.
- * Il codice ITINERARY manager (sopra) resta dormiente per V2.
- *
- * @param {Object} itinItem — ignorato in V1.0
- * @returns {string} stringa vuota — nessun bottone renderizzato
- */
-window.renderPlanBtn = function(/* itinItem */) { return ''; };
-window.togglePlan    = function() { /* no-op V1.0 */ };
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  5. BADGE UPDATER
-//     Aggiorna i contatori visibili sui pulsanti Home (Preferiti / Itinerario)
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  BADGE CONTATORE HOME (TERZIARIO)
+//  Aggiorna il numerino sulla pill "Preferiti" nella home page.
+//  Chiamata dopo ogni toggleHeart() e dopo "Svuota tutto".
+// ───────────────────────────────────────────────────────────────────────
 window._updateHomeBadges = function() {
     const wlBadge = document.querySelector('[data-home-badge="wishlist"]');
 
@@ -332,13 +335,21 @@ window._updateHomeBadges = function() {
         wlBadge.textContent = count;
         wlBadge.style.display = count > 0 ? 'flex' : 'none';
     }
-    // V1.0: badge itinerario rimosso dalla home — pill itinerario disabilitata
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  6. WISHLIST PAGE
-// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGINA PREFERITI (PRIMARIO)
+//
+//  Mostra tutti gli item salvati con cuoricino, con possibilità di:
+//    - Aprire il modale dettaglio (tap sulla card)
+//    - Rimuovere singoli item (bottone X con animazione slide-out)
+//    - Svuotare tutto (con dialog di conferma)
+//  Se vuota, mostra un messaggio con istruzioni per l'utente.
+//
+//  Chiamata da: app.js → switchView('wishlist') e switchView('itinerary')
+//  Dipendenze: WL manager, ui-modal.js → openModal()
+// ═══════════════════════════════════════════════════════════════════════════
 window.renderWishlist = function() {
     const content = document.getElementById('app-content');
     if (!content) return;
@@ -366,7 +377,7 @@ window.renderWishlist = function() {
 
     const countLabel = items.length === 1 ? `1 ${L.count_one}` : `${items.length} ${L.count_many}`;
 
-    let html = `<div class="animate-fade pb-8">
+    let html = `<div class="animate-fade pb-20">
         <!-- Header -->
         <div class="flex items-start justify-between mb-6 pt-2">
             <div>
@@ -482,189 +493,23 @@ window._openWlModal = function(modalType, payload) {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  7. ITINERARY PAGE
-// ─────────────────────────────────────────────────────────────────────────────
-window.renderItinerary = function() {
-    const content = document.getElementById('app-content');
-    if (!content) return;
-    const items = window.ITINERARY.get();
-    const lang  = window.currentLang || 'it';
 
-    const L = {
-        it: { title: 'Il mio Itinerario', empty: 'Nessuna tappa aggiunta.', emptyHint: "Premi 📋 sulle card per costruire il tuo percorso giornaliero — rimane salvato tra una sessione e l'altra.", clearAll: 'Svuota', openBtn: 'Apri', removeBtn: 'Rimuovi', step: 'Tappa', dayPlan: 'Piano del giorno', count_one: 'tappa', count_many: 'tappe', move_up: 'Sposta su', move_down: 'Sposta giù' },
-        en: { title: 'My Itinerary', empty: 'No stops yet.', emptyHint: 'Tap 📋 on any card to build your daily itinerary — stays saved between sessions.', clearAll: 'Clear all', openBtn: 'Open', removeBtn: 'Remove', step: 'Stop', dayPlan: 'Day plan', count_one: 'stop', count_many: 'stops', move_up: 'Move up', move_down: 'Move down' },
-        fr: { title: 'Mon Itinéraire', empty: 'Aucune étape.', emptyHint: 'Appuyez sur 📋 pour construire votre itinéraire.', clearAll: 'Tout effacer', openBtn: 'Voir', removeBtn: 'Supprimer', step: 'Étape', dayPlan: 'Plan du jour', count_one: 'étape', count_many: 'étapes', move_up: 'Monter', move_down: 'Descendre' },
-        de: { title: 'Meine Route', empty: 'Keine Stopps.', emptyHint: 'Tippe auf 📋 um deine Tagesroute zu erstellen.', clearAll: 'Alle löschen', openBtn: 'Öffnen', removeBtn: 'Entfernen', step: 'Stopp', dayPlan: 'Tagesplan', count_one: 'Stopp', count_many: 'Stopps', move_up: 'Hoch', move_down: 'Runter' },
-        es: { title: 'Mi Itinerario', empty: 'Sin paradas.', emptyHint: 'Pulsa 📋 para construir tu itinerario del día.', clearAll: 'Limpiar', openBtn: 'Ver', removeBtn: 'Quitar', step: 'Parada', dayPlan: 'Plan del día', count_one: 'parada', count_many: 'paradas', move_up: 'Subir', move_down: 'Bajar' },
-        zh: { title: '我的行程', empty: '还没有站点。', emptyHint: '点击 📋 来规划您的每日行程。', clearAll: '清空', openBtn: '查看', removeBtn: '移除', step: '站', dayPlan: '每日计划', count_one: '站', count_many: '站', move_up: '上移', move_down: '下移' }
-    }[lang] || { title: 'My Itinerary', empty: 'No stops yet.', emptyHint: 'Tap 📋 on cards to build your day.', clearAll: 'Clear all', openBtn: 'Open', removeBtn: 'Remove', step: 'Stop', dayPlan: 'Day plan', count_one: 'stop', count_many: 'stops', move_up: 'Up', move_down: 'Down' };
-
-    // Colori per tipo
-    const TYPE_COLORS = {
-        ristorante: 'bg-ct-terracotta text-white',
-        attrazione: 'bg-ct-blue text-white',
-        spiaggia:   'bg-sky-500 text-white',
-        sentiero:   'bg-ct-green text-white',
-        vino:       'bg-red-500 text-white',
-        prodotto:   'bg-green-600 text-white'
-    };
-    const TYPE_ICONS = {
-        ristorante: 'restaurant', attrazione: 'attractions',
-        spiaggia: 'beach_access', sentiero: 'hiking',
-        vino: 'wine_bar', prodotto: 'eco'
-    };
-
-    const countLabel = items.length === 1 ? `1 ${L.count_one}` : `${items.length} ${L.count_many}`;
-
-    let html = `<div class="animate-fade pb-8">
-        <!-- Header -->
-        <div class="flex items-start justify-between mb-6 pt-2">
-            <div>
-                <h2 class="font-serif text-3xl font-bold text-slate-800 leading-tight">
-                    <span class="text-amber-400">🗺</span> ${L.title}
-                </h2>
-                <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1.5">${countLabel}</p>
-            </div>
-            ${items.length > 0 ? `<button
-                onclick="window._clearItinerary()"
-                class="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-3 py-2 rounded-xl
-                       hover:bg-rose-50 hover:text-rose-500 active:scale-95 transition-all touch-manipulation
-                       border border-transparent hover:border-rose-100">
-                ${L.clearAll}
-            </button>` : ''}
-        </div>`;
-
-    if (items.length === 0) {
-        html += `<div class="flex flex-col items-center justify-center py-20 text-center">
-            <div class="w-24 h-24 bg-amber-50 rounded-full flex items-center justify-center mb-6 border-2 border-amber-100">
-                <span class="material-icons text-5xl text-amber-200">map</span>
-            </div>
-            <p class="font-bold text-slate-600 text-lg mb-2">${L.empty}</p>
-            <p class="text-sm text-slate-400 max-w-xs leading-relaxed">${L.emptyHint}</p>
-        </div>`;
-    } else {
-        html += `<div class="flex flex-col gap-2.5" id="itinerary-list">`;
-
-        items.forEach((item, idx) => {
-            const colorCls = TYPE_COLORS[item.itin_type] || 'bg-slate-500 text-white';
-            const iconName = TYPE_ICONS[item.itin_type]  || 'place';
-            const hasModal = item.itin_modal_type && item.itin_modal_payload;
-            const isFirst  = idx === 0;
-            const isLast   = idx === items.length - 1;
-
-            html += `<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden itin-card animate-pop" data-itin-id="${item.itin_id}">
-                <!-- Main row -->
-                <div class="flex items-stretch">
-                    <!-- Numero tappa con colore tipo -->
-                    <div class="w-14 ${colorCls} flex flex-col items-center justify-center shrink-0 py-4 gap-1">
-                        <span class="material-icons text-sm opacity-70">${iconName}</span>
-                        <span class="font-black text-2xl leading-none">${idx + 1}</span>
-                    </div>
-                    <!-- Contenuto -->
-                    <div class="flex-1 p-4 flex items-center gap-3 min-w-0">
-                        <div class="flex-1 min-w-0">
-                            <h3 class="font-bold text-slate-800 text-sm leading-snug truncate">${item.itin_name}</h3>
-                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide truncate mt-0.5">${item.itin_sub || ''}</p>
-                        </div>
-                        <!-- Azioni -->
-                        <div class="flex items-center gap-1.5 shrink-0">
-                            ${hasModal ? `<button
-                                onclick="window._openItinModal('${item.itin_modal_type}', '${item.itin_modal_payload}')"
-                                class="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center active:scale-90 transition-all touch-manipulation"
-                                aria-label="${L.openBtn}">
-                                <span class="material-icons text-ct-blue text-sm">open_in_new</span>
-                            </button>` : ''}
-                            <button
-                                onclick="window._removeItinItem('${item.itin_id}', this)"
-                                class="w-9 h-9 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center active:scale-90 transition-all touch-manipulation"
-                                aria-label="${L.removeBtn}">
-                                <span class="material-icons text-red-400 text-sm">close</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <!-- Footer con riordinamento -->
-                <div class="border-t border-slate-50 flex items-center justify-between px-4 py-2 bg-slate-50/50">
-                    <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">${L.step} ${idx + 1} / ${items.length}</span>
-                    <div class="flex gap-1.5">
-                        ${!isFirst ? `<button
-                            onclick="window._moveItinItem(${idx}, ${idx - 1})"
-                            class="w-7 h-7 rounded-lg bg-white border border-slate-150 shadow-sm flex items-center justify-center active:scale-90 touch-manipulation"
-                            aria-label="${L.move_up}">
-                            <span class="material-icons text-slate-400 text-sm">arrow_upward</span>
-                        </button>` : ''}
-                        ${!isLast ? `<button
-                            onclick="window._moveItinItem(${idx}, ${idx + 1})"
-                            class="w-7 h-7 rounded-lg bg-white border border-slate-150 shadow-sm flex items-center justify-center active:scale-90 touch-manipulation"
-                            aria-label="${L.move_down}">
-                            <span class="material-icons text-slate-400 text-sm">arrow_downward</span>
-                        </button>` : ''}
-                    </div>
-                </div>
-            </div>`;
-        });
-
-        html += `</div>`;
-    }
-
-    html += `</div>`;
-    content.innerHTML = html;
-};
-
-// Helper: svuota itinerario CON CONFERMA
-window._clearItinerary = function() {
-    window._showConfirmDialog(
-        window.t('confirm_clear_title') || 'Sei sicuro?',
-        window.t('confirm_clear_itinerary') || 'Tutte le tappe verranno rimosse.',
-        function() {
-            window.ITINERARY.clear();
-            window.renderItinerary();
-            window._updateHomeBadges();
-        }
-    );
-};
-
-window._removeItinItem = function(id, btn) {
-    const card = btn.closest('.itin-card');
-    if (card) {
-        card.style.transition = 'opacity 0.22s ease, transform 0.22s ease';
-        card.style.opacity = '0';
-        card.style.transform = 'translateX(50px)';
-    }
-    setTimeout(() => {
-        window.ITINERARY.remove(id);
-        // Aggiorna visivamente eventuali pulsanti Piano visibili nelle card
-        document.querySelectorAll(`[data-itin-id="${id}"]`).forEach(el => {
-            if (el.classList.contains('itin-plan-btn')) {
-                const icon    = el.querySelector('.material-icons');
-                const wrapper = el.querySelector('.h-11');
-                const label   = el.querySelector('span:last-child');
-                el.classList.remove('itin-active');
-                if (icon)    { icon.textContent = 'add_circle_outline'; icon.classList.replace('text-amber-500', 'text-slate-400'); }
-                if (wrapper) { wrapper.classList.remove('bg-amber-50', 'border-amber-100'); wrapper.classList.add('bg-slate-50', 'border-slate-200'); }
-                if (label)   { if (label.classList.contains('text-amber-500')) label.classList.replace('text-amber-500', 'text-slate-400'); }
-            }
-        });
-        window.renderItinerary();
-        window._updateHomeBadges();
-    }, 230);
-};
-
-window._moveItinItem = function(fromIdx, toIdx) {
-    window.ITINERARY.move(fromIdx, toIdx);
-    window.renderItinerary();
-};
-
-window._openItinModal = function(modalType, payload) {
-    if (typeof window.openModal === 'function') window.openModal(modalType, payload);
-};
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  8. CINQUE TERRE CARD PAGE
-//     Info sulla tessera del Parco Nazionale: prezzi, acquisto, sentieri inclusi
-// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  CINQUE TERRE CARD (SECONDARIO)
+//
+//  Pagina informativa sulla tessera del Parco Nazionale delle Cinque Terre.
+//  Include:
+//    - Spiegazione di cosa include la card (sentieri, bus, WiFi, ecc.)
+//    - Calendario interattivo con fasce di prezzo (A=bassa, B=media, C=alta)
+//    - Simulatore prezzo: scegli durata, data, tipo viaggiatore → prezzo stimato
+//
+//  8a. renderCinqueTerreCard() → Pagina principale con info e simulatore
+//  8b. Calendario fasce        → Dataset dal PDF ufficiale PN5T 2026
+//  8c. Simulatore prezzo       → Calcolo basato su durata × fascia × tipologia
+//
+//  Chiamata da: app.js → switchView('ct_card')
+//  Dipendenze: data-logic.js → window.t(), window.currentLang
+// ═══════════════════════════════════════════════════════════════════════════
 window.renderCinqueTerreCard = function() {
     const content = document.getElementById('app-content');
     if (!content) return;
@@ -871,7 +716,7 @@ window.renderCinqueTerreCard = function() {
         }
     }[lang] || L.it;
 
-    content.innerHTML = `<div class="animate-fade pb-8">
+    content.innerHTML = `<div class="animate-fade pb-20">
         <div class="rounded-3xl overflow-hidden mb-5" style="background: linear-gradient(140deg, #0d3b2e 0%, #1a7a6a 100%);">
             <div class="p-6">
                 <div class="flex items-start justify-between mb-3">
@@ -1216,7 +1061,7 @@ window.renderCinqueTerreTrenoCard = function() {
         }
     }[lang] || L.it;
 
-    content.innerHTML = `<div class="animate-fade pb-8">
+    content.innerHTML = `<div class="animate-fade pb-20">
         <div class="rounded-3xl overflow-hidden mb-5" style="background: linear-gradient(140deg, #33181c 0%, #be123c 60%, #e11d48 100%);">
             <div class="p-6">
                 <div class="flex items-start justify-between mb-3">
@@ -1270,33 +1115,90 @@ window.renderCinqueTerreTrenoCard = function() {
             </div>
         </div>
 
+        <!-- ═══ CALENDARIO & SIMULATORE PREZZO (unificati) ═══ -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-3">
-            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-widest mb-2 flex items-center gap-2">
-                <span class="material-icons text-slate-500 text-[18px]">event_note</span>
-                ${L.calendar_title}
+            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-widest mb-1 flex items-center gap-2">
+                <span class="material-icons text-rose-500 text-base">calculate</span>
+                ${window.t('ct_sim_title')}
             </h3>
-            <p class="text-xs text-slate-500 mb-4 leading-relaxed">${L.calendar_desc}</p>
+            <p class="text-[11px] text-slate-500 mb-4">${window.t('ct_sim_subtitle')}</p>
 
-            <div class="flex flex-col gap-3 mb-5">
-                <div class="flex items-start gap-3">
-                    <div class="w-3.5 h-3.5 rounded-full bg-emerald-500 shrink-0 mt-0.5 shadow-sm"></div>
-                    <div class="text-[11px] text-slate-600 leading-tight"><strong class="text-emerald-700">Fascia A (Verde):</strong> ${L.cal_a}</div>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-3.5 h-3.5 rounded-full bg-amber-400 shrink-0 mt-0.5 shadow-sm"></div>
-                    <div class="text-[11px] text-slate-600 leading-tight"><strong class="text-amber-600">Fascia B (Gialla):</strong> ${L.cal_b}</div>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-3.5 h-3.5 rounded-full shrink-0 mt-0.5 shadow-sm" style="background-color: #e11d48;"></div>
-                    <div class="text-[11px] text-slate-600 leading-tight"><strong style="color: #be123c;">Fascia C (Rossa):</strong> ${L.cal_c}</div>
-                </div>
+            <!-- Step 1: Card duration pills -->
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <span class="w-4 h-4 rounded-full bg-slate-800 text-white text-[9px] font-black flex items-center justify-center shrink-0">1</span>
+                ${window.t('ct_sim_step1')}
+            </p>
+            <div class="flex gap-2 mb-4">
+                <button class="ct-sim-pill flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all active:scale-95 touch-manipulation bg-ct-blue text-white shadow-md" data-days="1" onclick="window._ctSimSwitchCard(1)">
+                    1 ${window.t('ct_sim_day')}
+                </button>
+                <button class="ct-sim-pill flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all active:scale-95 touch-manipulation bg-slate-100 text-slate-600" data-days="2" onclick="window._ctSimSwitchCard(2)">
+                    2 ${window.t('ct_sim_days')}
+                </button>
+                <button class="ct-sim-pill flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all active:scale-95 touch-manipulation bg-slate-100 text-slate-600" data-days="3" onclick="window._ctSimSwitchCard(3)">
+                    3 ${window.t('ct_sim_days')}
+                </button>
             </div>
 
-            <button onclick="window.open('https://card.parconazionale5terre.it/en/cartatreno', '_blank')" class="w-full py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm">
-                <span class="material-icons text-[16px] text-slate-500">picture_as_pdf</span>
+            <!-- Step 2: Calendario inline -->
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <span class="w-4 h-4 rounded-full bg-slate-800 text-white text-[9px] font-black flex items-center justify-center shrink-0">2</span>
+                ${window.t('ct_sim_step2')}
+            </p>
+
+            <!-- Legenda fasce compatta -->
+            <div class="flex items-center gap-3 mb-3 text-[10px]">
+                <div class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><span class="text-slate-500 font-bold">A</span></div>
+                <div class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span><span class="text-slate-500 font-bold">B</span></div>
+                <div class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full" style="background:#e11d48;"></span><span class="text-slate-500 font-bold">C</span></div>
+                <span class="text-slate-300">|</span>
+                <div class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full border-2 border-slate-300 bg-transparent"></span><span class="text-slate-400">${window.t('ct_sim_today')}</span></div>
+            </div>
+
+            <button onclick="window._toggleCTCalendar()" 
+                class="w-full py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
+                id="ct-calendar-toggle-btn">
+                <span class="material-icons text-[16px] text-slate-500" id="ct-calendar-toggle-icon">expand_more</span>
                 ${L.btn_calendar}
             </button>
+
+            <!-- Calendario interattivo inline (hidden by default) -->
+            <div id="ct-calendar-container" class="hidden mt-3"></div>
+
+            <!-- Step 3: Buyer panel (hidden until date selected) -->
+            <div id="ct-sim-buyer-panel" class="hidden mt-4">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-slate-800 text-white text-[9px] font-black flex items-center justify-center shrink-0">3</span>
+                    ${window.t('ct_sim_step3')}
+                </p>
+            </div>
+
+            <!-- Result (hidden until buyer selected) -->
+            <div id="ct-sim-result" class="hidden mt-3"></div>
         </div>
+
+        <!-- Legenda fasce dettagliata (collassabile, fuori dal simulatore) -->
+        <details class="bg-slate-50 rounded-2xl shadow-sm border border-slate-100 mb-3">
+            <summary class="p-4 flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 uppercase tracking-widest select-none">
+                <span class="material-icons text-slate-400 text-[16px]">help_outline</span>
+                ${L.calendar_title}
+            </summary>
+            <div class="px-5 pb-4 flex flex-col gap-2.5">
+                <p class="text-[11px] text-slate-500 leading-relaxed">${L.calendar_desc}</p>
+                <div class="flex items-start gap-2.5">
+                    <div class="w-3 h-3 rounded-full bg-emerald-500 shrink-0 mt-0.5"></div>
+                    <div class="text-[11px] text-slate-600 leading-tight"><strong class="text-emerald-700">A:</strong> ${L.cal_a}</div>
+                </div>
+                <div class="flex items-start gap-2.5">
+                    <div class="w-3 h-3 rounded-full bg-amber-400 shrink-0 mt-0.5"></div>
+                    <div class="text-[11px] text-slate-600 leading-tight"><strong class="text-amber-600">B:</strong> ${L.cal_b}</div>
+                </div>
+                <div class="flex items-start gap-2.5">
+                    <div class="w-3 h-3 rounded-full shrink-0 mt-0.5" style="background-color: #e11d48;"></div>
+                    <div class="text-[11px] text-slate-600 leading-tight"><strong style="color: #be123c;">C:</strong> ${L.cal_c}</div>
+                </div>
+            </div>
+        </details>
 
         <div class="bg-sky-50 rounded-2xl shadow-sm border border-sky-100 p-5 mb-3">
             <h3 class="font-bold text-sky-800 text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -1329,9 +1231,540 @@ window.renderCinqueTerreTrenoCard = function() {
     </div>`;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  9. NEAR ME — Ordinamento per distanza (geolocalizzazione)
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  CALENDARIO FASCE CT CARD (TERZIARIO)
+//  Dataset dal PDF ufficiale PN5T 2026. Periodo: 14 marzo - 1 novembre.
+//  Ogni giorno ha una fascia: A (verde/bassa), B (giallo/media), C (rosso/alta).
+//  Usato dal simulatore prezzo per calcolare il costo in base alla data scelta.
+// ───────────────────────────────────────────────────────────────────────
+
+(function() {
+    // Default = A (verde). Override solo B e C.
+    // Fonte: mappatura manuale da PDF ufficiale PN5T 2026.
+
+    // ── MS 1 GIORNO ──
+    const _B1 = new Set(['2026-04-02','2026-04-03','2026-04-07','2026-04-08','2026-04-09','2026-04-10','2026-04-11','2026-04-12','2026-04-18','2026-04-19','2026-04-24','2026-04-27','2026-04-28','2026-04-29','2026-04-30','2026-05-08','2026-05-09','2026-05-10','2026-05-15','2026-05-16','2026-05-17','2026-05-22','2026-05-23','2026-05-24','2026-05-29','2026-06-03','2026-06-04','2026-06-06','2026-06-07','2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12','2026-06-13','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19','2026-06-20','2026-06-21','2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-29','2026-06-30','2026-07-01','2026-07-02','2026-07-03','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-13','2026-07-14','2026-07-15','2026-07-16','2026-07-17','2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24','2026-07-28','2026-07-29','2026-07-30','2026-07-31','2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07','2026-08-10','2026-08-11','2026-08-12','2026-08-13','2026-08-17','2026-08-18','2026-08-19','2026-08-20','2026-08-21','2026-08-24','2026-08-25','2026-08-26','2026-08-27','2026-08-28','2026-08-31','2026-09-01','2026-09-02','2026-09-03','2026-09-04','2026-09-05','2026-09-06','2026-09-07','2026-09-08','2026-09-09','2026-09-10','2026-09-11','2026-09-12','2026-09-13','2026-09-14','2026-09-15','2026-09-16','2026-09-17','2026-09-18','2026-09-19','2026-09-20','2026-09-21','2026-09-22','2026-09-23','2026-09-24','2026-09-25','2026-09-26','2026-09-27','2026-09-28','2026-09-29','2026-09-30','2026-10-03','2026-10-04','2026-10-05','2026-10-10','2026-10-11','2026-10-30','2026-10-31','2026-11-01']);
+    const _C1 = new Set(['2026-04-04','2026-04-05','2026-04-06','2026-04-25','2026-04-26','2026-05-01','2026-05-02','2026-05-03','2026-05-30','2026-05-31','2026-06-01','2026-06-02','2026-06-05','2026-06-27','2026-06-28','2026-07-04','2026-07-05','2026-07-11','2026-07-12','2026-07-18','2026-07-19','2026-07-25','2026-07-26','2026-07-27','2026-08-01','2026-08-02','2026-08-08','2026-08-09','2026-08-14','2026-08-15','2026-08-16','2026-08-22','2026-08-23','2026-08-29','2026-08-30']);
+
+    // ── MS 2 GIORNI ──
+    const _B2 = new Set(['2026-04-06','2026-04-07','2026-04-08','2026-04-09','2026-04-10','2026-04-11','2026-04-18','2026-04-24','2026-04-26','2026-04-27','2026-04-28','2026-04-29','2026-04-30','2026-05-08','2026-05-09','2026-05-15','2026-05-16','2026-05-22','2026-05-23','2026-05-29','2026-06-02','2026-06-03','2026-06-04','2026-06-05','2026-06-06','2026-06-07','2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12','2026-06-13','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19','2026-06-20','2026-06-21','2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-26','2026-06-28','2026-06-29','2026-06-30','2026-07-01','2026-07-02','2026-07-03','2026-07-05','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-12','2026-07-13','2026-07-14','2026-07-15','2026-07-16','2026-07-17','2026-07-19','2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24','2026-07-27','2026-07-28','2026-07-29','2026-07-30','2026-07-31','2026-08-02','2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07','2026-08-09','2026-08-10','2026-08-11','2026-08-12','2026-08-13','2026-08-16','2026-08-17','2026-08-18','2026-08-19','2026-08-20','2026-08-21','2026-08-23','2026-08-24','2026-08-25','2026-08-26','2026-08-27','2026-08-28','2026-08-30','2026-08-31','2026-09-01','2026-09-02','2026-09-03','2026-09-04','2026-09-05','2026-09-06','2026-09-07','2026-09-08','2026-09-09','2026-09-10','2026-09-11','2026-09-12','2026-09-13','2026-09-14','2026-09-15','2026-09-16','2026-09-17','2026-09-18','2026-09-19','2026-09-20','2026-09-21','2026-09-22','2026-09-23','2026-09-24','2026-09-25','2026-09-26','2026-10-03','2026-10-04','2026-10-10','2026-10-30','2026-10-31']);
+    const _C2 = new Set(['2026-04-04','2026-04-05','2026-04-25','2026-05-01','2026-05-02','2026-05-30','2026-05-31','2026-06-01','2026-06-27','2026-07-04','2026-07-11','2026-07-18','2026-07-25','2026-07-26','2026-08-01','2026-08-08','2026-08-14','2026-08-15','2026-08-22','2026-08-29']);
+
+    // ── MS 3 GIORNI ──
+    const _B3 = new Set(['2026-04-01','2026-04-02','2026-04-06','2026-04-07','2026-04-08','2026-04-09','2026-04-10','2026-04-11','2026-04-17','2026-04-18','2026-04-23','2026-04-26','2026-04-27','2026-04-28','2026-04-29','2026-05-02','2026-05-07','2026-05-08','2026-05-09','2026-05-14','2026-05-15','2026-05-16','2026-05-21','2026-05-22','2026-05-23','2026-05-28','2026-06-02','2026-06-03','2026-06-04','2026-06-05','2026-06-06','2026-06-07','2026-06-08','2026-06-09','2026-06-10','2026-06-11','2026-06-12','2026-06-13','2026-06-14','2026-06-15','2026-06-16','2026-06-17','2026-06-18','2026-06-19','2026-06-20','2026-06-21','2026-06-22','2026-06-23','2026-06-24','2026-06-25','2026-06-28','2026-06-29','2026-06-30','2026-07-01','2026-07-02','2026-07-05','2026-07-06','2026-07-07','2026-07-08','2026-07-09','2026-07-12','2026-07-13','2026-07-14','2026-07-15','2026-07-16','2026-07-19','2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-27','2026-07-28','2026-07-29','2026-07-30','2026-08-02','2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-09','2026-08-10','2026-08-11','2026-08-12','2026-08-16','2026-08-17','2026-08-18','2026-08-19','2026-08-20','2026-08-23','2026-08-24','2026-08-25','2026-08-26','2026-08-27','2026-08-30','2026-08-31','2026-09-01','2026-09-02','2026-09-03','2026-09-04','2026-09-05','2026-09-06','2026-09-07','2026-09-08','2026-09-09','2026-09-10','2026-09-11','2026-09-12','2026-09-13','2026-09-14','2026-09-15','2026-09-16','2026-09-17','2026-09-18','2026-09-19','2026-09-20','2026-09-21','2026-09-22','2026-09-23','2026-09-24','2026-09-25','2026-09-26','2026-10-02','2026-10-03','2026-10-04','2026-10-09','2026-10-10','2026-10-29','2026-10-30','2026-10-31']);
+    const _C3 = new Set(['2026-04-03','2026-04-04','2026-04-05','2026-04-24','2026-04-25','2026-04-30','2026-05-01','2026-05-29','2026-05-30','2026-05-31','2026-06-01','2026-06-26','2026-06-27','2026-07-03','2026-07-04','2026-07-10','2026-07-11','2026-07-17','2026-07-18','2026-07-24','2026-07-25','2026-07-26','2026-07-31','2026-08-01','2026-08-07','2026-08-08','2026-08-13','2026-08-14','2026-08-15','2026-08-21','2026-08-22','2026-08-28','2026-08-29']);
+
+    // Lookup per durata card
+    const _BANDS = {
+        1: { B: _B1, C: _C1 },
+        2: { B: _B2, C: _C2 },
+        3: { B: _B3, C: _C3 }
+    };
+
+    // Periodo coperto
+    const START = new Date(2026, 2, 14); // 14 marzo
+    const END   = new Date(2026, 10, 1); // 1 novembre
+
+    /**
+     * Restituisce la fascia (A/B/C) per una data ISO e una durata card.
+     * @param {string} dateISO  — formato 'YYYY-MM-DD'
+     * @param {number} [cardDays=1] — durata card: 1, 2 o 3
+     * @returns {'A'|'B'|'C'|null}
+     */
+    window._getCTBand = function(dateISO, cardDays) {
+        const d = new Date(dateISO + 'T00:00:00');
+        if (d < START || d > END) return null;
+        const sets = _BANDS[cardDays || 1] || _BANDS[1];
+        if (sets.C.has(dateISO)) return 'C';
+        if (sets.B.has(dateISO)) return 'B';
+        return 'A';
+    };
+
+    // ── Prezziario MS Card ──
+    // Struttura: PRICES[durata][tipologia][fascia] = prezzo in centesimi
+    // Centesimi per evitare errori floating point nel calcolo famiglia
+    window._CT_PRICES = {
+        1: {
+            adult:  { A: 2200, B: 2950, C: 3500 },
+            child:  { A: 1500, B: 2000, C: 2350 },
+            senior: { A: 1850, B: 2500, C: 2950 },
+            family: { A: 5650, B: 7700, C: 9150 }
+        },
+        2: {
+            adult:  { A: 3650, B: 5100, C: 6100 },
+            child:  { A: 2450, B: 3350, C: 4050 },
+            senior: { A: 3050, B: 4250, C: 5100 },
+            family: { A: 9400, B: 13200, C: 15900 }
+        },
+        3: {
+            adult:  { A: 4900, B: 6800, C: 8100 },
+            child:  { A: 3300, B: 4450, C: 5350 },
+            senior: { A: 4100, B: 5600, C: 6750 },
+            family: { A: 12550, B: 17500, C: 21050 }
+        }
+    };
+})();
+
+// Mesi localizzati per il calendario
+const _CT_CAL_MONTHS = {
+    it: ['Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre'],
+    en: ['March','April','May','June','July','August','September','October','November'],
+    fr: ['Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre'],
+    de: ['März','April','Mai','Juni','Juli','August','September','Oktober','November'],
+    es: ['Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre'],
+    zh: ['三月','四月','五月','六月','七月','八月','九月','十月','十一月']
+};
+const _CT_CAL_DAYS = {
+    it: ['L','M','M','G','V','S','D'],
+    en: ['M','T','W','T','F','S','S'],
+    fr: ['L','M','M','J','V','S','D'],
+    de: ['M','D','M','D','F','S','S'],
+    es: ['L','M','X','J','V','S','D'],
+    zh: ['一','二','三','四','五','六','日']
+};
+
+// Stato calendario e simulatore
+window._ctCalMonth = null; // indice 0=marzo, 1=aprile...
+window._ctSimCardDays = 1; // durata card selezionata (1/2/3)
+window._ctSimSelectedDate = null; // data ISO selezionata
+window._ctSimBuyerType = null; // 'adult','child','senior','family'
+window._ctSimExtraKids = 0; // ragazzi extra oltre il primo (solo per family)
+
+/** Toggle apertura/chiusura calendario */
+window._toggleCTCalendar = function() {
+    const container = document.getElementById('ct-calendar-container');
+    const icon      = document.getElementById('ct-calendar-toggle-icon');
+    if (!container) return;
+
+    if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        if (icon) icon.textContent = 'expand_less';
+        // Inizia dal mese corrente se nel range, altrimenti aprile
+        const now   = new Date();
+        const month = now.getMonth(); // 0-indexed
+        if (month >= 2 && month <= 10) { // marzo(2) - novembre(10)
+            window._ctCalMonth = month - 2; // indice interno (0=marzo)
+        } else {
+            window._ctCalMonth = 1; // aprile come default
+        }
+        window._renderCTCalendar();
+        setTimeout(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+    } else {
+        container.classList.add('hidden');
+        if (icon) icon.textContent = 'expand_more';
+    }
+};
+
+/** Render del calendario per il mese corrente */
+window._renderCTCalendar = function() {
+    const container = document.getElementById('ct-calendar-container');
+    if (!container) return;
+
+    const lang   = window.currentLang || 'it';
+    const idx    = window._ctCalMonth;
+    const months = _CT_CAL_MONTHS[lang] || _CT_CAL_MONTHS.en;
+    const days   = _CT_CAL_DAYS[lang]   || _CT_CAL_DAYS.en;
+    const cardDays = window._ctSimCardDays || 1;
+
+    // Mese reale: marzo=2 + idx
+    const realMonth = 2 + idx; // 0-indexed JS (2=marzo, 3=aprile, ...)
+    const year      = 2026;
+    const firstDay  = new Date(year, realMonth, 1).getDay(); // 0=dom
+    const mondayStart = (firstDay + 6) % 7; // 0=lunedì
+    const daysInMonth = new Date(year, realMonth + 1, 0).getDate();
+
+    // Calcola il set di date selezionate (range dal giorno di partenza in avanti)
+    const selectedRange = new Set();
+    if (window._ctSimSelectedDate) {
+        const startD = new Date(window._ctSimSelectedDate + 'T12:00:00'); // mezzogiorno evita ambiguità timezone
+        for (let i = 0; i < cardDays; i++) {
+            const rd = new Date(startD);
+            rd.setDate(rd.getDate() + i);
+            // Costruisci ISO manualmente per evitare shift UTC
+            const rISO = `${rd.getFullYear()}-${String(rd.getMonth()+1).padStart(2,'0')}-${String(rd.getDate()).padStart(2,'0')}`;
+            selectedRange.add(rISO);
+        }
+    }
+
+    // Griglia celle
+    let cells = '';
+    for (let i = 0; i < mondayStart; i++) {
+        cells += `<div class="w-full aspect-square"></div>`;
+    }
+
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const END_ISO = '2026-11-01';
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const iso = `${year}-${String(realMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const band = window._getCTBand(iso, cardDays); // Colore specifico per la durata selezionata
+        const isToday = iso === today;
+        const isInRange = selectedRange.has(iso);
+        const isStart = iso === window._ctSimSelectedDate;
+
+        // Check se il giorno ha abbastanza giorni successivi nel periodo
+        let canSelect = band !== null;
+        if (canSelect && cardDays > 1) {
+            const checkD = new Date(iso + 'T12:00:00');
+            for (let i = 1; i < cardDays; i++) {
+                const nextD = new Date(checkD);
+                nextD.setDate(nextD.getDate() + i);
+                const nextISO = `${nextD.getFullYear()}-${String(nextD.getMonth()+1).padStart(2,'0')}-${String(nextD.getDate()).padStart(2,'0')}`;
+                if (window._getCTBand(nextISO, cardDays) === null) {
+                    canSelect = false;
+                    break;
+                }
+            }
+        }
+
+        let bgClass = 'bg-slate-50 text-slate-300';
+        let dotColor = '';
+        if (band === 'A') { bgClass = 'bg-emerald-50 text-emerald-800'; dotColor = '#10b981'; }
+        if (band === 'B') { bgClass = 'bg-amber-50 text-amber-800';     dotColor = '#f59e0b'; }
+        if (band === 'C') { bgClass = 'bg-rose-50 text-rose-800';       dotColor = '#e11d48'; }
+
+        const todayRing = isToday ? 'border-2 border-slate-400 border-dashed' : '';
+
+        // Range highlight: giorno di partenza = forte (blu pieno), giorni successivi = indicatore leggero
+        let rangeStyle = '';
+        if (isStart) {
+            rangeStyle = 'ring-[3px] ring-ct-blue ring-offset-1 scale-110 shadow-lg z-10';
+        } else if (isInRange) {
+            rangeStyle = 'ring-2 ring-ct-blue/60 ring-offset-1';
+        }
+
+        // Disabilitato se non ha copertura completa
+        const disabled = !canSelect;
+        const tapClass = canSelect
+            ? 'cursor-pointer active:scale-90 transition-all touch-manipulation'
+            : 'opacity-40 cursor-not-allowed';
+
+        cells += `<div class="w-full aspect-square rounded-lg flex flex-col items-center justify-center ${bgClass} ${todayRing} ${rangeStyle} ${tapClass}"
+            ${canSelect ? `onclick="window._ctSimSelectDate('${iso}')"` : ''}>
+            <span class="text-xs font-bold leading-none">${d}</span>
+            ${dotColor ? `<span class="w-1.5 h-1.5 rounded-full mt-0.5" style="background:${dotColor};"></span>` : ''}
+        </div>`;
+    }
+
+    const canPrev = idx > 0;
+    const canNext = idx < 8; // 0=marzo ... 8=novembre
+
+    container.innerHTML = `
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <!-- Header mese con navigazione -->
+            <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
+                <button onclick="window._ctCalNav(-1)" 
+                    class="w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 transition-transform ${canPrev ? 'text-slate-600 hover:bg-slate-200' : 'text-slate-300 pointer-events-none'}"
+                    ${canPrev ? '' : 'disabled'}>
+                    <span class="material-icons text-lg">chevron_left</span>
+                </button>
+                <span class="text-sm font-bold text-slate-800 uppercase tracking-wide">${months[idx]} 2026</span>
+                <button onclick="window._ctCalNav(1)" 
+                    class="w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 transition-transform ${canNext ? 'text-slate-600 hover:bg-slate-200' : 'text-slate-300 pointer-events-none'}"
+                    ${canNext ? '' : 'disabled'}>
+                    <span class="material-icons text-lg">chevron_right</span>
+                </button>
+            </div>
+
+            <!-- Giorni della settimana -->
+            <div class="grid grid-cols-7 gap-1 px-3 pt-2 pb-1">
+                ${days.map(d => `<div class="text-center text-[10px] font-bold text-slate-400 uppercase">${d}</div>`).join('')}
+            </div>
+
+            <!-- Griglia giorni -->
+            <div class="grid grid-cols-7 gap-1 px-3 pb-3">
+                ${cells}
+            </div>
+
+            <!-- Legenda compatta sotto il calendario -->
+            <div class="flex items-center justify-center gap-4 px-3 py-2.5 bg-slate-50 border-t border-slate-100">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span class="text-[10px] font-bold text-slate-500">A</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                    <span class="text-[10px] font-bold text-slate-500">B</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full" style="background:#e11d48;"></span>
+                    <span class="text-[10px] font-bold text-slate-500">C</span>
+                </div>
+            </div>
+
+            <!-- Banner: tipo card selezionata -->
+            <div class="flex items-start gap-2 px-3 py-2.5 bg-sky-50 border-t border-sky-100">
+                <span class="material-icons text-sky-500 text-sm shrink-0 mt-0.5">info</span>
+                <p class="text-[10px] text-sky-700 leading-snug font-medium">
+                    ${window.t('ct_cal_showing')} <strong>${cardDays} ${cardDays === 1 ? window.t('ct_sim_day') : window.t('ct_sim_days')}</strong>
+                </p>
+            </div>
+        </div>`;
+};
+
+/** Naviga avanti/indietro di un mese */
+window._ctCalNav = function(dir) {
+    window._ctCalMonth = Math.max(0, Math.min(8, window._ctCalMonth + dir));
+    window._renderCTCalendar();
+};
+
+// ───────────────────────────────────────────────────────────────────────
+//  SIMULATORE PREZZO CT CARD (TERZIARIO)
+//  L'utente sceglie: durata (1/2/3 giorni) → data inizio → tipo viaggiatore
+//  Il simulatore calcola il prezzo basandosi sulla fascia del calendario.
+// ───────────────────────────────────────────────────────────────────────
+
+/** Cambia durata card (1/2/3 giorni) → aggiorna calendario + reset selezione */
+window._ctSimSwitchCard = function(days) {
+    window._ctSimCardDays = days;
+    window._ctSimSelectedDate = null;
+    window._ctSimBuyerType = null;
+    window._ctSimExtraKids = 0;
+
+    // Aggiorna pills attive
+    document.querySelectorAll('.ct-sim-pill').forEach(el => {
+        const active = parseInt(el.dataset.days) === days;
+        el.classList.toggle('bg-ct-blue', active);
+        el.classList.toggle('text-white', active);
+        el.classList.toggle('shadow-md', active);
+        el.classList.toggle('bg-slate-100', !active);
+        el.classList.toggle('text-slate-600', !active);
+    });
+
+    // Ri-renderizza calendario con nuovi colori
+    window._renderCTCalendar();
+    // Nascondi buyer panel e risultato
+    const buyerPanel = document.getElementById('ct-sim-buyer-panel');
+    const resultPanel = document.getElementById('ct-sim-result');
+    if (buyerPanel) buyerPanel.classList.add('hidden');
+    if (resultPanel) resultPanel.classList.add('hidden');
+};
+
+/** L'utente tocca un giorno nel calendario */
+window._ctSimSelectDate = function(iso) {
+    window._haptic(8);
+    window._ctSimSelectedDate = iso;
+    window._ctSimBuyerType = null;
+    window._ctSimExtraKids = 0;
+
+    // Ri-renderizza calendario per mostrare selezione
+    window._renderCTCalendar();
+
+    // Mostra pannello acquirente
+    const buyerPanel = document.getElementById('ct-sim-buyer-panel');
+    if (buyerPanel) {
+        buyerPanel.classList.remove('hidden');
+        window._renderCTSimBuyer();
+        setTimeout(() => buyerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
+    }
+
+    // Nascondi risultato precedente
+    const resultPanel = document.getElementById('ct-sim-result');
+    if (resultPanel) resultPanel.classList.add('hidden');
+};
+
+/** Render pannello acquirente */
+window._renderCTSimBuyer = function() {
+    const panel = document.getElementById('ct-sim-buyer-panel');
+    if (!panel) return;
+    const lang = window.currentLang || 'it';
+    const selected = window._ctSimBuyerType;
+
+    const types = [
+        { key: 'adult',  icon: 'person',        label: window.t('ct_sim_adult') },
+        { key: 'child',  icon: 'child_care',     label: window.t('ct_sim_child') },
+        { key: 'senior', icon: 'elderly',        label: window.t('ct_sim_senior') },
+        { key: 'family', icon: 'family_restroom', label: window.t('ct_sim_family') }
+    ];
+
+    let html = `<p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+        <span class="material-icons text-sm text-slate-400">group</span>
+        ${window.t('ct_sim_who')}
+    </p>
+    <div class="grid grid-cols-2 gap-2 mb-3">`;
+
+    types.forEach(t => {
+        const isActive = selected === t.key;
+        const activeCls = isActive
+            ? 'border-ct-blue bg-sky-50 shadow-sm'
+            : 'border-slate-150 bg-white';
+        const iconCls = isActive ? 'text-ct-blue' : 'text-slate-400';
+        const textCls = isActive ? 'text-ct-blue font-bold' : 'text-slate-600 font-medium';
+
+        html += `<button onclick="window._ctSimSelectBuyer('${t.key}')"
+            class="flex items-center gap-2.5 p-3 rounded-xl border ${activeCls} active:scale-95 transition-all touch-manipulation cursor-pointer">
+            <span class="material-icons text-lg ${iconCls}">${t.icon}</span>
+            <span class="text-[11px] ${textCls} leading-tight">${t.label}</span>
+        </button>`;
+    });
+    html += '</div>';
+
+    // Pannello famiglia: counter ragazzi extra
+    if (selected === 'family') {
+        const kids = 1 + window._ctSimExtraKids;
+        html += `<div class="bg-amber-50 rounded-xl border border-amber-100 p-3 mb-3 animate-fade">
+            <p class="text-[11px] text-amber-700 font-medium mb-2.5">
+                <span class="material-icons text-xs align-middle mr-1">info</span>
+                ${window.t('ct_sim_family_desc')}
+            </p>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="material-icons text-slate-400 text-base">person</span>
+                    <span class="text-xs font-bold text-slate-700">2 ${window.t('ct_sim_adults_label')}</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="material-icons text-slate-400 text-base">child_care</span>
+                    <button onclick="window._ctSimKids(-1)"
+                        class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 font-bold text-lg active:scale-90 transition-all touch-manipulation ${kids <= 1 ? 'opacity-30 pointer-events-none' : ''}"
+                        ${kids <= 1 ? 'disabled' : ''}>−</button>
+                    <span class="text-sm font-black text-slate-800 w-5 text-center">${kids}</span>
+                    <button onclick="window._ctSimKids(1)"
+                        class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 font-bold text-lg active:scale-90 transition-all touch-manipulation ${kids >= 6 ? 'opacity-30 pointer-events-none' : ''}"
+                        ${kids >= 6 ? 'disabled' : ''}>+</button>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    panel.innerHTML = html;
+};
+
+/** Seleziona tipo acquirente */
+window._ctSimSelectBuyer = function(type) {
+    window._haptic(8);
+    window._ctSimBuyerType = type;
+    window._ctSimExtraKids = 0;
+    window._renderCTSimBuyer();
+    window._ctSimCalcPrice();
+};
+
+/** Incrementa/decrementa ragazzi famiglia */
+window._ctSimKids = function(dir) {
+    window._haptic(5);
+    window._ctSimExtraKids = Math.max(0, Math.min(5, window._ctSimExtraKids + dir));
+    window._renderCTSimBuyer();
+    window._ctSimCalcPrice();
+};
+
+/** Calcola e mostra il prezzo — lookup diretto: fascia del giorno di partenza nel calendario della durata scelta */
+window._ctSimCalcPrice = function() {
+    const resultPanel = document.getElementById('ct-sim-result');
+    if (!resultPanel) return;
+
+    const days = window._ctSimCardDays;
+    const dateISO = window._ctSimSelectedDate;
+    const buyer = window._ctSimBuyerType;
+    if (!dateISO || !buyer) { resultPanel.classList.add('hidden'); return; }
+
+    const lang = window.currentLang || 'it';
+    const dayNames = _CT_CAL_DAYS[lang] || _CT_CAL_DAYS.en;
+    const monthNames = _CT_CAL_MONTHS[lang] || _CT_CAL_MONTHS.en;
+
+    // Fascia del giorno di partenza nel calendario specifico per la durata
+    const band = window._getCTBand(dateISO, days);
+    if (!band) { resultPanel.classList.add('hidden'); return; }
+
+    // Lookup prezzo
+    const prices = window._CT_PRICES[days];
+    if (!prices || !prices[buyer]) { resultPanel.classList.add('hidden'); return; }
+
+    let totalCents = prices[buyer][band];
+
+    // Famiglia: aggiungi ragazzi extra (stessa fascia e durata)
+    let extraKidsCents = 0;
+    if (buyer === 'family' && window._ctSimExtraKids > 0) {
+        const childPrice = prices.child[band];
+        extraKidsCents = childPrice * window._ctSimExtraKids;
+        totalCents += extraKidsCents;
+    }
+
+    const totalEuro = (totalCents / 100).toFixed(2).replace('.', ',');
+
+    // Colori fascia
+    const bandColors = {
+        A: { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'A' },
+        B: { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-400', label: 'B' },
+        C: { bg: 'bg-rose-100', text: 'text-rose-700', dot: 'bg-rose-500', label: 'C' }
+    };
+    const bc = bandColors[band];
+
+    // Buyer label
+    const buyerLabels = { adult: window.t('ct_sim_adult'), child: window.t('ct_sim_child'), senior: window.t('ct_sim_senior'), family: window.t('ct_sim_family') };
+
+    // Date range display
+    const startD = new Date(dateISO + 'T12:00:00');
+    const startDow = (startD.getDay() + 6) % 7;
+    const startMIdx = startD.getMonth() - 2;
+    const startLabel = `${dayNames[startDow]} ${startD.getDate()} ${monthNames[startMIdx] || ''}`;
+
+    let endLabel = '';
+    if (days > 1) {
+        const lastD = new Date(startD);
+        lastD.setDate(lastD.getDate() + days - 1);
+        const lastDow = (lastD.getDay() + 6) % 7;
+        const lastMIdx = lastD.getMonth() - 2;
+        endLabel = ` → ${dayNames[lastDow]} ${lastD.getDate()} ${monthNames[lastMIdx] || ''}`;
+    }
+
+    // Extra kids breakdown
+    let extraKidsHtml = '';
+    if (buyer === 'family' && window._ctSimExtraKids > 0) {
+        const baseEuro = ((totalCents - extraKidsCents) / 100).toFixed(2).replace('.', ',');
+        const extraEuro = (extraKidsCents / 100).toFixed(2).replace('.', ',');
+        extraKidsHtml = `
+            <div class="flex flex-col gap-1 mt-3 pt-3 border-t border-white/10 text-[11px]">
+                <div class="flex items-center justify-between">
+                    <span class="text-white/50">${window.t('ct_sim_family_base')} (2+1)</span>
+                    <span class="text-white/70 font-bold">€ ${baseEuro}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-white/50">+ ${window._ctSimExtraKids} ${window.t('ct_sim_child')}</span>
+                    <span class="text-white/70 font-bold">€ ${extraEuro}</span>
+                </div>
+            </div>`;
+    }
+
+    resultPanel.classList.remove('hidden');
+    resultPanel.innerHTML = `
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 text-white shadow-lg animate-fade">
+            <div class="flex items-center justify-between mb-1">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-white/40">${window.t('ct_sim_estimate')}</p>
+                <span class="px-2.5 py-1 rounded-lg ${bc.bg} ${bc.text} text-[10px] font-black uppercase">${window.t('ct_sim_band')} ${bc.label}</span>
+            </div>
+            <p class="text-3xl font-black mb-1">€ ${totalEuro}</p>
+            <p class="text-[10px] text-white/40 font-medium mb-3">${startLabel}${endLabel}</p>
+
+            <div class="flex items-center gap-2 pt-3 border-t border-white/10">
+                <span class="material-icons text-white/30 text-sm">receipt_long</span>
+                <span class="text-[11px] text-white/50">${buyerLabels[buyer]} · MS ${days} ${days === 1 ? window.t('ct_sim_day') : window.t('ct_sim_days')}</span>
+            </div>
+
+            ${extraKidsHtml}
+
+            <p class="text-[9px] text-white/25 mt-3 leading-relaxed">${window.t('ct_sim_disclaimer')}</p>
+        </div>`;
+
+    setTimeout(() => resultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  NEAR ME — ORDINAMENTO PER DISTANZA (SECONDARIO)
+//
+//  Quando l'utente preme il bottone "Near Me" nella filter bar,
+//  la lista viene riordinata dal più vicino al più lontano.
+//
+//  Flusso:
+//    1. toggleNearMe() → chiede il permesso GPS (se non già dato)
+//    2. GeoTracker (sotto) ottiene la posizione
+//    3. sortByDistance() calcola la distanza in km per ogni item
+//    4. La lista viene ri-filtrata con il nuovo ordinamento
+//
+//  Dipendenze:
+//    GeoTracker (sotto) → per ottenere la posizione GPS
+//    app.js Sezione 13  → _requestGeoPermission() per il permesso
+//    app.js Sezione 9   → i filtri richiamano sortByDistance()
+// ═══════════════════════════════════════════════════════════════════════════
 // Toggle state: true = ordina per distanza, false = ordine originale
 window._nearMeEnabled = false;
 // Cached user position (aggiornata via GeoTracker singleton)
@@ -1435,34 +1868,26 @@ window.sortByDistance = function(items, latKey, lonKey) {
 };
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  10. SEGNALAZIONI — "Segnala un problema" su ogni card/modal
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEGNALAZIONI — "SEGNALA UN PROBLEMA" (SECONDARIO)
 //
-//  Tabella Supabase richiesta: "Segnalazioni"
-//  Colonne: id (bigint, identity), created_at (timestamptz, default now()),
-//           item_type (text), item_id (text), item_name (text),
-//           report_type (text), note (text), lang (text)
+//  Permette all'utente di segnalare errori sui dati (ristorante chiuso,
+//  indirizzo sbagliato, sentiero bloccato, ecc.)
 //
-//  RLS: abilitare e creare SOLO una policy INSERT per il ruolo anon.
-//  Nessuna policy SELECT/UPDATE/DELETE → i turisti non possono leggere/cancellare.
+//  Flusso:
+//    1. renderReportBtn() genera il bottoncino nei modali dettaglio
+//    2. Al tap si apre un bottom-sheet con 4 opzioni + campo note
+//    3. _submitReport() invia la segnalazione alla tabella Supabase "Segnalazioni"
+//    4. Rate limiting client-side: max 3 segnalazioni al minuto (sessionStorage)
 //
-//  SQL da eseguire su Supabase Dashboard → SQL Editor:
-//  ──────────────────────────────────────────────────
-//  CREATE TABLE IF NOT EXISTS "Segnalazioni" (
-//    id bigint generated always as identity primary key,
-//    created_at timestamptz default now(),
-//    item_type text not null,
-//    item_id text,
-//    item_name text,
-//    report_type text not null,
-//    note text default '',
-//    lang text default 'it'
-//  );
-//  ALTER TABLE "Segnalazioni" ENABLE ROW LEVEL SECURITY;
-//  CREATE POLICY "anon_can_insert" ON "Segnalazioni"
-//    FOR INSERT TO anon WITH CHECK (true);
-//  ──────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+//  Tabella Supabase necessaria: "Segnalazioni"
+//  Colonne: id, created_at, item_type, item_id, item_name, report_type, note, lang
+//  RLS: solo INSERT per il ruolo anon (i turisti non possono leggere/cancellare)
+//
+//  Dipendenze:
+//    data-logic.js → window.supabaseClient, window.t()
+//  Usata da: ui-modal.js → aggiunge renderReportBtn() nei modali reportabili
+// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Genera il bottoncino "Segnala" da inserire nelle card o nei modali.

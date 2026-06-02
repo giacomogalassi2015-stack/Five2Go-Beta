@@ -1,21 +1,57 @@
-// 1. CONFIGURAZIONE SUPABASE
+// ═══════════════════════════════════════════════════════════════════════════
+//  data-logic.js — DATI, TRADUZIONI E SERVIZI (PRIMARIO)
+//
+//  Questo è il PRIMO file caricato. Fornisce a tutti gli altri file:
+//    - Connessione al database (Supabase)
+//    - Sistema di traduzione (6 lingue)
+//    - Generazione URL immagini (Cloudinary)
+//    - Meteo in tempo reale (API Open-Meteo)
+//    - Utility per festivi italiani (per badge bus feriale/festivo)
+//
+//  ESPORTA SU WINDOW (usato dagli altri file):
+//    window.supabaseClient  → connessione al database
+//    window.appCache        → cache dati in memoria (evita fetch ripetuti)
+//    window.currentLang     → lingua corrente ('it','en','fr','de','es','zh')
+//    window.t(key)          → restituisce il testo tradotto per la chiave
+//    window.dbCol(item,key) → estrae un campo multilingua dal database
+//    window.valIT(item,key) → estrae un campo nella versione italiana (per URL immagini)
+//    window.getSmartUrl()   → genera URL Cloudinary ottimizzato per mobile
+//    window.escapeHtml()    → protegge da XSS nei template HTML
+//    window.AVAILABLE_LANGS → lista delle 6 lingue [{code,label,flag}]
+//    window.FERRY_STOPS     → fermate traghetto per il form di ricerca
+//    window.getChiccoRealTimeAdvice() → meteo + curiosità per la mascotte
+//
+//  CHI USA QUESTO FILE: tutti gli altri file JS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ───────────────────────────────────────────────────────────────────────
+//  CONNESSIONE DATABASE (Supabase)
+//  La chiave è "anon" (pubblica) — i dati sono protetti da Row Level Security.
+// ───────────────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://ydrpicezcwtfwdqpihsb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcnBpY2V6Y3d0ZndkcXBpaHNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNTQzMDAsImV4cCI6MjA4MzYzMDMwMH0.c89-gAZ8Pgp5Seq89BYRraTG-qqmP03LUCl1KqG9bOg';
 
-// RENDIAMO SUPABASE GLOBALE
+// Client Supabase disponibile globalmente per tutti i file
 window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// INIZIALIZZAZIONE CACHE
+// Cache in memoria: dopo il primo fetch, i dati restano qui per non ri-scaricarli
+// Invalidata dal pull-to-refresh (app.js Sezione 15)
 window.appCache = {};
+
+// ───────────────────────────────────────────────────────────────────────
+//  CLOUDINARY — Servizio immagini
+//  Tutte le foto dell'app sono su Cloudinary. getSmartUrl() genera l'URL
+//  con ridimensionamento automatico, formato WebP, e qualità ottimizzata.
+// ───────────────────────────────────────────────────────────────────────
 
 const CLOUDINARY_CLOUD_NAME = 'dkg0jfady';
 const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/`;
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  ESCAPE HTML — Protezione XSS
-//  Sanitizza stringhe prima di inserirle in innerHTML.
-//  Converte i 5 caratteri pericolosi (&<>"') in entità HTML.
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  SICUREZZA — Protezione XSS
+//  Converte caratteri pericolosi (<, >, ", ecc.) in entità HTML sicure.
+//  Usata da: ui-renderers.js in tutti i template delle card
+// ───────────────────────────────────────────────────────────────────────────
 window.escapeHtml = function(str) {
     if (str == null) return '';
     if (typeof str !== 'string') str = String(str);
@@ -27,20 +63,11 @@ window.escapeHtml = function(str) {
         .replace(/'/g,  '&#39;');
 };
 
-/** Wrapper: dbCol + escapeHtml. Per template HTML. */
-window.safeCol = function(item, field) {
-    return window.escapeHtml(window.dbCol(item, field));
-};
-
-/** Wrapper: valIT + escapeHtml. Per template HTML. */
-window.safeValIT = function(item, field) {
-    return window.escapeHtml(window.valIT(item, field));
-};
-
+// Lingua corrente — letta da localStorage (persiste tra sessioni)
 window.currentLang = localStorage.getItem('app_lang') || 'it';
 window.currentViewName = 'home';
 
-// 3. CONFIGURAZIONE LINGUE
+// Le 6 lingue supportate — usate dal pannello cambio lingua (app.js Sezione 14)
 window.AVAILABLE_LANGS = [
     { code: 'it', label: 'IT', flag: '🇮🇹' },
     { code: 'en', label: 'EN', flag: '🇬🇧' },
@@ -50,9 +77,18 @@ window.AVAILABLE_LANGS = [
     { code: 'zh', label: 'CN', flag: '🇨🇳' }
 ];
 
-// ==========================================================
-// UI-LANGUAGE.JS: DIZIONARIO COMPLETO (Interfaccia + Meteo)
-// ==========================================================
+// ═══════════════════════════════════════════════════════════════════════════
+//  DIZIONARIO TRADUZIONI — Tutti i testi dell'interfaccia in 6 lingue
+//
+//  Ogni chiave (es. "loading", "btn_map", "menu_rest") è usata in tutta l'app
+//  tramite window.t('chiave') che restituisce il testo nella lingua corrente.
+//
+//  Per aggiungere una nuova stringa:
+//    1. Aggiungi la chiave in TUTTI e 6 i blocchi lingua (it, en, fr, de, es, zh)
+//    2. Usa window.t('nuova_chiave') nel codice
+//
+//  Usata da: TUTTI i file JS
+// ═══════════════════════════════════════════════════════════════════════════
 
 const UI_TEXT = {
     it: {
@@ -99,12 +135,38 @@ const UI_TEXT = {
         // ----------------------------------
         bus_searching: "Cerco collegamenti...", bus_no_conn: "Nessun collegamento", 
         bus_no_dest: "Nessuna destinazione", bus_not_found: "Nessuna corsa trovata",
-        bus_try_change: "Prova a cambiare orario.", 
+        bus_try_change: "Prova a cambiare orario.",
+        ferry_no_corniglia: "Corniglia non ha un molo — il traghetto non effettua fermata. Prova da Vernazza o Manarola, i borghi più vicini!",
+        ferry_stop_not_served: "Questa fermata non è servita nella data selezionata. Prova a cambiare data o punto di partenza.", 
         badge_holiday: "📅 FESTIVO", badge_weekday: "🏢 FERIALE",
         label_warning: "ATTENZIONE",
         how_to_ticket: "COME ACQUISTARE IL BIGLIETTO",
         show_map: "MOSTRA MAPPA", hide_map: "NASCONDI MAPPA",
         map_hint: "Tocca i segnaposto per impostare Partenza/Arrivo",
+        map_title: "Five2Go consigliati",
+        map_count_label: "in vista",
+        ct_cal_showing: "Calendario fasce per la carta",
+        ct_sim_title: "Simulatore Prezzo",
+        ct_sim_subtitle: "Scopri quanto costa la tua Cinque Terre Card in base alla data e alla tipologia.",
+        ct_sim_step1: "Scegli la durata",
+        ct_sim_step2: "Scegli la data di inizio",
+        ct_sim_step3: "Chi viaggia?",
+        ct_sim_day: "Giorno",
+        ct_sim_days: "Giorni",
+        ct_sim_tap_hint: "Tocca un giorno nel calendario qui sopra per selezionare la data di inizio.",
+        ct_sim_adult: "Adulti (12-69)",
+        ct_sim_child: "Ragazzi (4-11)",
+        ct_sim_senior: "Over 70",
+        ct_sim_family: "Famiglia",
+        ct_sim_family_desc: "2 adulti + 1 o più ragazzi (4-11 anni non compiuti). Ogni ragazzo extra viene aggiunto al prezzo base.",
+        ct_sim_adults_label: "adulti",
+        ct_sim_who: "Tipologia acquirente",
+        ct_sim_estimate: "Prezzo Stimato",
+        ct_sim_band: "Fascia",
+        ct_sim_family_base: "Base famiglia",
+        ct_sim_disclaimer: "Prezzi indicativi basati sulle tariffe ufficiali 2026. Il prezzo effettivo può variare — verifica sul sito ufficiale al momento dell'acquisto.",
+        ct_sim_today: "Oggi",
+        explore_also: "Esplora anche",
         train_cta: "ORARI E BIGLIETTI",
         train_desc: "Il treno è il mezzo più veloce. Corse frequenti ogni 15-20 minuti tra i borghi.",
         avg_times: "Tempi Medi", between_villages: "Tra i Borghi", check_site: "Acquista e controlla gli orari sul sito ufficiale",
@@ -156,6 +218,10 @@ trail_source2_label: "Sito CAI La Spezia",
         sea_calm: "Calmo", sea_rough: "Mosso", sea_agitated: "Agitato!",
         label_humidity: "Umidità", label_sea: "Mare",
         chicco_welcome: "Piacere, sono Chicco! Sono il tuo assistente locale. Cliccami quando vuoi per meteo preciso, orari treni e consigli segreti!",
+        chicco_bubble_welcome: "Benvenuto! Sono Chicco, la tua guida. Toccami per info al volo! ✨",
+        chicco_bubble_morning: "Buongiorno! Toccami per il meteo di oggi ☀️",
+        chicco_bubble_afternoon: "Eccoti qui! Serve una dritta? Toccami 🍷",
+        chicco_bubble_evening: "Buonasera! Toccami per i piani di stasera 🌅",
         ptr_pull: "Tira per aggiornare",
         ptr_release: "Rilascia per aggiornare",
         ptr_loading: "Aggiornamento...",
@@ -195,7 +261,7 @@ trail_source2_label: "Sito CAI La Spezia",
             chicco_map_8: "🐟 Il giovedì a Riomaggiore c'è il mercatino locale. Acciughe, pesto fresco e limoncino artigianale.",
         // ── Conferma svuota ──
         confirm_clear_title: "Sei sicuro?", confirm_clear_wishlist: "Tutti i tuoi preferiti verranno rimossi.",
-        confirm_clear_itinerary: "Tutte le tappe verranno rimosse.", confirm_yes: "Sì, svuota", confirm_no: "Annulla",
+        confirm_yes: "Sì, svuota", confirm_no: "Annulla",
         // ── Geo modal ──
         geo_title: "Dove sei?", geo_desc: "Per mostrarti la tua posizione e trovare i posti più vicini, Five2Go ha bisogno di accedere alla posizione.",
         geo_privacy: "🔒 La tua posizione viene usata solo in questa sessione e non viene mai salvata.",
@@ -271,13 +337,39 @@ trail_source2_label: "CAI La Spezia Website",
         // --------------------
         bus_searching: "Searching...", bus_no_conn: "No connection", 
         bus_no_dest: "No destination", bus_not_found: "No runs found",
-        bus_try_change: "Try changing time.", 
+        bus_try_change: "Try changing time.",
+        ferry_no_corniglia: "Corniglia has no pier — the ferry doesn't stop there. Try Vernazza or Manarola, the nearest villages!",
+        ferry_stop_not_served: "This stop is not served on the selected date. Try changing the date or departure point.", 
         badge_holiday: "📅 HOLIDAY", badge_weekday: "🏢 WEEKDAY",
         label_warning: "WARNING",
         how_to_ticket: "HOW TO BUY TICKETS",
         show_map: "SHOW MAP", hide_map: "HIDE MAP",
         map_hint: "Tap markers to set Departure/Arrival",
+        map_title: "Five2Go picks",
+        map_count_label: "in view",
+        ct_cal_showing: "Band calendar for the",
+        ct_sim_title: "Price Simulator",
+        ct_sim_subtitle: "Find out how much your Cinque Terre Card costs based on date and traveller type.",
+        ct_sim_step1: "Choose duration",
+        ct_sim_step2: "Choose start date",
+        ct_sim_step3: "Who's travelling?",
+        ct_sim_day: "Day",
+        ct_sim_days: "Days",
+        ct_sim_tap_hint: "Tap a day on the calendar above to select your start date.",
+        ct_sim_adult: "Adults (12-69)",
+        ct_sim_child: "Children (4-11)",
+        ct_sim_senior: "Over 70",
+        ct_sim_family: "Family",
+        ct_sim_family_desc: "2 adults + 1 or more children (4-11 years). Each extra child is added to the base price.",
+        ct_sim_adults_label: "adults",
+        ct_sim_who: "Traveller type",
+        ct_sim_estimate: "Estimated Price",
+        ct_sim_band: "Band",
+        ct_sim_family_base: "Family base",
+        ct_sim_disclaimer: "Indicative prices based on official 2026 rates. Actual price may vary — check the official website at the time of purchase.",
+        ct_sim_today: "Today",
         train_cta: "TIMETABLE & TICKETS",
+        explore_also: "Explore also",
         train_desc: "The train is the fastest way. Frequent runs every 15-20 mins between villages.",
         avg_times: "Avg Times", between_villages: "Between Villages", check_site: "Buy and check times on the official site",
         ideal_for: "Best for", distance: "Distance", duration: "Duration", level: "Level",
@@ -301,6 +393,10 @@ trail_source2_label: "CAI La Spezia Website",
         sea_calm: "Calm", sea_rough: "Rough", sea_agitated: "Choppy!",
         label_humidity: "Humidity", label_sea: "Sea",
         chicco_welcome: "Hi, I'm Chicco! I'm your local assistant. Click me anytime for precise weather, train times, and secret tips!",
+        chicco_bubble_welcome: "Welcome! I'm Chicco, your guide. Tap me for instant tips! ✨",
+        chicco_bubble_morning: "Buongiorno! Tap me for today's weather ☀️",
+        chicco_bubble_afternoon: "There you are! Need a tip? Tap me 🍷",
+        chicco_bubble_evening: "Buonasera! Tap me for tonight's plans 🌅",
         ptr_pull: "Pull to refresh",
         ptr_release: "Release to refresh",
         ptr_loading: "Refreshing...",
@@ -339,7 +435,7 @@ trail_source2_label: "CAI La Spezia Website",
             chicco_map_7: "🍸 Monterosso has the biggest beach. The bars along the promenade serve spritz with a view of the medieval tower.",
             chicco_map_8: "🐟 On Thursdays in Riomaggiore there's a local market. Anchovies, fresh pesto and artisan limoncino.",
         confirm_clear_title: "Are you sure?", confirm_clear_wishlist: "All your favourites will be removed.",
-        confirm_clear_itinerary: "All stops will be removed.", confirm_yes: "Yes, clear", confirm_no: "Cancel",
+        confirm_yes: "Yes, clear", confirm_no: "Cancel",
         geo_title: "Where are you?", geo_desc: "To show your position and find the nearest places, Five2Go needs your location.",
         geo_privacy: "🔒 Your location is used only now and is never saved or shared.",
         geo_hint: "After tapping «Allow», look for the request in the browser bar above and approve.",
@@ -412,12 +508,38 @@ trail_source2_label: "Site Web CAI La Spezia",
         bus_searching: "Recherche connexions...", bus_no_conn: "Aucune connexion",
         bus_no_dest: "Aucune destination", bus_not_found: "Aucun trajet trouvé",
         bus_try_change: "Essayez de changer l'heure.",
+        ferry_no_corniglia: "Corniglia n'a pas de quai — le bateau ne s'y arrête pas. Essayez Vernazza ou Manarola, les villages les plus proches !",
+        ferry_stop_not_served: "Cet arrêt n'est pas desservi à la date sélectionnée. Essayez de changer la date ou le point de départ.", 
         badge_holiday: "📅 FÉRIÉ", badge_weekday: "🏢 SEMAINE",
         label_warning: "ATTENTION",
         how_to_ticket: "COMMENT ACHETER LE BILLET",
         show_map: "AFFICHER CARTE", hide_map: "MASQUER CARTE",
         map_hint: "Touchez les marqueurs pour définir Départ/Arrivée",
+        map_title: "Sélections Five2Go",
+        map_count_label: "en vue",
+        ct_cal_showing: "Calendrier des bandes pour la carte",
+        ct_sim_title: "Simulateur de Prix",
+        ct_sim_subtitle: "Découvrez le coût de votre Cinque Terre Card selon la date et le type de voyageur.",
+        ct_sim_step1: "Choisir la durée",
+        ct_sim_step2: "Choisir la date de début",
+        ct_sim_step3: "Qui voyage ?",
+        ct_sim_day: "Jour",
+        ct_sim_days: "Jours",
+        ct_sim_tap_hint: "Touchez un jour dans le calendrier ci-dessus pour sélectionner la date de début.",
+        ct_sim_adult: "Adultes (12-69)",
+        ct_sim_child: "Enfants (4-11)",
+        ct_sim_senior: "Plus de 70 ans",
+        ct_sim_family: "Famille",
+        ct_sim_family_desc: "2 adultes + 1 ou plusieurs enfants (4-11 ans). Chaque enfant supplémentaire est ajouté au prix de base.",
+        ct_sim_adults_label: "adultes",
+        ct_sim_who: "Type de voyageur",
+        ct_sim_estimate: "Prix Estimé",
+        ct_sim_band: "Bande",
+        ct_sim_family_base: "Base famille",
+        ct_sim_disclaimer: "Prix indicatifs basés sur les tarifs officiels 2026. Le prix réel peut varier — vérifiez sur le site officiel lors de l'achat.",
+        ct_sim_today: "Aujourd'hui",
         train_cta: "HORAIRES ET BILLETS",
+        explore_also: "Explorez aussi",
         train_desc: "Le train est le moyen le plus rapide. Départs fréquents toutes les 15-20 min entre les villages.",
         avg_times: "Temps Moyens", between_villages: "Entre les Villages", check_site: "Achetez et vérifiez les horaires sur le site officiel",
         ideal_for: "Idéal pour", distance: "Distance", duration: "Durée", level: "Niveau",
@@ -442,6 +564,10 @@ trail_source2_label: "Site Web CAI La Spezia",
         sea_calm: "Calme", sea_rough: "Agité", sea_agitated: "Très agité !",
         label_humidity: "Humidité", label_sea: "Mer",
         chicco_welcome: "Enchanté, je suis Chicco ! Je suis ton assistant local. Clique sur moi pour la météo, les horaires de train et des conseils secrets !",
+        chicco_bubble_welcome: "Bienvenue ! Moi c'est Chicco, ton guide. Touche-moi pour des infos express ! ✨",
+        chicco_bubble_morning: "Buongiorno ! Touche-moi pour la météo du jour ☀️",
+        chicco_bubble_afternoon: "Te revoilà ! Besoin d'un conseil ? Touche-moi 🍷",
+        chicco_bubble_evening: "Buonasera ! Touche-moi pour tes plans de ce soir 🌅",
         ptr_pull: "Tirez pour actualiser",
         ptr_release: "Relâchez pour actualiser",
         ptr_loading: "Actualisation...",
@@ -480,7 +606,7 @@ trail_source2_label: "Site Web CAI La Spezia",
             chicco_map_7: "🍸 Monterosso a la plus grande plage. Les bars servent des spritz avec vue sur la tour médiévale.",
             chicco_map_8: "🐟 Le jeudi à Riomaggiore il y a un marché local. Anchois, pesto frais et limoncino artisanal.",
         confirm_clear_title: "Êtes-vous sûr ?", confirm_clear_wishlist: "Tous vos favoris seront supprimés.",
-        confirm_clear_itinerary: "Toutes les étapes seront supprimées.", confirm_yes: "Oui, vider", confirm_no: "Annuler",
+        confirm_yes: "Oui, vider", confirm_no: "Annuler",
         geo_title: "Où êtes-vous ?", geo_desc: "Pour afficher votre position et trouver les arrêts les plus proches.",
         geo_privacy: "🔒 Votre position n'est utilisée que maintenant et n'est jamais enregistrée.",
         geo_hint: "Après avoir appuyé sur «Autoriser», cherchez la demande dans la barre du navigateur.",
@@ -554,12 +680,38 @@ trail_source2_label: "CAI La Spezia Webseite",
         bus_searching: "Suche Verbindungen...", bus_no_conn: "Keine Verbindung",
         bus_no_dest: "Kein Ziel", bus_not_found: "Keine Fahrt gefunden",
         bus_try_change: "Versuchen Sie eine andere Zeit.",
+        ferry_no_corniglia: "Corniglia hat keinen Anleger — die Fähre hält dort nicht. Versuchen Sie Vernazza oder Manarola, die nächsten Dörfer!",
+        ferry_stop_not_served: "Diese Haltestelle wird am gewählten Datum nicht bedient. Versuchen Sie ein anderes Datum oder einen anderen Abfahrtspunkt.", 
         badge_holiday: "📅 FEIERTAG", badge_weekday: "🏢 WERKTAG",
         label_warning: "ACHTUNG",
         how_to_ticket: "TICKETKAUF",
         show_map: "KARTE ANZEIGEN", hide_map: "KARTE AUSBLENDEN",
         map_hint: "Tippen Sie auf Marker für Start/Ziel",
+        map_title: "Five2Go Empfehlungen",
+        map_count_label: "sichtbar",
+        ct_cal_showing: "Bandkalender für die",
+        ct_sim_title: "Preissimulator",
+        ct_sim_subtitle: "Finden Sie heraus, was Ihre Cinque Terre Card je nach Datum und Reisetyp kostet.",
+        ct_sim_step1: "Dauer wählen",
+        ct_sim_step2: "Startdatum wählen",
+        ct_sim_step3: "Wer reist?",
+        ct_sim_day: "Tag",
+        ct_sim_days: "Tage",
+        ct_sim_tap_hint: "Tippen Sie auf einen Tag im Kalender oben, um das Startdatum auszuwählen.",
+        ct_sim_adult: "Erwachsene (12-69)",
+        ct_sim_child: "Kinder (4-11)",
+        ct_sim_senior: "Über 70",
+        ct_sim_family: "Familie",
+        ct_sim_family_desc: "2 Erwachsene + 1 oder mehr Kinder (4-11 Jahre). Jedes weitere Kind wird zum Grundpreis hinzugerechnet.",
+        ct_sim_adults_label: "Erwachsene",
+        ct_sim_who: "Reisetyp",
+        ct_sim_estimate: "Geschätzter Preis",
+        ct_sim_band: "Band",
+        ct_sim_family_base: "Familiengrundpreis",
+        ct_sim_disclaimer: "Richtwerte basierend auf den offiziellen Tarifen 2026. Der tatsächliche Preis kann abweichen — überprüfen Sie die offizielle Website beim Kauf.",
+        ct_sim_today: "Heute",
         train_cta: "FAHRPLÄNE & TICKETS",
+        explore_also: "Entdecken Sie auch",
         train_desc: "Der Zug ist am schnellsten. Häufige Fahrten alle 15-20 Min. zwischen den Dörfern.",
         avg_times: "Durchschn. Zeit", between_villages: "Zwischen Dörfern", check_site: "Kaufen & prüfen Sie Zeiten auf der offiziellen Seite",
         ideal_for: "Ideal für", distance: "Distanz", duration: "Dauer", level: "Niveau",
@@ -584,6 +736,10 @@ trail_source2_label: "CAI La Spezia Webseite",
         sea_calm: "Ruhig", sea_rough: "Rau", sea_agitated: "Sehr rau!",
         label_humidity: "Feuchtigkeit", label_sea: "Meer",
         chicco_welcome: "Freut mich, ich bin Chicco! Ich bin dein lokaler Assistent. Klick mich für Wetter, Zugzeiten und Geheimtipps!",
+        chicco_bubble_welcome: "Willkommen! Ich bin Chicco, dein Guide. Tipp mich für Sofort-Tipps! ✨",
+        chicco_bubble_morning: "Buongiorno! Tipp mich für das Wetter heute ☀️",
+        chicco_bubble_afternoon: "Da bist du! Brauchst du einen Tipp? Tipp mich 🍷",
+        chicco_bubble_evening: "Buonasera! Tipp mich für die Abendpläne 🌅",
         ptr_pull: "Zum Aktualisieren ziehen",
         ptr_release: "Zum Aktualisieren loslassen",
         ptr_loading: "Wird aktualisiert...",
@@ -622,7 +778,7 @@ trail_source2_label: "CAI La Spezia Webseite",
             chicco_map_7: "🍸 Monterosso hat den größten Strand. Die Bars an der Promenade servieren Spritz mit Blick auf den mittelalterlichen Turm.",
             chicco_map_8: "🐟 Donnerstags in Riomaggiore gibt es einen lokalen Markt. Sardellen, frisches Pesto und handgemachten Limoncino.",
         confirm_clear_title: "Bist du sicher?", confirm_clear_wishlist: "Alle Favoriten werden entfernt.",
-        confirm_clear_itinerary: "Alle Stopps werden entfernt.", confirm_yes: "Ja, löschen", confirm_no: "Abbrechen",
+        confirm_yes: "Ja, löschen", confirm_no: "Abbrechen",
         geo_title: "Wo bist du?", geo_desc: "Um deine Position anzuzeigen und die nächsten Orte zu finden.",
         geo_privacy: "🔒 Dein Standort wird nur jetzt verwendet und niemals gespeichert.",
         geo_hint: "Tippe auf «Erlauben» und bestätige dann in der Browserleiste oben.",
@@ -696,12 +852,38 @@ trail_source2_label: "Sitio Web CAI La Spezia",
         bus_searching: "Buscando conexiones...", bus_no_conn: "Sin conexión",
         bus_no_dest: "Sin destino", bus_not_found: "No se encontraron viajes",
         bus_try_change: "Prueba a cambiar el horario.",
+        ferry_no_corniglia: "Corniglia no tiene muelle — el barco no para allí. ¡Prueba desde Vernazza o Manarola, los pueblos más cercanos!",
+        ferry_stop_not_served: "Esta parada no tiene servicio en la fecha seleccionada. Prueba a cambiar la fecha o el punto de salida.", 
         badge_holiday: "📅 FESTIVO", badge_weekday: "🏢 LABORABLE",
         label_warning: "ATENCIÓN",
         how_to_ticket: "CÓMO COMPRAR EL BILLETE",
         show_map: "MOSTRAR MAPA", hide_map: "OCULTAR MAPA",
         map_hint: "Toca los marcadores para fijar Salida/Llegada",
+        map_title: "Recomendados Five2Go",
+        map_count_label: "a la vista",
+        ct_cal_showing: "Calendario de franjas para la tarjeta",
+        ct_sim_title: "Simulador de Precio",
+        ct_sim_subtitle: "Descubre cuánto cuesta tu Cinque Terre Card según la fecha y el tipo de viajero.",
+        ct_sim_step1: "Elige la duración",
+        ct_sim_step2: "Elige la fecha de inicio",
+        ct_sim_step3: "¿Quién viaja?",
+        ct_sim_day: "Día",
+        ct_sim_days: "Días",
+        ct_sim_tap_hint: "Toca un día en el calendario de arriba para seleccionar la fecha de inicio.",
+        ct_sim_adult: "Adultos (12-69)",
+        ct_sim_child: "Niños (4-11)",
+        ct_sim_senior: "Mayores de 70",
+        ct_sim_family: "Familia",
+        ct_sim_family_desc: "2 adultos + 1 o más niños (4-11 años). Cada niño extra se suma al precio base.",
+        ct_sim_adults_label: "adultos",
+        ct_sim_who: "Tipo de viajero",
+        ct_sim_estimate: "Precio Estimado",
+        ct_sim_band: "Franja",
+        ct_sim_family_base: "Base familia",
+        ct_sim_disclaimer: "Precios indicativos basados en tarifas oficiales 2026. El precio real puede variar — consulta la web oficial al momento de la compra.",
+        ct_sim_today: "Hoy",
         train_cta: "HORARIOS Y BILLETES",
+        explore_also: "Explora también",
         train_desc: "El tren es el medio más rápido. Frecuencia cada 15-20 min entre pueblos.",
         avg_times: "Tiempos Medios", between_villages: "Entre Pueblos", check_site: "Compra y revisa horarios en la web oficial",
         ideal_for: "Ideal para", distance: "Distancia", duration: "Duración", level: "Nivel",
@@ -726,6 +908,10 @@ trail_source2_label: "Sitio Web CAI La Spezia",
         sea_calm: "Calma", sea_rough: "Movido", sea_agitated: "¡Muy agitado!",
         label_humidity: "Humedad", label_sea: "Mar",
         chicco_welcome: "¡Hola, soy Chicco! Soy tu asistente local. ¡Hazme clic para ver el tiempo, trenes y consejos secretos!",
+        chicco_bubble_welcome: "¡Bienvenido! Soy Chicco, tu guía. ¡Tócame para info al instante! ✨",
+        chicco_bubble_morning: "¡Buongiorno! Tócame para el clima de hoy ☀️",
+        chicco_bubble_afternoon: "¡Aquí estás! ¿Necesitas un consejo? Tócame 🍷",
+        chicco_bubble_evening: "¡Buonasera! Tócame para los planes de esta noche 🌅",
         ptr_pull: "Desliza para actualizar",
         ptr_release: "Suelta para actualizar",
         ptr_loading: "Actualizando...",
@@ -764,7 +950,7 @@ trail_source2_label: "Sitio Web CAI La Spezia",
             chicco_map_7: "🍸 Monterosso tiene la playa más grande. Los bares sirven spritz con vista a la torre medieval.",
             chicco_map_8: "🐟 Los jueves en Riomaggiore hay un mercadillo local. Anchoas, pesto fresco y limoncino artesanal.",
         confirm_clear_title: "¿Estás seguro?", confirm_clear_wishlist: "Todos tus favoritos serán eliminados.",
-        confirm_clear_itinerary: "Todas las paradas serán eliminadas.", confirm_yes: "Sí, limpiar", confirm_no: "Cancelar",
+        confirm_yes: "Sí, limpiar", confirm_no: "Cancelar",
         geo_title: "¿Dónde estás?", geo_desc: "Para mostrarte tu posición y encontrar los lugares más cercanos.",
         geo_privacy: "🔒 Tu ubicación se usa solo ahora y nunca se guarda ni comparte.",
         geo_hint: "Tras pulsar «Permitir», busca la solicitud en la barra del navegador.",
@@ -838,12 +1024,38 @@ trail_source2_label: "CAI La Spezia 网站",
         bus_searching: "正在搜索连接...", bus_no_conn: "无连接",
         bus_no_dest: "无目的地", bus_not_found: "未找到班次",
         bus_try_change: "尝试更改时间。",
+        ferry_no_corniglia: "科尔尼利亚没有码头——渡轮不在此停靠。请尝试韦尔纳扎或马纳罗拉，最近的村庄！",
+        ferry_stop_not_served: "该站点在所选日期没有服务。请尝试更改日期或出发点。", 
         badge_holiday: "📅 节假日", badge_weekday: "🏢 工作日",
         label_warning: "注意",
         how_to_ticket: "如何购票",
         show_map: "显示地图", hide_map: "隐藏地图",
         map_hint: "点击标记以设置出发/到达",
+        map_title: "Five2Go 精选",
+        map_count_label: "可见",
+        ct_cal_showing: "价格分区日历，适用于",
+        ct_sim_title: "价格模拟器",
+        ct_sim_subtitle: "根据日期和旅客类型，查看五渔村卡的费用。",
+        ct_sim_step1: "选择时长",
+        ct_sim_step2: "选择开始日期",
+        ct_sim_step3: "谁在旅行？",
+        ct_sim_day: "天",
+        ct_sim_days: "天",
+        ct_sim_tap_hint: "点击上方日历中的某一天来选择开始日期。",
+        ct_sim_adult: "成人 (12-69)",
+        ct_sim_child: "儿童 (4-11)",
+        ct_sim_senior: "70岁以上",
+        ct_sim_family: "家庭",
+        ct_sim_family_desc: "2位成人 + 1位或多位儿童（4-11岁）。每位额外儿童将加到基础价格上。",
+        ct_sim_adults_label: "成人",
+        ct_sim_who: "旅客类型",
+        ct_sim_estimate: "预估价格",
+        ct_sim_band: "分区",
+        ct_sim_family_base: "家庭基础价",
+        ct_sim_disclaimer: "价格基于2026年官方费率，仅供参考。实际价格可能有所不同——购买时请查阅官方网站。",
+        ct_sim_today: "今天",
         train_cta: "时刻表与车票",
+        explore_also: "探索更多",
         train_desc: "火车是最快的交通方式。村庄间每15-20分钟一班。",
         avg_times: "平均时间", between_villages: "村庄之间", check_site: "在官网购买并检查时刻表",
         ideal_for: "适合", distance: "距离", duration: "时长", level: "难度",
@@ -867,6 +1079,10 @@ trail_source2_label: "CAI La Spezia 网站",
         sea_calm: "平静", sea_rough: "有浪", sea_agitated: "巨浪！",
         label_humidity: "湿度", label_sea: "海况",
         chicco_welcome: "你好，我是Chicco！你的本地助手。点击我可以查看精准天气、火车时刻和秘密建议！",
+        chicco_bubble_welcome: "欢迎！我是Chicco，你的向导。点我获取即时攻略！✨",
+        chicco_bubble_morning: "Buongiorno！点我查看今日天气 ☀️",
+        chicco_bubble_afternoon: "你来啦！需要建议吗？点我 🍷",
+        chicco_bubble_evening: "Buonasera！点我看今晚安排 🌅",
         ptr_pull: "下拉刷新",
         ptr_release: "松开以刷新",
         ptr_loading: "刷新中...",
@@ -905,7 +1121,7 @@ trail_source2_label: "CAI La Spezia 网站",
             chicco_map_7: "🍸 蒙泰罗索有最大的海滩，海滨酒吧供应Spritz，可欣赏中世纪塔楼。",
             chicco_map_8: "🐟 每逢周四，里奥马焦雷有本地集市：鳀鱼、新鲜罗勒酱和手工柠檬酒。",
         confirm_clear_title: "确定吗？", confirm_clear_wishlist: "所有收藏将被移除。",
-        confirm_clear_itinerary: "所有站点将被移除。", confirm_yes: "是，清空", confirm_no: "取消",
+        confirm_yes: "是，清空", confirm_no: "取消",
         geo_title: "你在哪里？", geo_desc: "为了在地图上显示你的位置并找到最近的站点。",
         geo_privacy: "🔒 你的位置仅在此次使用，不会被保存或分享。",
         geo_hint: "点击«允许»后，请在浏览器顶部栏确认请求。",
@@ -920,24 +1136,37 @@ trail_source2_label: "CAI La Spezia 网站",
 
 // FERRY_STOPS: esposto su window qui per evitare dipendenza dall'ordine di caricamento degli script.
 // ui-modal-contents.js lo sovrascrive con la stessa lista (compatibilità mantenuta).
+// IDs match ferry_stops.name in Supabase (sort_order ascending)
+// Corniglia è inclusa per UX (il turista la cerca) ma il check in
+// eseguiRicercaTraghetto mostra un messaggio specifico (no molo).
 window.FERRY_STOPS = [
-    { id: 'levanto', label: 'Levanto' },
-    { id: 'monterosso', label: 'Monterosso' },
-    { id: 'vernazza', label: 'Vernazza' },
-    { id: 'corniglia', label: 'Corniglia' },
-    { id: 'manarola', label: 'Manarola' },
+    { id: 'lerici',      label: 'Lerici' },
+    { id: 'la_spezia',   label: 'La Spezia' },
+    { id: 'portovenere', label: 'Porto Venere' },
     { id: 'riomaggiore', label: 'Riomaggiore' },
-    { id: 'portovenere', label: 'Portovenere' },
-    { id: 'la spezia', label: 'La Spezia' },
-    { id: 'lerici', label: 'Lerici' }
+    { id: 'manarola',    label: 'Manarola' },
+    { id: 'corniglia',   label: 'Corniglia' },
+    { id: 'vernazza',    label: 'Vernazza' },
+    { id: 'monterosso',  label: 'Monterosso' },
+    { id: 'levanto',     label: 'Levanto' }
 ];
 
-// 5. HELPER FUNCTIONS GLOBALI
+// ═══════════════════════════════════════════════════════════════════════════
+//  FUNZIONI HELPER GLOBALI (PRIMARIO)
+//  Queste sono le funzioni più usate in tutta l'app.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Restituisce il testo tradotto per una chiave. Se la chiave non esiste, la restituisce tal quale.
+// Esempio: window.t('btn_map') → "Mappa" (in italiano) o "Map" (in inglese)
 window.t = function(key) {
     const langDict = UI_TEXT[window.currentLang] || UI_TEXT['it'];
     return langDict[key] || key;
 };
 
+// Estrae un campo dal database nella lingua corrente.
+// I campi multilingua in Supabase sono salvati come oggetto {it:"...", en:"...", fr:"..."}
+// Questa funzione restituisce il valore nella lingua giusta, con fallback all'italiano.
+// Esempio: window.dbCol(ristorante, 'Nome') → "The best restaurant" (se lang='en')
 window.dbCol = function(item, field) {
     if (!item || !item[field]) return '';
     let value = item[field];
@@ -947,6 +1176,10 @@ window.dbCol = function(item, field) {
     return value;
 };
 
+// Genera l'URL Cloudinary ottimizzato per un'immagine.
+// Applica: ridimensionamento, formato auto (WebP), qualità eco, no retina 2x.
+// Il nome viene usato come path Cloudinary (le foto si chiamano come l'elemento).
+// Esempio: window.getSmartUrl('Manarola', '', 900) → URL della foto di Manarola larga 900px
 window.getSmartUrl = function(name, folder = '', width = 600) {
     if (!name) return 'https://via.placeholder.com/600x400?text=No+Image';
     const safeName = encodeURIComponent(name.trim()); 
@@ -956,6 +1189,9 @@ window.getSmartUrl = function(name, folder = '', width = 600) {
     return `${CLOUDINARY_BASE_URL}/w_${width},c_fill,g_auto,f_auto,q_auto:eco,dpr_1.0,fl_progressive/${folderPath}${safeName}`;
 };
 
+// Come dbCol, ma restituisce SEMPRE la versione italiana.
+// Serve per generare URL Cloudinary (le foto hanno nomi italiani)
+// e per confronti interni dove la lingua dell'utente non conta.
 window.valIT = function(item, field) {
     if (!item || !item[field]) return '';
     let value = item[field];
@@ -965,16 +1201,18 @@ window.valIT = function(item, field) {
     return value;
 };
 
-// Nota: questa definizione viene sovrascritta da app.js (caricato dopo).
-// Mantenuta come fallback di sicurezza con chiave localStorage coerente.
-window.changeLanguage = function(langCode) {
-    window.currentLang = langCode;
-    localStorage.setItem('app_lang', langCode); // chiave unificata con app.js
-    location.reload();
-};
+// changeLanguage: definita in app.js (caricato dopo)
 
-// getLangText: rimosso (non usato — sostituito da window.dbCol e window.t)
 
+
+// ───────────────────────────────────────────────────────────────────────
+//  FESTIVI ITALIANI (TERZIARIO)
+//  Usata da: app.js Sezione 15 (trasporti) per mostrare il badge
+//  "FESTIVO" o "FERIALE" nella ricerca orari bus.
+//  Calcola Pasqua e Pasquetta con l'algoritmo di Gauss.
+// ───────────────────────────────────────────────────────────────────────
+
+// Calcola la data di Pasqua per un anno dato (algoritmo di Gauss)
 function getEasterDate(year) {
     const a = year % 19;
     const b = Math.floor(year / 100);
@@ -995,6 +1233,7 @@ function getEasterDate(year) {
     return new Date(year, month, day);
 }
 
+// Restituisce true se una data è festiva in Italia (domenica, feste fisse, Pasquetta)
 function isItalianHoliday(dateObj) {
     const d = dateObj.getDate();
     const m = dateObj.getMonth() + 1; 
@@ -1014,8 +1253,25 @@ function isItalianHoliday(dateObj) {
     return false;
 }
 
-// getLangText era qui — rimossa perché mai utilizzata nel codebase attuale.
 
+
+// ───────────────────────────────────────────────────────────────────────
+//  CHICCO METEO E CURIOSITÀ (SECONDARIO)
+//
+//  getChiccoRealTimeAdvice() viene chiamata quando l'utente tocca Chicco.
+//  Chiama l'API Open-Meteo (gratuita, no API key) per le Cinque Terre
+//  e restituisce: icona meteo, temperatura, umidità, stato mare + una curiosità random.
+//
+//  La risposta viene cachata 15 minuti per evitare fetch ripetuti.
+//
+//  TRIVIA_KEYS: 26 curiosità sulle Cinque Terre (tradotte nel dizionario)
+//  MAP_CHICCO_KEYS: 8 frasi specifiche per quando Chicco è sulla mappa
+//
+//  Dipendenze: API Open-Meteo (fetch HTTP), window.t() per le traduzioni
+//  Usata da: app.js Sezione 14 (toggleChicco → card meteo)
+// ───────────────────────────────────────────────────────────────────────
+
+// Chiavi delle curiosità random (i testi sono nel dizionario UI_TEXT)
 const TRIVIA_KEYS = [
     "trivia_1", "trivia_2", "trivia_3", "trivia_4", "trivia_5", 
     "trivia_6", "trivia_7", "trivia_8", "trivia_9", "trivia_10", 
@@ -1024,14 +1280,14 @@ const TRIVIA_KEYS = [
     "trivia_21", "trivia_22", "trivia_23", "trivia_24", "trivia_25", "trivia_26"
 ];
 
+// Frasi di Chicco specifiche per la vista mappa
 const MAP_CHICCO_KEYS = [
     "chicco_map_1", "chicco_map_2", "chicco_map_3", "chicco_map_4",
     "chicco_map_5", "chicco_map_6", "chicco_map_7", "chicco_map_8"
 ];
 
-// ── Cache meteo in memoria (TTL 15 minuti) ────────────────────────
-// Evita fetch ripetuti ad ogni tap su Chicco nella stessa sessione.
-// In caso di errore la cache viene invalidata così al prossimo tap riprova.
+// Cache meteo in memoria: evita di richiamare l'API ad ogni tap su Chicco.
+// Si resetta dopo 15 minuti (WEATHER_TTL_MS) o in caso di errore.
 let _weatherCache   = null;
 let _weatherCacheTs = 0;
 const WEATHER_TTL_MS = 15 * 60 * 1000; // 15 minuti

@@ -1,6 +1,45 @@
-// ════════════════════════════════════════════════════
-//  SKELETON LOADERS
-// ════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+//  ui-renderers.js — TEMPLATE DELLE CARD (PRIMARIO)
+//
+//  Contiene tutti i "renderer": funzioni che prendono un oggetto dal database
+//  e restituiscono l'HTML di una card per quella categoria.
+//
+//  Ogni renderer è una funzione che riceve un item e restituisce una stringa HTML.
+//  Le card usano tutte il template renderMasterCard() come base comune.
+//
+//  RENDERER DISPONIBILI (ognuno esposto su window):
+//    ristoranteRenderer  → Card ristorante con foto, paese, bottoni mappa/tel
+//    attrazioniRenderer  → Card attrazione con foto, paese, categoria
+//    spiaggiaRenderer    → Card spiaggia con foto, paese, bottone mappa
+//    prodottoRenderer    → Card prodotto (griglia 2 colonne, senza foto grande)
+//    vinoRenderer        → Card vino (layout orizzontale speciale)
+//    sentieroRenderer    → Card sentiero con mini-mappa GPX Leaflet
+//    farmacieRenderer    → Card farmacia (layout compatto con telefono)
+//    numeriUtiliRenderer → Card numero utile (layout compatto con telefono)
+//
+//  TEMPLATE BASE:
+//    renderMasterCard()  → Card con foto hero, titolo, bottoni azione
+//    renderWineCard()    → Card orizzontale per vini
+//    renderUtilityCard() → Card compatta per farmacie e numeri utili
+//    getCandyBtn()       → Bottone ghost con bordo colorato (Mappa, Tel, Info)
+//
+//  DIPENDENZE:
+//    data-logic.js  → window.dbCol(), window.valIT(), window.t(),
+//                     window.getSmartUrl(), window.escapeHtml()
+//    features.js    → window.renderHeartBtnOverlay() per il cuoricino wishlist
+//    ui-modal.js    → openModal() chiamata dall'onclick delle card
+//    app.js         → window.pendingMaps[] per le mini-mappe GPX dei sentieri
+//
+//  USATO DA:
+//    app.js Sezione 9 → loadTableData() passa i dati a questi renderer
+//    app.js Sezione 11 → la ricerca globale usa getName/getSub per i risultati
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ───────────────────────────────────────────────────────────────────────
+//  SKELETON LOADERS (TERZIARIO)
+//  Animazioni di caricamento "pulsanti" che appaiono mentre i dati
+//  vengono scaricati dal database. Ogni tabella ha il suo layout skeleton.
+// ───────────────────────────────────────────────────────────────────────
 window.renderSkeletonList = function(tableName) {
     if (tableName === 'Vini') {
         return Array(4).fill(0).map(() => `
@@ -52,25 +91,39 @@ window.renderSkeletonList = function(tableName) {
     </div>`).join('');
 };
 
-/** HELPER: CANDY BTN (Per le altre card standard) */
+// ───────────────────────────────────────────────────────────────────────
+//  BOTTONE "CANDY" — bottone trasparente con bordo colorato e icona.
+//  Usato nella barra azioni di ogni card (Mappa, Tel, Info).
+//  Al tocco si riempie brevemente del colore (feedback tattile).
+//  Min 44px touch target per accessibilità mobile (WCAG).
+// ───────────────────────────────────────────────────────────────────────
 function getCandyBtn(icon, label, color, onclick) {
-    // Colori pastello/soft meno vibranti
     const colors = {
-        'orange': 'bg-orange-50 text-orange-600 border-orange-100', 
-        'blue':   'bg-sky-50 text-sky-600 border-sky-100',       
-        'green':  'bg-emerald-50 text-emerald-600 border-emerald-100',    
-        'red':    'bg-rose-50 text-rose-600 border-rose-100',
-        'purple': 'bg-slate-50 text-slate-600 border-slate-200',
-        'yellow': 'bg-amber-50 text-amber-600 border-amber-100', 
+        'map':     'text-ct-shore border-ct-shore/40 active:bg-ct-shore active:text-white',
+        'phone':   'text-ct-sage border-ct-sage/40 active:bg-ct-sage active:text-white',
+        'info':    'text-ct-cream-dark border-ct-cream-dark/60 active:bg-ct-cream-dark active:text-primary',
+        'orange':  'text-ct-terracotta border-ct-terracotta/40 active:bg-ct-terracotta active:text-white',
+        'blue':    'text-ct-shore border-ct-shore/40 active:bg-ct-shore active:text-white',
+        'green':   'text-ct-sage border-ct-sage/40 active:bg-ct-sage active:text-white',
+        'red':     'text-ct-wine border-ct-wine/40 active:bg-ct-wine active:text-white',
+        'purple':  'text-ct-service border-ct-service/40 active:bg-ct-service active:text-white',
+        'yellow':  'text-ct-yellow border-ct-yellow/50 active:bg-ct-yellow active:text-primary',
     };
     const theme = colors[color] || colors['blue'];
 
     return `
-    <button class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl ${theme} border shadow-sm active:scale-95 transition-all duration-200 cursor-pointer touch-manipulation" onclick="${onclick}">
+    <button class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-transparent ${theme} border shadow-none active:scale-95 transition-all duration-300 cursor-pointer touch-manipulation" onclick="${onclick}">
         <span class="material-icons text-sm">${icon}</span>
         ${label ? `<span class="text-[11px] font-bold uppercase tracking-wide">${label}</span>` : ''}
     </button>`;
 }
+// ───────────────────────────────────────────────────────────────────────
+//  MASTER CARD — Template base per ristoranti, attrazioni, spiagge.
+//  Due varianti:
+//    - CON immagine: foto hero + titolo sovrapposto + barra azioni
+//    - SENZA immagine: sfondo gradiente con icona grande + titolo sotto
+//  La barra azioni in basso ha: chip paese (sinistra) + bottoni (destra)
+// ───────────────────────────────────────────────────────────────────────
 function renderMasterCard({ id, onClick, label, title, subText, image, iconFallback, themeColor, buttonsHtml, heartOverlayHtml }) {
     const esc = window.escapeHtml || (s => s);
     title = esc(title); subText = esc(subText); label = esc(label);
@@ -99,12 +152,12 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
         </div>`;
     } else {
         const bgMap = {
-            'orange': 'from-orange-100 to-orange-50 text-ct-terracotta',
-            'blue':   'from-cyan-100 to-cyan-50 text-ct-blue',
-            'green':  'from-lime-100 to-lime-50 text-ct-green',
-            'yellow': 'from-yellow-100 to-yellow-50 text-yellow-600',
-            'purple': 'from-slate-100 to-slate-50 text-slate-500',
-            'red':    'from-red-100 to-red-50 text-red-500'
+            'orange': 'from-ct-terracotta-light to-orange-50/50 text-ct-terracotta',
+            'blue':   'from-ct-shore-light to-sky-50/50 text-ct-shore',
+            'green':  'from-ct-sage-light to-emerald-50/50 text-ct-sage',
+            'yellow': 'from-ct-yellow-light to-amber-50/50 text-ct-yellow',
+            'purple': 'from-ct-service-light to-slate-50/50 text-ct-service',
+            'red':    'from-ct-wine-light to-rose-50/50 text-ct-wine'
         };
         const themeClass = bgMap[themeColor] || bgMap['blue'];
         return `
@@ -135,19 +188,20 @@ function renderMasterCard({ id, onClick, label, title, subText, image, iconFallb
     }
 }
 
+// WINE CARD — Layout orizzontale speciale per i vini (miniatura + info a destra)
 function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, themeColor, buttonsHtml, heartOverlayHtml }) {
     const esc = window.escapeHtml || (s => s);
     title = esc(title); typeLabel = esc(typeLabel); producer = esc(producer); grapes = esc(grapes);
     const colors = {
-        'yellow': 'bg-[#E9C46A] text-yellow-900', 
-        'red':    'bg-[#9B2226] text-red-100',     
-        'orange': 'bg-[#E76F51] text-orange-100'   
+        'yellow': 'bg-ct-yellow text-yellow-900',     /* Bianco → ocra */
+        'red':    'bg-ct-wine text-rose-100',          /* Rosso → borgogna spento */
+        'orange': 'bg-ct-terracotta text-orange-50'    /* Passito → terracotta polveroso */
     };
     const themeClass = colors[themeColor] || colors['red'];
     const iconColor = themeColor === 'yellow' ? 'text-yellow-800' : 'text-white';
 
     return `
-    <div class="flex bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-h-[140px] cursor-pointer touch-manipulation active:scale-[0.98] active:shadow-sm transition-all duration-150 mb-3 group relative" data-card-id="${id}" onclick="${onClick}">
+    <div class="flex bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-h-[140px] cursor-pointer touch-manipulation active:scale-[0.98] active:shadow-sm transition-all duration-300 mb-3 group relative" data-card-id="${id}" onclick="${onClick}">
         <div class="w-24 ${themeClass} flex items-center justify-center relative overflow-hidden shrink-0">
             <span class="material-icons text-4xl ${iconColor} drop-shadow-sm opacity-90 relative z-10">wine_bar</span>
         </div>
@@ -158,7 +212,7 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
                     ${typeLabel}
                 </span>
             </div>
-            <h3 class="font-serif text-lg font-bold text-slate-800 leading-snug mb-1 pr-2 group-hover:text-ct-terracotta transition-colors line-clamp-2">${title}</h3>
+            <h3 class="font-serif text-lg font-bold text-slate-800 leading-snug mb-1 pr-2 group-hover:text-ct-wine transition-colors line-clamp-2">${title}</h3>
             <div class="flex items-center gap-1.5 mb-3 min-w-0">
                 <span class="material-icons text-[14px] text-slate-300 shrink-0">storefront</span>
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wide truncate">${producer}</span>
@@ -176,30 +230,35 @@ function renderWineCard({ id, onClick, typeLabel, title, producer, grapes, theme
     </div>`;
 }
 
+// UTILITY CARD — Layout compatto per farmacie e numeri utili (icona + nome + telefono)
 function renderUtilityCard({ id, icon, title, subtitle, phone, color }) {
     const esc = window.escapeHtml || (s => s);
     title = esc(title); subtitle = esc(subtitle);
     const iconColors = {
-        'green': 'bg-green-100 text-green-700', 'blue': 'bg-blue-100 text-blue-700',
-        'purple': 'bg-purple-100 text-purple-700', 'red': 'bg-red-100 text-red-700'
+        'green':  'bg-ct-health-light text-ct-health',
+        'blue':   'bg-ct-service-light text-ct-service',
+        'purple': 'bg-ct-service-light text-ct-service',
+        'red':    'bg-ct-terracotta-light text-ct-terracotta'
     };
     const iconTheme = iconColors[color] || iconColors['blue'];
     
     return `
-    <div class="flex items-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm mb-2 animate-pop active:scale-[0.98] active:shadow-none transition-all duration-150 touch-manipulation cursor-pointer" data-card-id="${id || ''}">
-        <div class="w-12 h-12 rounded-xl ${iconTheme} flex items-center justify-center shrink-0 mr-4">
+    <div class="flex items-center p-4 bg-white rounded-2xl border border-slate-100/60 shadow-soft mb-2 animate-pop active:scale-[0.98] active:shadow-none transition-all duration-300 touch-manipulation cursor-pointer" data-card-id="${id || ''}">
+        <div class="w-12 h-12 rounded-2xl ${iconTheme} flex items-center justify-center shrink-0 mr-4">
             <span class="material-icons text-2xl">${icon}</span>
         </div>
         <div class="flex-1 min-w-0">
-            <h3 class="font-bold text-slate-800 text-sm truncate">${title}</h3>
+            <h3 class="font-bold text-primary text-sm truncate">${title}</h3>
             <p class="text-[11px] font-bold uppercase text-slate-400 tracking-wide truncate">${subtitle}</p>
         </div>
-        ${phone ? `<button onclick="window.location.href='tel:${phone}'" class="ml-3 w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 active:bg-slate-100 active:scale-95 transition-all touch-manipulation cursor-pointer"><span class="material-icons text-xl">call</span></button>` : ''}
+        ${phone ? `<button onclick="window.location.href='tel:${phone}'" class="ml-3 w-11 h-11 rounded-2xl border border-ct-sage/40 flex items-center justify-center text-ct-sage active:bg-ct-sage active:text-white active:scale-95 transition-all duration-300 touch-manipulation cursor-pointer"><span class="material-icons text-xl">call</span></button>` : ''}
     </div>`;
 }
 
 // --- RENDERERS ---
 
+// RISTORANTE — Card con foto, paese, bottoni Mappa e Tel
+// Apre il modale 'ristorante' al tap. Usata da: loadTableData('Ristoranti')
 window.ristoranteRenderer = (r) => {
     const nome = window.dbCol(r, 'Nome') || 'Ristorante';
     const nomeIT = window.valIT(r, 'Nome'); 
@@ -222,12 +281,14 @@ window.ristoranteRenderer = (r) => {
         themeColor: 'yellow',
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
-            ${getCandyBtn('map', window.t('btn_map'), 'green', `event.stopPropagation(); window.open('${mapLink}', '_blank')`)}
-            ${numero ? getCandyBtn('call', 'Tel', 'green', `event.stopPropagation(); window.location.href='tel:${numero}'`) : ''}
+            ${getCandyBtn('map', window.t('btn_map'), 'map', `event.stopPropagation(); window.open('${mapLink}', '_blank')`)}
+            ${numero ? getCandyBtn('call', 'Tel', 'phone', `event.stopPropagation(); window.location.href='tel:${numero}'`) : ''}
         `
     });
 };
 
+// ATTRAZIONE — Card con foto, paese, categoria (es. Cultura, Sacro, Panorama)
+// Apre il modale 'attrazione' al tap. Usata da: loadTableData('Attrazioni')
 window.attrazioniRenderer = function(item) {
     const safeId = item.POI_ID || item.id;
     const titolo = window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo');
@@ -255,11 +316,13 @@ window.attrazioniRenderer = function(item) {
         themeColor: themeColor,
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
-            ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
+            ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'map', `window.openMapBtn(event, ${lat}, ${lon}, 'attrazione')`) : ''}
         `
     });
 };
 
+// SPIAGGIA — Card con foto e bottone Mappa che vola alla posizione GPS
+// Apre il modale 'Spiagge' al tap. Usata da: loadTableData('Spiagge')
 window.spiaggiaRenderer = function(item) {
     const safeObj = encodeURIComponent(JSON.stringify(item)).replace(/'/g, "%27");
     const nome = window.dbCol(item, 'Nome');
@@ -282,11 +345,13 @@ window.spiaggiaRenderer = function(item) {
         themeColor: 'blue',
         heartOverlayHtml: window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem) : '',
         buttonsHtml: `
-            ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'green', `window.openMapBtn(event, ${lat}, ${lon})`) : ''}
+            ${(lat && lon) ? getCandyBtn('map', window.t('btn_map'), 'map', `window.openMapBtn(event, ${lat}, ${lon}, 'spiaggia')`) : ''}
         `
     });
 };
 
+// PRODOTTO — Card nella griglia 2 colonne (foto + nome, nessun bottone azione)
+// Apre il modale 'product' al tap. Usata da: loadTableData('Prodotti')
 window.prodottoRenderer = (p) => {
     const titolo   = window.dbCol(p, 'Prodotti') || window.dbCol(p, 'Nome');
     const titoloIT = window.valIT(p, 'Prodotti')  || window.valIT(p, 'Nome');
@@ -311,6 +376,8 @@ window.prodottoRenderer = (p) => {
     });
 };
 
+// VINO — Card orizzontale con tipologia (Rosso/Bianco/Passito), uve, produttore
+// Apre il modale 'Vini' al tap. Usata da: loadTableData('Vini')
 window.vinoRenderer = function(item) {
     const safeId = item.id || item.ID; 
     const nome = item.Nome || 'Vino';
@@ -343,6 +410,10 @@ window.vinoRenderer = function(item) {
     });
 };
 
+// SENTIERO — Card con mini-mappa GPX Leaflet, durata, distanza, bottoni Mappa/Info
+// La mini-mappa viene caricata lazy tramite window.pendingMaps + initPendingMaps()
+// Apre: openTechMap() per mappa grande, openModal('sentieroInfo') per dettagli
+// Usata da: loadTableData('Sentieri')
 window.sentieroRenderer = (s) => {
     const uniqueId = 'k-map-' + (s.poi_id || Math.floor(Math.random() * 99999));
     const nome = s.nome || s.Titolo || 'Sentiero';
@@ -362,7 +433,7 @@ window.sentieroRenderer = (s) => {
     return `
     <div class="bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col h-full relative mb-4 group border border-slate-100/50 hover:shadow-lg transition-all">
         <div id="${uniqueId}" class="h-48 w-full bg-slate-100 relative border-b border-slate-100 cursor-pointer" onclick="window.openTechMap('${safeObj}')">
-            <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[11px] font-bold text-ct-green shadow-sm z-[400] font-sans tracking-widest uppercase">
+            <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-2xl text-[11px] font-bold text-ct-sage shadow-sm z-[400] font-sans tracking-widest uppercase">
                 🥾 Outdoor
             </div>
             ${window.renderHeartBtnOverlay ? window.renderHeartBtnOverlay(wlItem).replace('z-20', 'z-[401]') : ''}
@@ -377,17 +448,19 @@ window.sentieroRenderer = (s) => {
             <h3 class="font-serif text-xl font-bold text-slate-800 leading-tight mb-2 line-clamp-2">${nome}</h3>
         </div>
         
-        <div class="px-3 py-3 border-t border-slate-100 bg-slate-50/30 flex items-center gap-2 flex-wrap">
-             <button onclick="window.openTechMap('${safeObj}')" class="flex-1 min-w-[80px] py-2.5 bg-ct-green text-white rounded-xl font-bold text-[11px] uppercase tracking-wide shadow-sm active:scale-[0.97] transition-all duration-150 touch-manipulation flex items-center justify-center gap-1.5">
+        <div class="px-3 py-3 border-t border-slate-100/60 bg-white flex items-center gap-2 flex-wrap">
+             <button onclick="window.openTechMap('${safeObj}')" class="flex-1 min-w-[80px] py-2.5 bg-transparent text-ct-sage border border-ct-sage/40 rounded-2xl font-bold text-[11px] uppercase tracking-wide active:bg-ct-sage active:text-white active:scale-[0.97] transition-all duration-300 touch-manipulation flex items-center justify-center gap-1.5">
                 <span class="material-icons text-sm">map</span> ${window.t('btn_map')}
              </button>
-             <button onclick="window.openModal('sentieroInfo', '${safeObj}')" class="flex-1 min-w-[80px] py-2.5 bg-ct-blue text-white rounded-xl font-bold text-[11px] uppercase tracking-wide shadow-sm active:scale-[0.97] transition-all duration-150 touch-manipulation flex items-center justify-center gap-1.5">
+             <button onclick="window.openModal('sentieroInfo', '${safeObj}')" class="flex-1 min-w-[80px] py-2.5 bg-transparent text-ct-shore border border-ct-shore/40 rounded-2xl font-bold text-[11px] uppercase tracking-wide active:bg-ct-shore active:text-white active:scale-[0.97] transition-all duration-300 touch-manipulation flex items-center justify-center gap-1.5">
                 <span class="material-icons text-sm">visibility</span> ${window.t('btn_info')}
              </button>
         </div>
     </div>`;
 };
 
+// FARMACIA — Card compatta con icona verde, nome, indirizzo, bottone telefono
+// Usata da: loadTableData('Farmacie')
 window.farmacieRenderer = (f) => {
     // Estrazione sicura per il Nome (previene l'effetto [object Object])
     let nome = f.Nome; 
@@ -425,6 +498,9 @@ window.farmacieRenderer = (f) => {
     });
 };
 
+// NUMERO UTILE — Card compatta con icona contestuale (polizia, emergenza, ecc.)
+// L'icona e il colore cambiano in base al nome (es. "Carabinieri" → icona polizia)
+// Usata da: loadTableData('Numeri_utili')
 window.numeriUtiliRenderer = (n) => {
     let nome = n.Nome; 
     try { 
@@ -451,9 +527,14 @@ window.numeriUtiliRenderer = (n) => {
     });
 };
 
-window.openMapBtn = function(e, lat, lon) {
+// Bottone "Mappa" nelle card: apre la mappa interattiva e vola alla posizione GPS.
+// Passa le coordinate e la categoria per pre-filtrare i marker.
+// Chiamata da: onclick dei bottoni Mappa nelle card ristoranti, spiagge, attrazioni
+// Dipendenze: app.js → switchView('mappa'), ui-map.js legge window._mapFlyToTarget
+window.openMapBtn = function(e, lat, lon, cat) {
     if (!e) return;
     e.stopPropagation(); e.preventDefault();
-    // Usa maps.google.com diretto — funziona su tutti i browser/OS aprendo l'app nativa
-    window.open(`https://www.google.com/maps?q=${lat},${lon}`, '_blank');
+    // Apre la mappa proprietaria Five2Go, vola alla posizione e pre-filtra la categoria
+    window._mapFlyToTarget = { lat, lon, cat: cat || null };
+    window.switchView('mappa');
 };

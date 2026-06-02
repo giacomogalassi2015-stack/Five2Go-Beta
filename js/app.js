@@ -1,10 +1,45 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  app.js — CUORE DELL'APP (PRIMARIO)
+//
+//  Questo file gestisce TUTTO il flusso principale dell'applicazione:
+//    - Navigazione tra le pagine (home, cibo, outdoor, servizi, mappa, ecc.)
+//    - Pulsante indietro del telefono (History API)
+//    - Caricamento dati dal database (Supabase)
+//    - Ricerca globale
+//    - Mascotte Chicco (meteo)
+//    - Trasporti (bus, treni, traghetti)
+//
+//  DIPENDENZE (caricati PRIMA di questo file):
+//    data-logic.js  → window.t(), window.dbCol(), window.getSmartUrl(),
+//                     window.supabaseClient, window.appCache, window.currentLang
+//    ui-renderers.js → tutti i *Renderer (ristoranteRenderer, vinoRenderer, ecc.)
+//    ui-modal-contents.js → window.getModalContent()
+//    ui-modal.js    → window.openModal(), window._dismissModal()
+//    ui-map.js      → window.renderMappaInterattiva()
+//    features.js    → window.WL, window.renderWishlist(),
+//                     window.renderCinqueTerreCard(), window.renderHeartBtnOverlay(),
+//                     window.renderReportBtn()
+//
+//  CHI USA QUESTO FILE:
+//    index.html     → i bottoni della navbar chiamano switchView()
+//                   → la search bar chiama window._searchDebounced()
+// ═══════════════════════════════════════════════════════════════════════════
 
-const content = document.getElementById('app-content');
+// Array globale per le mini-mappe GPX nei sentieri (usato da initPendingMaps)
 window.pendingMaps = [];
 
-// ─────────────────────────────────────────────────────────────────────────
-//  HISTORY ROUTER
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 1 — NAVIGAZIONE E HISTORY (PRIMARIO)
+//
+//  Gestisce il pulsante "indietro" del telefono.
+//  Quando l'utente preme indietro, chiude i modali aperti oppure
+//  torna alla pagina precedente.
+//
+//  Come funziona:
+//    1. Ogni volta che apri una pagina → pushState aggiunge un "punto" alla storia
+//    2. Quando premi indietro → popstate controlla cosa c'era prima e ci torna
+//    3. _historyNav evita loop: si disattiva durante la navigazione programmatica
+// ═══════════════════════════════════════════════════════════════════════════
 window._historyNav = true;
 
 window._pushViewState = function(view) {
@@ -40,29 +75,56 @@ window.addEventListener('popstate', function(e) {
     if (state?.view) {
         const navBtn = document.querySelector(`.nav-item[onclick*="${state.view}"]`);
         switchView(state.view, navBtn);
+
+        // Se lo stato ha un subTable, riapri la sottotabella dopo il render del menu
+        if (state.subTable && window._openSubTable) {
+            // Piccolo delay per lasciare che switchView renderizzi il menu
+            setTimeout(() => {
+                window._historyNav = false; // Evita di ri-pushare lo stato
+                window._openSubTable(state.subTable);
+                window._historyNav = true;
+            }, 50);
+        }
     } else {
         switchView('home', document.querySelector('.nav-item[onclick*="home"]'));
     }
     window._historyNav = true;
 });
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SWIPE GLOBALS
-// ─────────────────────────────────────────────────────────────────────────
-window.currentMenuOptions = [];
-window.currentActiveTable = null;
-window.touchStartX = 0;
-window.touchStartY = 0;
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 2 — VARIABILI GLOBALI DI STATO
+//
+//  Queste variabili tengono traccia di dove si trova l'utente nell'app.
+//  Sono usate da più file per sapere quale menu/tabella è attiva.
+// ═══════════════════════════════════════════════════════════════════════════
 
-// ─────────────────────────────────────────────────────────────────────────
-//  NAV / HEADER
-// ─────────────────────────────────────────────────────────────────────────
+// Lista delle opzioni del sottomenu corrente (cibo o outdoor)
+// Usata da: _openSubTable() per costruire le tab di navigazione in basso
+window.currentMenuOptions = [];
+
+// Nome della tabella Supabase attualmente visualizzata (es. "Ristoranti", "Spiagge")
+// Usata da: pull-to-refresh per sapere cosa ricaricare
+window.currentActiveTable = null;
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 3 — BARRA DI NAVIGAZIONE E LINGUA (SECONDARIO)
+//
+//  Funzioni che aggiornano i testi e le icone della navbar in fondo allo schermo.
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per le traduzioni
+//    data-logic.js → window.AVAILABLE_LANGS per la lista lingue
+//    data-logic.js → window.currentLang per la lingua corrente
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Pulisce l'header (era usato per un menu superiore, ora vuoto) e aggiorna la bandierina lingua
 function setupHeaderElements() {
     const header = document.querySelector('header');
     if (header) header.innerHTML = '';
     updateLangIconInNavBar();
 }
 
+// Traduce le 4 label della navbar nella lingua corrente
 function updateNavBar() {
     const labels = document.querySelectorAll('.nav-label');
     if (labels.length >= 4) {
@@ -73,6 +135,7 @@ function updateNavBar() {
     }
 }
 
+// Aggiorna la bandierina emoji nella barra di navigazione (bump button)
 function updateLangIconInNavBar() {
     const flagEl = document.getElementById('nav-lang-flag');
     if (flagEl) {
@@ -81,6 +144,8 @@ function updateLangIconInNavBar() {
     }
 }
 
+// Cambia lingua: salva in localStorage, aggiorna navbar, ri-renderizza la pagina corrente
+// Chiamata da: bump lang panel (home pill) e nav center bump button
 window.changeLanguage = function(langCode) {
     window.currentLang = langCode;
     localStorage.setItem('app_lang', langCode);
@@ -96,14 +161,50 @@ window.changeLanguage = function(langCode) {
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SWITCH VIEW — dispatch map (elimina catena if/else)
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 4 — SWITCH VIEW (PRIMARIO — il "cervello" della navigazione)
+//
+//  switchView() è LA funzione principale dell'app. Ogni volta che l'utente
+//  preme un bottone della navbar o naviga, passa tutto da qui.
+//
+//  Flusso:
+//    1. Resetta lo scroll in cima
+//    2. Pulisce la view precedente (rimuove filtri, FAB, mappa, Chicco)
+//    3. Applica lo stile del body (sfondo foto per home, colore sabbia per il resto)
+//    4. Evidenzia il bottone attivo nella navbar
+//    5. Chiama il renderer giusto dalla mappa _VIEW_RENDERERS
+//
+//  _VIEW_RENDERERS è una mappa nome→funzione: per aggiungere una nuova pagina
+//  basta aggiungere una riga qui.
+//
+//  Dipendenze:
+//    data-logic.js → window.getSmartUrl() per lo sfondo home
+//    features.js   → window.renderWishlist(), window.renderCinqueTerreCard()
+//    ui-map.js     → window.renderMappaInterattiva()
+// ═══════════════════════════════════════════════════════════════════════════
 
-/** Applica stili body + background per ogni view */
+// Applica sfondo e stili del body in base alla pagina.
+// Home = foto di Manarola fullscreen. Altre pagine = sfondo sabbia.
+// Nasconde la navbar nella vista mappa.
 function _applyViewBodyStyle(view) {
     const body          = document.body;
     const centerBtn     = document.getElementById('center-lang-btn-wrapper');
+    const nav           = document.getElementById('bottom-nav');
+
+    // ── Navbar: nascosta sulla mappa, visibile altrove ──
+    if (nav) {
+        if (view === 'mappa') {
+            nav.style.transition = 'transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease';
+            nav.style.transform  = 'translateY(120%)';
+            nav.style.opacity    = '0';
+            nav.style.pointerEvents = 'none';
+        } else {
+            nav.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease';
+            nav.style.transform  = '';
+            nav.style.opacity    = '';
+            nav.style.pointerEvents = '';
+        }
+    }
 
     if (view === 'home') {
         body.style.backgroundColor = '#0d1f18';
@@ -116,7 +217,7 @@ function _applyViewBodyStyle(view) {
             body.style.backgroundPosition = 'center 40%';
         }
     } else {
-        body.style.backgroundColor    = '#F4F1DE';
+        body.style.backgroundColor    = '#F5F1E1';
         body.style.backgroundImage    = '';
         body.style.backgroundSize     = '';
         body.style.backgroundPosition = '';
@@ -125,23 +226,51 @@ function _applyViewBodyStyle(view) {
     }
 }
 
-/** Pulisce DOM della view precedente */
+// Rimuove tutti gli elementi della pagina precedente prima di mostrare quella nuova.
+// Senza questo, i filtri, FAB e la mappa resterebbero sovrapposti.
 function _cleanupPreviousView() {
     document.querySelectorAll('.smart-filter-bar-container').forEach(el => el.remove());
     window._destroyScrollFABs?.();
+    window._cleanupOverscrollPeek?.();
+    // Cleanup mappa fullscreen: rimuove il contenitore fixed se presente
+    const mapRoot = document.getElementById('mappa-root');
+    if (mapRoot) mapRoot.remove();
     const chiccoFab = document.getElementById('chicco-fab-wrap');
     if (chiccoFab) chiccoFab.remove();
+    _dismissChiccoBubble();
     window._closeChiccoCard();
 }
 
-/** Aggiorna stato attivo nella nav bar */
+// Torna dalla mappa alla pagina precedente. Usata dal bottone "←" nella mappa.
+// Chiamata da: ui-map.js (bottone back nella mappa interattiva)
+window.mapGoBack = function() {
+    const nav = document.getElementById('bottom-nav');
+    if (nav) {
+        nav.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease';
+        nav.style.transform  = '';
+        nav.style.opacity    = '';
+        nav.style.pointerEvents = '';
+    }
+
+    const returnView = window._mapReturnView || null;
+    window._mapReturnView = null;
+
+    if (returnView) {
+        const navBtn = document.querySelector(`.nav-item[onclick*="${returnView}"]`);
+        switchView(returnView, navBtn);
+    } else {
+        switchView('home', document.querySelector('.nav-item[onclick*="home"]'));
+    }
+};
+
+// Evidenzia il bottone corretto nella navbar (aggiunge la classe "active")
 function _setActiveNav(view, el) {
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     const target = el ?? document.querySelector(`.nav-item[onclick*="${view}"]`);
     target?.classList.add('active');
 }
 
-/** Fades out the splash overlay (solo prima volta) */
+// Nasconde lo schermo bianco iniziale con un fade-out (solo al primo caricamento)
 function _fadeSplash() {
     const overlay = document.getElementById('splash-overlay');
     if (overlay && !overlay.classList.contains('fade-out')) {
@@ -152,10 +281,8 @@ function _fadeSplash() {
     }
 }
 
-/**
- * Dispatch map: view → renderer function.
- * Aggiungere una nuova view = aggiungere una riga qui.
- */
+// MAPPA PAGINE: ogni nome di view → la funzione che la renderizza.
+// Per aggiungere una nuova pagina, basta aggiungere una riga qui.
 const _VIEW_RENDERERS = {
     home: () => { renderHome(); _fadeSplash(); },
 
@@ -173,19 +300,22 @@ const _VIEW_RENDERERS = {
 
    
     servizi:  () => renderServicesGrid(),
+    mappa:    () => window.renderMappaInterattiva(),
     wishlist: () => window.renderWishlist(),
     itinerary:() => window.renderWishlist(),   // v1.0 redirect silenzioso
     ct_card:  () => window.renderCinqueTerreCard(),
     treno_card: () => window.renderCinqueTerreTrenoCard(),
 
-    mappe_monumenti: () => renderSubMenu([
-        { label: window.t('menu_map'), table: 'Mappe' }
-    ], 'Mappe'),
 };
 
 window.switchView = async function(view, el) {
     const content = document.getElementById('app-content');
     if (!content) return;
+
+    // Salva la view corrente prima di navigare alla mappa, per il ritorno
+    if (view === 'mappa' && window.currentViewName && window.currentViewName !== 'mappa') {
+        window._mapReturnView = window.currentViewName;
+    }
 
     // Reset scroll istantaneo
     content.style.scrollBehavior = 'auto';
@@ -218,9 +348,25 @@ window.switchView = async function(view, el) {
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  RENDER HOME
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 5 — HOME PAGE (PRIMARIO)
+//
+//  Costruisce la landing page: titolo "Five2Go", barra di ricerca,
+//  pulsanti Preferiti e Lingua, e inietta la mascotte Chicco.
+//
+//  Elementi creati:
+//    - Hero con titolo e tagline tradotta
+//    - Search bar globale (chiama _searchDebounced al digitare)
+//    - Pill "Preferiti" con badge contatore (da WL manager in features.js)
+//    - Pill cambio lingua (apre _toggleBumpLangPanel)
+//    - Backdrop per chiudere la ricerca
+//    - Chicco FAB (mascotte meteo, vedi Sezione 12)
+//    - Overscroll peek (vedi Sezione 6)
+//
+//  Dipendenze:
+//    features.js   → window.WL.get() per conteggio preferiti
+//    data-logic.js → window.currentLang, window.t()
+// ═══════════════════════════════════════════════════════════════════════════
 function renderHome() {
     const content = document.getElementById('app-content');
     if (!content) return;
@@ -307,81 +453,273 @@ function renderHome() {
     }
 
     _injectChiccoFAB();
+    _initOverscrollPeek();
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SUBMENU (barra laterale a scomparsa)
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 6 — OVERSCROLL PEEK (TERZIARIO — effetto visuale)
+//
+//  Quando l'utente arriva in fondo allo scroll e continua a tirare verso l'alto:
+//    1. Il contenuto si sposta leggermente (rubber-band, come iOS nativo)
+//    2. La navbar mostra TUTTE le label per invitare a esplorare le altre sezioni
+//    3. Dopo 2 secondi, la navbar torna normale
+//
+//  Funziona su TUTTE le view, non solo la home.
+//  Usa eventi touch nativi (touchstart, touchmove, touchend).
+//
+//  Dipendenze: nessuna (puro DOM/CSS)
+//  Usata da: renderHome(), renderSubMenu(), _openSubTable(), renderServicesGrid()
+// ═══════════════════════════════════════════════════════════════════════════
+function _initOverscrollPeek() {
+    const content = document.getElementById('app-content');
+    const nav     = document.getElementById('bottom-nav');
+    if (!content || !nav) return;
+
+    // Cleanup precedente
+    window._cleanupOverscrollPeek?.();
+
+    let startY       = 0;
+    let isAtBottom    = false;
+    let pulling       = false;
+    let pullDistance   = 0;
+    let peekTimeout   = null;
+    const THRESHOLD   = 40;
+    const DAMPING     = 0.3;
+
+    function onTouchStart(e) {
+        isAtBottom = (content.scrollHeight - content.scrollTop - content.clientHeight) < 2;
+        if (!isAtBottom) return;
+        startY   = e.touches[0].clientY;
+        pulling  = false;
+        pullDistance = 0;
+    }
+
+    function onTouchMove(e) {
+        if (!isAtBottom) return;
+        const currentY = e.touches[0].clientY;
+        const delta    = startY - currentY;
+
+        if (delta <= 0) {
+            if (pulling) _resetPull();
+            return;
+        }
+
+        pulling = true;
+        pullDistance = delta;
+
+        const pull = Math.round(delta * DAMPING);
+        const maxPull = 60;
+        const clampedPull = Math.min(pull, maxPull);
+        content.style.transform = `translateY(-${clampedPull}px)`;
+        content.classList.add('overscroll-active');
+
+        if (delta > THRESHOLD && !nav.classList.contains('nav-peek')) {
+            nav.classList.add('nav-peek');
+            if (navigator.vibrate) navigator.vibrate(8);
+        }
+    }
+
+    function onTouchEnd() {
+        if (!pulling) return;
+        _springBack();
+
+        if (nav.classList.contains('nav-peek')) {
+            clearTimeout(peekTimeout);
+            peekTimeout = setTimeout(() => {
+                nav.classList.remove('nav-peek');
+            }, 2000);
+        }
+
+        pulling     = false;
+        pullDistance = 0;
+        isAtBottom   = false;
+    }
+
+    function _springBack() {
+        content.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        content.style.transform  = '';
+        const onEnd = () => {
+            content.style.transition = '';
+            content.classList.remove('overscroll-active');
+            content.removeEventListener('transitionend', onEnd);
+        };
+        content.addEventListener('transitionend', onEnd, { once: true });
+        setTimeout(onEnd, 600);
+    }
+
+    function _resetPull() {
+        if (!pulling) return;
+        _springBack();
+        pulling = false;
+        pullDistance = 0;
+    }
+
+    content.addEventListener('touchstart', onTouchStart, { passive: true });
+    content.addEventListener('touchmove',  onTouchMove,  { passive: true });
+    content.addEventListener('touchend',   onTouchEnd,   { passive: true });
+
+    window._cleanupOverscrollPeek = function() {
+        content.removeEventListener('touchstart', onTouchStart);
+        content.removeEventListener('touchmove',  onTouchMove);
+        content.removeEventListener('touchend',   onTouchEnd);
+        content.style.transform  = '';
+        content.style.transition = '';
+        content.classList.remove('overscroll-active');
+        nav.classList.remove('nav-peek');
+        clearTimeout(peekTimeout);
+        window._cleanupOverscrollPeek = null;
+    };
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 7 — SOTTOMENU E TABELLE (PRIMARIO)
+//
+//  Quando l'utente preme "Cibo" o "Outdoor", non va direttamente ai dati:
+//  vede prima un menu con 3 card (es. Prodotti / Vini / Ristoranti).
+//
+//  renderSubMenu() → Mostra le card di scelta (primo livello)
+//  _openSubTable() → Quando premi una card, carica i dati dal DB (secondo livello)
+//                    Mostra un back button + tab di navigazione tra le voci sorelle
+//
+//  Flusso: Navbar → switchView('cibo') → renderSubMenu() → tap card →
+//          _openSubTable('Ristoranti') → loadTableData('Ristoranti')
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per le traduzioni delle etichette
+//    Sezione 9     → loadTableData() per caricare i dati dal DB
+// ═══════════════════════════════════════════════════════════════════════════
 window.renderSubMenu = function(options, defaultTable) {
     window.currentMenuOptions = options;
 
-    const colorMap = {
-        orange: 'bg-white text-ct-terracotta border-orange-100 active:border-ct-terracotta shadow-sm',
-        yellow: 'bg-white text-yellow-700   border-yellow-100 active:border-ct-yellow shadow-sm',
-        red:    'bg-white text-red-800      border-red-100    active:border-red-400 shadow-sm',
-        blue:   'bg-white text-ct-blue      border-teal-100   active:border-ct-blue shadow-sm',
-        green:  'bg-white text-ct-green     border-green-100  active:border-ct-green shadow-sm',
+    // Colori per le card del selettore
+    const cardStyles = {
+        orange: { gradient: 'from-ct-terracotta-light to-orange-50/30', border: 'border-ct-terracotta/15', iconBg: 'bg-ct-terracotta/10', iconColor: 'text-ct-terracotta' },
+        yellow: { gradient: 'from-ct-yellow-light to-amber-50/30',     border: 'border-ct-yellow/15',     iconBg: 'bg-ct-yellow/10',     iconColor: 'text-ct-yellow' },
+        red:    { gradient: 'from-ct-wine-light to-rose-50/30',        border: 'border-ct-wine/15',       iconBg: 'bg-ct-wine/10',       iconColor: 'text-ct-wine' },
+        blue:   { gradient: 'from-ct-shore-light to-sky-50/30',        border: 'border-ct-shore/15',      iconBg: 'bg-ct-shore/10',      iconColor: 'text-ct-shore' },
+        green:  { gradient: 'from-ct-sage-light to-emerald-50/30',     border: 'border-ct-sage/15',       iconBg: 'bg-ct-sage/10',       iconColor: 'text-ct-sage' },
     };
 
-    const buttonsHtml = options.map((opt, index) => {
-        const theme = colorMap[opt.color] || colorMap.blue;
-        const icon  = opt.icon || 'star';
+    const cardsHtml = options.map(opt => {
+        const s = cardStyles[opt.color] || cardStyles.blue;
+        const icon = opt.icon || 'star';
         return `
-        <button class="btn-pop-menu w-full px-3 py-2.5 rounded-2xl flex items-center gap-3 border transition-all duration-300 transform ${theme}"
-            data-table="${opt.table}" data-index="${index}"
-            onclick="window.loadTableData('${opt.table}', this); window.toggleSideMenu(false);">
-            <span class="material-icons text-xl opacity-80">${icon}</span>
-            <span class="text-xs font-bold uppercase tracking-wide text-left flex-1">${opt.label}</span>
+        <button class="w-full bg-gradient-to-br ${s.gradient} rounded-2xl ${s.border} border shadow-sm p-5 flex items-center gap-4 active:scale-[0.97] transition-all touch-manipulation text-left"
+            onclick="window._openSubTable('${opt.table}')">
+            <div class="w-14 h-14 rounded-2xl ${s.iconBg} flex items-center justify-center shrink-0">
+                <span class="material-icons text-2xl ${s.iconColor}">${icon}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h3 class="font-bold text-slate-800 text-base">${opt.label}</h3>
+            </div>
+            <span class="material-icons text-slate-300 text-lg shrink-0">chevron_right</span>
         </button>`;
     }).join('');
 
     const content = document.getElementById('app-content');
     content.innerHTML = `
-    <div id="side-category-menu" class="fixed top-28 left-0 z-[80] flex transition-transform duration-300"
-         style="transform:translateX(0px);">
-        <div id="side-menu-panel"
-             class="bg-white/95 backdrop-blur-xl shadow-floating rounded-r-3xl p-3 flex flex-col gap-3 border-y border-r border-slate-200 min-w-[150px]">
-            ${buttonsHtml}
+    <div class="animate-fade pb-20 pt-2 px-1">
+        <div class="flex flex-col gap-3">
+            ${cardsHtml}
         </div>
-        <button onclick="window.toggleSideMenu()"
-                class="bg-white/95 backdrop-blur-xl shadow-[4px_4px_10px_rgba(0,0,0,0.1)] border-y border-r border-slate-200 rounded-r-2xl w-10 h-16 flex items-center justify-center -ml-1 mt-6 active:scale-95 transition-all outline-none touch-manipulation">
-            <span id="side-menu-arrow"
-                  class="material-icons text-slate-500 transition-transform duration-300"
-                  style="transform:rotate(180deg);">chevron_right</span>
-        </button>
-    </div>
-    <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-200 ease-out pt-6 px-2"></div>`;
+    </div>`;
 
-    const defaultBtn = content.querySelector(`button[data-table="${defaultTable}"]`)
-                    || content.querySelector('.btn-pop-menu');
-    if (defaultBtn) loadTableData(defaultBtn.getAttribute('data-table'), defaultBtn);
-
-    setTimeout(() => window.toggleSideMenu(false), 1500);
-    window._initScrollFABs?.();
+    _initOverscrollPeek();
 };
 
-window.toggleSideMenu = function(forceState) {
-    const menu  = document.getElementById('side-category-menu');
-    const panel = document.getElementById('side-menu-panel');
-    const arrow = document.getElementById('side-menu-arrow');
-    if (!menu || !panel) return;
+// Apre una sotto-tabella: mostra back button, contenuto dati, e tab per navigare
+// tra le voci sorelle (es. da "Ristoranti" puoi andare a "Vini" o "Prodotti")
+window._openSubTable = function(tableName) {
+    const options = window.currentMenuOptions;
+    if (!options) return;
 
-    const isClosed   = menu.style.transform.includes('translateX(-');
-    const shouldOpen = forceState !== undefined ? forceState : isClosed;
-    const panelWidth = panel.offsetWidth;
+    // ── History: pusha stato con subTable per il back button ──
+    const parentView = window.currentViewName; // 'cibo' o 'outdoor'
+    if (window._historyNav) {
+        history.pushState({ view: parentView, subTable: tableName }, '', `#/${parentView}/${tableName}`);
+    }
 
-    menu.style.transform = shouldOpen ? 'translateX(0px)' : `translateX(-${panelWidth - 2}px)`;
-    if (arrow) arrow.style.transform = shouldOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+    // Trova label e view corrente per il back button
+    const currentView = parentView;
+    const currentOpt = options.find(o => o.table === tableName);
+    const currentLabel = currentOpt ? currentOpt.label : tableName;
+
+    // Colori per le mini-tab in fondo
+    const tabColors = {
+        orange: { active: 'bg-ct-terracotta/10 text-ct-terracotta border-ct-terracotta/20', inactive: 'bg-white text-slate-400 border-slate-100' },
+        yellow: { active: 'bg-ct-yellow/10 text-ct-yellow border-ct-yellow/20',             inactive: 'bg-white text-slate-400 border-slate-100' },
+        red:    { active: 'bg-ct-wine/10 text-ct-wine border-ct-wine/20',                   inactive: 'bg-white text-slate-400 border-slate-100' },
+        blue:   { active: 'bg-ct-shore/10 text-ct-shore border-ct-shore/20',                inactive: 'bg-white text-slate-400 border-slate-100' },
+        green:  { active: 'bg-ct-sage/10 text-ct-sage border-ct-sage/20',                   inactive: 'bg-white text-slate-400 border-slate-100' },
+    };
+
+    const footerTabsHtml = options.map(opt => {
+        const c = tabColors[opt.color] || tabColors.blue;
+        const isActive = opt.table === tableName;
+        const cls = isActive
+            ? c.active + ' shadow-sm pointer-events-none'
+            : c.inactive + ' cursor-pointer';
+        return `<button class="flex-1 flex flex-col items-center justify-center gap-1 py-3 rounded-xl border transition-all active:scale-95 touch-manipulation ${cls}"
+            ${isActive ? 'disabled' : `onclick="window._openSubTable('${opt.table}')"`}>
+            <span class="material-icons text-lg">${opt.icon || 'star'}</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide">${opt.label}</span>
+            ${isActive ? '<span class="w-1 h-1 rounded-full bg-current mt-0.5"></span>' : ''}
+        </button>`;
+    }).join('');
+
+    const content = document.getElementById('app-content');
+    content.innerHTML = `
+    <div class="animate-fade">
+        <!-- Back button + titolo -->
+        <div class="flex items-center gap-3 pt-1 pb-3 px-1">
+            <button onclick="window.switchView('${currentView}')"
+                class="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-slate-100 active:scale-90 transition-all touch-manipulation shrink-0">
+                <span class="material-icons text-slate-600 text-lg">arrow_back</span>
+            </button>
+            <h2 class="font-serif text-xl font-bold text-slate-800">${currentLabel}</h2>
+        </div>
+
+        <!-- Contenuto lista -->
+        <div id="sub-content" class="min-h-[300px] touch-pan-y transition-opacity duration-300 ease-out px-2"></div>
+
+        <!-- Footer: navigazione tra le schede sorelle -->
+        <div class="px-2 pt-4 pb-20">
+            <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest text-center mb-2">${window.t('explore_also')}</p>
+            <div class="flex gap-2">
+                ${footerTabsHtml}
+            </div>
+        </div>
+    </div>`;
+
+    // Carica i dati nella sotto-vista
+    loadTableData(tableName, null);
+
+    _initOverscrollPeek();
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  FAB FLOTTANTI (scroll-to-top + filtro)
-// ─────────────────────────────────────────────────────────────────────────
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 8 — FAB FLOTTANTI (TERZIARIO — UX enhancement)
+//
+//  Due bottoni rotondi che appaiono quando scrolli giù in una lista:
+//    - FAB Filtro (scuro): scrolla in cima e apre il pannello filtri
+//    - FAB Scroll-to-top (bianco): riporta in cima alla lista
+//
+//  Appaiono solo dopo che l'utente ha scrollato oltre la filter bar.
+//  Pattern ispirato da Google Maps, Zalando, Deliveroo.
+//
+//  Dipendenze: nessuna (puro DOM)
+//  Usata da: NON più attivamente chiamata (era in loadTableData, ora rimossa)
+//  Nota: _initScrollFABs viene ancora esposta su window per uso futuro
+// ═══════════════════════════════════════════════════════════════════════════
 window._initScrollFABs = function() {
     window._destroyScrollFABs();
 
     const appContent = document.getElementById('app-content');
-    const tabBar     = document.getElementById('nav-tab-bar');
+    const tabBar     = document.getElementById('sub-tab-bar') || document.getElementById('nav-tab-bar');
     if (!appContent || !tabBar) return;
 
     const fabWrap = document.createElement('div');
@@ -440,9 +778,37 @@ window._destroyScrollFABs = function() {
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  LOAD TABLE DATA
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 9 — CARICAMENTO DATI E FILTRI (PRIMARIO)
+//
+//  loadTableData() carica i dati dal database Supabase e li passa
+//  al renderer corretto per ogni tabella.
+//
+//  Flusso:
+//    1. Mostra skeleton loader (animazione di caricamento)
+//    2. Controlla se i dati sono già in cache (window.appCache)
+//    3. Se no, fetch da Supabase e salva in cache
+//    4. Passa i dati al renderer appropriato tramite un switch/case
+//
+//  SISTEMA FILTRI:
+//    renderHorizontalFilterView()       → filtro singolo (es. per Paese)
+//    renderDoubleHorizontalFilterView() → filtro doppio (es. Paese + Categoria)
+//
+//    I filtri creano chip cliccabili. Quando l'utente preme un chip:
+//    → applySingleSmartFilter() o applyDoubleSmartFilter() filtra la lista
+//    → IncrementalRenderer() renderizza solo i primi 10 risultati
+//    → Al scroll, un IntersectionObserver carica i successivi (lazy loading)
+//
+//  INCREMENTAL RENDERER:
+//    Renderizza le card a batch di 10 per non bloccare il telefono.
+//    Un "sentinel" invisibile in fondo alla lista triggera il caricamento
+//    del batch successivo quando diventa visibile (IntersectionObserver).
+//
+//  Dipendenze:
+//    data-logic.js   → window.supabaseClient, window.appCache, window.dbCol()
+//    ui-renderers.js → tutti i *Renderer (ristoranteRenderer, vinoRenderer, ecc.)
+//    features.js     → window.sortByDistance() per ordinamento Near Me
+// ═══════════════════════════════════════════════════════════════════════════
 window.loadTableData = async function(tableName, btnEl) {
     const mainContainer = document.getElementById('app-content');
     if (mainContainer) {
@@ -457,22 +823,6 @@ window.loadTableData = async function(tableName, btnEl) {
 
     window._haptic?.(5);
 
-    // Risolve bottone se chiamato dallo swipe (btnEl === null)
-    if (!btnEl) btnEl = document.querySelector(`button[data-table="${tableName}"]`);
-
-    // Reset stile tutti i bottoni
-    document.querySelectorAll('.btn-pop-menu').forEach(b => {
-        b.classList.remove('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105', 'shadow-md');
-        b.style.opacity = '0.7';
-    });
-
-    // Attiva stile bottone corrente
-    if (btnEl) {
-        btnEl.classList.add('ring-2', 'ring-offset-1', 'ring-stone-300', 'scale-105', 'shadow-md');
-        btnEl.style.opacity = '1';
-        btnEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-
     // Fade content
     subContent.style.opacity = '0.5';
     setTimeout(() => { subContent.style.opacity = '1'; }, 200);
@@ -484,17 +834,6 @@ window.loadTableData = async function(tableName, btnEl) {
             : `<div class="py-20 flex flex-col items-center justify-center gap-4">
                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-ct-terracotta"></div>
                </div>`;
-    }
-
-    // Caso speciale Mappe (iframe)
-    if (tableName === 'Mappe') {
-        subContent.innerHTML = `
-            <div class="rounded-2xl overflow-hidden shadow-soft border-2 border-white animate-fade"
-                 style="height:70vh;height:70dvh;">
-                <iframe src="https://www.google.com/maps/d/embed?mid=13bSWXjKhIe7qpsrxdLS8Cs3WgMfO8NU&ehbc=2E312F&noprof=1"
-                        width="100%" height="100%" style="border:0;"></iframe>
-            </div>`;
-        return;
     }
 
     // Fetch dati (con cache)
@@ -531,7 +870,9 @@ window.loadTableData = async function(tableName, btnEl) {
             renderHorizontalFilterView(data, 'Paesi', subContent, window.spiaggiaRenderer, 'lat_sp', 'long_sp');
             break;
         case 'Prodotti':
-            subContent.innerHTML = `<div class="grid grid-cols-2 gap-3.5 pb-24 animate-fade pt-2">
+            window._currentFilteredList = data;
+            window._currentCardRenderer = window.prodottoRenderer;
+            subContent.innerHTML = `<div class="grid grid-cols-2 gap-3.5 animate-fade pt-2">
                 ${data.map(p => window.prodottoRenderer(p)).join('')}
             </div>`;
             break;
@@ -545,7 +886,7 @@ window.loadTableData = async function(tableName, btnEl) {
             renderHorizontalFilterView(data, 'difficolta_cai', subContent, window.sentieroRenderer);
             break;
         case 'Farmacie':
-            subContent.innerHTML = `<div class="flex flex-col gap-3 pb-24 animate-fade pt-2">
+            subContent.innerHTML = `<div class="flex flex-col gap-3 animate-fade pt-2">
                 ${data.map(i => window.farmacieRenderer(i)).join('')}
             </div>`;
             break;
@@ -557,20 +898,25 @@ window.loadTableData = async function(tableName, btnEl) {
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  INCREMENTAL RENDERER FACTORY (DRY: sostituisce ~80 righe duplicate)
-// ─────────────────────────────────────────────────────────────────────────
-/**
- * Renderizza una lista in modo incrementale tramite IntersectionObserver.
- * Sostituisce il codice duplicato in renderHorizontalFilterView e
- * renderDoubleHorizontalFilterView.
- *
- * @param {HTMLElement} container    - elemento lista target
- * @param {Array}       items        - dataset filtrato (già ordinato)
- * @param {Function}    cardRenderer - item => HTML string
- * @param {number}      [batchSize=10]
- */
+// ───────────────────────────────────────────────────────────────────────
+//  INCREMENTAL RENDERER (SECONDARIO — performance)
+//
+//  Renderizza una lista di card in batch da 10 per evitare di bloccare
+//  il browser su liste lunghe (+50 elementi). Un elemento invisibile
+//  ("sentinel") in fondo alla lista viene osservato: quando l'utente
+//  scrolla vicino, carica il batch successivo.
+//
+//  Salva la lista corrente in window._currentFilteredList per consentire
+//  al ModalSwiper (ui-modal.js) di navigare avanti/indietro tra gli item.
+//
+//  Dipendenze: nessuna (IntersectionObserver nativo)
+//  Usata da: applySingleSmartFilter(), applyDoubleSmartFilter(), loadTableData()
+// ───────────────────────────────────────────────────────────────────────
 window.IncrementalRenderer = function(container, items, cardRenderer, batchSize = 10) {
+    // ── Esponi la lista corrente per il modal-swipe ──
+    window._currentFilteredList = items || [];
+    window._currentCardRenderer = cardRenderer || null;
+
     // Disconnetti observer precedente salvato sul container
     if (container._incObs) {
         container._incObs.disconnect();
@@ -621,9 +967,12 @@ window.IncrementalRenderer = function(container, items, cardRenderer, batchSize 
     container._incObs = obs;
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SMART FILTER — valori unici (con memoizzazione)
-// ─────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  CACHE VALORI UNICI PER FILTRI (TERZIARIO — performance)
+//  Calcola i valori distinti di una colonna (es. tutti i Paesi) e li memorizza
+//  per non ricalcolarli ogni volta che l'utente apre un filtro.
+//  La cache si invalida al pull-to-refresh (window._invalidateUniqueValCache).
+// ───────────────────────────────────────────────────────────────────────
 const _uniqueValCache = new Map();
 
 function getUniqueValues(allData, key, customOrder = []) {
@@ -655,9 +1004,12 @@ function getUniqueValues(allData, key, customOrder = []) {
 // Invalida cache al pull-to-refresh o cambio dati
 window._invalidateUniqueValCache = function() { _uniqueValCache.clear(); };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  HORIZONTAL FILTER VIEW (filtro singolo)
-// ─────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  FILTRO SINGOLO (SECONDARIO)
+//  Mostra una barra con chip cliccabili per filtrare per una colonna
+//  (es. filtra Ristoranti per Paese). Include anche il pulsante "Near Me"
+//  per ordinare per distanza se la tabella ha coordinate GPS.
+// ───────────────────────────────────────────────────────────────────────
 function renderHorizontalFilterView(allData, filterKey, container, cardRenderer, latKey, lonKey) {
     const tags      = getUniqueValues(allData, filterKey, ['Tutti','Riomaggiore','Manarola','Corniglia','Vernazza','Monterosso']);
     const filterId  = `filter-${Math.random().toString(36).substr(2, 9)}`;
@@ -667,19 +1019,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
     const labelAll  = window.t('label_all');
     const hasNearMe = !!(latKey && lonKey);
 
-// Determina azione mappa contestuale
-    const isRistorantiView = filterKey === 'Paesi' && cardRenderer === window.ristoranteRenderer;
-    const isVinoView       = filterKey === 'Tipo'  && cardRenderer === window.vinoRenderer;
-    const isSpiaggiaView   = filterKey === 'Paesi' && cardRenderer === window.spiaggiaRenderer;
-
-    let mapAction = null; // <-- FONDAMENTALE: dichiara la variabile come null qui
-
-    const secondaryBtnHtml = mapAction
-        ? `<button class="shrink-0 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl w-[50px] flex items-center justify-center transition-all active:scale-95 self-stretch"
-               onclick="window.${mapAction}?.()" aria-label="Mappa">
-               <span class="material-icons">explore</span>
-           </button>`
-        : (hasNearMe
+    const secondaryBtnHtml = hasNearMe
             ? `<button id="${nearMeId}"
                    class="near-me-btn ${window._nearMeEnabled ? 'active-near-me' : ''}"
                    title="${window.currentLang === 'it' ? 'Ordina per distanza' : 'Sort by distance'}"
@@ -688,7 +1028,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
                    onclick="window.toggleNearMe('${nearMeId}', function(){ window.applySingleSmartFilter('__ALL__','${filterId}',false); })">
                    <span class="material-icons text-sm">near_me</span>
                </button>`
-            : '');
+            : '';
 
     container.innerHTML = `
         <div class="smart-filter-bar-container -mx-4 px-4 pb-3 relative">
@@ -709,7 +1049,7 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
                 <div class="p-3 overflow-x-auto no-scrollbar flex gap-2" id="chips-${filterId}"></div>
             </div>
         </div>
-        <div id="dynamic-list" class="flex flex-col gap-3 pb-24 animate-fade min-h-[50vh]"></div>`;
+        <div id="dynamic-list" class="flex flex-col gap-3 animate-fade min-h-[50vh]"></div>`;
 
     const chipContainer = container.querySelector(`#chips-${filterId}`);
     const listContainer = container.querySelector('#dynamic-list');
@@ -766,9 +1106,11 @@ function renderHorizontalFilterView(allData, filterKey, container, cardRenderer,
     window.applySingleSmartFilter('__ALL__', filterId);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  DOUBLE HORIZONTAL FILTER VIEW (filtro doppio: paese + categoria)
-// ─────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  FILTRO DOPPIO (SECONDARIO)
+//  Come il filtro singolo, ma con DUE righe di chip (es. Paese + Categoria).
+//  Usato solo per le Attrazioni che hanno sia il borgo che la tipologia.
+// ───────────────────────────────────────────────────────────────────────
 function renderDoubleHorizontalFilterView(allData, filtersConfig, container, cardRenderer, latKey, lonKey) {
     const values1   = getUniqueValues(allData, filtersConfig.primary.key, filtersConfig.primary.customOrder);
     const values2   = getUniqueValues(allData, filtersConfig.secondary.key);
@@ -780,15 +1122,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     const labelAllFem  = window.t('label_all_fem');
     const btnClose     = window.t('btn_close_show');
     const hasNearMe    = !!(latKey && lonKey);
-    const isAttrazioni = cardRenderer === window.attrazioniRenderer;
-    const mapAction    = null; // <-- Disabilitato (era: isAttrazioni ? '_openMapAttrazione' : null)
-
-    const secondaryBtnHtml = mapAction
-        ? `<button class="shrink-0 bg-white/95 backdrop-blur shadow-sm border border-stone-200 rounded-xl w-[50px] flex items-center justify-center transition-all active:scale-95 self-stretch"
-               onclick="window.${mapAction}?.()" aria-label="Mappa">
-               <span class="material-icons">explore</span>
-           </button>`
-        : (hasNearMe
+    const secondaryBtnHtml = hasNearMe
             ? `<button id="${nearMeId}"
                    class="near-me-btn ${window._nearMeEnabled ? 'active-near-me' : ''}"
                    title="${window.currentLang === 'it' ? 'Ordina per distanza' : 'Sort by distance'}"
@@ -797,7 +1131,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
                    onclick="window.toggleNearMe('${nearMeId}', function(){ window.applyDoubleSmartFilter(0,null,'${filterId}'); })">
                    <span class="material-icons text-sm">near_me</span>
                </button>`
-            : '');
+            : '';
 
     container.innerHTML = `
         <div class="smart-filter-bar-container -mx-4 px-4 pb-3 relative">
@@ -829,7 +1163,7 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
                 </div>
             </div>
         </div>
-        <div id="dynamic-list" class="flex flex-col gap-3 pb-24 animate-fade min-h-[50vh]"></div>`;
+        <div id="dynamic-list" class="flex flex-col gap-3 animate-fade min-h-[50vh]"></div>`;
 
     const c1        = container.querySelector(`#row1-${filterId}`);
     const c2        = container.querySelector(`#row2-${filterId}`);
@@ -890,9 +1224,8 @@ function renderDoubleHorizontalFilterView(allData, filtersConfig, container, car
     executeFilter();
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  TOGGLE SMART FILTER (panel apri/chiudi)
-// ─────────────────────────────────────────────────────────────────────────
+// Apre/chiude il pannello filtri (animazione expand/collapse)
+// Chiamata da: bottone filtro nella filter bar
 window.toggleSmartFilter = function(panelId, triggerId) {
     const panel = document.getElementById(panelId);
     const icon  = document.querySelector(`#${triggerId} .material-icons:last-child`);
@@ -905,9 +1238,21 @@ window.toggleSmartFilter = function(panelId, triggerId) {
     if (icon) icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SERVICES GRID
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 10 — GRIGLIA SERVIZI (PRIMARIO)
+//
+//  La pagina "Servizi" non ha sottomenu: mostra direttamente una griglia
+//  con card per Bus, Treno, Battello, Numeri Utili, Farmacie, CT Card, CT Treno.
+//  Le card hanno un effetto 3D "raised" (definito in index.html CSS).
+//
+//  renderSimpleList() è usata per Numeri Utili e Farmacie: mostra un back
+//  button e carica i dati con loadTableData().
+//
+//  Dipendenze:
+//    data-logic.js   → window.t(), window.getSmartUrl()
+//    ui-modal.js     → openModal('transport', 'bus'|'train'|'ferry')
+//    Sezione 9       → loadTableData(), renderSimpleList()
+// ═══════════════════════════════════════════════════════════════════════════
 window.renderServicesGrid = async function() {
     const targetEl = document.getElementById('app-content');
     document.querySelectorAll('.smart-filter-bar-container').forEach(el => el.remove());
@@ -918,10 +1263,10 @@ window.renderServicesGrid = async function() {
     const ferryImg = window.getSmartUrl('Battello','', 600);
 
     targetEl.innerHTML = `
-    <div class="flex flex-col gap-3 pb-32 animate-pop">
+    <div class="flex flex-col gap-4 pb-32 animate-pop" style="perspective:800px;">
 
-        <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft"
-             style="height:150px" onclick="openModal('transport','bus')">
+        <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised"
+             style="height:150px; animation-delay:0s;" onclick="openModal('transport','bus')">
             <img src="${busImg}" class="absolute inset-0 w-full h-full object-cover scale-[1.02]" onerror="this.style.display='none'">
             <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
             <div class="absolute inset-0 p-5 flex flex-col justify-between z-10">
@@ -933,8 +1278,8 @@ window.renderServicesGrid = async function() {
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-150 touch-manipulation shadow-soft"
-                 style="height:150px" onclick="openModal('transport','train')">
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised"
+                 style="height:150px; animation-delay:0.6s;" onclick="openModal('transport','train')">
                 <img src="${trainImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
                 <div class="absolute inset-0 bg-black/20"></div>
                 <div class="absolute inset-0 p-4 flex flex-col justify-between z-10">
@@ -944,8 +1289,8 @@ window.renderServicesGrid = async function() {
                     <h3 class="font-serif text-lg font-bold text-white leading-tight drop-shadow-md">${window.t('label_train')}</h3>
                 </div>
             </div>
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-150 touch-manipulation shadow-soft"
-                 style="height:150px" onclick="openModal('transport','ferry')">
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised"
+                 style="height:150px; animation-delay:1.2s;" onclick="openModal('transport','ferry')">
                 <img src="${ferryImg}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
                 <div class="absolute inset-0 bg-black/20"></div>
                 <div class="absolute inset-0 p-4 flex flex-col justify-between z-10">
@@ -957,47 +1302,49 @@ window.renderServicesGrid = async function() {
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation"
+        <div class="bg-white rounded-2xl flex items-center gap-4 p-4 cursor-pointer touch-manipulation svc-raised-flat"
+             style="animation-delay:1.8s;"
              onclick="renderSimpleList('Numeri_utili')">
-            <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-ct-service flex items-center justify-center shrink-0 shadow-sm">
                 <span class="material-icons text-xl text-white">phonelink_ring</span>
             </div>
             <div class="flex-1 min-w-0">
-                <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_num')}</h3>
+                <h3 class="font-serif font-bold text-primary text-base leading-tight">${window.t('menu_num')}</h3>
             </div>
-            <span class="material-icons text-slate-300 text-xl">chevron_right</span>
+            <span class="material-icons text-slate-300 text-xl svc-chevron">chevron_right</span>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-soft border border-slate-100/70 flex items-center gap-4 p-4 cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation"
+        <div class="bg-white rounded-2xl flex items-center gap-4 p-4 cursor-pointer touch-manipulation svc-raised-flat"
+             style="animation-delay:2.4s;"
              onclick="renderSimpleList('Farmacie')">
-            <div class="w-12 h-12 rounded-xl bg-ct-green flex items-center justify-center shrink-0 shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-ct-health flex items-center justify-center shrink-0 shadow-sm">
                 <span class="material-icons text-xl text-white">medical_services</span>
             </div>
             <div class="flex-1 min-w-0">
-                <h3 class="font-serif font-bold text-slate-800 text-base leading-tight">${window.t('menu_pharm')}</h3>
+                <h3 class="font-serif font-bold text-primary text-base leading-tight">${window.t('menu_pharm')}</h3>
             </div>
-            <span class="material-icons text-slate-300 text-xl">chevron_right</span>
+            <span class="material-icons text-slate-300 text-xl svc-chevron">chevron_right</span>
         </div>
 
         <div class="grid grid-cols-2 gap-3 mb-4">
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft border border-slate-100/70 flex flex-col justify-between p-4"
-                 style="height:140px" onclick="window.switchView('ct_card')">
-                <div class="absolute inset-0" style="background:linear-gradient(140deg,#0d3b2e 0%,#1a7a6a 60%,#2A9D8F 100%)"></div>
-                <div class="absolute bottom-0 left-0 right-0 h-1.5" style="background:linear-gradient(90deg,#E9C46A,#E76F51,#2A9D8F)"></div>
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised flex flex-col justify-between p-4"
+                 style="height:140px; animation-delay:3s;" onclick="window.switchView('ct_card')">
+                <div class="absolute inset-0" style="background:linear-gradient(145deg,#3D4246 0%,#5E7A8C 55%,#7097A8 100%)"></div>
+                <div class="absolute bottom-0 left-0 right-0 h-1" style="background:linear-gradient(90deg,#E9C46A,#D6CFC1)"></div>
                 <div class="relative z-10">
-                    <div class="w-10 h-10 mb-2.5 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/25">
+                    <div class="w-10 h-10 mb-2.5 rounded-xl bg-white/12 backdrop-blur flex items-center justify-center border border-white/20">
                         <span class="material-icons text-xl text-white">card_membership</span>
                     </div>
                     <h3 class="font-serif text-base font-bold text-white leading-tight drop-shadow-sm">Cinque Terre Card</h3>
                 </div>
             </div>
 
-            <div class="relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-150 touch-manipulation shadow-soft border border-slate-100/70 flex flex-col justify-between p-4"
-                 style="height:140px" onclick="window.switchView('treno_card')">
-                <div class="absolute inset-0" style="background:linear-gradient(140deg,#33181c 0%,#be123c 60%,#e11d48 100%)"></div>
-                <div class="absolute bottom-0 left-0 right-0 h-1.5" style="background:linear-gradient(90deg,#fcd34d,#f97316,#e11d48)"></div>
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer touch-manipulation svc-raised flex flex-col justify-between p-4"
+                 style="height:140px; animation-delay:3.6s;" onclick="window.switchView('treno_card')">
+                <div class="absolute inset-0" style="background:linear-gradient(145deg,#5C4440 0%,#8B5E5E 50%,#C98A5F 100%)"></div>
+                <div class="absolute bottom-0 left-0 right-0 h-1" style="background:linear-gradient(90deg,#E9C46A,#D6CFC1)"></div>
                 <div class="relative z-10">
-                    <div class="w-10 h-10 mb-2.5 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/25">
+                    <div class="w-10 h-10 mb-2.5 rounded-xl bg-white/12 backdrop-blur flex items-center justify-center border border-white/20">
                         <span class="material-icons text-xl text-white">train</span>
                     </div>
                     <h3 class="font-serif text-base font-bold text-white leading-tight drop-shadow-sm">Cinque Terre Treno</h3>
@@ -1012,6 +1359,8 @@ window.renderServicesGrid = async function() {
             </button>
         </div>
     </div>`;
+
+    _initOverscrollPeek();
 };
 
 window.renderSimpleList = function(tableName) {
@@ -1037,9 +1386,30 @@ window.toggleTicketInfo = function() {
     document.getElementById('ticket-info-box')?.classList.toggle('hidden');
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  GLOBAL SEARCH
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 11 — RICERCA GLOBALE (PRIMARIO)
+//
+//  La barra di ricerca nella home cerca in TUTTE le tabelle contemporaneamente:
+//  Ristoranti, Attrazioni, Spiagge, Prodotti, Vini, Farmacie, Numeri Utili,
+//  e anche i "virtuali" Bus/Traghetti/Treni.
+//
+//  Flusso:
+//    1. L'utente digita → _searchDebounced() aspetta 280ms (debounce)
+//    2. _runSearch() cerca in tutte le tabelle in cache
+//    3. I risultati appaiono in un bottom-sheet raggruppati per categoria
+//    4. Tap su un risultato → _searchNavigateTo() naviga alla pagina giusta,
+//       apre la tabella corretta, scrolla alla card e la evidenzia con un flash
+//
+//  PREFETCH: al primo caricamento, le tabelle vengono pre-caricate in background
+//  (requestIdleCallback) così la ricerca è istantanea.
+//
+//  _SEARCH_SECTIONS è la configurazione: ogni riga definisce una tabella,
+//  come estrarre nome/sottotitolo, e come aprire il modale al tap.
+//
+//  Dipendenze:
+//    data-logic.js → window.supabaseClient, window.appCache, window.dbCol()
+//    ui-modal.js   → openModal() per aprire i dettagli dal risultato
+// ═══════════════════════════════════════════════════════════════════════════
 const _BUS_VIRTUAL = [
     { _virtual: true, id: 'bus',   Nome: 'Orari Bus',       Alias: 'bus orari autobus ctbus',                    Sottotitolo: 'Cerca connessioni tra borghi' },
 ];
@@ -1053,7 +1423,7 @@ const _TRAIN_VIRTUAL = [
 const _SEARCH_SECTIONS = [
     {
         table: 'Ristoranti', view: 'cibo', label: 'Ristoranti', icon: 'restaurant',
-        color: '#E76F51', bg: '#FFEDE1',
+        color: '#C98A5F', bg: '#F5E6D8',
         getId:     item => item.id,
         getName:   item => window.dbCol(item, 'Nome') || 'Ristorante',
         getSub:    item => window.dbCol(item, 'Paesi') || '',
@@ -1061,7 +1431,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: 'Attrazioni', view: 'outdoor', label: 'Attrazioni', icon: 'attractions',
-        color: '#2A9D8F', bg: '#E0F7FA',
+        color: '#768E6B', bg: '#E8EDE5',
         getId:     item => item.POI_ID || item.id,
         getName:   item => window.dbCol(item, 'Attrazioni') || window.dbCol(item, 'Titolo') || 'Attrazione',
         getSub:    item => window.dbCol(item, 'Paese') || '',
@@ -1069,7 +1439,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: 'Spiagge', view: 'outdoor', label: 'Spiagge', icon: 'beach_access',
-        color: '#0369A1', bg: '#EFF6FF',
+        color: '#7097A8', bg: '#E4EEF2',
         getId:     item => item.id,
         getName:   item => window.dbCol(item, 'Spiagge') || window.dbCol(item, 'Nome') || 'Spiaggia',
         getSub:    item => window.dbCol(item, 'Paesi') || '',
@@ -1077,7 +1447,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: 'Prodotti', view: 'cibo', label: 'Prodotti', icon: 'lunch_dining',
-        color: '#C2410C', bg: '#FFF3E0',
+        color: '#C98A5F', bg: '#F5E6D8',
         getId:     item => item.id,
         getName:   item => window.dbCol(item, 'Prodotti') || window.dbCol(item, 'Nome') || 'Prodotto',
         getSub:    () => '',
@@ -1085,7 +1455,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: 'Vini', view: 'cibo', label: 'Vini', icon: 'wine_bar',
-        color: '#9B2226', bg: '#FFF0EE',
+        color: '#8B5E5E', bg: '#F2E8E8',
         getId:     item => item.id || item.ID,
         getName:   item => item.Nome || 'Vino',
         getSub:    item => item.Produttore || '',
@@ -1093,7 +1463,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: 'Farmacie', view: 'servizi', label: 'Farmacie', icon: 'local_pharmacy',
-        color: '#606C38', bg: '#ECFCCB',
+        color: '#8DAA91', bg: '#E6EEE7',
         getId:     item => item.id,
         getName:   item => _safeStr(item.Nome) || 'Farmacia',
         getSub:    item => _safeStr(item.Paesi) || item.Indirizzo || '',
@@ -1125,7 +1495,7 @@ const _SEARCH_SECTIONS = [
     },
     {
         table: '_train', view: 'servizi', virtual: true, data: _TRAIN_VIRTUAL,
-        label: 'Treni', icon: 'train', color: '#E76F51', bg: '#FFEDE1',
+        label: 'Treni', icon: 'train', color: '#5E7A8C', bg: '#E1E9EE',
         getId:     item => item.id,
         getName:   item => item.Nome,
         getSub:    item => item.Sottotitolo,
@@ -1349,7 +1719,7 @@ window._flashCard = function(id, fallbackName, attempt) {
 
     // Flash ring — solo outline (nessun boxShadow per evitare artefatti Safari)
     target.style.transition    = 'outline 0.2s';
-    target.style.outline       = '3px solid #E76F51';
+    target.style.outline       = '3px solid #C98A5F';
     target.style.outlineOffset = '3px';
     setTimeout(() => {
         target.style.outline = '3px solid transparent';
@@ -1399,9 +1769,21 @@ window._searchNavigateTo = async function(secIdx, hitIdx) {
     setTimeout(() => sec.openModal(item), 300);
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  LOADING FEEDBACK + NETWORK ERROR
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 12 — LOADING, OFFLINE E INIT (PRIMARIO)
+//
+//  Gestisce il primo caricamento dell'app:
+//    1. Mostra step di loading ("Connessione...", "Caricamento dati...", "Pronto!")
+//    2. Se offline con Service Worker → mostra banner "Offline" e usa la cache
+//    3. Se offline senza SW → mostra errore "Connessione assente" con bottone Riprova
+//    4. Quando tutto è pronto → renderizza la home e attiva pull-to-refresh
+//
+//  Il DOMContentLoaded alla fine del file è il PUNTO DI INGRESSO dell'app.
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per i testi di loading tradotti
+//    Sezione 4     → switchView('home') per mostrare la prima pagina
+// ═══════════════════════════════════════════════════════════════════════════
 function setLoadingStep(msg) {
     const el = document.getElementById('loading-step');
     if (el) el.textContent = msg;
@@ -1457,9 +1839,11 @@ function _saveOnlineTimestamp() {
     try { localStorage.setItem('f2g_last_online', new Date().toISOString()); } catch(e) {}
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  DOM CONTENT LOADED — INIT
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  PUNTO DI INGRESSO — viene eseguito quando la pagina HTML è pronta.
+//  Questo è il "main()" dell'app: controlla la connessione, mostra il loading,
+//  e poi renderizza la home page.
+// ═══════════════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
     const netErrorTimer = setTimeout(() => {
         if (document.getElementById('loading-step')) showNetworkError();
@@ -1495,36 +1879,106 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateNavBar?.();
     switchView('home');
     window._initPullToRefresh();
-    window._showLangTooltipIfFirstVisit();
 });
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SWIPE GESTURE (tab switching)
-// ─────────────────────────────────────────────────────────────────────────
-document.addEventListener('touchstart', (e) => {
-    window.touchStartX = e.changedTouches[0].screenX;
-    window.touchStartY = e.changedTouches[0].screenY;
-}, { passive: true });
+// ───────────────────────────────────────────────────────────────────────
+//  PINCH-ZOOM CON AUTO-RESET (TERZIARIO — UX mobile)
+//
+//  Intercetta il pinch a 2 dita su Safari iOS (che ignora user-scalable=no)
+//  e applica uno zoom CSS controllato che torna a scala 1 dopo 350ms.
+//  Senza questo, Safari ingrandirebbe la pagina in modo permanente.
+//
+//  Dipendenze: nessuna (puro DOM/touch events)
+// ───────────────────────────────────────────────────────────────────────
+(function _initPinchZoom() {
+    const target = document.getElementById('app-content');
+    if (!target) return;
 
-document.addEventListener('touchend', (e) => {
-    if (!document.getElementById('sub-content')) return;
-    if (!window.currentMenuOptions?.length) return;
+    let _startDist    = 0;
+    let _currentScale = 1;
+    let _pinching     = false;
+    let _resetTimer   = null;
+    const MAX_SCALE   = 2.5;
 
-    const xDiff = e.changedTouches[0].screenX - window.touchStartX;
-    const yDiff = e.changedTouches[0].screenY - window.touchStartY;
+    function _dist(t1, t2) {
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
 
-    if (Math.abs(yDiff) > Math.abs(xDiff)) return;   // scroll verticale
-    if (Math.abs(xDiff) < 60) return;                  // soglia minima
+    function _midpoint(t1, t2) {
+        return {
+            x: (t1.clientX + t2.clientX) / 2,
+            y: (t1.clientY + t2.clientY) / 2
+        };
+    }
 
-    const currentIndex = window.currentMenuOptions.findIndex(o => o.table === window.currentActiveTable);
-    if (currentIndex === -1) return;
+    // ── touchstart: salva stato iniziale ──
+    document.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            _pinching = true;
+            _startDist = _dist(e.touches[0], e.touches[1]);
+            clearTimeout(_resetTimer);
 
-    const nextIndex = xDiff > 0
-        ? (currentIndex > 0 ? currentIndex - 1 : -1)
-        : (currentIndex < window.currentMenuOptions.length - 1 ? currentIndex + 1 : -1);
+            target.style.transition = 'none';
 
-    if (nextIndex !== -1) loadTableData(window.currentMenuOptions[nextIndex].table, null);
-}, { passive: true });
+            const rect = target.getBoundingClientRect();
+            const mid  = _midpoint(e.touches[0], e.touches[1]);
+            const ox   = ((mid.x - rect.left) / rect.width)  * 100;
+            const oy   = ((mid.y - rect.top)  / rect.height) * 100;
+            target.style.transformOrigin = `${ox}% ${oy}%`;
+        }
+    }, { passive: true });
+
+    // ── touchmove: BLOCCA il pinch nativo + applica il nostro zoom ──
+    // DEVE essere { passive: false } per poter chiamare preventDefault()
+    document.addEventListener('touchmove', (e) => {
+        if (!_pinching || e.touches.length !== 2) return;
+
+        // ★ Questo blocca il pinch-zoom nativo di Safari iOS
+        e.preventDefault();
+
+        const newDist = _dist(e.touches[0], e.touches[1]);
+        let newScale = newDist / _startDist;
+
+        // Clamp + damping
+        newScale = Math.max(1, Math.min(MAX_SCALE, newScale));
+        if (newScale > 2) newScale = 2 + (newScale - 2) * 0.3;
+
+        _currentScale = newScale;
+        target.style.transform = `scale(${_currentScale})`;
+    }, { passive: false });  // ← passive:false è OBBLIGATORIO per preventDefault
+
+    // ── touchend: delay → snapBack elastico ──
+    document.addEventListener('touchend', (e) => {
+        if (!_pinching) return;
+        if (e.touches.length < 2) {
+            _pinching = false;
+
+            if (_currentScale < 1.08) {
+                _snapBack();
+                return;
+            }
+
+            clearTimeout(_resetTimer);
+            _resetTimer = setTimeout(_snapBack, 350);
+        }
+    }, { passive: true });
+
+    function _snapBack() {
+        target.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+        target.style.transform  = 'scale(1)';
+        _currentScale = 1;
+
+        const _onEnd = () => {
+            target.style.transition = '';
+            target.style.transformOrigin = '';
+            target.removeEventListener('transitionend', _onEnd);
+        };
+        target.addEventListener('transitionend', _onEnd, { once: true });
+        setTimeout(_onEnd, 500);
+    }
+})();
 
 window.apriTrenitalia = function() { window.open('https://www.trenitalia.com', '_blank'); };
 
@@ -1582,9 +2036,33 @@ window.initPendingMaps = function() {
 window.userMarker         = null;
 window.userAccuracyCircle = null;
 
-// ─────────────────────────────────────────────────────────────────────────
-//  GEO MODAL FACTORY (DRY: elimina ~120 righe duplicate)
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 13 — GEO MODAL E GPS (SECONDARIO)
+//
+//  Sistema di permessi e tracciamento GPS, usato da:
+//    - Sentieri (bottone GPS nella mappa tecnica)
+//    - Bus (auto-localizzazione sulla mappa fermate)
+//    - Near Me (ordinamento per distanza nelle liste)
+//    - Mappa interattiva (posizione utente su ui-map.js)
+//
+//  GeoModal è un bottom-sheet generico per chiedere permessi o mostrare errori.
+//  GeoTracker (definito più in basso) è un singleton pub/sub che gestisce
+//  un solo watchPosition condiviso tra tutti i consumatori.
+//
+//  Flusso permessi:
+//    1. _requestGeoPermission() controlla lo stato (granted/denied/prompt)
+//    2. Se "prompt" → mostra GeoModal per chiedere il permesso
+//    3. Se "granted" → chiama il callback onGranted
+//    4. Se "denied" → mostra modale di errore con istruzioni
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per i testi tradotti dei modali
+//  Usata da:
+//    toggleGPS() (bottone GPS nei sentieri)
+//    initBusMap() (mappa bus)
+//    ui-map.js → per il tracking sulla mappa interattiva
+//    features.js → toggleNearMe() per ordinamento per distanza
+// ═══════════════════════════════════════════════════════════════════════════
 window.GeoModal = {
     show(config) {
         this.dismiss();
@@ -1612,7 +2090,7 @@ window.GeoModal = {
                 <h2 style="text-align:center;font-family:'Roboto Slab',serif;font-size:1.3rem;font-weight:700;color:#264653;margin:0 0 10px;">${config.title}</h2>
                 <p style="text-align:center;font-size:0.88rem;color:#64748b;line-height:1.6;margin:0 0 ${config.subBody ? '8px' : '24px'};">${config.body}</p>
                 ${config.subBody ? `<p style="text-align:center;font-size:0.78rem;color:#94a3b8;line-height:1.5;margin:0 0 24px;">${config.subBody}</p>` : ''}
-                ${config.hint   ? `<div id="geo-browser-hint" style="display:none;background:#F4F1DE;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:0.78rem;color:#606C38;font-weight:600;text-align:center;line-height:1.5;">📍 ${config.hint}</div>` : ''}
+                ${config.hint   ? `<div id="geo-browser-hint" style="display:none;background:#F5F1E1;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:0.78rem;color:#768E6B;font-weight:600;text-align:center;line-height:1.5;">📍 ${config.hint}</div>` : ''}
                 <div style="display:flex;flex-direction:column;gap:10px;">${actionsHtml}</div>
             </div>`;
 
@@ -1646,7 +2124,7 @@ window.GeoModal = {
 function _showGeoRequestModal(onGranted, onDenied) {
     window.GeoModal.show({
         iconName: 'my_location',
-        iconBg:   'linear-gradient(135deg,#E76F51,#c0392b)',
+        iconBg:   'linear-gradient(135deg,#C98A5F,#9E7B6B)',
         title:    window.t('geo_title'),
         body:     window.t('geo_desc'),
         subBody:  window.t('geo_privacy'),
@@ -1668,12 +2146,13 @@ function _showGeoErrorModal(title, message) {
     });
 }
 
-// Alias privato mantenuto per retrocompatibilità interna
-function _dismissGeoModal() { window.GeoModal.dismiss(); }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  GPS PERMISSION + TRACKING
-// ─────────────────────────────────────────────────────────────────────────
+
+// Richiede il permesso GPS all'utente. Gestisce 3 casi:
+//   - "granted" → chiama onGranted subito
+//   - "denied" → mostra errore (l'utente deve andare nelle impostazioni del browser)
+//   - "prompt" → mostra il modale di richiesta con spiegazione
+// Fallback iOS Safari: usa localStorage perché Safari non supporta Permissions API
 window._requestGeoPermission = async function(onGranted, onDenied) {
     if (!navigator.geolocation) {
         _showGeoErrorModal(window.t('geo_blocked_title'), window.t('geo_unsupported'));
@@ -1754,9 +2233,7 @@ function _startGeoWatch(btn, map) {
     window.GeoTracker.start('sentieri', ({ lat, lng, accuracy, isFirst }) => {
         _dismissGeoBanner();
         if (isFirst) {
-            window.userMarker?.let?.(m => map.removeLayer(m));
-            window.userAccuracyCircle?.let?.(c => map.removeLayer(c));
-            // Compatibilità vanilla: rimuovi se esistono
+            // Rimuovi marker precedenti se esistono
             if (window.userMarker)         { map.removeLayer(window.userMarker);         window.userMarker = null; }
             if (window.userAccuracyCircle) { map.removeLayer(window.userAccuracyCircle); window.userAccuracyCircle = null; }
 
@@ -1799,6 +2276,7 @@ function _dismissGeoBanner() {
     if (b) { b.style.opacity = '0'; setTimeout(() => b.remove(), 300); }
 }
 
+<<<<<<< HEAD
 function _showGeoError(btn, msg) {
     _showGeoErrorModal('Errore GPS', msg);
     if (btn) {
@@ -1809,6 +2287,34 @@ function _showGeoError(btn, msg) {
 // ─────────────────────────────────────────────────────────────────────────
 //  CHICCO — Mascotte meteo con animazione Lottie
 // ─────────────────────────────────────────────────────────────────────────
+=======
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 14 — CHICCO MASCOTTE METEO (SECONDARIO — COMPONENTE PROTETTO)
+//
+//  Chicco è un grappolo d'uva animato che appare sulla home page.
+//  Al tap mostra una card con meteo in tempo reale + curiosità sulle Cinque Terre.
+//
+//  Componenti:
+//    - FAB: bottone rotondo in basso a sinistra (immagine statica Cloudinary)
+//    - Lottie: animazione che parte al primo tap (caricata lazy)
+//    - Speech bubble: messaggio di benvenuto (primo accesso / fascia oraria)
+//    - Card meteo: pannello con temperatura, umidità, stato mare + consiglio
+//
+//  Logica bubble:
+//    - Prima visita IN ASSOLUTO (localStorage 'f2g_chicco_ever') → benvenuto caloroso
+//    - Prima visita di QUESTA SESSIONE (sessionStorage) → messaggio per fascia oraria
+//    - Visite successive nella stessa sessione → nessuna bubble
+//
+//  ATTENZIONE: Chicco è un componente protetto. Non modificare senza conferma.
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per i messaggi, window.getChiccoRealTimeAdvice() per il meteo
+//    Lottie Web (CDN) → window.lottie per le animazioni
+//    Cloudinary → immagine statica chicco_wxxwbm.png e animazione chicco.json
+// ═══════════════════════════════════════════════════════════════════════════
+>>>>>>> d79452cbc6655a230f7358426493f5f206a13b6e
 const CHICCO_STATIC_URL = 'https://res.cloudinary.com/dkg0jfady/image/upload/v1770990643/chicco_wxxwbm.png';
 const CHICCO_LOTTIE_URL = 'https://res.cloudinary.com/dkg0jfady/raw/upload/chicco.json';
 
@@ -1834,6 +2340,56 @@ function _injectChiccoFAB() {
                  id="chicco-fab-static" draggable="false">
         </button>`;
     document.body.appendChild(fab);
+
+    // ── Speech bubble di benvenuto ──
+    // Due livelli:
+    //   - localStorage 'f2g_chicco_ever' → prima visita IN ASSOLUTO = benvenuto caloroso
+    //   - sessionStorage 'f2g_chicco_session' → primo atterraggio di QUESTA SESSIONE = messaggio fascia oraria
+    // La bubble appare SOLO all'atterraggio sulla landing page (da URL/browser),
+    // MAI quando si naviga tra le view interne della PWA.
+    const EVER_KEY    = 'f2g_chicco_ever';
+    const SESSION_KEY = 'f2g_chicco_session';
+    const alreadyGreetedThisSession = sessionStorage.getItem(SESSION_KEY);
+
+    if (!alreadyGreetedThisSession) {
+        // È il primo atterraggio di questa sessione
+        const isFirstEver = !localStorage.getItem(EVER_KEY);
+        const bubbleKey = isFirstEver
+            ? 'chicco_bubble_welcome'       // prima volta in assoluto → benvenuto caloroso
+            : _getChiccoBubbleKeyByTime();  // sessione successiva → fascia oraria
+
+        if (isFirstEver) localStorage.setItem(EVER_KEY, '1');
+        sessionStorage.setItem(SESSION_KEY, '1');
+
+        // Rimuovi eventuale bubble precedente
+        document.getElementById('chicco-bubble')?.remove();
+
+        const bubble = document.createElement('div');
+        bubble.className = 'chicco-bubble';
+        bubble.id = 'chicco-bubble';
+        bubble.textContent = window.t(bubbleKey);
+        bubble.addEventListener('click', () => window.toggleChicco());
+        document.body.appendChild(bubble);
+
+        // Auto-dismiss dopo 6.5s (1.5s delay CSS + 5s visibile)
+        window._chiccoBubbleTimer = setTimeout(() => _dismissChiccoBubble(), 6500);
+    }
+}
+
+/** Restituisce la chiave chicco_bubble_* in base all'ora locale */
+function _getChiccoBubbleKeyByTime() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12)  return 'chicco_bubble_morning';
+    if (h >= 12 && h < 18) return 'chicco_bubble_afternoon';
+    return 'chicco_bubble_evening';
+}
+
+function _dismissChiccoBubble() {
+    clearTimeout(window._chiccoBubbleTimer);
+    const bubble = document.getElementById('chicco-bubble');
+    if (!bubble || bubble.classList.contains('bubble-out')) return;
+    bubble.classList.add('bubble-out');
+    setTimeout(() => bubble.remove(), 350);
 }
 
 async function _loadChiccoLottie() {
@@ -1851,9 +2407,25 @@ async function _loadChiccoLottie() {
 window.toggleChicco = async function() {
     if (document.getElementById('chicco-weather-card')) { window._closeChiccoCard(); return; }
 
+    // Dismiss la bubble se presente
+    _dismissChiccoBubble();
+
     window._haptic?.(10);
 
+<<<<<<< HEAD
     // RIMOSSO: L'istruzione che nascondeva Chicco al click. Ora rimane fisso.
+=======
+    // ── Animate FAB out: shrink + fade verso la posizione della card ──
+    const fabWrap = document.getElementById('chicco-fab-wrap');
+    if (fabWrap) {
+        fabWrap.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease';
+        fabWrap.style.transform  = 'scale(0.3) translateY(-30px)';
+        fabWrap.style.opacity    = '0';
+        fabWrap.style.pointerEvents = 'none';
+    }
+
+    const lottieData = await _loadChiccoLottie();
+>>>>>>> d79452cbc6655a230f7358426493f5f206a13b6e
 
     // 1. INIEZIONE IMMEDIATA DELL'UI (Rimuove il "vuoto" causato dal caricamento)
     const card = document.createElement('div');
@@ -1927,19 +2499,57 @@ window.toggleChicco = async function() {
 window._closeChiccoCard = function() {
     if (_chiccoCardAnim) { try { _chiccoCardAnim.destroy(); } catch(e) {} _chiccoCardAnim = null; }
 
+<<<<<<< HEAD
     // RIMOSSO: il ripristino di style.display='', in quanto il pulsante non viene più nascosto
 
+=======
+    const fabWrap  = document.getElementById('chicco-fab-wrap');
+>>>>>>> d79452cbc6655a230f7358426493f5f206a13b6e
     const card     = document.getElementById('chicco-weather-card');
     const backdrop = document.getElementById('chicco-card-backdrop');
-    if (card) {
-        Object.assign(card.style, { transition: 'opacity 0.18s ease, transform 0.18s ease', opacity: '0', transform: 'translateY(8px) scale(0.96)' });
-        setTimeout(() => card.remove(), 200);
+
+    // ── Tutto parte nello stesso frame ──
+    // Card: fade-out + slide giù (250ms)
+    // FAB:  spring-back elastico (450ms, parte da scale 0.3)
+    // Il FAB è più lento della card → l'occhio segue il movimento
+    // di Chicco che "atterra" mentre la card è già svanita.
+    if (fabWrap) {
+        fabWrap.classList.remove('chicco-talking');
+        fabWrap.style.transition = 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease';
+        fabWrap.style.transform  = '';
+        fabWrap.style.opacity    = '';
+        fabWrap.style.pointerEvents = '';
     }
+
+    if (card) {
+        Object.assign(card.style, {
+            transition: 'opacity 0.25s ease, transform 0.25s cubic-bezier(0.4,0,0.2,1)',
+            opacity: '0',
+            transform: 'translateY(12px) scale(0.95)'
+        });
+        setTimeout(() => card.remove(), 280);
+    }
+
     backdrop?.remove();
 };
+<<<<<<< HEAD
 // ─────────────────────────────────────────────────────────────────────────
 //  BUMP LANG PANEL
 // ─────────────────────────────────────────────────────────────────────────
+=======
+
+// ───────────────────────────────────────────────────────────────────────
+//  PANNELLO CAMBIO LINGUA (SECONDARIO)
+//
+//  Popup che appare dal pulsante lingua nella home page.
+//  Mostra le 6 lingue disponibili con bandierina, nome e check sulla attiva.
+//  Al tap su una lingua → changeLanguage() aggiorna tutto.
+//
+//  Dipendenze:
+//    data-logic.js → window.AVAILABLE_LANGS, window.currentLang
+//    Sezione 3     → changeLanguage()
+// ───────────────────────────────────────────────────────────────────────
+>>>>>>> d79452cbc6655a230f7358426493f5f206a13b6e
 window._toggleBumpLangPanel = function() {
     if (document.getElementById('bump-lang-panel')) { window._closeBumpLangPanel(); return; }
 
@@ -1953,12 +2563,12 @@ window._toggleBumpLangPanel = function() {
 
         var btn = document.createElement('button');
         btn.style.cssText = 'width:100%;display:flex;align-items:center;gap:14px;padding:13px 20px;text-align:left;border:none;cursor:pointer;'
-            + 'background:' + (isActive ? '#F4F1DE' : 'transparent') + ';'
+            + 'background:' + (isActive ? '#F5F1E1' : 'transparent') + ';'
             + '-webkit-tap-highlight-color:transparent;'
             + (isFirst ? 'border-radius:20px 20px 4px 4px;' : isLast ? 'border-radius:4px 4px 20px 20px;' : '');
 
-        btn.addEventListener('mouseenter', function() { this.style.background = isActive ? '#F4F1DE' : '#f8fafc'; });
-        btn.addEventListener('mouseleave', function() { this.style.background = isActive ? '#F4F1DE' : 'transparent'; });
+        btn.addEventListener('mouseenter', function() { this.style.background = isActive ? '#F5F1E1' : '#f8fafc'; });
+        btn.addEventListener('mouseleave', function() { this.style.background = isActive ? '#F5F1E1' : 'transparent'; });
         btn.addEventListener('click', (function(code) { return function() { changeLanguage(code); window._closeBumpLangPanel(); }; })(l.code));
 
         var flagSpan  = document.createElement('span');
@@ -1975,7 +2585,7 @@ window._toggleBumpLangPanel = function() {
         if (isActive) {
             var check = document.createElement('span');
             check.className    = 'material-icons';
-            check.style.cssText= 'color:#606C38;font-size:18px;flex-shrink:0;';
+            check.style.cssText= 'color:#768E6B;font-size:18px;flex-shrink:0;';
             check.textContent  = 'check_circle';
             btn.appendChild(check);
         }
@@ -2004,54 +2614,18 @@ window._closeBumpLangPanel = function() {
     document.getElementById('bump-lang-trigger')?.setAttribute('aria-expanded', 'false');
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  TOOLTIP FIRST-VISIT LINGUA
-// ─────────────────────────────────────────────────────────────────────────
-window._showLangTooltipIfFirstVisit = function() {
-    var STORAGE_KEY = 'five2go_lang_tooltip_seen';
-    if (localStorage.getItem(STORAGE_KEY)) return;
-
-    setTimeout(function() {
-        var trigger = document.getElementById('bump-lang-trigger');
-        if (!trigger) return;
-
-        var pulse = document.createElement('span');
-        pulse.className = 'lang-pulse-ring';
-        pulse.id = 'lang-pulse-ring';
-        var inner = trigger.querySelector('.lang-btn-inner');
-        if (inner) { inner.style.position = 'relative'; inner.appendChild(pulse); }
-        else        { trigger.style.position = 'relative'; trigger.appendChild(pulse); }
-
-        var tooltip = document.createElement('div');
-        tooltip.className = 'lang-first-tooltip';
-        tooltip.id = 'lang-first-tooltip';
-        tooltip.setAttribute('role', 'status');
-        tooltip.setAttribute('aria-live', 'polite');
-        tooltip.innerHTML = '<span class="material-icons">translate</span><span>Change language · Cambia lingua</span>';
-        document.body.appendChild(tooltip);
-
-        var dismissed = false;
-        function dismiss() {
-            if (dismissed) return;
-            dismissed = true;
-            localStorage.setItem(STORAGE_KEY, '1');
-            var tt = document.getElementById('lang-first-tooltip');
-            if (tt) { tt.style.animation = 'tooltipFadeOut 0.25s ease forwards'; setTimeout(function() { tt.parentNode?.removeChild(tt); }, 260); }
-            var pr = document.getElementById('lang-pulse-ring');
-            pr?.parentNode?.removeChild(pr);
-        }
-
-        tooltip.addEventListener('click', function() { dismiss(); window._toggleBumpLangPanel(); });
-        var autoTimer = setTimeout(dismiss, 6000);
-
-        var origToggle = window._toggleBumpLangPanel;
-        window._toggleBumpLangPanel = function() { dismiss(); clearTimeout(autoTimer); origToggle(); };
-    }, 1800);
-};
-
-// ─────────────────────────────────────────────────────────────────────────
-//  PULL-TO-REFRESH
-// ─────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
+//  PULL-TO-REFRESH (SECONDARIO)
+//
+//  Quando l'utente tira verso il basso dalla cima della pagina:
+//    1. Appare una freccia animata con testo "Tira per aggiornare"
+//    2. Se tira abbastanza (65px) e rilascia → ricarica i dati della tabella corrente
+//    3. Invalida la cache filtri e ricarica dal database
+//
+//  Dipendenze:
+//    data-logic.js → window.t() per i testi
+//    Sezione 9     → loadTableData() per ricaricare i dati
+// ───────────────────────────────────────────────────────────────────────
 window._initPullToRefresh = function() {
     var container = document.getElementById('app-content');
     if (!container || container._ptrAttached) return;
@@ -2115,7 +2689,7 @@ window._initPullToRefresh = function() {
             if (label) label.textContent = window.t?.('ptr_loading') || 'Aggiornamento...';
             setTimeout(function() {
                 var table = window.currentActiveTable;
-                if (table && table !== 'Mappe' && window.appCache) {
+                if (table && window.appCache) {
                     delete window.appCache[table];
                     window._invalidateUniqueValCache();   // ← invalida cache filtri
                     loadTableData(table, null);
@@ -2130,9 +2704,32 @@ window._initPullToRefresh = function() {
     }, { passive: true });
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-//  BUS MAP
-// ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEZIONE 15 — TRASPORTI: BUS, TRAGHETTI, TRENI (SECONDARIO)
+//
+//  Queste funzioni gestiscono la ricerca orari per i 3 mezzi di trasporto.
+//  Sono chiamate dai modali in ui-modal-contents.js (sezione transport).
+//
+//  BUS:
+//    initBusMap()         → Crea la mappa Leaflet con le fermate (marker cliccabili)
+//    setBusStop()         → Imposta partenza/arrivo quando l'utente clicca un marker
+//    handleBusSelectionChange() → Aggiorna le destinazioni disponibili
+//    eseguiRicercaBus()   → Chiama la RPC Supabase 'trova_bus' e mostra i risultati
+//
+//  TRAGHETTI:
+//    eseguiRicercaTraghetto() → Chiama la RPC 'next_departures'
+//                               Caso speciale: Corniglia non ha molo → messaggio ad hoc
+//
+//  TRENI:
+//    apriTrenitalia()     → Apre il sito Trenitalia in un nuovo tab
+//
+//  Dipendenze:
+//    data-logic.js         → window.supabaseClient (RPC calls), window.t(),
+//                            isItalianHoliday() per badge feriale/festivo
+//    Leaflet.js (CDN)      → L.map, L.marker per la mappa bus
+//    ui-modal-contents.js  → genera l'HTML dei form di ricerca
+//    Sezione 13            → GPS per auto-localizzazione sulla mappa bus
+// ═══════════════════════════════════════════════════════════════════════════
 window.initBusMap = function(fermate) {
     const mapContainer = document.getElementById('bus-map');
     if (!mapContainer) return;
@@ -2158,7 +2755,7 @@ window.initBusMap = function(fermate) {
 
     fermate.forEach(f => {
         if (!f.LAT || !f.LONG) return;
-        L.marker([f.LAT, f.LONG], { icon: busIcon }).addTo(map)
+        const marker = L.marker([f.LAT, f.LONG], { icon: busIcon })
             .bindPopup(`
             <div style="text-align:center;min-width:160px;font-family:inherit;">
                 <div style="font-weight:800;font-size:0.9rem;color:#1e293b;margin-bottom:10px;line-height:1.2;">${f.NOME_FERMATA}</div>
@@ -2169,7 +2766,7 @@ window.initBusMap = function(fermate) {
                         style="flex:1;background:#dc2626;color:white;border:none;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;">↓ ${labelArrivo}</button>
                 </div>
             </div>`);
-        markersGroup.addLayer;
+        markersGroup.addLayer(marker);
     });
     map.addLayer(markersGroup);
 
@@ -2451,44 +3048,79 @@ window.eseguiRicercaBus = async function() {
 window.eseguiRicercaTraghetto = async function() {
     const selPart = document.getElementById('selPartenzaFerry');
     const selArr  = document.getElementById('selArrivoFerry');
+    const selData = document.getElementById('selDataFerry');
     const selOra  = document.getElementById('selOraFerry');
     const resultsContainer = document.getElementById('ferryResultsContainer');
     const nextCard         = document.getElementById('nextFerryCard');
     const list             = document.getElementById('otherFerryList');
     if (!selPart.value || !selArr.value || !selOra.value) return;
 
+    // ── Caso 1: Corniglia non ha un molo ──
+    // Check client-side, zero latenza — il turista capisce subito perché.
+    if (selPart.value === 'corniglia' || selArr.value === 'corniglia') {
+        resultsContainer.style.display = 'block';
+        list.innerHTML = '';
+        nextCard.innerHTML = `<div class="text-center py-6 text-white">
+            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm border border-white/30">
+                <span class="material-icons text-3xl">location_off</span>
+            </div>
+            <strong class="block text-xl mb-1">Corniglia</strong>
+            <div class="opacity-90 text-sm px-4 leading-relaxed">${window.t('ferry_no_corniglia')}</div>
+        </div>`;
+        setTimeout(() => resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        return;
+    }
+
     resultsContainer.style.display = 'block';
     nextCard.innerHTML = `<div class="flex flex-col items-center justify-center py-8"><span class="material-icons spin text-3xl mb-2 opacity-80">sync</span><span class="text-sm font-bold uppercase tracking-widest opacity-80">${window.t('loading')}</span></div>`;
     list.innerHTML = '';
     setTimeout(() => resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 
-    const startCol   = selPart.value;
-    const endCol     = selArr.value;
-    const timeFilter = selOra.value;
+    // Chiama la RPC next_departures (nuova struttura DB normalizzata)
+    const { data, error } = await window.supabaseClient.rpc('next_departures', {
+        from_stop:   selPart.value,
+        to_stop:     selArr.value,
+        check_date:  selData.value,
+        check_time:  selOra.value + ':00',   // TIME vuole hh:mm:ss
+        max_results: 10
+    });
 
-    const { data, error } = await window.supabaseClient
-        .from('Orari_traghetti').select(`id, direzione, validita, "${startCol}", "${endCol}"`);
+    if (error || !data?.length) {
+        // ── Caso 2: diagnostica — la fermata è servita oggi? ──
+        // Rifacciamo la query con orario 00:00 per capire se esistono
+        // corse in QUALUNQUE momento della giornata per questa tratta.
+        const { data: allDay } = await window.supabaseClient.rpc('next_departures', {
+            from_stop:   selPart.value,
+            to_stop:     selArr.value,
+            check_date:  selData.value,
+            check_time:  '00:00:00',
+            max_results: 1
+        });
+        const stopNotServed = !allDay || allDay.length === 0;
+        const errIcon = stopNotServed ? 'event_busy' : 'directions_boat';
+        const errMsg  = stopNotServed
+            ? window.t('ferry_stop_not_served')
+            : window.t('bus_try_change');
 
-    const validRuns = (data || [])
-        .filter(row => {
-            const tS = row[startCol], tE = row[endCol];
-            return tS && tE && tS < tE && tS >= timeFilter;
-        })
-        .sort((a, b) => a[startCol].localeCompare(b[startCol]));
-
-    if (error || !validRuns.length) {
-        nextCard.innerHTML = `<div class="text-center py-6 text-white"><div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm border border-white/30"><span class="material-icons text-3xl">directions_boat</span></div><strong class="block text-xl mb-1">${window.t('bus_not_found')}</strong><div class="opacity-80 text-sm">Controlla se la tratta è diretta.</div></div>`;
+        nextCard.innerHTML = `<div class="text-center py-6 text-white">
+            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm border border-white/30">
+                <span class="material-icons text-3xl">${errIcon}</span>
+            </div>
+            <strong class="block text-xl mb-1">${window.t('bus_not_found')}</strong>
+            <div class="opacity-90 text-sm px-4 leading-relaxed">${errMsg}</div>
+        </div>`;
         return;
     }
 
-    const primo      = validRuns[0];
-    const successivi = validRuns.slice(1);
+    const primo      = data[0];
+    const successivi = data.slice(1);
+    const fmtTime    = t => (t || '').slice(0, 5);  // "09:35:00" → "09:35"
 
-    nextCard.innerHTML = `<div class="flex justify-between items-start mb-6"><span class="text-[11px] font-bold uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-lg bg-black/5">${window.t('next_departure')}</span><span></span></div><div class="flex items-end justify-between relative z-10"><div><div class="text-6xl font-serif font-bold text-white leading-none tracking-tight drop-shadow-md mb-1">${primo[startCol].slice(0,5)}</div><div class="text-sm font-bold text-cyan-100 uppercase tracking-widest pl-1">${window.t('departure')}</div></div><div class="text-right pb-1"><div class="text-2xl font-bold text-white/90 leading-none">${primo[endCol].slice(0,5)}</div><div class="text-[11px] font-bold text-cyan-100 uppercase tracking-widest opacity-80">${window.t('arrival')}</div></div></div><div class="mt-6 pt-4 border-t border-white/20 flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-icons text-white/80 text-sm">explore</span><span class="text-xs font-bold text-white uppercase tracking-wide">${window.t('direction_dir')} ${primo.direzione || window.t('coast')}</span></div></div><span class="material-icons absolute -right-6 -bottom-6 text-[140px] text-white opacity-10 rotate-[-10deg] pointer-events-none">sailing</span>`;
+    nextCard.innerHTML = `<div class="flex justify-between items-start mb-6"><span class="text-[11px] font-bold uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-lg bg-black/5">${window.t('next_departure')}</span><span></span></div><div class="flex items-end justify-between relative z-10"><div><div class="text-6xl font-serif font-bold text-white leading-none tracking-tight drop-shadow-md mb-1">${fmtTime(primo.departure_time)}</div><div class="text-sm font-bold text-cyan-100 uppercase tracking-widest pl-1">${window.t('departure')}</div></div><div class="text-right pb-1"><div class="text-2xl font-bold text-white/90 leading-none">${fmtTime(primo.arrival_time)}</div><div class="text-[11px] font-bold text-cyan-100 uppercase tracking-widest opacity-80">${window.t('arrival')}</div></div></div><div class="mt-6 pt-4 border-t border-white/20 flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-icons text-white/80 text-sm">explore</span><span class="text-xs font-bold text-white uppercase tracking-wide">${primo.route_name_it || ''}</span></div></div><span class="material-icons absolute -right-6 -bottom-6 text-[140px] text-white opacity-10 rotate-[-10deg] pointer-events-none">sailing</span>`;
 
     list.innerHTML = successivi.length === 0
         ? `<div class="text-center text-slate-400 text-xs py-4 font-bold uppercase tracking-widest">${window.t('last_run_day')}</div>`
-        : successivi.map(run => `<div class="group flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-md hover:border-cyan-100 cursor-default"><div class="flex items-center gap-4"><div class="flex flex-col"><span class="text-xl font-bold text-slate-700 leading-none group-hover:text-cyan-600 transition-colors">${run[startCol].slice(0,5)}</span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">${window.t('departure')}</span></div><span class="material-icons text-slate-400 text-sm opacity-40">arrow_forward</span><div class="flex flex-col"><span class="text-lg font-bold text-slate-500 leading-none">${run[endCol].slice(0,5)}</span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">${window.t('arrival')}</span></div></div><div class="bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm group-hover:bg-cyan-50 group-hover:border-cyan-100 transition-colors"><span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-cyan-600">Ferry</span></div></div>`).join('');
+        : successivi.map(run => `<div class="group flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-md hover:border-cyan-100 cursor-default"><div class="flex items-center gap-4"><div class="flex flex-col"><span class="text-xl font-bold text-slate-700 leading-none group-hover:text-cyan-600 transition-colors">${fmtTime(run.departure_time)}</span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">${window.t('departure')}</span></div><span class="material-icons text-slate-400 text-sm opacity-40">arrow_forward</span><div class="flex flex-col"><span class="text-lg font-bold text-slate-500 leading-none">${fmtTime(run.arrival_time)}</span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">${window.t('arrival')}</span></div></div><div class="bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm group-hover:bg-cyan-50 group-hover:border-cyan-100 transition-colors"><span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-cyan-600">Ferry</span></div></div>`).join('');
 };
 
 window.apriTrenitalia = function() { window.open('https://www.trenitalia.com', '_blank'); };
