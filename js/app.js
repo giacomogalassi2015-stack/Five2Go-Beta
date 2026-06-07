@@ -2276,18 +2276,6 @@ function _dismissGeoBanner() {
     if (b) { b.style.opacity = '0'; setTimeout(() => b.remove(), 300); }
 }
 
-<<<<<<< HEAD
-function _showGeoError(btn, msg) {
-    _showGeoErrorModal('Errore GPS', msg);
-    if (btn) {
-        btn.innerHTML = '<span class="material-icons">my_location</span> GPS';
-        btn.style.backgroundColor = '#29B6F6';
-    }
-}
-// ─────────────────────────────────────────────────────────────────────────
-//  CHICCO — Mascotte meteo con animazione Lottie
-// ─────────────────────────────────────────────────────────────────────────
-=======
 
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2314,7 +2302,6 @@ function _showGeoError(btn, msg) {
 //    Lottie Web (CDN) → window.lottie per le animazioni
 //    Cloudinary → immagine statica chicco_wxxwbm.png e animazione chicco.json
 // ═══════════════════════════════════════════════════════════════════════════
->>>>>>> d79452cbc6655a230f7358426493f5f206a13b6e
 const CHICCO_STATIC_URL = 'https://res.cloudinary.com/dkg0jfady/image/upload/v1770990643/chicco_wxxwbm.png';
 const CHICCO_LOTTIE_URL = 'https://res.cloudinary.com/dkg0jfady/raw/upload/chicco.json';
 
@@ -2322,17 +2309,10 @@ let _chiccoLottieData = null;
 let _chiccoCardAnim   = null;
 
 function _injectChiccoFAB() {
-    // Se esiste già, assicuriamoci che non sia nascosto da timer esterni
-    if (document.getElementById('chicco-fab-wrap')) {
-        document.getElementById('chicco-fab-wrap').classList.remove('chicco-hidden');
-        document.getElementById('chicco-fab-wrap').style.display = 'block';
-        return;
-    }
-    
+    if (document.getElementById('chicco-fab-wrap')) return;
     const fab = document.createElement('div');
     fab.id = 'chicco-fab-wrap';
-    fab.className = 'chicco-fab'; // Nessuna classe "hidden" per apparizione ritardata
-    fab.style.display = 'block';  // Forza l'apparizione immediata
+    fab.className = 'chicco-fab';
     fab.innerHTML = `
         <button class="chicco-fab-btn" onclick="window.toggleChicco()"
                 aria-label="Meteo Cinque Terre" id="chicco-fab-btn">
@@ -2412,9 +2392,6 @@ window.toggleChicco = async function() {
 
     window._haptic?.(10);
 
-<<<<<<< HEAD
-    // RIMOSSO: L'istruzione che nascondeva Chicco al click. Ora rimane fisso.
-=======
     // ── Animate FAB out: shrink + fade verso la posizione della card ──
     const fabWrap = document.getElementById('chicco-fab-wrap');
     if (fabWrap) {
@@ -2425,9 +2402,7 @@ window.toggleChicco = async function() {
     }
 
     const lottieData = await _loadChiccoLottie();
->>>>>>> d79452cbc6655a230f7358426493f5f206a13b6e
 
-    // 1. INIEZIONE IMMEDIATA DELL'UI (Rimuove il "vuoto" causato dal caricamento)
     const card = document.createElement('div');
     card.id = 'chicco-weather-card';
     card.className = 'chicco-card';
@@ -2438,9 +2413,8 @@ window.toggleChicco = async function() {
         <div class="chicco-card-header">
             <div style="position:relative;width:52px;height:52px;">
                 <div id="chicco-card-anim" style="width:100%;height:100%;"></div>
-                <!-- L'immagine statica viene mostrata di default finché non carica Lottie -->
                 <img id="chicco-card-static-fallback" src="${CHICCO_STATIC_URL}"
-                     style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;transform:scale(1.02);" alt="Chicco">
+                     style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;display:none;transform:scale(1.02);" alt="Chicco">
             </div>
             <div>
                 <div style="font-size:13px;font-weight:800;color:#264653;text-transform:uppercase;letter-spacing:0.08em;">Cinque Terre</div>
@@ -2455,35 +2429,35 @@ window.toggleChicco = async function() {
         </div>`;
     document.body.appendChild(card);
 
+    const animContainer    = document.getElementById('chicco-card-anim');
+    const staticFallback   = document.getElementById('chicco-card-static-fallback');
+
+    if (lottieData && animContainer && window.lottie) {
+        _chiccoCardAnim = window.lottie.loadAnimation({
+            container: animContainer, renderer: 'svg', loop: true, autoplay: true, animationData: lottieData,
+        });
+        let loopCount = 0;
+        _chiccoCardAnim.addEventListener('loopComplete', () => {
+            if (++loopCount >= 3) {
+                _chiccoCardAnim.destroy();
+                _chiccoCardAnim = null;
+                animContainer.style.display  = 'none';
+                staticFallback.style.display = 'block';
+            }
+        });
+    } else if (animContainer) {
+        animContainer.style.display  = 'none';
+        staticFallback.style.display = 'block';
+    }
+
+    // Backdrop
     const backdrop = document.createElement('div');
     backdrop.id = 'chicco-card-backdrop';
     backdrop.style.cssText = 'position:fixed;inset:0;z-index:9002;';
     backdrop.onclick = () => window._closeChiccoCard();
     document.body.appendChild(backdrop);
 
-    // 2. FETCH DELL'ANIMAZIONE IN BACKGROUND (Non blocca più l'apertura della tendina)
-    _loadChiccoLottie().then(lottieData => {
-        const animContainer  = document.getElementById('chicco-card-anim');
-        const staticFallback = document.getElementById('chicco-card-static-fallback');
-        
-        if (lottieData && animContainer && window.lottie) {
-            staticFallback.style.display = 'none'; // Nasconde l'immagine fissa
-            _chiccoCardAnim = window.lottie.loadAnimation({
-                container: animContainer, renderer: 'svg', loop: true, autoplay: true, animationData: lottieData,
-            });
-            let loopCount = 0;
-            _chiccoCardAnim.addEventListener('loopComplete', () => {
-                if (++loopCount >= 3) {
-                    _chiccoCardAnim.destroy();
-                    _chiccoCardAnim = null;
-                    animContainer.style.display  = 'none';
-                    staticFallback.style.display = 'block'; // Ripristina l'immagine fissa a fine loop
-                }
-            });
-        }
-    });
-
-    // 3. FETCH METEO (Carica i dati solo dopo aver mostrato la card)
+    // Fetch meteo
     try {
         const info  = window.getChiccoRealTimeAdvice ? await window.getChiccoRealTimeAdvice() : { weather: '😴 ...', advice: '' };
         const bodyEl = document.getElementById('chicco-card-body');
@@ -2499,12 +2473,7 @@ window.toggleChicco = async function() {
 window._closeChiccoCard = function() {
     if (_chiccoCardAnim) { try { _chiccoCardAnim.destroy(); } catch(e) {} _chiccoCardAnim = null; }
 
-<<<<<<< HEAD
-    // RIMOSSO: il ripristino di style.display='', in quanto il pulsante non viene più nascosto
-
-=======
     const fabWrap  = document.getElementById('chicco-fab-wrap');
->>>>>>> d79452cbc6655a230f7358426493f5f206a13b6e
     const card     = document.getElementById('chicco-weather-card');
     const backdrop = document.getElementById('chicco-card-backdrop');
 
@@ -2532,11 +2501,6 @@ window._closeChiccoCard = function() {
 
     backdrop?.remove();
 };
-<<<<<<< HEAD
-// ─────────────────────────────────────────────────────────────────────────
-//  BUMP LANG PANEL
-// ─────────────────────────────────────────────────────────────────────────
-=======
 
 // ───────────────────────────────────────────────────────────────────────
 //  PANNELLO CAMBIO LINGUA (SECONDARIO)
@@ -2549,7 +2513,6 @@ window._closeChiccoCard = function() {
 //    data-logic.js → window.AVAILABLE_LANGS, window.currentLang
 //    Sezione 3     → changeLanguage()
 // ───────────────────────────────────────────────────────────────────────
->>>>>>> d79452cbc6655a230f7358426493f5f206a13b6e
 window._toggleBumpLangPanel = function() {
     if (document.getElementById('bump-lang-panel')) { window._closeBumpLangPanel(); return; }
 
