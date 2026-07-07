@@ -36,7 +36,7 @@
 //     - LegalBlink (cookie consent) → script di terze parti
 // ═══════════════════════════════════════════════════════════════════════════
 
-const APP_VERSION  = 'v4';
+const APP_VERSION  = 'v5';
 const STATIC_CACHE = `five2go-static-${APP_VERSION}`;
 const CDN_CACHE    = `five2go-cdn-${APP_VERSION}`;
 const IMAGE_CACHE  = `five2go-images-${APP_VERSION}`;
@@ -48,18 +48,25 @@ const ALL_CACHES = [STATIC_CACHE, CDN_CACHE, IMAGE_CACHE, DATA_CACHE];
 // Quando il browser installa il SW (prima visita online), questi file
 // vengono scaricati e messi in CacheStorage. Da quel momento l'app
 // si avvia anche completamente offline.
+// NOTA: percorsi RELATIVI (./) e non assoluti (/).
+// Il SW viene registrato con scope pari alla directory in cui risiede sw.js:
+// i path relativi funzionano sia su dominio root sia su sottopercorso
+// (es. GitHub Pages: /Five2Go-Beta/). I path assoluti '/...' puntavano
+// alla root del dominio e facevano fallire cache.addAll() → install fallita.
 const STATIC_ASSETS = [
-    '/',
-    '/index.html',
-    '/manifest.json',
-    '/features.js',
-    '/js/data-logic.js',
-    '/js/ui-renderers.js',
-    '/js/legal-render.js',
-    '/js/ui-modal-contents.js',
-    '/js/ui-modal.js',
-    '/js/ui-map.js',
-    '/js/app.js',
+    './',
+    './index.html',
+    './manifest.json',
+    './icons/icon-192.png',
+    './icons/icon-512.png',
+    './js/data-logic.js',
+    './js/ui-renderers.js',
+    './js/legal-render.js',
+    './js/ui-modal-contents.js',
+    './js/ui-modal.js',
+    './js/ui-map.js',
+    './js/features.js',
+    './js/app.js',
 ];
 
 // Domini CDN da servire con Cache First

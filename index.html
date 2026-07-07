@@ -5,8 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Five2Go</title>
 
-    <!-- PWA Manifest + meta cross-browser -->
-    <link rel="manifest" href="/manifest.json">
+    <!-- Privacy: non inviare mai l'URL completo come Referer a domini terzi
+         (CDN, font, tile server, API). Riduce il data leakage cross-origin. -->
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <!-- PWA Manifest + meta cross-browser
+         href RELATIVO: con path assoluto (/manifest.json) il file risulta 404
+         quando l'app è servita da un sottopercorso (es. GitHub Pages). -->
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3D4246">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -1152,9 +1158,13 @@
 //      il banner "Aggiungi alla schermata home".
 // La registrazione avviene su 'load' (non DOMContentLoaded) per non ritardare
 // il rendering iniziale dell'app.
+// Path RELATIVO ('./sw.js'): con '/sw.js' la registrazione puntava alla root
+// del dominio e falliva su hosting a sottopercorso (GitHub Pages).
+// Lo scope del SW coincide così con la directory dell'app.
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.info('[SW] Registrato, scope:', reg.scope))
             .catch(err => console.warn('[SW] Registrazione fallita:', err));
     });
 }

@@ -2,7 +2,8 @@
   "name": "Five2Go",
   "short_name": "Five2Go",
   "description": "La tua guida essenziale per vivere la magia delle Cinque Terre.",
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#F4F1DE",
   "theme_color": "#264653",
@@ -10,13 +11,13 @@
   "lang": "it",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
